@@ -12,6 +12,7 @@ FOLDER_PATH = '/storage/opt_project_test/optProjectTest/optProjectTest/models/pe
 MODEL_PATH = FOLDER_PATH + 'bayesian_gaussian_mixture_exclude0.pkl'
 PERFORMANCE = ['cpc', 'clicks', 'impressions', 'reach']
 
+<<<<<<< HEAD
 def performance_sort( adset_id ):
     request_date = datetime.datetime.now().date()
     mydb = mysql_adactivity_save.connectDB("ad_activity")
@@ -24,6 +25,8 @@ def performance_sort( adset_id ):
         df_adset = pd.DataFrame({'adset_id':adset_id, 'charge':0}, index=[0])
     return df_adset
 
+=======
+>>>>>>> 99d9fe34978fb78d0155703ef2693419869d888c
 def forOPT(adset_id, ad_id):
     df = mysql_adactivity_save.getDataforSelection(adset_id)
     d={}
@@ -33,6 +36,10 @@ def forOPT(adset_id, ad_id):
         for ad in ad_id_list:
             d[ad] = df['clicks'][df['ad_id'] == ad].sort_values().iloc[-1]
         biggestKey = max(d, key=d.get)
+<<<<<<< HEAD
+=======
+#         print('='*20)
+>>>>>>> 99d9fe34978fb78d0155703ef2693419869d888c
         adid = int(df['ad_id'][df['ad_id'] == int(ad_id)].iloc[-1])
         if adid == int(biggestKey):
             return True
