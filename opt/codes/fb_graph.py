@@ -199,14 +199,14 @@ def select_adid_by_campaign(ad_campaign_id):
     for adset_id in adset_list:
         ad_list = df[COL_AD_ID][df.adset_id == adset_id].unique()
         for ad_id in ad_list:
-<<<<<<< HEAD
+
             adset_id, ad_id = adset_id.astype(dtype=object), ad_id.astype(dtype=object)
             status = selection.forOPT( adset_id, ad_id )
 #             pred_cpc, pred_budget, decide_type = mysql_adactivity_save.get_pred_data( ad_id )
             pred_cpc = revive_bidding(ad_id)
             pred_budget = 10000
 
->>>>>>> 99d9fe34978fb78d0155703ef2693419869d888c
+
             decide_type = 'Revive'
             reasons = "Low Performance"
 #             if decide_type == 'KPI':
@@ -219,7 +219,7 @@ def select_adid_by_campaign(ad_campaign_id):
 #                 reasons = "collecting data, settings no change."
             mydict[str(ad_id)] = { PRED_CPC: math.ceil(pred_cpc), PRED_BUDGET: abs(pred_budget), REASONS: reasons,
                               DECIDE_TYPE: decide_type, STATUS: status, ADSET: str(adset_id) }
-<<<<<<< HEAD
+
             ad_dict = {'ad_id':str(ad_id),
                       'request_time':datetime.now(),
                        'next_cpc':math.ceil(pred_cpc),
@@ -235,7 +235,7 @@ def select_adid_by_campaign(ad_campaign_id):
             
 #             mysql_adactivity_save.insertSelection( ad_campaign_id, adset_id, ad_id, status )
 
->>>>>>> 99d9fe34978fb78d0155703ef2693419869d888c
+
     mydict_json = json.dumps(mydict)
     mysql_adactivity_save.insert_result( ad_campaign_id, mydict_json, datetime.now() )
     return
@@ -419,7 +419,7 @@ def normalized_sigmoid_fkt(a, b, x):
     return s
     
 def revive_bidding(ad_id):
-<<<<<<< HEAD
+
     campaign_id = mysql_adactivity_save.get_campaign_id(ad_id)
     init_cpc = mysql_adactivity_save.get_init_bidamount(ad_id)
     TOTAL_CLICKS = mysql_adactivity_save.get_total_clicks(campaign_id)
@@ -431,7 +431,7 @@ def revive_bidding(ad_id):
     df_camp = pd.read_sql("SELECT * FROM campaign_target where campaign_id=%s" % (campaign_id), con=mydb )
     avgspeed = df_camp['avgspeed'].iloc[0].astype(dtype=object)
 
->>>>>>> 99d9fe34978fb78d0155703ef2693419869d888c
+
     speed = optimizer.compute_speed(ad_id)
     center = 0.5
     width = 5
@@ -439,14 +439,14 @@ def revive_bidding(ad_id):
     if progress > 0.5:
         next_cpc = math.ceil(init_cpc)
     else:
-<<<<<<< HEAD
+
         next_cpc = init_cpc + BID_RANGE *( normalized_sigmoid_fkt(center, width, progress) - 0.5 )
 #        next_cpc = init_cpc + BID_RANGE * init_cpc*( normalized_sigmoid_fkt(center, width, progress) - 0.5 )
         next_cpc = next_cpc.astype(dtype=object)
     
     mysql_adactivity_save.update_bidcap(ad_id, next_cpc)
 
->>>>>>> 99d9fe34978fb78d0155703ef2693419869d888c
+
     return next_cpc
 
 def make_default( campaign_id ):
@@ -470,16 +470,14 @@ def bid_adjust(campaign_id):
     for ad_id in ad_id_list:
         avgspeed, speed, decide_type = mysql_adactivity_save.get_speed(ad_id)
         ad_id = ad_id.astype(dtype=object)
-<<<<<<< HEAD
 
->>>>>>> 99d9fe34978fb78d0155703ef2693419869d888c
         bid = revive_bidding(ad_id)
         mysql_adactivity_save.update_bidcap(ad_id, bid)
     return
 
 def main(parameter):
     print(datetime.now())
-<<<<<<< HEAD
+
 
     campaignid_target_dict = mysql_adactivity_save.get_campaign_target_dict()
     FacebookAdsApi.init( my_app_id, my_app_secret, my_access_token )
@@ -497,7 +495,7 @@ def main(parameter):
             target_allocation( campaign_id.astype(dtype=object) )
     return
 
->>>>>>> 99d9fe34978fb78d0155703ef2693419869d888c
+
         
 if __name__ == "__main__":
     print('Number of arguments:', len(sys.argv), 'arguments.')
