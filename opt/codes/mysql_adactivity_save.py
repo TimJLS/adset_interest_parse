@@ -202,25 +202,20 @@ def check_campaignid_target(campaign_id, total_clicks):
         mydb.commit()
     return
 
-<<<<<<< HEAD
+
 def get_campaign_target_dict():
     mydb = connectDB("ad_activity")
     request_time = datetime.datetime.now()
-=======
-def get_campaignid_target():
-    mydb = connectDB("ad_activity")
->>>>>>> 99d9fe34978fb78d0155703ef2693419869d888c
+
     df = pd.read_sql( "SELECT * FROM campaign_target" , con=mydb )
     campaignid_dict=dict()
     campaignid_list = df['campaign_id'].unique()
     for campaign_id in campaignid_list:
-<<<<<<< HEAD
+
         stop_time = df['stop_time'][df.campaign_id==campaign_id].iloc[0]
         if stop_time > request_time:
             campaignid_dict[campaign_id]=df['target'][df.campaign_id==campaign_id]
-=======
-        campaignid_dict[campaign_id]=df['target'][df.campaign_id==campaign_id]
->>>>>>> 99d9fe34978fb78d0155703ef2693419869d888c
+
     return campaignid_dict
 
 def get_ad_id(campaign_id):
@@ -262,7 +257,7 @@ def get_total_clicks( campaign_id ):
     
     total_clicks = int(total_clicks[0][0])
     return total_clicks
-<<<<<<< HEAD
+
 ######## NEW ######
 
 def get_campaign_target(campaign_id):
@@ -298,18 +293,7 @@ def intoDB(table, df):
 
 
 
-=======
 
-def intoDB(table, df):
-    engine = create_engine( 'mysql://root:adgeek1234@localhost/ad_activity' )
-    with engine.connect() as conn, conn.begin():
-        if table == "pred":
-            df.to_sql("pred", conn, if_exists='append',index=False)
-        else:
-            df.to_sql("all_time", conn, if_exists='append',index=False)
-
-
->>>>>>> 99d9fe34978fb78d0155703ef2693419869d888c
 if __name__=="__main__":
     #intoDB()
 #     AdsInAdSet(adset_id)
