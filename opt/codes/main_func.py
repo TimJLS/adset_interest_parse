@@ -27,7 +27,7 @@ BID_RANGE = 0.8
 PRED_CPC, PRED_BUDGET, REASONS, DECIDE_TYPE, STATUS, ADSET = 'pred_cpc', 'pred_budget', 'reasons', 'decide_type', 'status', 'adset_id'
 target_index = {'LINK_CLICKS': 'link_click', 'POST_ENGAGEMENT': 'post_engagement', 'VIDEO_VIEWS': 'video_view' }
 charge_index = {'LINK_CLICKS': 'link_click', 'POST_ENGAGEMENT': 'post_engagement', 'VIDEO_VIEWS': 'video_view', 'CLICKS': 'clicks' }
-
+target_cpc = {'CLICKS':AdsInsights.Field.cpc}
 fields_ad = [ AdsInsights.Field.ad_id, AdsInsights.Field.impressions, AdsInsights.Field.reach ]
 insights_ad = [ AdsInsights.Field.actions, AdsInsights.Field.cost_per_action_type ]
 field_clicks = ['cpc', 'clicks']
@@ -37,13 +37,14 @@ GENDER = 'gender'
 # breakdowns = [AGE, GENDER]
 breakdowns = [HOUR_TIME]
 fields_adSet = [ AdSet.Field.id, AdSet.Field.bid_amount, AdSet.Field.daily_budget, AdSet.Field.budget_remaining, AdSet.Field.optimization_goal, AdSet.Field.targeting, AdSet.Field.effective_status ]
+insights_adSet = [AdsInsights.Field.spend]
 COL_CAMPAIGN_ID, COL_ADSET_ID = 'campaign_id', 'adset_id'
 COL_TARGET_TYPE = 'target_type'
 COL_TARGET_CPC = 'target_cpc'
 COL_CHARGE_CPC = 'charge_cpc'
 COL_TARGET = 'target'
 COL_CHARGE = 'charge'
-COL_OPTIMAL_GOAL, COL_BID_AMOUNT, COL_DAILY_BUDGET, COL_AGE_MAX, COL_AGE_MIN = 'optimization_goal', 'bid_amount', 'daily_budget', 'age_max', 'age_min'
+COL_OPTIMAL_GOAL, COL_BID_AMOUNT, COL_DAILY_BUDGET, COL_AGE_MAX, COL_AGE_MIN, COL_SPEND = 'optimization_goal', 'bid_amount', 'daily_budget', 'age_max', 'age_min', 'spend'
 COL_FLEXIBLE_SPEC, COL_GEO_LOCATIONS = 'flexible_spec', 'geo_locations'
 COL_CAMPAIGN_ID, COL_ADSET_ID = 'campaign_id', 'adset_id'
 fields_camp=[ Campaign.Field.id, Campaign.Field.spend_cap, Campaign.Field.start_time, Campaign.Field.stop_time, Campaign.Field.objective]
@@ -51,7 +52,7 @@ COL_SPEND_CAP, COL_OBJECTIVE, COL_START_TIME, COL_STOP_TIME = 'spend_cap', 'obje
 FEATURE_CAMPAIGN = [ 'id','spend_cap', 'objective', 'start_time', 'stop_time' ]
 COL_CAMPAIGN = [ 'campaign_id','spend_cap', 'objective', 'start_time', 'stop_time' ]
 FEATURE_ADSET = [COL_ADSET_ID, COL_OPTIMAL_GOAL, COL_BID_AMOUNT,COL_DAILY_BUDGET,
-                 COL_AGE_MAX,COL_AGE_MIN,COL_FLEXIBLE_SPEC,COL_GEO_LOCATIONS,'request_time']
+                 COL_AGE_MAX,COL_AGE_MIN,COL_FLEXIBLE_SPEC,COL_GEO_LOCATIONS,COL_SPEND,'request_time']
 class Campaigns(object):
     def __init__( self, campaign_id ):
         self.campaign_id = campaign_id
@@ -64,11 +65,28 @@ class Campaigns(object):
         campaign_feature_dict[COL_CAMPAIGN_ID] = campaign_feature_dict.pop('id')
         campaign_feature_dict[COL_TARGET_TYPE] = campaign_feature_dict.pop('objective')
 #         df = pd.DataFrame(campaign_feature_dict, index=[0])
-        campaign_feature_dict['start_time'] = datetime.datetime.strptime( campaign_feature_dict['start_time'],'%Y-%m-%dT%H:%M:%S+%f' ).strftime( '%Y-%m-%d %H:%M:%S' )
-        campaign_feature_dict['stop_time'] = datetime.datetime.strptime( campaign_feature_dict['stop_time'],'%Y-%m-%dT%H:%M:%S+%f' ).strftime( '%Y-%m-%d %H:%M:%S' )
+        campaign_feature_dict['start_time'] = datetime.datetime.strptime( campaign_feature_dict['start_time'],'%Y-%m-%dT%H:%M:%S+%f' )
+        campaign_feature_dict['stop_time'] = datetime.datetime.strptime( campaign_feature_dict['stop_time'],'%Y-%m-%dT%H:%M:%S+%f' )
+        campaign_feature_dict['campaign_days'] = ( campaign_feature_dict['stop_time'] - campaign_feature_dict['start_time'] ).days
+        campaign_feature_dict['start_time'] = campaign_feature_dict['start_time'].strftime( '%Y-%m-%d %H:%M:%S' )
+        campaign_feature_dict['stop_time'] = campaign_feature_dict['stop_time'].strftime( '%Y-%m-%d %H:%M:%S' )
+        campaign_feature_dict['budget_per_day'] = int(campaign_feature_dict['spend_cap'])/campaign_feature_dict['campaign_days']
 #         mysql_adactivity_save.intoDB("campaign_target", df)
         return campaign_feature_dict
-
+    def get_campaign_insights( self ):
+        campaign = Campaign( self.campaign_id )
+        params = {
+            'date_preset': 'today',
+        }
+        insights_cpc = []
+        df = mysql_adactivity_save.get_campaign_target( self.campaign_id )
+        if df['charge_type'].iloc[0] == 'CLICKS':
+            insights_cpc.append( target_cpc[ df['charge_type'].iloc[0] ] )
+        else:
+            insights_cpc.append( AdsInsights.Field.cost_per_action_type )
+        insights = campaign.get_insights(params=params, fields=insights_camp+insights_cpc)
+        
+        return insights
     def get_adids( self ):
         ad_id_list=list()
         ad_campaign = Campaign( self.campaign_id )
@@ -84,28 +102,29 @@ class AdSets(object):
     def get_adset_insights( self ):
         ad_set = AdSet( self.adset_id )
         params = {
-            "fields" : ",".join(fields_ad),
-            "breakdowns" : ",".join(breakdowns),
-            "time_increment" : 1,
+            "fields" : ",".join(insights_adSet),
+#             "breakdowns" : ",".join(breakdowns),
+#             "time_increment" : 1,
             'limit' : 10000,
-            'data_preset':'today',
+            'date_preset':'today',
         }
         adsets = ad_set.get_insights(params=params)
-
-        adsets = ad_set.remote_read( fields = fields_adSet, params = params )
-        optimal_goal = adsets.get( COL_OPTIMAL_GOAL )
-        bid_amount, daily_budget = adsets.get( COL_BID_AMOUNT ), adsets.get( COL_DAILY_BUDGET )
-        age_max = adsets.get( AdSet.Field.targeting ).get( COL_AGE_MAX )
-        age_min = adsets.get( AdSet.Field.targeting ).get( COL_AGE_MIN )
-        flexible_spec = str( adsets.get( AdSet.Field.targeting ).get( COL_FLEXIBLE_SPEC ) )
-        geo_locations = str( adsets.get( AdSet.Field.targeting ).get( COL_GEO_LOCATIONS ) )
-        adset_insights_keys=FEATURE_ADSET
-        adset_insights_values=[ self.adset_id, optimal_goal, bid_amount, daily_budget,
-                               age_max, age_min, flexible_spec, geo_locations, datetime.datetime.now() ]
-        adset_insight_dict = dict(zip(adset_insights_keys, adset_insights_values))
-        df = pd.DataFrame(adset_insight_dict, index=[0])
-#         mysql_adactivity_save.intoDB("adset_insights", df)
-        return df
+        for adset in adsets:
+            spend = int(adset.get(COL_SPEND))
+            adsets = ad_set.remote_read( fields = fields_adSet, params = params )
+            optimal_goal = adsets.get( COL_OPTIMAL_GOAL )
+            bid_amount, daily_budget = adsets.get( COL_BID_AMOUNT ), adsets.get( COL_DAILY_BUDGET )
+            age_max = adsets.get( AdSet.Field.targeting ).get( COL_AGE_MAX )
+            age_min = adsets.get( AdSet.Field.targeting ).get( COL_AGE_MIN )
+            flexible_spec = str( adsets.get( AdSet.Field.targeting ).get( COL_FLEXIBLE_SPEC ) )
+            geo_locations = str( adsets.get( AdSet.Field.targeting ).get( COL_GEO_LOCATIONS ) )
+            adset_insights_keys=FEATURE_ADSET
+            adset_insights_values=[ self.adset_id, optimal_goal, bid_amount, daily_budget,
+                                       age_max, age_min, flexible_spec, geo_locations, spend, datetime.datetime.now() ]
+            adset_insight_dict = dict(zip(adset_insights_keys, adset_insights_values))
+            df = pd.DataFrame(adset_insight_dict, index=[0])
+    #         mysql_adactivity_save.intoDB("adset_insights", df)
+            return df
 
 
 class Ads( AdSets, Campaigns ):
@@ -211,7 +230,7 @@ def normalized_sigmoid_fkt(center, width, progress):
 def bid_adjust( campaign_id ):
     mydb = mysql_adactivity_save.connectDB("ad_activity")
     request_time = datetime.datetime.now()
-    time_progress = request_time.hour / HOUR_PER_DAY
+    time_progress = ( request_time.hour + 1 ) / HOUR_PER_DAY
 
     df_camp = pd.read_sql( "SELECT * FROM campaign_target where campaign_id=%s" %( campaign_id ), con=mydb )
     df_ad = pd.read_sql( "SELECT * FROM ad_insights where campaign_id = %s ORDER BY request_time desc limit %s" %( campaign_id, LIMIT ), con=mydb )
@@ -238,23 +257,24 @@ def bid_adjust( campaign_id ):
         df_ad = pd.read_sql( "SELECT * FROM ad_insights where ad_id=%s ORDER BY request_time DESC LIMIT 1" %( ad_id ), con=mydb )
         adset_id = df_ad['adset_id'].iloc[0]
         
-#         campaign_performance = '-'
-        
-        adset_performance = adset_target * time_progress
         adset_performance = df_ad['charge'].iloc[0]
 
         df_adset = pd.read_sql( "SELECT * FROM adset_insights where adset_id=%s LIMIT 1" %( adset_id ), con=mydb )
         init_cpc = df_adset['bid_amount'].iloc[0]
-        adset_progress = adset_performance / adset_target
-        
-        if adset_performance > adset_target and campaign_performance < campaign_target:
+        adset_time_target = adset_target * time_progress
+        adset_progress = adset_performance / adset_time_target
+                
+        if adset_performance > adset_time_target and campaign_performance < campaign_target:
             df_adset = pd.read_sql( "SELECT * FROM adset_insights where adset_id=%s ORDER BY request_time DESC LIMIT 1" %( adset_id ), con=mydb )
             bid = df_adset['bid_amount'].iloc[0].astype(dtype=object) 
         else:
             bid = init_cpc + BID_RANGE*init_cpc*( normalized_sigmoid_fkt(center, width, adset_progress) - 0.5 )
             bid = bid.astype(dtype=object)            
             if adset_progress > 1:
-                bid = math.ceil(init_cpc) # Keep Initail Bid
+#                 bid = math.ceil(init_cpc) # Keep Initail Bid
+                df_adset = pd.read_sql( "SELECT * FROM adset_insights where adset_id=%s ORDER BY request_time DESC LIMIT 1" %( adset_id ), con=mydb )
+                bid = df_adset['bid_amount'].iloc[0].astype(dtype=object) 
+        print(campaign_id, ad_id, adset_performance, adset_time_target, adset_progress, bid)
         ad_dict = {'ad_id':ad_id, 'request_time':datetime.datetime.now(), 'next_cpc':int(bid),
           PRED_CPC:bid, PRED_BUDGET: df_adset['daily_budget'].iloc[0].astype(dtype=object), DECIDE_TYPE: 'Revive' }
         df_ad = pd.DataFrame(ad_dict, index=[0])
