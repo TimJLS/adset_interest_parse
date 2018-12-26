@@ -257,7 +257,37 @@ def get_total_clicks( campaign_id ):
     
     total_clicks = int(total_clicks[0][0])
     return total_clicks
+### optimal_weight ###
 
+def check_optimal_weight(campaign_id, df):
+    mydb = connectDB("ad_activity")
+    df_check = pd.read_sql( "SELECT * FROM optimal_weight WHERE campaign_id=%s" % (campaign_id), con=mydb )
+#     print(type(campaign_id.astype(dtype=object)))
+    if df_check.empty:
+        engine = create_engine( 'mysql://root:adgeek1234@localhost/ad_activity' )
+        with engine.connect() as conn, conn.begin():
+            df.to_sql( "optimal_weight", conn, if_exists='append',index=False )
+        return
+    else:
+        mycursor = mydb.cursor()
+        sql = "UPDATE optimal_weight SET score=%s, weight_kpi=%s, weight_spend=%s, weight_bid=%s WHERE campaign_id=%s"
+        val = ( df['score'].iloc[0].astype(dtype=object),
+                df['weight_kpi'].iloc[0].astype(dtype=object),
+                df['weight_spend'].iloc[0].astype(dtype=object),
+                df['weight_bid'].iloc[0].astype(dtype=object),
+                df['campaign_id'].iloc[0].astype(dtype=object)
+              )
+#         sql = "UPDATE optimal_weight SET score=%s, weight_kpi=%s, weight_spend=%s, weight_bid=%s, weight_width=%s WHERE campaign_id=%s"
+#         val = ( df['score'].iloc[0].astype(dtype=object),
+#                 df['weight_kpi'].iloc[0].astype(dtype=object),
+#                 df['weight_spend'].iloc[0].astype(dtype=object),
+#                 df['weight_bid'].iloc[0].astype(dtype=object),
+#                 df['weight_width'].iloc[0].astype(dtype=object),
+#                 df['campaign_id'].iloc[0].astype(dtype=object)
+#               )
+        mycursor.execute(sql, val)
+        mydb.commit()
+        return
 ######## NEW ######
 
 def get_campaign_target(campaign_id):
@@ -286,10 +316,10 @@ def intoDB(table, df):
             df.to_sql("adset_insights", conn, if_exists='append',index=False)
         elif table == "campaign_target":
             df.to_sql("campaign_target", conn, if_exists='append',index=False)
-        elif table == "by_campaign":
-            df.to_sql("by_campaign", conn, if_exists='append',index=False)
-        elif table == "all_time":
-            df.to_sql("all_time", conn, if_exists='append',index=False)
+        elif table == "optimal_weight":
+            df.to_sql("optimal_weight", conn, if_exists='append',index=False)
+        elif table == "adset_score":
+            df.to_sql("adset_score", conn, if_exists='append',index=False)
 
 
 

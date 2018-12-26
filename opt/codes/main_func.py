@@ -21,6 +21,7 @@ import datetime
 import pandas as pd
 import mysql_adactivity_save
 import selection
+import genetic_algorithm
 LIMIT=10000
 HOUR_PER_DAY = 20
 BID_RANGE = 0.8
@@ -28,6 +29,7 @@ PRED_CPC, PRED_BUDGET, REASONS, DECIDE_TYPE, STATUS, ADSET = 'pred_cpc', 'pred_b
 target_index = {'LINK_CLICKS': 'link_click', 'POST_ENGAGEMENT': 'post_engagement', 'VIDEO_VIEWS': 'video_view' }
 charge_index = {'LINK_CLICKS': 'link_click', 'POST_ENGAGEMENT': 'post_engagement', 'VIDEO_VIEWS': 'video_view', 'CLICKS': 'clicks' }
 target_cpc = {'CLICKS':AdsInsights.Field.cpc}
+target_charge={'CLICKS':AdsInsights.Field.clicks}
 fields_ad = [ AdsInsights.Field.ad_id, AdsInsights.Field.impressions, AdsInsights.Field.reach ]
 insights_ad = [ AdsInsights.Field.actions, AdsInsights.Field.cost_per_action_type ]
 field_clicks = ['cpc', 'clicks']
@@ -47,12 +49,29 @@ COL_CHARGE = 'charge'
 COL_OPTIMAL_GOAL, COL_BID_AMOUNT, COL_DAILY_BUDGET, COL_AGE_MAX, COL_AGE_MIN, COL_SPEND = 'optimization_goal', 'bid_amount', 'daily_budget', 'age_max', 'age_min', 'spend'
 COL_FLEXIBLE_SPEC, COL_GEO_LOCATIONS = 'flexible_spec', 'geo_locations'
 COL_CAMPAIGN_ID, COL_ADSET_ID = 'campaign_id', 'adset_id'
+insights_camp=[AdsInsights.Field.spend, AdsInsights.Field.actions, AdsInsights.Field.impressions]
 fields_camp=[ Campaign.Field.id, Campaign.Field.spend_cap, Campaign.Field.start_time, Campaign.Field.stop_time, Campaign.Field.objective]
 COL_SPEND_CAP, COL_OBJECTIVE, COL_START_TIME, COL_STOP_TIME = 'spend_cap', 'objective', 'start_time', 'stop_time'
 FEATURE_CAMPAIGN = [ 'id','spend_cap', 'objective', 'start_time', 'stop_time' ]
 COL_CAMPAIGN = [ 'campaign_id','spend_cap', 'objective', 'start_time', 'stop_time' ]
 FEATURE_ADSET = [COL_ADSET_ID, COL_OPTIMAL_GOAL, COL_BID_AMOUNT,COL_DAILY_BUDGET,
                  COL_AGE_MAX,COL_AGE_MIN,COL_FLEXIBLE_SPEC,COL_GEO_LOCATIONS,COL_SPEND,'request_time']
+class Accounts(object):
+    def __init__( self, account_id ):
+        self.account_id = account_id
+    def get_account_insights( self ):
+        accounts = AdAccount( self.account_id )
+        params = {
+            'date_preset': 'today',
+        }
+        account = accounts.get_insights(params=params,
+                                        fields=[AdsInsights.Field.account_id,
+                                               AdsInsights.Field.cpc,
+                                               AdsInsights.Field.clicks,
+                                               AdsInsights.Field.spend,
+                                               AdsInsights.Field.impressions]
+                                       )
+        return account
 class Campaigns(object):
     def __init__( self, campaign_id ):
         self.campaign_id = campaign_id
@@ -82,6 +101,7 @@ class Campaigns(object):
         df = mysql_adactivity_save.get_campaign_target( self.campaign_id )
         if df['charge_type'].iloc[0] == 'CLICKS':
             insights_cpc.append( target_cpc[ df['charge_type'].iloc[0] ] )
+            insights_cpc.append( target_charge[ df['charge_type'].iloc[0] ] )
         else:
             insights_cpc.append( AdsInsights.Field.cost_per_action_type )
         insights = campaign.get_insights(params=params, fields=insights_camp+insights_cpc)
@@ -94,7 +114,12 @@ class Campaigns(object):
         for ad in ads:
             ad_id_list.append( ad.get("id") )
         return ad_id_list
-
+    def get_account_id( self ):
+        campaign = Campaign( self.campaign_id )
+        account = campaign.get_insights(fields=[Campaign.Field.account_id])
+        for acc in account:
+            acc_id = acc.get("account_id")
+            return acc_id
 
 class AdSets(object):
     def __init__( self, adset_id ):
@@ -249,6 +274,8 @@ def bid_adjust( campaign_id ):
     dfs = dfs.sort_values(by=['charge'], ascending=False).reset_index(drop=True)
     campaign_performance = dfs['charge'].sum()
     campaign_target = df_camp['target'].iloc[0]
+#     campaign_time_target = (campaign_target-campaign_performance) * time_progress
+    campaign_time_target = campaign_target * time_progress
     adset_target = campaign_target / campaign_days / adset_num
     for ad_id in ad_id_list:
         ad_id = ad_id.astype(dtype=object)
@@ -264,7 +291,7 @@ def bid_adjust( campaign_id ):
         adset_time_target = adset_target * time_progress
         adset_progress = adset_performance / adset_time_target
                 
-        if adset_performance > adset_time_target and campaign_performance < campaign_target:
+        if adset_performance > adset_time_target and campaign_performance < campaign_time_target:
             df_adset = pd.read_sql( "SELECT * FROM adset_insights where adset_id=%s ORDER BY request_time DESC LIMIT 1" %( adset_id ), con=mydb )
             bid = df_adset['bid_amount'].iloc[0].astype(dtype=object) 
         else:
@@ -317,6 +344,21 @@ def select_adid_by_campaign(ad_campaign_id):
     mysql_adactivity_save.insert_result( ad_campaign_id, mydict_json, datetime.datetime.now() )
     return
 
+def ga_optimal_weight(campaign_id):
+    request_time = datetime.datetime.now().date()
+    mydb = mysql_adactivity_save.connectDB( "ad_activity" )
+    df_weight = pd.read_sql("SELECT * FROM optimal_weight WHERE campaign_id=%s " %(campaign_id), con=mydb)
+    ad_id_list = Campaigns(campaign_id).get_adids()
+    for ad_id in ad_id_list:
+        df = genetic_algorithm.ObjectiveFunc.adset_status(ad_id)
+        r = genetic_algorithm.ObjectiveFunc.adset_fitness( df_weight, df )
+
+        df_ad=pd.read_sql("SELECT adset_id FROM ad_insights WHERE ad_id=%s LIMIT 1" %(ad_id), con=mydb)
+        adset_id = df_ad['adset_id'].iloc[0].astype(dtype=object)              
+        df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'ad_id':ad_id, 'score':r, 'request_time':request_time}, index=[0])
+        mysql_adactivity_save.intoDB("adset_score", df_final)
+    return
+
 def data_collect( campaign_id, total_clicks, charge_type ):
     request_time = datetime.datetime.now()
     request_dict = {'request_time': request_time}
@@ -351,6 +393,8 @@ def main(parameter):
         elif parameter[1] == 'bid_adjust':
             bid_adjust( campaign_id.astype(dtype=object) )
 #             select_adid_by_campaign( campaign_id.astype(dtype=object) )
+        elif parameter[1] == 'ga_optimal_weight':
+            ga_optimal_weight(campaign_id)
     print(datetime.datetime.now()-start_time)
     return
 
