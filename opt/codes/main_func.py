@@ -107,6 +107,21 @@ class Campaigns(object):
         insights = campaign.get_insights(params=params, fields=insights_camp+insights_cpc)
         
         return insights
+    def get_lifetime_insights(self):
+        campaign = Campaign( self.campaign_id )
+        params = {
+            'date_preset': 'lifetime',
+        }
+        insights_cpc = []
+        df = mysql_adactivity_save.get_campaign_target( self.campaign_id )
+        if df['charge_type'].iloc[0] == 'CLICKS':
+            insights_cpc.append( target_cpc[ df['charge_type'].iloc[0] ] )
+            insights_cpc.append( target_charge[ df['charge_type'].iloc[0] ] )
+        else:
+            insights_cpc.append( AdsInsights.Field.cost_per_action_type )
+        insights = campaign.get_insights(params=params, fields=insights_camp+insights_cpc)
+        
+        return insights
     def get_adids( self ):
         ad_id_list=list()
         ad_campaign = Campaign( self.campaign_id )
@@ -273,7 +288,7 @@ def bid_adjust( campaign_id ):
         dfs = pd.concat([dfs, df], axis=0, sort=False)
     dfs = dfs.sort_values(by=['charge'], ascending=False).reset_index(drop=True)
     campaign_performance = dfs['charge'].sum()
-    campaign_target = df_camp['target'].iloc[0]
+    campaign_target = df_camp['target_left'].iloc[0] / campaign_days
 #     campaign_time_target = (campaign_target-campaign_performance) * time_progress
     campaign_time_target = campaign_target * time_progress
     adset_target = campaign_target / campaign_days / adset_num
@@ -298,10 +313,11 @@ def bid_adjust( campaign_id ):
             bid = init_cpc + BID_RANGE*init_cpc*( normalized_sigmoid_fkt(center, width, adset_progress) - 0.5 )
             bid = bid.astype(dtype=object)            
             if adset_progress > 1:
-#                 bid = math.ceil(init_cpc) # Keep Initail Bid
-                df_adset = pd.read_sql( "SELECT * FROM adset_insights where adset_id=%s ORDER BY request_time DESC LIMIT 1" %( adset_id ), con=mydb )
-                bid = df_adset['bid_amount'].iloc[0].astype(dtype=object) 
-        print(campaign_id, ad_id, adset_performance, adset_time_target, adset_progress, bid)
+                bid = math.ceil(init_cpc) # Keep Initail Bid
+#                 df_adset = pd.read_sql( "SELECT * FROM adset_insights where adset_id=%s ORDER BY request_time DESC LIMIT 1" %( adset_id ), con=mydb )
+#                 bid = df_adset['bid_amount'].iloc[0].astype(dtype=object) 
+#         print(campaign_id, ad_id, adset_performance, adset_time_target, adset_progress, campaign_performance, campaign_time_target, bid, init_cpc)
+        print(campaign_id, ad_id, campaign_performance, campaign_time_target, campaign_target, time_progress, bid, init_cpc)
         ad_dict = {'ad_id':ad_id, 'request_time':datetime.datetime.now(), 'next_cpc':int(bid),
           PRED_CPC:bid, PRED_BUDGET: df_adset['daily_budget'].iloc[0].astype(dtype=object), DECIDE_TYPE: 'Revive' }
         df_ad = pd.DataFrame(ad_dict, index=[0])
@@ -344,6 +360,17 @@ def select_adid_by_campaign(ad_campaign_id):
     mysql_adactivity_save.insert_result( ad_campaign_id, mydict_json, datetime.datetime.now() )
     return
 
+def check_lifetime_target( campaign_id ):
+    insights = Campaigns( campaign_id ).get_lifetime_insights()
+    df = mysql_adactivity_save.get_campaign_target( campaign_id )
+    charge_type = df['charge_type'].iloc[0]
+
+    charge = int( insights[0].get("clicks") )
+#     campaign_target = df['target'].iloc[0] - charge
+    campaign_lifetime=dict()
+    campaign_lifetime['target']=charge
+    return campaign_lifetime
+
 def ga_optimal_weight(campaign_id):
     request_time = datetime.datetime.now().date()
     mydb = mysql_adactivity_save.connectDB( "ad_activity" )
@@ -363,7 +390,11 @@ def data_collect( campaign_id, total_clicks, charge_type ):
     request_time = datetime.datetime.now()
     request_dict = {'request_time': request_time}
     charge_dict = {'charge_type': charge_type}
-    campaign_dict =  {**Campaigns( campaign_id ).get_campaign_feature(), **charge_dict}
+    lifetime_target = check_lifetime_target( campaign_id )
+    charge = lifetime_target['target']
+    target_left_dict = {'target_left': int(total_clicks) - int(charge)}
+    
+    campaign_dict =  {**Campaigns( campaign_id ).get_campaign_feature(), **charge_dict, **target_left_dict}
     df_camp = pd.DataFrame(campaign_dict, index=[0])
     mysql_adactivity_save.update_campaign_target(df_camp)#update to campaign_target
     for ad in Campaigns( campaign_id ).get_adids():

@@ -298,8 +298,8 @@ def get_campaign_target(campaign_id):
 def update_campaign_target(df_camp):
     mydb = connectDB("ad_activity")
     mycursor = mydb.cursor()
-    sql = "UPDATE campaign_target SET target_type = %s,spend_cap = %s, start_time = %s, stop_time = %s WHERE campaign_id = %s"
-    val = ( df_camp['target_type'].iloc[0], df_camp['spend_cap'].iloc[0], df_camp['start_time'].iloc[0], df_camp['stop_time'].iloc[0], df_camp['campaign_id'].iloc[0] )
+    sql = "UPDATE campaign_target SET target_left = %s, target_type = %s,spend_cap = %s, start_time = %s, stop_time = %s , campaign_days=%s, budget_per_day=%s WHERE campaign_id = %s"
+    val = ( df_camp['target_left'].iloc[0].astype(dtype=object), df_camp['target_type'].iloc[0], df_camp['spend_cap'].iloc[0], df_camp['start_time'].iloc[0], df_camp['stop_time'].iloc[0], df_camp['campaign_days'].iloc[0].astype(dtype=object), df_camp['budget_per_day'].iloc[0].astype(dtype=object), df_camp['campaign_id'].iloc[0] )
     mycursor.execute(sql, val)
     mydb.commit()
     return
