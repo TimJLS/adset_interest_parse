@@ -182,61 +182,41 @@ class Ads( AdSets, Campaigns ):
         insight_dict = dict()
         insight = list()
         ad = Ad( self.ad_id )
-        params = {"fields" : ",".join( fields_ad + field_clicks + insights_ad ),
-                 "date_preset" : 'today',
-                  'limit' : 10000, }
+        params = {
+            "fields" : ",".join( fields_ad + field_clicks + insights_ad ),
+            "date_preset" : 'today', 
+        }
         ad_insights = ad.get_insights( params=params )
         ads = Ads( self.ad_id )
-        target_type = Campaigns( ads.get_camp_id() ).get_campaign_feature()['target_type']
-        charge_type = mysql_adactivity_save.get_campaign_target( ads.get_camp_id() )['charge_type'].iloc[0]        
-        for ad_insight in ad_insights:
-            for field in fields_ad:
-                insight_dict[field]=ad_insight.get(field)
-            if charge_type != 'CLICKS':         
-                for field in insights_ad:
-                    if field == 'actions' and ad_insight.get(field) != None:
-                        for tar in ad_insight.get(field):
-                            target = target_index[target_type]
-                            charge = charge_index[charge_type]
-                            if tar['action_type'] == target_index[target_type]:
-                                insight_dict[COL_TARGET] = tar['value']
-                                insight_dict[COL_CHARGE] = tar['value']
-                    elif field == 'cost_per_action_type' and ad_insight.get(field) != None:
-                        for tar in ad_insight.get(field):
-                            target = target_index[target_type]
-                            charge = charge_index[charge_type]                                                            
-                            if tar['action_type'] == target_index[target_type]:
-                                insight_dict[COL_TARGET_CPC] = tar['value']
-                                insight_dict[COL_CHARGE_CPC] = tar['value']
-                    elif ad_insight.get(field) == None:
-                        insight_dict[COL_TARGET] = '0'
-                        insight_dict[COL_CHARGE] = '0'
-                        insight_dict[COL_TARGET_CPC] = '0'
-                        insight_dict[COL_CHARGE_CPC] = '0'
-            elif charge_type == 'CLICKS':
-                for field in field_clicks:
-                    if field == 'cpc':
-                        if ad_insight.get(field) != None:
-                            insight_dict[COL_CHARGE_CPC] = ad_insight.get(field)
-                        else:
-                            insight_dict[COL_CHARGE_CPC] = '0'
-                    elif field == 'clicks':
-                        insight_dict[COL_CHARGE] = ad_insight.get(field)
-                for field in insights_ad:
-                    if field == 'actions' and ad_insight.get(field) != None:
-                        for tar in ad_insight.get(field):
-                            target = target_index[target_type]
-                            if tar['action_type'] == target_index[target_type]:
-                                insight_dict[COL_TARGET] = tar['value']
-                    elif field == 'cost_per_action_type' and ad_insight.get(field) != None:
-                        for tar in ad_insight.get(field):
-                            target = target_index[target_type]                                                        
-                            if tar['action_type'] == target_index[target_type]:
-                                insight_dict[COL_TARGET_CPC] = tar['value']
-                    elif ad_insight.get(field) == None:
-                        insight_dict[COL_TARGET] = '0'
-                        insight_dict[COL_TARGET_CPC] = '0'
-            return insight_dict
+        df = mysql_adactivity_save.get_campaign_target( ads.get_camp_id() )
+        target_type = Campaigns( ads.get_camp_id() ).get_campaign_feature()[COL_TARGET_TYPE]
+#         charge_type = target_type
+        charge_type = df['charge_type'][df.campaign_id==ads.get_camp_id()].iloc[0]
+
+        for field in fields_ad:
+            insight_dict[field]=ad_insights[0].get(field)
+        charge_type = 'CLICKS'
+        for field in insights_ad:
+            insight_dict[COL_TARGET] = '0'
+            insight_dict[COL_CHARGE] = '0'
+            insight_dict[COL_TARGET_CPC] = '0'
+            insight_dict[COL_CHARGE_CPC] = '0'
+            for act in ad_insights[0].get('actions'):
+                if act['action_type']==campaign_objective[target_type]:
+                    insight_dict[COL_TARGET] = act['value']
+                    insight_dict[COL_CHARGE] = act['value']
+            for act in ad_insights[0].get('cost_per_action_type'):
+                if act['action_type']==campaign_objective[target_type]:
+                    insight_dict[COL_TARGET_CPC] = act['value']
+                    insight_dict[COL_CHARGE_CPC] = act['value']
+
+        if charge_type == 'CLICKS':
+            insight_dict[COL_CHARGE] = '0'
+            insight_dict[COL_CHARGE_CPC] = '0'         
+            insight_dict[COL_CHARGE] = ad_insights[0].get('clicks')
+            insight_dict[COL_CHARGE_CPC] = ad_insights[0].get('cpc')
+               
+        return insight_dict
     def get_campaign_feature( self ):
         ad = Ads( self.ad_id )
         campaign = Campaigns( ad.get_camp_id() )
@@ -248,7 +228,6 @@ class Ads( AdSets, Campaigns ):
 ######## Functions ########
 
 def make_default( campaign_id ):
-    mydb = mysql_adactivity_save.connectDB( "ad_activity" )
     ad_list = Campaigns(campaign_id).get_adids()
     mydict=dict()
     for ad in ad_list:
