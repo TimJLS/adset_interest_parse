@@ -14,6 +14,8 @@ from opt.codes import fb_graph
 from opt.codes import mysql_adactivity_save
 from opt.codes import optimizer
 from opt.codes import selection
+from opt.codes import main_func
+from main_func import Campaigns
 
 FOLDER_PATH = 'opt/models/cpc_120/'
 MODEL_PATH = FOLDER_PATH + 'cpc_20_500_64.h5'
@@ -40,21 +42,27 @@ my_access_token = 'EAANoD9I4obMBAPcoZA5V7OZBQaPa3Tk7NMAT0ZBZCepdD8zZBcwMZBMHAM1z
 def opt_api(request):
     if request.method == "POST":
         campaign_id = request.POST.get(CAMPAIGN_ID)
-        total_clicks = request.POST.get(TOTAL_CLICKS)
-        ad_id = request.POST.get(AD_ID)
+        target = request.POST.get(TARGET)
+        charge_type = request.POST.get(CHARGE_TYPE)
         fb_graph.FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-        if campaign_id and total_clicks:
-            ##########################if c_id not exist , save to campaign_table
-            mysql_adactivity_save.check_campaignid_target( campaign_id, total_clicks )
-            if fb_graph.check_time_interval( campaign_id ):
+
+        if campaign_id and target and charge_type:
+#             FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
+#             facebook_datacollector.make_default( int(campaign_id) )
+            main_func.make_default( int(campaign_id) )
+            if mysql_adactivity_save.check_campaignid_target( campaign_id, target, charge_type ):
                 mydict = mysql_adactivity_save.get_result( campaign_id )
                 mydict = json.loads(mydict)
-                return JsonResponse( mydict, safe=False )
             else:
+                campaign_feature_dict = Campaigns( int(campaign_id) ).get_campaign_feature()
+                charge_dict = {'charge_type': charge_type}
+                target_dict = {'target': int(target)}
+                campaign_dict =  {**campaign_feature_dict, **charge_dict, **target_dict}
+                df_camp = pd.DataFrame(campaign_dict, index=[0])
+                mysql_adactivity_save.update_campaign_target(df_camp)
                 mydict = mysql_adactivity_save.get_default( campaign_id )
                 mydict = json.loads(mydict)
-                return JsonResponse( mydict, safe=False )
-
+            return JsonResponse( mydict, safe=False )
 
 # def main():
 #     opt_api()
