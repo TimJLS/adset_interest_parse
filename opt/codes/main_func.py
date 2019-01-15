@@ -21,11 +21,17 @@ import datetime
 import pandas as pd
 import mysql_adactivity_save
 import selection
-import genetic_algorithm
+# import genetic_algorithm
 LIMIT=10000
 HOUR_PER_DAY = 20
 BID_RANGE = 0.8
 PRED_CPC, PRED_BUDGET, REASONS, DECIDE_TYPE, STATUS, ADSET = 'pred_cpc', 'pred_budget', 'reasons', 'decide_type', 'status', 'adset_id'
+campaign_objective = {
+    'LINK_CLICKS': 'link_click',
+    'POST_ENGAGEMENT': 'post_engagement', 
+    'VIDEO_VIEWS': 'video_view', 
+    'CONVERSIONS':'offsite_conversion',
+}
 target_index = {'LINK_CLICKS': 'link_click', 'POST_ENGAGEMENT': 'post_engagement', 'VIDEO_VIEWS': 'video_view' }
 charge_index = {'LINK_CLICKS': 'link_click', 'POST_ENGAGEMENT': 'post_engagement', 'VIDEO_VIEWS': 'video_view', 'CLICKS': 'clicks' }
 target_cpc = {'CLICKS':AdsInsights.Field.cpc}
@@ -90,6 +96,9 @@ class Campaigns(object):
         campaign_feature_dict['start_time'] = campaign_feature_dict['start_time'].strftime( '%Y-%m-%d %H:%M:%S' )
         campaign_feature_dict['stop_time'] = campaign_feature_dict['stop_time'].strftime( '%Y-%m-%d %H:%M:%S' )
         campaign_feature_dict['budget_per_day'] = int(campaign_feature_dict['spend_cap'])/campaign_feature_dict['campaign_days']
+        
+#         print(campaign_feature_dict)
+        
 #         mysql_adactivity_save.intoDB("campaign_target", df)
         return campaign_feature_dict
     def get_campaign_insights( self ):
@@ -104,6 +113,7 @@ class Campaigns(object):
             insights_cpc.append( target_charge[ df['charge_type'].iloc[0] ] )
         else:
             insights_cpc.append( AdsInsights.Field.cost_per_action_type )
+            
         insights = campaign.get_insights(params=params, fields=insights_camp+insights_cpc)
         
         return insights
@@ -119,8 +129,9 @@ class Campaigns(object):
             insights_cpc.append( target_charge[ df['charge_type'].iloc[0] ] )
         else:
             insights_cpc.append( AdsInsights.Field.cost_per_action_type )
-        insights = campaign.get_insights(params=params, fields=insights_camp+insights_cpc)
+            insights_cpc.append( AdsInsights.Field.actions )
         
+        insights = campaign.get_insights(params=params, fields=insights_camp+insights_cpc)
         return insights
     def get_adids( self ):
         ad_id_list=list()
@@ -163,6 +174,7 @@ class AdSets(object):
                                        age_max, age_min, flexible_spec, geo_locations, spend, datetime.datetime.now() ]
             adset_insight_dict = dict(zip(adset_insights_keys, adset_insights_values))
             df = pd.DataFrame(adset_insight_dict, index=[0])
+            
     #         mysql_adactivity_save.intoDB("adset_insights", df)
             return df
 
@@ -192,30 +204,32 @@ class Ads( AdSets, Campaigns ):
         target_type = Campaigns( ads.get_camp_id() ).get_campaign_feature()[COL_TARGET_TYPE]
 #         charge_type = target_type
         charge_type = df['charge_type'][df.campaign_id==ads.get_camp_id()].iloc[0]
+#         print(ad_insights)
+        try:
+            for field in fields_ad:
+                insight_dict[field]=ad_insights[0].get(field)
+            for field in insights_ad:
+                insight_dict[COL_TARGET] = '0'
+                insight_dict[COL_CHARGE] = '0'
+                insight_dict[COL_TARGET_CPC] = '0'
+                insight_dict[COL_CHARGE_CPC] = '0'
 
-        for field in fields_ad:
-            insight_dict[field]=ad_insights[0].get(field)
-        charge_type = 'CLICKS'
-        for field in insights_ad:
-            insight_dict[COL_TARGET] = '0'
-            insight_dict[COL_CHARGE] = '0'
-            insight_dict[COL_TARGET_CPC] = '0'
-            insight_dict[COL_CHARGE_CPC] = '0'
-            for act in ad_insights[0].get('actions'):
-                if act['action_type']==campaign_objective[target_type]:
-                    insight_dict[COL_TARGET] = act['value']
-                    insight_dict[COL_CHARGE] = act['value']
-            for act in ad_insights[0].get('cost_per_action_type'):
-                if act['action_type']==campaign_objective[target_type]:
-                    insight_dict[COL_TARGET_CPC] = act['value']
-                    insight_dict[COL_CHARGE_CPC] = act['value']
+                for act in ad_insights[0].get('actions'):
+                    if act['action_type']==campaign_objective[target_type]:
+                        insight_dict[COL_TARGET] = act['value']
+                        insight_dict[COL_CHARGE] = act['value']
+                for act in ad_insights[0].get('cost_per_action_type'):
+                    if act['action_type']==campaign_objective[target_type]:
+                        insight_dict[COL_TARGET_CPC] = act['value']
+                        insight_dict[COL_CHARGE_CPC] = act['value']
 
-        if charge_type == 'CLICKS':
-            insight_dict[COL_CHARGE] = '0'
-            insight_dict[COL_CHARGE_CPC] = '0'         
-            insight_dict[COL_CHARGE] = ad_insights[0].get('clicks')
-            insight_dict[COL_CHARGE_CPC] = ad_insights[0].get('cpc')
-               
+            if charge_type == 'CLICKS':
+                insight_dict[COL_CHARGE] = '0'
+                insight_dict[COL_CHARGE_CPC] = '0'         
+                insight_dict[COL_CHARGE] = ad_insights[0].get('clicks')
+                insight_dict[COL_CHARGE_CPC] = ad_insights[0].get('cpc')
+        except:
+            pass
         return insight_dict
     def get_campaign_feature( self ):
         ad = Ads( self.ad_id )
@@ -232,12 +246,15 @@ def make_default( campaign_id ):
     mydict=dict()
     for ad in ad_list:
         df_adset = Ads(ad).get_adset_insights()
-        adset_id = Ads(ad).get_adset_id()
-        mydict[ str(ad) ] = {PRED_CPC: str(df_adset['bid_amount'].iloc[0]),
-                             PRED_BUDGET: str(df_adset['daily_budget'].iloc[0]),
-                             REASONS: "Requirements not match",
-                             DECIDE_TYPE: "Learning",
-                             STATUS: True, ADSET: str(adset_id),}
+        if df_adset is None:
+            pass
+        else:
+            adset_id = Ads(ad).get_adset_id()
+            mydict[ str(ad) ] = {PRED_CPC: str(df_adset['bid_amount'].iloc[0]),
+                                 PRED_BUDGET: str(df_adset['daily_budget'].iloc[0]),
+                                 REASONS: "Requirements not match",
+                                 DECIDE_TYPE: "Learning",
+                                 STATUS: True, ADSET: str(adset_id),}
     mydict_json = json.dumps(mydict)
     mysql_adactivity_save.insert_default( str( campaign_id ), mydict_json, datetime.datetime.now() ) 
     return
@@ -252,8 +269,9 @@ def bid_adjust( campaign_id ):
     time_progress = ( request_time.hour + 1 ) / HOUR_PER_DAY
 
     df_camp = pd.read_sql( "SELECT * FROM campaign_target where campaign_id=%s" %( campaign_id ), con=mydb )
-    df_ad = pd.read_sql( "SELECT * FROM ad_insights where campaign_id = %s ORDER BY request_time desc limit %s" %( campaign_id, LIMIT ), con=mydb )
+    df_ad = pd.read_sql( "SELECT * FROM ad_insights where campaign_id = %s  " %( campaign_id ), con=mydb )
     ad_id_list = df_ad['ad_id'].unique()
+
     result_dict=dict()
     df_ad=df_ad[df_ad.charge_cpc!=0]
     adset_num = len( df_ad['adset_id'].unique() )
@@ -262,11 +280,14 @@ def bid_adjust( campaign_id ):
     dfs = pd.DataFrame(columns=['adset_id', 'charge'])
     for ad_id in ad_id_list:
         ad_id = ad_id.astype(dtype=object)
-        df_ad = pd.read_sql( "SELECT * FROM ad_insights where ad_id=%s ORDER BY request_time DESC LIMIT 1" %( ad_id ), con=mydb )
-        adset_id = df_ad['adset_id'].iloc[0]
-
-        df = selection.performance_sort( adset_id )
-        dfs = pd.concat([dfs, df], axis=0, sort=False)
+        try:
+            df_ad = pd.read_sql( "SELECT * FROM ad_insights where ad_id=%s ORDER BY request_time DESC LIMIT 1" %( ad_id ), con=mydb )
+            adset_id = df_ad['adset_id'].iloc[0]
+        except:
+            pass
+        else:
+            df = selection.performance_sort( adset_id )
+            dfs = pd.concat([dfs, df], axis=0, sort=False)
     dfs = dfs.sort_values(by=['charge'], ascending=False).reset_index(drop=True)
     campaign_performance = dfs['charge'].sum()
     campaign_target = df_camp['target_left'].iloc[0]
@@ -277,39 +298,41 @@ def bid_adjust( campaign_id ):
         ad_id = ad_id.astype(dtype=object)
         center = 1
         width = 5
-        df_ad = pd.read_sql( "SELECT * FROM ad_insights where ad_id=%s ORDER BY request_time DESC LIMIT 1" %( ad_id ), con=mydb )
-        adset_id = df_ad['adset_id'].iloc[0]
-        
-        adset_performance = df_ad['charge'].iloc[0]
-
-        df_adset = pd.read_sql( "SELECT * FROM adset_insights where adset_id=%s LIMIT 1" %( adset_id ), con=mydb )
-        init_cpc = df_adset['bid_amount'].iloc[0]
-        adset_time_target = adset_target * time_progress
-        adset_progress = adset_performance / adset_time_target
-                
-        if adset_performance > adset_time_target and campaign_performance < campaign_time_target:
-            df_adset = pd.read_sql( "SELECT * FROM adset_insights where adset_id=%s ORDER BY request_time DESC LIMIT 1" %( adset_id ), con=mydb )
-            bid = df_adset['bid_amount'].iloc[0].astype(dtype=object)
-        elif adset_performance > adset_time_target and campaign_performance > campaign_time_target:
-            bid = math.ceil(init_cpc) # Keep Initail Bid
-        else:
-            bid = init_cpc + BID_RANGE*init_cpc*( normalized_sigmoid_fkt(center, width, adset_progress) - 0.5 )
-            bid = bid.astype(dtype=object)
+        try:
+            df_ad = pd.read_sql( "SELECT * FROM ad_insights where ad_id=%s ORDER BY request_time DESC LIMIT 1" %( ad_id ), con=mydb )
             
-#                 df_adset = pd.read_sql( "SELECT * FROM adset_insights where adset_id=%s ORDER BY request_time DESC LIMIT 1" %( adset_id ), con=mydb )
-#                 bid = df_adset['bid_amount'].iloc[0].astype(dtype=object) 
-        print(campaign_id, adset_id, adset_performance > adset_time_target, adset_progress, campaign_performance < campaign_time_target, bid, campaign_days_left)
-#         print(campaign_id, ad_id, campaign_performance, campaign_time_target, campaign_target, time_progress, bid, init_cpc)
-        ad_dict = {'ad_id':ad_id, 'request_time':datetime.datetime.now(), 'next_cpc':math.ceil(bid),
+            
+        except:
+            pass
+        else:
+            adset_id = df_ad['adset_id'].iloc[0]
+            adset_performance = df_ad['charge'].iloc[0]
+
+            df_adset = pd.read_sql( "SELECT * FROM adset_insights where adset_id=%s LIMIT 1" %( adset_id ), con=mydb )
+            init_cpc = df_adset['bid_amount'].iloc[0]
+            adset_time_target = adset_target * time_progress
+            adset_progress = adset_performance / adset_time_target
+            if adset_performance > adset_time_target and campaign_performance < campaign_time_target:
+                df_adset = pd.read_sql( "SELECT * FROM adset_insights where adset_id=%s ORDER BY request_time DESC LIMIT 1" %( adset_id ), con=mydb )
+                bid = df_adset['bid_amount'].iloc[0].astype(dtype=object)
+            elif adset_performance > adset_time_target and campaign_performance > campaign_time_target:
+                bid = math.ceil(init_cpc) # Keep Initail Bid
+            else:
+                bid = init_cpc + BID_RANGE*init_cpc*( normalized_sigmoid_fkt(center, width, adset_progress) - 0.5 )
+                bid = bid.astype(dtype=object)
+            
+            print(campaign_id, adset_id, adset_performance > adset_time_target, adset_progress, campaign_performance < campaign_time_target, bid, campaign_days_left)
+            ad_dict = {'ad_id':ad_id, 'request_time':datetime.datetime.now(), 'next_cpc':math.ceil(bid),
           PRED_CPC:bid, PRED_BUDGET: df_adset['daily_budget'].iloc[0].astype(dtype=object), DECIDE_TYPE: 'Revive' }
-        df_ad = pd.DataFrame(ad_dict, index=[0])
-        
-        result_dict[str(ad_id)] = { PRED_CPC: int(bid), PRED_BUDGET: 10000, REASONS: "collecting data, settings no change.",
+            df_ad = pd.DataFrame(ad_dict, index=[0])
+
+            result_dict[str(ad_id)] = { PRED_CPC: int(bid), PRED_BUDGET: 10000, REASONS: "collecting data, settings no change.",
                                DECIDE_TYPE: 'Revive', STATUS: True, ADSET: str(adset_id) }
-       
-        table = 'pred'
-        mysql_adactivity_save.intoDB(table, df_ad)
-        mysql_adactivity_save.update_bidcap(ad_id, bid)
+
+            table = 'pred'
+            mysql_adactivity_save.intoDB(table, df_ad)
+            mysql_adactivity_save.update_bidcap(ad_id, bid)
+
     mydict_json = json.dumps(result_dict)
     mysql_adactivity_save.insert_result( campaign_id, mydict_json, datetime.datetime.now() )
     return
@@ -344,29 +367,27 @@ def select_adid_by_campaign(ad_campaign_id):
 
 def check_lifetime_target( campaign_id ):
     insights = Campaigns( campaign_id ).get_lifetime_insights()
+
     df = mysql_adactivity_save.get_campaign_target( campaign_id )
     charge_type = df['charge_type'].iloc[0]
-
-    charge = int( insights[0].get("clicks") )
-#     campaign_target = df['target'].iloc[0] - charge
+    charge=0
+    if charge_type == 'CLICKS':
+        charge = int( insights[0].get("clicks") )
+    else:
+        action = insights[0].get("actions")
+        for act in action:
+            try:
+                if act["action_type"]==charge_index[charge_type]:
+                    charge = int( act["value"] )
+            except:
+                pass
+                
     campaign_lifetime=dict()
     campaign_lifetime['target']=charge
+
+#     campaign_target = df['target'].iloc[0] - charge
+
     return campaign_lifetime
-
-def ga_optimal_weight(campaign_id):
-    request_time = datetime.datetime.now().date()
-    mydb = mysql_adactivity_save.connectDB( "ad_activity" )
-    df_weight = pd.read_sql("SELECT * FROM optimal_weight WHERE campaign_id=%s " %(campaign_id), con=mydb)
-    ad_id_list = Campaigns(campaign_id).get_adids()
-    for ad_id in ad_id_list:
-        df = genetic_algorithm.ObjectiveFunc.adset_status(ad_id)
-        r = genetic_algorithm.ObjectiveFunc.adset_fitness( df_weight, df )
-
-        df_ad=pd.read_sql("SELECT adset_id FROM ad_insights WHERE ad_id=%s LIMIT 1" %(ad_id), con=mydb)
-        adset_id = df_ad['adset_id'].iloc[0].astype(dtype=object)              
-        df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'ad_id':ad_id, 'score':r, 'request_time':request_time}, index=[0])
-        mysql_adactivity_save.intoDB("adset_score", df_final)
-    return
 
 def data_collect( campaign_id, total_clicks, charge_type ):
     request_time = datetime.datetime.now()
@@ -380,7 +401,7 @@ def data_collect( campaign_id, total_clicks, charge_type ):
     df_camp = pd.DataFrame(campaign_dict, index=[0])
     mysql_adactivity_save.update_campaign_target(df_camp)#update to campaign_target
     for ad in Campaigns( campaign_id ).get_adids():
-        if Ads(ad).get_ad_insights()!=None:
+        if bool( Ads(ad).get_ad_insights() ):
             ad_dict = {**Ads(ad).get_ad_insights(),
                        **{'adset_id':Ads(ad).get_adset_id()},
                        **{'campaign_id':Ads(ad).get_camp_id()},
@@ -400,14 +421,14 @@ def main(parameter):
         if parameter[1] == 'data_collect':
             print(datetime.datetime.now()-start_time)
             print(campaign_id)
-            data_collect( campaign_id.astype(dtype=object), target.iloc[0].astype(dtype=object), 'CLICKS' )#存資料
+            charge_type = mysql_adactivity_save.get_campaign_target(campaign_id)['charge_type'].iloc[0]
+            data_collect( campaign_id.astype(dtype=object), target.iloc[0].astype(dtype=object), charge_type )#存資料
             print(datetime.datetime.now()-start_time)
 #             make_default( campaign_id.astype(dtype=object) )       
         elif parameter[1] == 'bid_adjust':
             bid_adjust( campaign_id.astype(dtype=object) )
 #             select_adid_by_campaign( campaign_id.astype(dtype=object) )
-        elif parameter[1] == 'ga_optimal_weight':
-            ga_optimal_weight(campaign_id)
+
     print(datetime.datetime.now()-start_time)
     return
 
@@ -416,3 +437,6 @@ if __name__ == "__main__":
     print('Argument List:', str(sys.argv[1]))
     parameter = sys.argv
     main(parameter)
+
+#     check_lifetime_target(23843212203370457)
+#     Campaigns(23843212203370457).get_lifetime_insights()

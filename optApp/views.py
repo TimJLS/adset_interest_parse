@@ -16,7 +16,7 @@ from opt.codes import optimizer
 from opt.codes import selection
 from opt.codes import main_func
 from main_func import Campaigns
-
+from facebook_business.api import FacebookAdsApi
 FOLDER_PATH = 'opt/models/cpc_120/'
 MODEL_PATH = FOLDER_PATH + 'cpc_20_500_64.h5'
 
@@ -27,7 +27,8 @@ REASONS = 'reasons'
 
 AD_ID = 'ad_id'
 CAMPAIGN_ID = 'campaign_id'
-TOTAL_CLICKS = 'total_clicks'
+TARGET = 'target'
+CHARGE_TYPE = 'charge_type'
 
 SCALER_X_PATH = FOLDER_PATH + 'scalerX.pkl'
 SCALER_Y_PATH = FOLDER_PATH + 'scalerY.pkl'
@@ -44,25 +45,36 @@ def opt_api(request):
         campaign_id = request.POST.get(CAMPAIGN_ID)
         target = request.POST.get(TARGET)
         charge_type = request.POST.get(CHARGE_TYPE)
-        fb_graph.FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-
-        if campaign_id and target and charge_type:
-#             FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-#             facebook_datacollector.make_default( int(campaign_id) )
+        FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
+        if charge_type is None:
+            charge_type == 'LINK_CLICKS'
+        print(campaign_id, target, charge_type)
+        mysql_adactivity_save.check_campaignid_target( campaign_id, target, charge_type )
+        if mysql_adactivity_save.check_campaignid_target( campaign_id, target, charge_type )==False:
             main_func.make_default( int(campaign_id) )
-            if mysql_adactivity_save.check_campaignid_target( campaign_id, target, charge_type ):
+            mydict = mysql_adactivity_save.get_default( campaign_id )
+            mydict = json.loads(mydict)
+        else:
+            campaign_feature_dict = Campaigns( int(campaign_id) ).get_campaign_feature()
+
+            lifetime_target = main_func.check_lifetime_target( campaign_id )
+            charge = lifetime_target[TARGET]
+            try:target_left_dict = {'target_left': int(target) - int(charge)}
+            except:
+                temp = mysql_adactivity_save.get_campaign_target_dict()
+                target = temp[int(campaign_id)]
+                target_left_dict = {'target_left': int(target) - int(charge)}
+            charge_dict = {'charge_type': charge_type}
+            target_dict = {'target': int(target)}
+            campaign_dict =  {**campaign_feature_dict, **charge_dict, **target_dict, **target_left_dict}
+            df_camp = pd.DataFrame(campaign_dict, index=[0])
+            try:
                 mydict = mysql_adactivity_save.get_result( campaign_id )
-                mydict = json.loads(mydict)
-            else:
-                campaign_feature_dict = Campaigns( int(campaign_id) ).get_campaign_feature()
-                charge_dict = {'charge_type': charge_type}
-                target_dict = {'target': int(target)}
-                campaign_dict =  {**campaign_feature_dict, **charge_dict, **target_dict}
-                df_camp = pd.DataFrame(campaign_dict, index=[0])
-                mysql_adactivity_save.update_campaign_target(df_camp)
+            except:
                 mydict = mysql_adactivity_save.get_default( campaign_id )
-                mydict = json.loads(mydict)
-            return JsonResponse( mydict, safe=False )
+            mydict = json.loads(mydict)
+            mysql_adactivity_save.update_campaign_target(df_camp)
+        return JsonResponse( mydict, safe=False )
 
 # def main():
 #     opt_api()

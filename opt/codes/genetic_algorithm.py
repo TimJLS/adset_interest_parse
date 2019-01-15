@@ -7,7 +7,7 @@ import datetime
 import main_func
 import pandas as pd
 import mysql_adactivity_save
-
+from main_func import Campaigns
 sizepop, vardim, MAXGEN, params = 2000, 3, 30, [0.9, 0.5, 0.5]
 
 class GeneticAlgorithm(object):
@@ -267,7 +267,7 @@ class ObjectiveFunc(object):
         mydb = mysql_adactivity_save.connectDB( "ad_activity" )
 
         df=pd.DataFrame({'adset_id':[],'charge':[], 'impressions':[], 'bid_amount':[]})
-        
+
         df_ad = pd.read_sql("SELECT * FROM ad_insights WHERE ad_id=%s ORDER BY request_time DESC LIMIT 1" %(ad_id), con=mydb)
         df_adset = pd.read_sql("SELECT * FROM adset_insights WHERE adset_id=%s ORDER BY request_time DESC LIMIT 1" %(df_ad['adset_id'].iloc[0]), con=mydb)
         df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id=%s" %(df_ad['campaign_id'].iloc[0]), con=mydb)
@@ -280,6 +280,25 @@ class ObjectiveFunc(object):
                               on=['campaign_id'] )
         df = pd.concat([df, df_status], ignore_index=True, sort=True)
         return df
+
+def ga_optimal_weight(campaign_id):
+    request_time = datetime.datetime.now().date()
+    mydb = mysql_adactivity_save.connectDB( "ad_activity" )
+    df_weight = pd.read_sql("SELECT * FROM optimal_weight WHERE campaign_id=%s " %(campaign_id), con=mydb)
+    ad_id_list = Campaigns(campaign_id).get_adids()
+    for ad_id in ad_id_list:
+        try:
+            print(ad_id)
+            df = ObjectiveFunc.adset_status(ad_id)
+            r = ObjectiveFunc.adset_fitness( df_weight, df )
+
+            df_ad=pd.read_sql("SELECT adset_id FROM ad_insights WHERE ad_id=%s LIMIT 1" %(ad_id), con=mydb)
+            adset_id = df_ad['adset_id'].iloc[0].astype(dtype=object)              
+            df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'ad_id':ad_id, 'score':r, 'request_time':request_time}, index=[0])
+            mysql_adactivity_save.intoDB("adset_score", df_final)
+        except:
+            pass
+    return
     
 if __name__ == "__main__":
     starttime = datetime.datetime.now()
@@ -300,7 +319,10 @@ if __name__ == "__main__":
 
         df_final = pd.DataFrame({'campaign_id':camp_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
         df_final = pd.concat( [df_score, df_final], axis=1, sort=True, ignore_index=False)
-        mysql_adactivity_save.check_optimal_weight(camp_id, df_final) 
+        mysql_adactivity_save.check_optimal_weight(camp_id, df_final)
+        
+        ga_optimal_weight(camp_id)
+        
         print('campaign_id:', camp_id )
         print('optimal_weight:', optimal)
         print(datetime.datetime.now()-starttime)    

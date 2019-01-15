@@ -184,23 +184,32 @@ def get_pred_data(ad_id):
     else:
         return None
 
-def check_campaignid_target(campaign_id, total_clicks):
+def check_campaignid_target(campaign_id, target, charge_type):
     mydb = connectDB("ad_activity")
     df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id=%s" % (campaign_id), con=mydb )
-    avgspeed = fb_graph.getAvgSpeed( campaign_id, total_clicks )
-    if df.empty:
-        mycursor = mydb.cursor()
-        sql = "INSERT INTO campaign_target ( campaign_id, target, avgspeed ) VALUES ( %s, %s, %s )"
-        val = ( campaign_id, total_clicks, avgspeed )
-        mycursor.execute(sql, val)
-        mydb.commit()
-    else:
-        mycursor = mydb.cursor()
-        sql = "UPDATE campaign_target SET target=%s, avgspeed=%s WHERE campaign_id=%s"
-        val = ( total_clicks, avgspeed, campaign_id )
-        mycursor.execute(sql, val)
-        mydb.commit()
-    return
+    try:
+        avgspeed = fb_graph.getAvgSpeed( campaign_id, int(target) )
+        if df.empty:
+            mycursor = mydb.cursor()
+            sql = "INSERT INTO campaign_target ( campaign_id, target, avgspeed, charge_type ) VALUES ( %s, %s, %s, %s )"
+            val = ( campaign_id, target, avgspeed, charge_type )
+            mycursor.execute(sql, val)
+            mydb.commit()
+            return False
+        else:
+            mycursor = mydb.cursor()
+            if charge_type is None:
+                sql = "UPDATE campaign_target SET target=%s, avgspeed=%s WHERE campaign_id=%s"
+                val = ( target, avgspeed, campaign_id )
+            else:
+                sql = "UPDATE campaign_target SET target=%s, avgspeed=%s, charge_type=%s WHERE campaign_id=%s"
+                val = ( target, avgspeed, charge_type, campaign_id )
+            mycursor.execute(sql, val)
+            mydb.commit()
+
+    except:
+        pass
+    return True
 
 
 def get_campaign_target_dict():
@@ -308,18 +317,21 @@ def intoDB(table, df):
     engine = create_engine( 'mysql://root:adgeek1234@localhost/ad_activity' )
 #     print(df.columns)
     with engine.connect() as conn, conn.begin():
-        if table == "pred":
-            df.to_sql("pred", conn, if_exists='append',index=False)
-        elif table == "ad_insights":
-            df.to_sql("ad_insights", conn, if_exists='append',index=False)
-        elif table == "adset_insights":
-            df.to_sql("adset_insights", conn, if_exists='append',index=False)
-        elif table == "campaign_target":
-            df.to_sql("campaign_target", conn, if_exists='append',index=False)
-        elif table == "optimal_weight":
-            df.to_sql("optimal_weight", conn, if_exists='append',index=False)
-        elif table == "adset_score":
-            df.to_sql("adset_score", conn, if_exists='append',index=False)
+        try:
+            if table == "pred":
+                df.to_sql("pred", conn, if_exists='append',index=False)
+            elif table == "ad_insights":
+                df.to_sql("ad_insights", conn, if_exists='append',index=False)
+            elif table == "adset_insights":
+                df.to_sql("adset_insights", conn, if_exists='append',index=False)
+            elif table == "campaign_target":
+                df.to_sql("campaign_target", conn, if_exists='append',index=False)
+            elif table == "optimal_weight":
+                df.to_sql("optimal_weight", conn, if_exists='append',index=False)
+            elif table == "adset_score":
+                df.to_sql("adset_score", conn, if_exists='append',index=False)
+        except:
+            pass
 
 
 
