@@ -46,11 +46,12 @@ def opt_api(request):
         target = request.POST.get(TARGET)
         charge_type = request.POST.get(CHARGE_TYPE)
         FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-        if charge_type is None:
-            charge_type == 'LINK_CLICKS'
+#         if charge_type is None:
+#             charge_type == 'POST_ENGAGEMENT'
         print(campaign_id, target, charge_type)
         mysql_adactivity_save.check_campaignid_target( campaign_id, target, charge_type )
-        if mysql_adactivity_save.check_campaignid_target( campaign_id, target, charge_type )==False:
+        queue = mysql_adactivity_save.check_campaignid_target( campaign_id, target, charge_type )
+        if mysql_adactivity_save.check_default_price(campaign_id):
             main_func.make_default( int(campaign_id) )
             mydict = mysql_adactivity_save.get_default( campaign_id )
             mydict = json.loads(mydict)
@@ -62,6 +63,7 @@ def opt_api(request):
             try:target_left_dict = {'target_left': int(target) - int(charge)}
             except:
                 temp = mysql_adactivity_save.get_campaign_target_dict()
+                print(type(temp))
                 target = temp[int(campaign_id)]
                 target_left_dict = {'target_left': int(target) - int(charge)}
             charge_dict = {'charge_type': charge_type}

@@ -295,6 +295,7 @@ def ga_optimal_weight(campaign_id):
             df_ad=pd.read_sql("SELECT adset_id FROM ad_insights WHERE ad_id=%s LIMIT 1" %(ad_id), con=mydb)
             adset_id = df_ad['adset_id'].iloc[0].astype(dtype=object)              
             df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'ad_id':ad_id, 'score':r, 'request_time':request_time}, index=[0])
+            print(r)
             mysql_adactivity_save.intoDB("adset_score", df_final)
         except:
             pass
@@ -305,6 +306,8 @@ if __name__ == "__main__":
 
     camp_dict = mysql_adactivity_save.get_campaign_target_dict()
     for camp_id in camp_dict.keys():
+#         ga_optimal_weight(camp_id)
+        
         global df
         df = ObjectiveFunc.account_status(camp_id)
         bound = np.tile([[0.5], [1]], vardim)

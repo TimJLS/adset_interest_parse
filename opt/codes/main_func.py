@@ -300,8 +300,6 @@ def bid_adjust( campaign_id ):
         width = 5
         try:
             df_ad = pd.read_sql( "SELECT * FROM ad_insights where ad_id=%s ORDER BY request_time DESC LIMIT 1" %( ad_id ), con=mydb )
-            
-            
         except:
             pass
         else:

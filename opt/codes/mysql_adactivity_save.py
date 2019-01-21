@@ -30,7 +30,13 @@ def connectDB(db_name):
 
 
 # In[ ]:
-
+def check_default_price(campaign_id):
+    mydb = connectDB("ad_activity")
+    df = pd.read_sql( "SELECT * FROM default_price WHERE campaign_id=%s" % (campaign_id), con=mydb )
+    if df.empty:
+        return True
+    else:
+        return False
 
 def selectData(table):
     mydb = connectDB("ad_activity")
