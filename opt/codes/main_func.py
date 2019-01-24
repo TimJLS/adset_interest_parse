@@ -276,12 +276,13 @@ def bid_adjust( campaign_id ):
     df_ad=df_ad[df_ad.charge_cpc!=0]
     adset_num = len( df_ad['adset_id'].unique() )
     campaign_days = ( df_camp['stop_time'].iloc[0] - df_camp['start_time'].iloc[0] ).days
-    campaign_days_left = ( df_camp['stop_time'].iloc[0] - request_time ).days
+    campaign_days_left = ( df_camp['stop_time'].iloc[0] - request_time +datetime.timedelta(1) ).days
     dfs = pd.DataFrame(columns=['adset_id', 'charge'])
     for ad_id in ad_id_list:
         ad_id = ad_id.astype(dtype=object)
         try:
             df_ad = pd.read_sql( "SELECT * FROM ad_insights where ad_id=%s ORDER BY request_time DESC LIMIT 1" %( ad_id ), con=mydb )
+            df_ad = df_ad[df_ad.request_time.dt.date == request_time.date()]
             adset_id = df_ad['adset_id'].iloc[0]
         except:
             pass
@@ -300,9 +301,9 @@ def bid_adjust( campaign_id ):
         width = 5
         try:
             df_ad = pd.read_sql( "SELECT * FROM ad_insights where ad_id=%s ORDER BY request_time DESC LIMIT 1" %( ad_id ), con=mydb )
-        except:
-            pass
-        else:
+#             print(df_ad[['charge', 'request_time']])
+            df_ad['request_time']=pd.to_datetime(df_ad['request_time'])
+            df_ad = df_ad[df_ad.request_time.dt.date==request_time.date()]
             adset_id = df_ad['adset_id'].iloc[0]
             adset_performance = df_ad['charge'].iloc[0]
 
@@ -318,18 +319,22 @@ def bid_adjust( campaign_id ):
             else:
                 bid = init_cpc + BID_RANGE*init_cpc*( normalized_sigmoid_fkt(center, width, adset_progress) - 0.5 )
                 bid = bid.astype(dtype=object)
-            
             print(campaign_id, adset_id, adset_performance > adset_time_target, adset_progress, campaign_performance < campaign_time_target, bid, campaign_days_left)
             ad_dict = {'ad_id':ad_id, 'request_time':datetime.datetime.now(), 'next_cpc':math.ceil(bid),
-          PRED_CPC:bid, PRED_BUDGET: df_adset['daily_budget'].iloc[0].astype(dtype=object), DECIDE_TYPE: 'Revive' }
+              PRED_CPC:bid, PRED_BUDGET: df_adset['daily_budget'].iloc[0].astype(dtype=object), DECIDE_TYPE: 'Revive' }
             df_ad = pd.DataFrame(ad_dict, index=[0])
 
-            result_dict[str(ad_id)] = { PRED_CPC: int(bid), PRED_BUDGET: 10000, REASONS: "collecting data, settings no change.",
-                               DECIDE_TYPE: 'Revive', STATUS: True, ADSET: str(adset_id) }
+            result_dict[str(ad_id)] = { PRED_CPC: int(bid), PRED_BUDGET: 50000, REASONS: "collecting data, settings no change.",
+                                   DECIDE_TYPE: 'Revive', STATUS: True, ADSET: str(adset_id) }
 
             table = 'pred'
             mysql_adactivity_save.intoDB(table, df_ad)
             mysql_adactivity_save.update_bidcap(ad_id, bid)
+        except:
+#             print('pass', ad_id )
+            pass
+
+
 
     mydict_json = json.dumps(result_dict)
     mysql_adactivity_save.insert_result( campaign_id, mydict_json, datetime.datetime.now() )

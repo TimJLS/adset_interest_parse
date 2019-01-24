@@ -21,7 +21,7 @@ import fb_graph
 def connectDB(db_name):
     mydb = mysql.connector.connect(
         host="localhost",
-        user="root",
+        user="app",
         passwd="adgeek1234",
         database=db_name
     )
@@ -279,7 +279,7 @@ def check_optimal_weight(campaign_id, df):
     df_check = pd.read_sql( "SELECT * FROM optimal_weight WHERE campaign_id=%s" % (campaign_id), con=mydb )
 #     print(type(campaign_id.astype(dtype=object)))
     if df_check.empty:
-        engine = create_engine( 'mysql://root:adgeek1234@localhost/ad_activity' )
+        engine = create_engine( 'mysql://app:adgeek1234@localhost/ad_activity' )
         with engine.connect() as conn, conn.begin():
             df.to_sql( "optimal_weight", conn, if_exists='append',index=False )
         return
@@ -320,7 +320,7 @@ def update_campaign_target(df_camp):
     return
 
 def intoDB(table, df):
-    engine = create_engine( 'mysql://root:adgeek1234@localhost/ad_activity' )
+    engine = create_engine( 'mysql://app:adgeek1234@localhost/ad_activity' )
 #     print(df.columns)
     with engine.connect() as conn, conn.begin():
         try:
