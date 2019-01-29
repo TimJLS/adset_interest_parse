@@ -324,7 +324,7 @@ def bid_adjust( campaign_id ):
               PRED_CPC:bid, PRED_BUDGET: df_adset['daily_budget'].iloc[0].astype(dtype=object), DECIDE_TYPE: 'Revive' }
             df_ad = pd.DataFrame(ad_dict, index=[0])
 
-            result_dict[str(ad_id)] = { PRED_CPC: int(bid), PRED_BUDGET: 50000, REASONS: "collecting data, settings no change.",
+            result_dict[str(ad_id)] = { PRED_CPC: int(bid), PRED_BUDGET: 10000, REASONS: "collecting data, settings no change.",
                                    DECIDE_TYPE: 'Revive', STATUS: True, ADSET: str(adset_id) }
 
             table = 'pred'
