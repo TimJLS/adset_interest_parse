@@ -19,7 +19,7 @@ DATABASE="Facebook"
 def connectDB(db_name):
     mydb = mysql.connector.connect(
         host="localhost",
-        user="root",
+        user="app",
         passwd="adgeek1234",
         database=db_name
     )
@@ -125,13 +125,15 @@ def get_total_clicks( campaign_id ):
 
 #pred
 
-def update_bidcap(ad_id, bid):
-    mydb = connectDB(DATABASE)
-    mycursor = mydb.cursor()
-    sql = "UPDATE pred SET next_cpc = %s WHERE ad_id = %s ORDER BY request_time DESC LIMIT 1"
-    val = ( bid, ad_id )
-    mycursor.execute(sql, val)
-    mydb.commit()
+def update_init_bid(adset_id, init_bid):
+    DB_LIST = ["ad_activity", "Facebook"]
+    for database in DB_LIST:
+        mydb = connectDB(database)
+        mycursor = mydb.cursor()
+        sql = "UPDATE adset_insights SET  bid_amount = %s WHERE adset_id = %s LIMIT 1"
+        val = ( init_bid+1, adset_id )
+        mycursor.execute(sql, val)
+        mydb.commit()
     return
 
 def update_avgspeed(ad_id, target_speed):
@@ -214,22 +216,30 @@ def getAllTimeData(ad_id):
     mydb = connectDB(DATABASE)
     df = pd.read_sql( "SELECT * FROM all_time WHERE ad_id=%s" % (ad_id), con=mydb )
     return df
+#default_price
 
+def check_default_price(campaign_id):
+    mydb = connectDB(DATABASE)
+    df = pd.read_sql( "SELECT * FROM default_price WHERE campaign_id=%s" % (campaign_id), con=mydb )
+    if df.empty:
+        return True
+    else:
+        return False
 #campaign_target
 
-def check_campaignid_target(campaign_id, target, charge_type):
+def check_campaignid_target(campaign_id, destination, charge_type):
     mydb = connectDB(DATABASE)
     df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id=%s" % (campaign_id), con=mydb )   
     if df.empty:
         mycursor = mydb.cursor()
-        sql = "INSERT INTO campaign_target ( campaign_id, target, charge_type ) VALUES ( %s, %s, %s )"
-        val = ( campaign_id, target, charge_type )
+        sql = "INSERT INTO campaign_target ( campaign_id, destination, charge_type ) VALUES ( %s, %s, %s )"
+        val = ( campaign_id, destination, charge_type )
         mycursor.execute(sql, val)
         mydb.commit()
         return False
     else:
-        sql = "UPDATE campaign_target SET target=%s, charge_type=%s WHERE campaign_id=%s"
-        val = ( target, charge_type, campaign_id )
+        sql = "UPDATE campaign_target SET destination=%s, charge_type=%s WHERE campaign_id=%s"
+        val = ( destination, charge_type, campaign_id )
         mycursor = mydb.cursor()
         mycursor.execute(sql, val)
         mydb.commit()
@@ -244,7 +254,7 @@ def get_campaign_target_dict():
     for campaign_id in campaignid_list:
         stop_time = df['stop_time'][df.campaign_id==campaign_id].iloc[0]
         if stop_time >= request_time:
-            campaignid_dict[campaign_id]=df['target'][df.campaign_id==campaign_id]
+            campaignid_dict[campaign_id]=df['destination'][df.campaign_id==campaign_id]
     return campaignid_dict
 
 def get_campaign_target_left_dict():
@@ -275,7 +285,7 @@ def check_optimal_weight(campaign_id, df):
     df_check = pd.read_sql( "SELECT * FROM optimal_weight WHERE campaign_id=%s" % (campaign_id), con=mydb )
 #     print(type(campaign_id.astype(dtype=object)))
     if df_check.empty:
-        engine = create_engine( 'mysql://root:adgeek1234@localhost/ad_activity' )
+        engine = create_engine( 'mysql://app:adgeek1234@localhost/Facebook' )
         with engine.connect() as conn, conn.begin():
             df.to_sql( "optimal_weight", conn, if_exists='append',index=False )
         return
@@ -310,18 +320,42 @@ def update_campaign_target(df_camp):
     mydb = connectDB(DATABASE)
     mycursor = mydb.cursor()
     try:
-        sql = "UPDATE campaign_target SET target = %s, target_type = %s,spend_cap = %s, start_time = %s, stop_time = %s , campaign_days=%s, budget_per_day=%s WHERE campaign_id = %s"
-        val = ( df_camp['target'].iloc[0].astype(dtype=object), df_camp['target_type'].iloc[0], df_camp['spend_cap'].iloc[0], df_camp['start_time'].iloc[0], df_camp['stop_time'].iloc[0], df_camp['campaign_days'].iloc[0].astype(dtype=object), df_camp['budget_per_day'].iloc[0].astype(dtype=object), df_camp['campaign_id'].iloc[0] )
+        sql = ("UPDATE campaign_target SET charge_type = %s, cost_per_target = %s, daily_budget = %s, daily_charge = %s, destination = %s, impressions = %s, period = %s, reach = %s, spend = %s, spend_cap = %s, start_time = %s , stop_time=%s, target=%s, target_left=%s, target_type=%s WHERE campaign_id = %s")
+        val = ( 
+            df_camp['charge_type'].iloc[0],
+            df_camp['cost_per_target'].iloc[0].astype(dtype=object),
+            df_camp['daily_budget'].iloc[0].astype(dtype=object),
+            df_camp['daily_charge'].iloc[0].astype(dtype=object),
+            df_camp['destination'].iloc[0].astype(dtype=object),
+            df_camp['impressions'].iloc[0].astype(dtype=object),
+            df_camp['period'].iloc[0].astype(dtype=object),
+            df_camp['reach'].iloc[0].astype(dtype=object),
+            df_camp['spend'].iloc[0].astype(dtype=object),
+            df_camp['spend_cap'].iloc[0].astype(dtype=object),
+            df_camp['start_time'].iloc[0],
+            df_camp['stop_time'].iloc[0],
+            df_camp['target'].iloc[0].astype(dtype=object),
+            df_camp['target_left'].iloc[0].astype(dtype=object),
+            df_camp['target_type'].iloc[0],
+            df_camp['campaign_id'].iloc[0].astype(dtype=object)
+        )
     except:
-        sql = "UPDATE campaign_target SET target_type = %s,spend_cap = %s, start_time = %s, stop_time = %s , campaign_days=%s, budget_per_day=%s WHERE campaign_id = %s"
-        val = ( df_camp['target_type'].iloc[0], df_camp['spend_cap'].iloc[0], df_camp['start_time'].iloc[0], df_camp['stop_time'].iloc[0], df_camp['campaign_days'].iloc[0].astype(dtype=object), df_camp['budget_per_day'].iloc[0].astype(dtype=object), df_camp['campaign_id'].iloc[0] )
-    
+        sql = "UPDATE campaign_target SET target_type = %s,spend_cap = %s, start_time = %s, stop_time = %s , period=%s, daily_budget=%s WHERE campaign_id = %s"
+        val = ( 
+            df_camp['target_type'].iloc[0], 
+            df_camp['spend_cap'].iloc[0], 
+            df_camp['start_time'].iloc[0], 
+            df_camp['stop_time'].iloc[0], 
+            df_camp['period'].iloc[0].astype(dtype=object), 
+            df_camp['daily_budget'].iloc[0].astype(dtype=object), 
+            df_camp['campaign_id'].iloc[0]
+        )
     mycursor.execute(sql, val)
     mydb.commit()
     return
 
 def intoDB(table, df):
-    engine = create_engine( 'mysql://root:adgeek1234@localhost/Facebook' )
+    engine = create_engine( 'mysql://app:adgeek1234@localhost/Facebook' )
 #     print(df.columns)
     with engine.connect() as conn, conn.begin():
         if table == "pred":

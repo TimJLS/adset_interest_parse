@@ -23,7 +23,7 @@ CAMPAIGN_PROGRESS = 'campaign_progress'
 class FacebookCampaignAdapter(object):
     def __init__(self, campaign_id):
         self.mydb = mysql_adactivity_save.connectDB( DATADASE )
-        self.limit = 10000
+        self.limit = 9000
         self.hour_per_day = 20
         self.campaign_id = campaign_id
         self.request_time = datetime.datetime.now()
@@ -33,19 +33,22 @@ class FacebookCampaignAdapter(object):
         
     def get_df(self):
         self.df_camp = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id=%s" %( self.campaign_id ), con=self.mydb )
-        self.df_ad = pd.read_sql( "SELECT * FROM ad_insights where campaign_id = %s ORDER BY request_time DESC LIMIT %s" %( self.campaign_id, self.limit ), con=self.mydb )
+#         self.df_ad = pd.read_sql( "SELECT * FROM ad_insights where campaign_id = %s ORDER BY request_time DESC LIMIT %s" %( self.campaign_id, self.limit ), con=self.mydb )
+        self.df_ad = pd.read_sql( "SELECT * FROM ad_insights where campaign_id = %s" %( self.campaign_id ), con=self.mydb )
         return
     
     def get_bid(self):
         adset_list = self.get_adset_list()
-        sql = "SELECT adset_id, bid_amount, request_time FROM adset_insights WHERE adset_id IN (%s) ;" % (','.join(['%s'] * len(adset_list)) )
-        val = adset_list
-        df_adset = pd.read_sql( sql, con=self.mydb, params = adset_list )
-        for adset in adset_list:
-            init_bid = df_adset[BID_AMOUNT][df_adset.adset_id==adset].head(1).iloc[0].astype(dtype=object)
-            last_bid = df_adset[BID_AMOUNT][df_adset.adset_id==adset].tail(1).iloc[0].astype(dtype=object)
-            self.init_bid_dict.update({ adset: init_bid })
-            self.last_bid_dict.update({ adset: last_bid })
+        if adset_list is not None:
+#             print(len(adset_list), self.campaign_id)
+            sql = "SELECT adset_id, bid_amount, request_time FROM adset_insights WHERE adset_id IN (%s) ;" % (','.join(['%s'] * len(adset_list)) )
+            val = adset_list
+            df_adset = pd.read_sql( sql, con=self.mydb, params = adset_list )
+            for adset in adset_list:
+                init_bid = df_adset[BID_AMOUNT][df_adset.adset_id==adset].head(1).iloc[0].astype(dtype=object)
+                last_bid = df_adset[BID_AMOUNT][df_adset.adset_id==adset].tail(1).iloc[0].astype(dtype=object)
+                self.init_bid_dict.update({ adset: init_bid })
+                self.last_bid_dict.update({ adset: last_bid })
         return
     
     def get_campaign_days_left(self):
@@ -163,19 +166,21 @@ def main():
     for campaign_id in campaignid_target_dict:
         campaign_id = campaign_id.astype(dtype=object)
         result={ 'media': 'Facebook', 'campaign_id': campaign_id, 'contents':[] }
-        fb = FacebookCampaignAdapter( campaign_id )
-        fb.retrieve_campaign_attribute()
-        adset_list = fb.get_adset_list()
-        for adset in adset_list:
-            s = FacebookAdSetAdapter( adset, fb )
-            status = s.retrieve_adset_attribute()
-            bid = bid_operator.adjust(**status)
-            result['contents'].append(bid)
-            del s
-        mydict_json = json.dumps(result)
-        mysql_adactivity_save.insert_result( campaign_id, mydict_json, datetime.datetime.now() )
-        del fb
-        
+        try:
+            fb = FacebookCampaignAdapter( campaign_id )
+            fb.retrieve_campaign_attribute()
+            adset_list = fb.get_adset_list()
+            for adset in adset_list:
+                s = FacebookAdSetAdapter( adset, fb )
+                status = s.retrieve_adset_attribute()
+                bid = bid_operator.adjust(**status)
+                result['contents'].append(bid)
+                del s
+            mydict_json = json.dumps(result)
+            mysql_adactivity_save.insert_result( campaign_id, mydict_json, datetime.datetime.now() )
+            del fb
+        except:
+            pass
 #     campaign_id = 23843355587140564
 #     result={ 'media': 'Facebook', 'campaign_id': campaign_id, 'contents':[] }
 #     fb = FacebookCampaignAdapter( campaign_id )

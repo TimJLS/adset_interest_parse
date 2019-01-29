@@ -19,22 +19,19 @@ import facebook_datacollector
 import datetime
 # FOLDER_PATH = 'ai_optimizer/models/cpc_120/'
 # MODEL_PATH = FOLDER_PATH + 'cpc_20_500_64.h5'
+class Field(object):
+    pred_cpc = 'pred_cpc'
+    pred_budget = 'pred_budget'
+    target_TYPE = 'target_type'
+    reasons = 'reasons'
 
-PRED_CPC = 'pred_cpc'
-PRED_BUDGET = 'pred_budget'
-DECIDE_TYPE = 'optimization_type'
-REASONS = 'reasons'
+    ad_id = 'ad_id'
+    campaign_id = 'campaign_id'
+    target = 'target'
+    charge_type = 'charge_type'
+    media = 'media'
 
-AD_ID = 'ad_id'
-CAMPAIGN_ID = 'campaign_id'
-TARGET = 'target'
-CHARGE_TYPE = 'charge_type'
-MEDIA = 'media'
 
-# SCALER_X_PATH = FOLDER_PATH + 'scalerX.pkl'
-# SCALER_Y_PATH = FOLDER_PATH + 'scalerY.pkl'
-# scalerX = joblib.load(SCALER_X_PATH)
-# scalerY = joblib.load(SCALER_Y_PATH)
 
 my_app_id = '958842090856883'
 my_app_secret = 'a952f55afca38572cea2994d440d674b'
@@ -43,29 +40,43 @@ my_access_token = 'EAANoD9I4obMBAPcoZA5V7OZBQaPa3Tk7NMAT0ZBZCepdD8zZBcwMZBMHAM1z
 @csrf_exempt
 def opt_api(request):
     if request.method == "POST":
-        campaign_id = request.POST.get(CAMPAIGN_ID)
-        target = request.POST.get(TARGET)
-        charge_type = request.POST.get(CHARGE_TYPE)
-        media = request.POST.get(MEDIA)
-        print(campaign_id, target, charge_type, media)
-        if campaign_id and target and charge_type and media:
+        start_time = datetime.datetime.now()
+        campaign_id = request.POST.get(Field.campaign_id)
+        destination = request.POST.get(Field.target)
+        charge_type = request.POST.get(Field.charge_type)
+        media = request.POST.get(Field.media)
+        print(campaign_id, destination, charge_type, media)
+        if campaign_id and destination and charge_type and media:
             if media == 'Facebook':
                 FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-                queue = mysql_adactivity_save.check_campaignid_target( campaign_id, target, charge_type )
-                facebook_datacollector.make_default( int(campaign_id) )
+                queue = mysql_adactivity_save.check_campaignid_target( campaign_id, destination, charge_type )
+                if mysql_adactivity_save.check_default_price(campaign_id):
+                    facebook_datacollector.make_default( int(campaign_id), charge_type )
                 if queue:
-                    campaign_feature_dict = Campaigns( int(campaign_id) ).get_campaign_feature()
-                    lifetime_target = facebook_datacollector.check_lifetime_target( campaign_id )
-                    charge = lifetime_target[TARGET]
-                    try:target_left_dict = {'target_left': int(target) - int(charge)}
+                    print(campaign_id, destination)
+                    campaign = Campaigns( int(campaign_id), charge_type )
+                    campaign_dict = campaign.to_campaign()
+                    lifetime_target = campaign_dict['target']
+                    try:
+                        target_left_dict = {
+                            'target_left': int(destination) - int(lifetime_target)
+                        }
                     except:
                         temp = mysql_adactivity_save.get_campaign_target_dict()
-                        target = temp[int(campaign_id)]
-                        target_left_dict = {'target_left': int(target) - int(charge)}
-                    charge_dict = {'charge_type': charge_type}
-                    target_dict = {'target': int(target)}
-                    campaign_dict =  {**campaign_feature_dict, **charge_dict, **target_dict, **target_left_dict}
-                    df_camp = pd.DataFrame(campaign_dict, index=[0])
+                        destination = temp[ int(campaign_id) ]
+                        target_left_dict = {
+                            'target_left': int(destination) - int(charge)
+                        }
+                    charge_dict = { 'charge_type': charge_type }
+                    target_dict = { 'destination': int(destination) }
+                    campaign_dict = {
+                        **campaign_dict,
+                        **charge_dict,
+                        **target_dict,
+                        **target_left_dict,
+                    }
+                    df_camp = pd.DataFrame( campaign_dict, index=[0] )
+                    mysql_adactivity_save.update_campaign_target(df_camp)
                     try:
                         mydict = mysql_adactivity_save.get_result( campaign_id )
                     except:
@@ -75,8 +86,7 @@ def opt_api(request):
                 mydict = json.loads(mydict)
                 return JsonResponse( mydict, safe=False )
         else:
-            responseStr = '[POST] return json for adgeek_message is:'
-            return  JsonResponse({'response': responseStr})
-#         try:
-#         except:
-#             return  JsonResponse({'response': 'exception occur'})
+            responseStr = '[POST] return json for adgeek_message is: missing arguments'
+            return  JsonResponse( {'response': responseStr} )
+        
+        
