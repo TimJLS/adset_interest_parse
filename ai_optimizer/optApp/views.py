@@ -48,6 +48,7 @@ def opt_api(request):
         print(campaign_id, destination, charge_type, media)
         if campaign_id and destination and charge_type and media:
             if media == 'Facebook':
+                print('11111')
                 FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
                 queue = mysql_adactivity_save.check_campaignid_target( campaign_id, destination, charge_type )
                 if mysql_adactivity_save.check_default_price(campaign_id):
@@ -80,8 +81,10 @@ def opt_api(request):
                     try:
                         mydict = mysql_adactivity_save.get_result( campaign_id )
                     except:
+                        print("[get default]")
                         mydict = mysql_adactivity_save.get_default( campaign_id )
                 else:
+                    print("[get default]")
                     mydict = mysql_adactivity_save.get_default( campaign_id )
                 mydict = json.loads(mydict)
                 return JsonResponse( mydict, safe=False )

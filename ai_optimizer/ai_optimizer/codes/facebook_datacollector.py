@@ -178,6 +178,26 @@ class DatePreset:
     this_week_sun_today = 'this_week_sun_today'
     this_year = 'this_year'
     
+class Accounts(object):
+    def __init__( self, account_id ):
+        self.account_id = account_id
+    def get_account_insights( self ):
+        accounts = AdAccount( self.account_id )
+        params = {
+            'date_preset': 'today',
+        }
+        account = accounts.get_insights(
+            params=params,
+            fields=[
+                AdsInsights.Field.account_id,
+                AdsInsights.Field.cpc,
+                AdsInsights.Field.clicks,
+                AdsInsights.Field.spend,
+                AdsInsights.Field.impressions
+            ]
+        )
+        return account
+    
 class Campaigns(object):
     def __init__( self, campaign_id, charge_type ):
         self.campaign_id = campaign_id
@@ -203,29 +223,27 @@ class Campaigns(object):
             params=params,
             fields=list( general_insights.values() )+list( target_insights.values() )
         )
-#         print(insights)
-#         if bool(insights):
-#             try:
-        for act in insights[0].get( Field.actions ):
-             if act["action_type"] == campaign_objective[ self.charge_type ]:
-                target = act["value"]
-                self.campaign_insights.update( {'target':target} )
-        for act in insights[0].get( Field.cost_per_action_type ):
-             if act["action_type"] == campaign_objective[ self.charge_type ]:
-                cost_per_target = act["value"]
-                self.campaign_insights.update( {'cost_per_target':cost_per_target} )
-        for k in list( general_insights.keys() ):
-            self.campaign_insights.update( {k: insights[0].get(k)} )
-        if self.charge_type != 'CLICKS':
-            self.campaign_insights.pop( Field.clicks )
-            self.campaign_insights.pop( Field.cpc )
-        else:
-            self.campaign_insights[ 'target' ] = self.campaign_insights.pop( Field.clicks )
-            self.campaign_insights[ 'cost_per_target' ] = self.campaign_insights.pop( Field.cpc )
-        return self.campaign_insights
-#             except:
-#                 pass
-
+        if bool(insights):
+            try:
+                for act in insights[0].get( Field.actions ):
+                     if act["action_type"] == campaign_objective[ self.charge_type ]:
+                        target = act["value"]
+                        self.campaign_insights.update( {'target':target} )
+                for act in insights[0].get( Field.cost_per_action_type ):
+                     if act["action_type"] == campaign_objective[ self.charge_type ]:
+                        cost_per_target = act["value"]
+                        self.campaign_insights.update( {'cost_per_target':cost_per_target} )
+                for k in list( general_insights.keys() ):
+                    self.campaign_insights.update( {k: insights[0].get(k)} )
+                if self.charge_type != 'CLICKS':
+                    self.campaign_insights.pop( Field.clicks )
+                    self.campaign_insights.pop( Field.cpc )
+                else:
+                    self.campaign_insights[ 'target' ] = self.campaign_insights.pop( Field.clicks )
+                    self.campaign_insights[ 'cost_per_target' ] = self.campaign_insights.pop( Field.cpc )
+                return self.campaign_insights
+            except:
+                pass
 
     def get_adsets( self ):
         adset_list=list()
@@ -236,6 +254,12 @@ class Campaigns(object):
             adset_list.append( adset.get("id") )
         return adset_list
 
+    def get_account_id( self ):
+        campaign = Campaign( self.campaign_id )
+        account = campaign.get_insights(fields=[Campaign.Field.account_id])
+        for acc in account:
+            acc_id = acc.get( Field.account_id )
+            return acc_id
     # Operator
     
     def to_campaign( self, date_preset='lifetime' ):
@@ -356,11 +380,19 @@ def data_collect( campaign_id, total_clicks, charge_type ):
 def make_default( campaign_id, charge_type ):
     adset_list = Campaigns(campaign_id, charge_type).get_adsets()
     mydict=dict()
+    result={ 'media': 'Facebook', 'campaign_id': campaign_id, 'contents':[] }
     for adset_id in adset_list:
         adset_dict = AdSets(adset_id, charge_type).to_adset()
         if not bool(adset_dict):
             pass
         else:
+            result['contents'].append(
+                {
+                    'pred_cpc': str( adset_dict['bid_amount'] ),
+                    'pred_budget': str( adset_dict['daily_budget'] ),
+                    'adset_id': str( adset_id ),
+                }
+            )
             mydict[ str(adset_id) ] = {
                 'pred_cpc': str( adset_dict['bid_amount'] ),
                 'pred_budget': str( adset_dict['daily_budget'] ),
@@ -369,9 +401,13 @@ def make_default( campaign_id, charge_type ):
 #                 DECIDE_TYPE: "Learning",
 #                 STATUS: True,                
             }
-    if bool(mydict):
-        mydict_json = json.dumps(mydict)
+    if result['contents']:
+        mydict_json = json.dumps(result)
         mysql_adactivity_save.insert_default( str( campaign_id ), mydict_json, datetime.datetime.now() ) 
+        
+#     if bool(mydict):
+#         mydict_json = json.dumps(mydict)
+#         mysql_adactivity_save.insert_default( str( campaign_id ), mydict_json, datetime.datetime.now() ) 
     return
 
 def main():

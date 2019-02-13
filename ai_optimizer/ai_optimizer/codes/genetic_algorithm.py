@@ -218,11 +218,11 @@ class ObjectiveFunc(object):
         return r
 
     def adset_fitness(optimal_weight, df):
-        m_kpi   = df['charge'] / df['charge_per_day'] * 10
-        if df['charge'].iloc[0] == 0:
+        m_kpi   = df['target'] / df['daily_charge'] * 10
+        if df['target'].iloc[0] == 0:
             m_kpi = -10
-        m_spend = -( df['budget_per_day'] - df['spend'] ) / df['budget_per_day']
-        m_bid   = ( df['bid_amount'] - df['charge_cpc'] ) / df['bid_amount']
+        m_spend = -( df['daily_budget'] - df['spend'] ) / df['daily_budget']
+        m_bid   = ( df['bid_amount'] - df['cost_per_target'] ) / df['bid_amount']
     #     m_width = df['impressions'] / df['daily_budget']
         status  = np.array( [m_kpi, m_spend, m_bid] )
         optimal_weight = np.array([optimal_weight['weight_kpi'].iloc[0], optimal_weight['weight_spend'].iloc[0], optimal_weight['weight_bid'].iloc[0]])
@@ -234,26 +234,36 @@ class ObjectiveFunc(object):
     def account_status( campaign_id ):
         mydb = mysql_adactivity_save.connectDB( "Facebook" )
         df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id=%s" %(campaign_id), con=mydb)
-        df_camp['charge_per_day'] = df_camp['target']/df_camp['campaign_days']
+        df_camp['charge_per_day'] = df_camp['target']/df_camp['period']
         df_camp['campaign_bid'] = df_camp['spend_cap']/df_camp['target']
-
-        acc_id = facebook_datacollector.Campaigns(campaign_id).get_account_id()
+        charge_type = df_camp['charge_type'].iloc[0]
+        acc_id = facebook_datacollector.Campaigns(campaign_id, charge_type).get_account_id()
         insights = facebook_datacollector.Accounts( "act_"+ str(acc_id) ).get_account_insights()
         for insight in insights:
             spend = int( insight.get("spend") )
             account_cpc = float( insight.get("cpc") )
             account_charge = int( insight.get("clicks") )
             impressions = int( insight.get("impressions") )
-        df=pd.DataFrame({'campaign_id':[campaign_id], 'campaign_cpc':[account_cpc], 'campaign_charge':[account_charge],
-                         'impressions':[impressions], 'campaign_bid':[df_camp['campaign_bid'].iloc[0]], 'spend':[spend],
-                         'daily_budget':[df_camp['budget_per_day'].iloc[0]], 'charge_per_day':[df_camp['charge_per_day'].iloc[0]], 'budget_per_day':[df_camp['budget_per_day'].iloc[0]]})
-
+        df=pd.DataFrame(
+            {
+                'campaign_id':[campaign_id],
+                'campaign_cpc':[account_cpc],
+                'campaign_charge':[account_charge],
+                'impressions':[impressions],
+                'campaign_bid':[df_camp['campaign_bid'].iloc[0]],
+                'spend':[spend],
+                'daily_budget':[df_camp['daily_budget'].iloc[0]],
+                'charge_per_day':[df_camp['daily_charge'].iloc[0]],
+                'budget_per_day':[df_camp['daily_budget'].iloc[0]]
+            }
+        )
         df = df.convert_objects(convert_numeric=True)
         return df
+    
     def campaign_status( campaign_id ):
         mydb = mysql_adactivity_save.connectDB( "Facebook" )
         df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id=%s" %(campaign_id), con=mydb)
-        df_camp['charge_per_day'] = df_camp['target']/df_camp['campaign_days']
+        df_camp['charge_per_day'] = df_camp['target']/df_camp['period']
         df_camp['campaign_bid'] = df_camp['spend_cap']/df_camp['target']
 
 #         df_temp = pd.concat( df_camp[['campaign_id', 'charge_per_day', 'budget_per_day', 'daily_budget','']])
@@ -268,21 +278,22 @@ class ObjectiveFunc(object):
                              'daily_budget':[df_camp['budget_per_day'].iloc[0]], 'charge_per_day':[df_camp['charge_per_day'].iloc[0]], 'budget_per_day':[df_camp['budget_per_day'].iloc[0]]})
         df = df.convert_objects(convert_numeric=True)
         return df
-    def adset_status( ad_id ):
+    def adset_status( adset_id ):
         mydb = mysql_adactivity_save.connectDB( "Facebook" )
 
-        df=pd.DataFrame({'adset_id':[],'charge':[], 'impressions':[], 'bid_amount':[]})
+        df=pd.DataFrame({'adset_id':[],'target':[], 'impressions':[], 'bid_amount':[]})
         
-        df_ad = pd.read_sql("SELECT * FROM ad_insights WHERE ad_id=%s ORDER BY request_time DESC LIMIT 1" %(ad_id), con=mydb)
-        df_ad = df_ad.apply(pd.to_numeric)
-        df_adset = pd.read_sql("SELECT * FROM adset_insights WHERE adset_id=%s ORDER BY request_time DESC LIMIT 1" %(df_ad['adset_id'].iloc[0]), con=mydb)
-        df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id=%s" %(df_ad['campaign_id'].iloc[0]), con=mydb)
-        df_camp['charge_per_day'] = df_camp['target']/df_camp['campaign_days']
-        df_temp = pd.merge( df_ad[['campaign_id', 'adset_id', 'charge', 'charge_cpc', 'impressions']],
+#         df_ad = pd.read_sql("SELECT * FROM ad_insights WHERE ad_id=%s ORDER BY request_time DESC LIMIT 1" %(ad_id), con=mydb)
+#         df_ad = df_ad.apply(pd.to_numeric)
+        df_adset = pd.read_sql("SELECT * FROM adset_insights WHERE adset_id=%s ORDER BY request_time DESC LIMIT 1" %(adset_id), con=mydb)
+        df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id=%s" %(df_adset['campaign_id'].iloc[0]), con=mydb)
+#         df_camp['charge_per_day'] = df_camp['target']/df_camp['campaign_days']
+        df_temp = pd.merge( df_adset[['campaign_id', 'adset_id', 'target', 'cost_per_target', 'impressions']],
                               df_adset[['adset_id','spend','bid_amount','daily_budget']],
                               on=['adset_id'] )
+        df_camp['campaign_daily_budget'] = df_camp['daily_budget']
         df_status = pd.merge( df_temp,
-                              df_camp[['campaign_id', 'charge_per_day', 'budget_per_day' ]],
+                              df_camp[['campaign_id', 'daily_charge', 'campaign_daily_budget']],
                               on=['campaign_id'] )
         df = pd.concat([df, df_status], ignore_index=True, sort=True)
 #         print(ad_id)
@@ -293,16 +304,17 @@ def ga_optimal_weight(campaign_id):
     request_time = datetime.datetime.now().date()
     mydb = mysql_adactivity_save.connectDB( "Facebook" )
     df_weight = pd.read_sql("SELECT * FROM optimal_weight WHERE campaign_id=%s " %(campaign_id), con=mydb)
-    ad_id_list = facebook_datacollector.Campaigns(campaign_id).get_adids()
-    for ad_id in ad_id_list:
+    df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id=%s " %(campaign_id), con=mydb)
+    charge_type = df_camp['charge_type'].iloc[0]
+    adset_list = facebook_datacollector.Campaigns(campaign_id, charge_type).get_adsets()
+    for adset_id in adset_list:
         
 #         print(ad_id)
-        df = ObjectiveFunc.adset_status(ad_id)
+        df = ObjectiveFunc.adset_status( adset_id )
         r = ObjectiveFunc.adset_fitness( df_weight, df )
 #         print('[score]', r, ad_id)
-        df_ad=pd.read_sql("SELECT adset_id FROM ad_insights WHERE ad_id=%s LIMIT 1" %(ad_id), con=mydb)
-        adset_id = df_ad['adset_id'].iloc[0].astype(dtype=object)              
-        df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'ad_id':ad_id, 'score':r, 'request_time':request_time}, index=[0])
+
+        df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'score':r, 'request_time':request_time}, index=[0])
 
         mysql_adactivity_save.intoDB("adset_score", df_final)
         
@@ -327,7 +339,7 @@ if __name__ == "__main__":
     camp_dict = mysql_adactivity_save.get_campaign_target_dict()
     for camp_id in camp_dict.keys():
 #         ga_optimal_weight(camp_id)
-        
+        print('campaign_id:', camp_id )
         global df
         df = ObjectiveFunc.account_status(camp_id)
         bound = np.tile([[0], [1]], vardim)
@@ -344,7 +356,7 @@ if __name__ == "__main__":
         df_final = pd.concat( [df_score, df_final], axis=1, sort=True, ignore_index=False)
         mysql_adactivity_save.check_optimal_weight(camp_id, df_final)
         ga_optimal_weight(camp_id)
-        print('campaign_id:', camp_id )
+        
         print('optimal_weight:', optimal)
         print(datetime.datetime.now()-starttime)    
     print(datetime.datetime.now()-starttime)

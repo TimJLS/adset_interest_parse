@@ -4,13 +4,14 @@ import mysql_adactivity_save
 import bid_operator
 import json
 
-DATADASE = "ad_activity"
+DATADASE = "Facebook"
 START_TIME = 'start_time'
 STOP_TIME = 'stop_time'
 AD_ID = 'ad_id'
 ADSET_ID = 'adset_id'
 CAMPAIGN_ID = 'campaign_id'
 CHARGE = 'charge'
+TARGET = 'target'
 BID_AMOUNT = 'bid_amount'
 REQUEST_TIME = 'request_time'
 TARGET_LEFT = 'target_left'
@@ -34,21 +35,19 @@ class FacebookCampaignAdapter(object):
     def get_df(self):
         self.df_camp = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id=%s" %( self.campaign_id ), con=self.mydb )
 #         self.df_ad = pd.read_sql( "SELECT * FROM ad_insights where campaign_id = %s ORDER BY request_time DESC LIMIT %s" %( self.campaign_id, self.limit ), con=self.mydb )
-        self.df_ad = pd.read_sql( "SELECT * FROM ad_insights where campaign_id = %s" %( self.campaign_id ), con=self.mydb )
+        self.df_ad = pd.read_sql( "SELECT * FROM adset_insights where campaign_id = %s" %( self.campaign_id ), con=self.mydb )
         return
     
     def get_bid(self):
-        adset_list = self.get_adset_list()
-        if adset_list is not None:
 #             print(len(adset_list), self.campaign_id)
-            sql = "SELECT adset_id, bid_amount, request_time FROM adset_insights WHERE adset_id IN (%s) ;" % (','.join(['%s'] * len(adset_list)) )
-            val = adset_list
-            df_adset = pd.read_sql( sql, con=self.mydb, params = adset_list )
-            for adset in adset_list:
-                init_bid = df_adset[BID_AMOUNT][df_adset.adset_id==adset].head(1).iloc[0].astype(dtype=object)
-                last_bid = df_adset[BID_AMOUNT][df_adset.adset_id==adset].tail(1).iloc[0].astype(dtype=object)
-                self.init_bid_dict.update({ adset: init_bid })
-                self.last_bid_dict.update({ adset: last_bid })
+        sql = "SELECT adset_id, bid_amount, request_time FROM adset_insights WHERE campaign_id=%s ;" % ( self.campaign_id )
+        df_adset = pd.read_sql( sql, con=self.mydb )
+        adset_list = df_adset['adset_id'].unique()
+        for adset in adset_list:
+            init_bid = df_adset[BID_AMOUNT][df_adset.adset_id==adset].head(1).iloc[0].astype(dtype=object)
+            last_bid = df_adset[BID_AMOUNT][df_adset.adset_id==adset].tail(1).iloc[0].astype(dtype=object)
+            self.init_bid_dict.update({ adset: init_bid })
+            self.last_bid_dict.update({ adset: last_bid })
         return
     
     def get_campaign_days_left(self):
@@ -60,14 +59,14 @@ class FacebookCampaignAdapter(object):
         return self.campaign_days
     
     def get_campaign_performance(self):
-        ad_id_list = self.df_ad[ AD_ID ].unique()
-        dfs = pd.DataFrame(columns=[ ADSET_ID, CHARGE ])
+        ad_id_list = self.df_ad[ ADSET_ID ].unique()
+        dfs = pd.DataFrame(columns=[ ADSET_ID, TARGET ])
         for ad_id in ad_id_list:
-            df_ad = self.df_ad[self.df_ad.ad_id==ad_id]
-            df = df_ad[[ CHARGE, REQUEST_TIME ]][df_ad.request_time.dt.date==self.request_time]
+            df_ad = self.df_ad[self.df_ad.adset_id==ad_id]
+            df = df_ad[[ TARGET, REQUEST_TIME ]][df_ad.request_time.dt.date==self.request_time]
             dfs = pd.concat([dfs, df], axis=0, sort=False)
-        dfs = dfs.sort_values(by=[ CHARGE ], ascending=False).reset_index(drop=True)
-        self.campaign_performance = dfs[ CHARGE ].sum()
+        dfs = dfs.sort_values(by=[ TARGET ], ascending=False).reset_index(drop=True)
+        self.campaign_performance = dfs[ TARGET ].sum()
         return self.campaign_performance
     
     def get_campaign_target(self):
@@ -128,7 +127,7 @@ class FacebookAdSetAdapter(FacebookCampaignAdapter):
         return self.adset_day_target
     
     def get_adset_performance(self):
-        self.adset_performance = self.df_ad[ CHARGE ][self.df_ad.adset_id==self.adset_id].iloc[0]
+        self.adset_performance = self.df_ad[ TARGET ][self.df_ad.adset_id==self.adset_id].iloc[0]
         return self.adset_performance
     
     def get_bid(self):
@@ -180,6 +179,7 @@ def main():
             mysql_adactivity_save.insert_result( campaign_id, mydict_json, datetime.datetime.now() )
             del fb
         except:
+            print('pass')
             pass
 #     campaign_id = 23843355587140564
 #     result={ 'media': 'Facebook', 'campaign_id': campaign_id, 'contents':[] }
