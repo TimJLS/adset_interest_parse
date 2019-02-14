@@ -247,14 +247,18 @@ def make_default( campaign_id ):
     for ad in ad_list:
         df_adset = Ads(ad).get_adset_insights()
         if df_adset is None:
+            print('pass')
             pass
         else:
             adset_id = Ads(ad).get_adset_id()
-            mydict[ str(ad) ] = {PRED_CPC: str(df_adset['bid_amount'].iloc[0]),
-                                 PRED_BUDGET: str(df_adset['daily_budget'].iloc[0]),
-                                 REASONS: "Requirements not match",
-                                 DECIDE_TYPE: "Learning",
-                                 STATUS: True, ADSET: str(adset_id),}
+            mydict[ str(ad) ] = {
+                PRED_CPC: str(df_adset['bid_amount'].iloc[0]),
+                PRED_BUDGET: str(df_adset['daily_budget'].iloc[0]),
+                REASONS: "Requirements not match",
+                DECIDE_TYPE: "Learning",
+                STATUS: True, ADSET: str(adset_id),
+            }
+#     if bool(mydict):
     mydict_json = json.dumps(mydict)
     mysql_adactivity_save.insert_default( str( campaign_id ), mydict_json, datetime.datetime.now() ) 
     return
@@ -271,20 +275,22 @@ def bid_adjust( campaign_id ):
     df_camp = pd.read_sql( "SELECT * FROM campaign_target where campaign_id=%s" %( campaign_id ), con=mydb )
     df_ad = pd.read_sql( "SELECT * FROM ad_insights where campaign_id = %s  " %( campaign_id ), con=mydb )
     ad_id_list = df_ad['ad_id'].unique()
-
+    ad_id_list = [ int(x) for x in ad_id_list ]
     result_dict=dict()
     df_ad=df_ad[df_ad.charge_cpc!=0]
     adset_num = len( df_ad['adset_id'].unique() )
     campaign_days = ( df_camp['stop_time'].iloc[0] - df_camp['start_time'].iloc[0] ).days
     campaign_days_left = ( df_camp['stop_time'].iloc[0] - request_time +datetime.timedelta(1) ).days
     dfs = pd.DataFrame(columns=['adset_id', 'charge'])
+    print('[campaign_id]', campaign_id)
     for ad_id in ad_id_list:
-        ad_id = ad_id.astype(dtype=object)
         try:
             df_ad = pd.read_sql( "SELECT * FROM ad_insights where ad_id=%s ORDER BY request_time DESC LIMIT 1" %( ad_id ), con=mydb )
             df_ad = df_ad[df_ad.request_time.dt.date == request_time.date()]
             adset_id = df_ad['adset_id'].iloc[0]
+            print('ok', ad_id)
         except:
+            print('pass1', ad_id)
             pass
         else:
             df = selection.performance_sort( adset_id )
@@ -296,7 +302,6 @@ def bid_adjust( campaign_id ):
     campaign_time_target = campaign_target / campaign_days_left# * time_progress
     adset_target = campaign_target / campaign_days_left / adset_num
     for ad_id in ad_id_list:
-        ad_id = ad_id.astype(dtype=object)
         center = 1
         width = 5
         try:
@@ -331,7 +336,7 @@ def bid_adjust( campaign_id ):
             mysql_adactivity_save.intoDB(table, df_ad)
             mysql_adactivity_save.update_bidcap(ad_id, bid)
         except:
-#             print('pass', ad_id )
+            print('pass', ad_id )
             pass
 
 
@@ -374,16 +379,17 @@ def check_lifetime_target( campaign_id ):
     df = mysql_adactivity_save.get_campaign_target( campaign_id )
     charge_type = df['charge_type'].iloc[0]
     charge=0
-    if charge_type == 'CLICKS':
-        charge = int( insights[0].get("clicks") )
-    else:
-        action = insights[0].get("actions")
-        for act in action:
-            try:
-                if act["action_type"]==charge_index[charge_type]:
-                    charge = int( act["value"] )
-            except:
-                pass
+    if bool(insights):
+        if charge_type == 'CLICKS':
+            charge = int( insights[0].get("clicks") )
+        else:
+            action = insights[0].get("actions")
+            for act in action:
+                try:
+                    if act["action_type"]==charge_index[charge_type]:
+                        charge = int( act["value"] )
+                except:
+                    pass
                 
     campaign_lifetime=dict()
     campaign_lifetime['target']=charge
