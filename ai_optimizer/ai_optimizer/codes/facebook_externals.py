@@ -135,6 +135,7 @@ def retrieve_copied_adset_id(session_id):
     r = requests.get(url, headers=headers, params=payload)
     while not bool( json.loads( json.loads( r.text )['result'] ) ):
         r = requests.get (url, headers=headers, params=payload )
+
     copied_adset_id = json.loads( json.loads( r.text )['result'] )['copied_adset_id']
     return copied_adset_id
 
@@ -189,18 +190,25 @@ def check_if_campaign_day_target_reach(campaign):
     
     print(fb.init_bid_dict)
     achieving_rate = target / daily_charge
-    print('[campaign_id]', campaign, '[achieving rate]', achieving_rate)
+    print('[campaign_id]', campaign, '[achieving rate]', achieving_rate, target, daily_charge)
     if achieving_rate > ACTION_BOUNDARY and achieving_rate < 1:
+        try:
 #         adjust_init_bid_of_adset(campaign, fb)
-        duplicate_highest_ranking_adset(campaign, fb)
+            duplicate_highest_ranking_adset(campaign, fb)
+        except:
+            pass
     elif achieving_rate < ACTION_BOUNDARY:
         adjust_init_bid_of_adset(campaign, fb)
-        duplicate_highest_ranking_adset_with_higher_bid(campaign, fb)
+        try:
+            duplicate_highest_ranking_adset_with_higher_bid(campaign, fb)
+        except:
+            pass
+    return
+        
 #     except:
 #         print('[check_if_campaign_day_target_reach]:pass')
 #         pass
 #     adjust_init_bid_of_adset(campaign, fb)
-    return
 
 def check_adset_name(adset_id_which_want_copy):
     ad_set = AdSet(adset_id_which_want_copy)
@@ -223,14 +231,10 @@ def duplicate_highest_ranking_adset(campaign, fb):
         df_camp = mysql_adactivity_save.get_campaign_target(campaign)
         charge_type = df_camp['charge_type'].iloc[0]
         adset_list = Campaigns(campaign, charge_type).get_adsets()
-    
-#     df = pd.read_sql("select * from adset_score where campaign_id=%s" %(campaign), con=mydb)
-#     df = df[df.request_time.dt.date==DATE].sort_values(by=['score'], ascending=False)
-#     adset_list = df['adset_id']
+
     for i, adset_id in enumerate(adset_list):
         if check_adset_name(adset_id) is False:
             adset_pop = adset_list.pop(i)
-#     adset_list = adset_list.head(3)
     adset_list = adset_list[:]
     for adset_id in adset_list:
         init_bid = fb.init_bid_dict[ int(adset_id) ]
@@ -249,11 +253,6 @@ def duplicate_highest_ranking_adset_with_higher_bid(campaign, fb):
         charge_type = df_camp['charge_type'].iloc[0]
         adset_list = Campaigns(campaign, charge_type).get_adsets()
 
-    
-    
-#     df = pd.read_sql("select * from adset_score where campaign_id=%s" %(campaign), con=mydb)
-#     df = df[df.request_time.dt.date==DATE].sort_values(by=['score'], ascending=False)
-#     adset_list = df['adset_id']
     for i, adset_id in enumerate(adset_list):
         if check_adset_name(adset_id) is False:
             adset_pop = adset_list.pop(i)
@@ -288,10 +287,11 @@ if __name__ == "__main__":
 #     import tabulate
 #     df = mysql_adactivity_save.get_campaign_target(23843212203370457)
 #     print(tabulate.tabulate(df, headers=df.columns, tablefmt='psql'))
-    campaign_list = mysql_adactivity_save.get_campaign()
-    for campaign in campaign_list:
-        check_if_campaign_day_target_reach(campaign)
 
+#     campaign_list = mysql_adactivity_save.get_campaign()
+#     for campaign in campaign_list:
+#         check_if_campaign_day_target_reach(campaign)
+    check_if_campaign_day_target_reach(23843223791000175)
 
 #         fb = FacebookCampaignAdapter(campaign)
 #         fb.get_df()

@@ -3,6 +3,7 @@ import pandas as pd
 import mysql_adactivity_save
 import bid_operator
 import json
+import math
 
 DATADASE = "Facebook"
 START_TIME = 'start_time'
@@ -127,7 +128,10 @@ class FacebookAdSetAdapter(FacebookCampaignAdapter):
         return self.adset_day_target
     
     def get_adset_performance(self):
+        
         self.adset_performance = self.df_ad[ TARGET ][self.df_ad.adset_id==self.adset_id].iloc[0]
+        if math.isnan(self.adset_performance):
+            self.adset_performance = 0
         return self.adset_performance
     
     def get_bid(self):
@@ -140,6 +144,7 @@ class FacebookAdSetAdapter(FacebookCampaignAdapter):
         return self.adset_time_target
     
     def get_adset_progress(self):
+        print(self.adset_performance, self.adset_time_target)
         self.adset_progress = self.adset_performance / self.adset_time_target
         return self.adset_progress
     
@@ -172,16 +177,19 @@ def main():
             for adset in adset_list:
                 s = FacebookAdSetAdapter( adset, fb )
                 status = s.retrieve_adset_attribute()
-                bid = bid_operator.adjust(**status)
+                media = result['media']
+                bid = bid_operator.adjust(media, **status)
                 result['contents'].append(bid)
                 del s
             mydict_json = json.dumps(result)
+#             print(mydict_json)
             mysql_adactivity_save.insert_result( campaign_id, mydict_json, datetime.datetime.now() )
             del fb
         except:
             print('pass')
             pass
-#     campaign_id = 23843355587140564
+        
+#     campaign_id = 23843269222010540
 #     result={ 'media': 'Facebook', 'campaign_id': campaign_id, 'contents':[] }
 #     fb = FacebookCampaignAdapter( campaign_id )
 #     fb.retrieve_campaign_attribute()
@@ -189,7 +197,8 @@ def main():
 #     for adset in adset_list:
 #         s = FacebookAdSetAdapter( adset, fb )
 #         status = s.retrieve_adset_attribute()
-#         bid = bid_operator.adjust(**status)
+#         media = result['media']
+#         bid = bid_operator.adjust(media, **status)
 #         result['contents'].append(bid)
 #         del s
 #     del fb

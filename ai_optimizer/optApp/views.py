@@ -12,7 +12,8 @@ import pandas as pd
 from sklearn.externals import joblib
 
 from ai_optimizer.codes import mysql_adactivity_save
-
+from ai_optimizer.codes import amobee_db
+from ai_optimizer.codes import amobee_datacollector
 from facebook_business.api import FacebookAdsApi
 from facebook_datacollector import Campaigns
 import facebook_datacollector
@@ -48,7 +49,6 @@ def opt_api(request):
         print(campaign_id, destination, charge_type, media)
         if campaign_id and destination and charge_type and media:
             if media == 'Facebook':
-                print('11111')
                 FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
                 queue = mysql_adactivity_save.check_campaignid_target( campaign_id, destination, charge_type )
                 if mysql_adactivity_save.check_default_price(campaign_id):
@@ -57,7 +57,8 @@ def opt_api(request):
                     print(campaign_id, destination)
                     campaign = Campaigns( int(campaign_id), charge_type )
                     campaign_dict = campaign.to_campaign()
-                    lifetime_target = campaign_dict['target']
+                    try:lifetime_target = campaign_dict['target']
+                    except:lifetime_target=0
                     try:
                         target_left_dict = {
                             'target_left': int(destination) - int(lifetime_target)
@@ -81,13 +82,16 @@ def opt_api(request):
                     try:
                         mydict = mysql_adactivity_save.get_result( campaign_id )
                     except:
-                        print("[get default]")
                         mydict = mysql_adactivity_save.get_default( campaign_id )
                 else:
-                    print("[get default]")
                     mydict = mysql_adactivity_save.get_default( campaign_id )
-                mydict = json.loads(mydict)
-                return JsonResponse( mydict, safe=False )
+                return JsonResponse( json.loads(mydict), safe=False )
+            elif media == 'Amobee':
+                queue = amobee_db.check_io_target( int(campaign_id), destination, charge_type )
+                if amobee_db.check_default_price(campaign_id):
+                    amobee_datacollector.make_default( int(campaign_id), media, charge_type )
+                mydict = amobee_db.get_default( campaign_id )
+                return JsonResponse( json.loads(mydict), safe=False )
         else:
             responseStr = '[POST] return json for adgeek_message is: missing arguments'
             return  JsonResponse( {'response': responseStr} )
