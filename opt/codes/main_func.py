@@ -30,7 +30,7 @@ campaign_objective = {
     'LINK_CLICKS': 'link_click',
     'POST_ENGAGEMENT': 'post_engagement', 
     'VIDEO_VIEWS': 'video_view', 
-    'CONVERSIONS':'offsite_conversion',
+    'CONVERSIONS':'offsite_conversion.fb_pixel_purchase',
 }
 target_index = {'LINK_CLICKS': 'link_click', 'POST_ENGAGEMENT': 'post_engagement', 'VIDEO_VIEWS': 'video_view' }
 charge_index = {'LINK_CLICKS': 'link_click', 'POST_ENGAGEMENT': 'post_engagement', 'VIDEO_VIEWS': 'video_view', 'CLICKS': 'clicks' }
@@ -204,6 +204,9 @@ class Ads( AdSets, Campaigns ):
         target_type = Campaigns( ads.get_camp_id() ).get_campaign_feature()[COL_TARGET_TYPE]
 #         charge_type = target_type
         charge_type = df['charge_type'][df.campaign_id==ads.get_camp_id()].iloc[0]
+        
+#         print('-'*30)
+#         print(ads.get_camp_id())
 #         print(ad_insights)
         try:
             for field in fields_ad:
@@ -324,7 +327,8 @@ def bid_adjust( campaign_id ):
             else:
                 bid = init_cpc + BID_RANGE*init_cpc*( normalized_sigmoid_fkt(center, width, adset_progress) - 0.5 )
                 bid = bid.astype(dtype=object)
-            print(campaign_id, adset_id, adset_performance > adset_time_target, adset_progress, campaign_performance < campaign_time_target, bid, campaign_days_left)
+            print(campaign_id, adset_id, adset_performance > adset_time_target, adset_performance, adset_time_target, campaign_performance < campaign_time_target, bid, campaign_days_left)
+            
             ad_dict = {'ad_id':ad_id, 'request_time':datetime.datetime.now(), 'next_cpc':math.ceil(bid),
               PRED_CPC:bid, PRED_BUDGET: df_adset['daily_budget'].iloc[0].astype(dtype=object), DECIDE_TYPE: 'Revive' }
             df_ad = pd.DataFrame(ad_dict, index=[0])
@@ -384,12 +388,12 @@ def check_lifetime_target( campaign_id ):
             charge = int( insights[0].get("clicks") )
         else:
             action = insights[0].get("actions")
-            for act in action:
-                try:
+            try:
+                for act in action:
                     if act["action_type"]==charge_index[charge_type]:
                         charge = int( act["value"] )
-                except:
-                    pass
+            except:
+                pass
                 
     campaign_lifetime=dict()
     campaign_lifetime['target']=charge
