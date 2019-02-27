@@ -39,3 +39,17 @@ def get_campaign_target():
         if stop_time >= request_time and start_time <= request_time:
             df_camp = pd.concat([df_camp, df[df.campaign_id==campaign_id]])
     return df_camp
+            
+def get_line_insights(campaign_id):
+    request_time = datetime.datetime.now()
+    mydb = connectDB(DATABASE)
+    mycursor = mydb.cursor()
+    df = pd.read_sql( "SELECT * FROM line_insights WHERE campaign_id={}".format(campaign_id) , con=mydb )
+    line_list = df['line_id'].unique()
+    df_line = pd.DataFrame(columns=df.columns)
+#     for campaign_id in campaign_list:
+#         start_time = df['start_time'][df.campaign_id==campaign_id].iloc[0]
+#         stop_time = df['stop_time'][df.campaign_id==campaign_id].iloc[0]
+#         if stop_time >= request_time and start_time <= request_time:
+#             df_camp = pd.concat([df_camp, df[df.campaign_id==campaign_id]])
+    return df_line

@@ -131,7 +131,7 @@ def update_init_bid(adset_id, init_bid):
         mydb = connectDB(database)
         mycursor = mydb.cursor()
         sql = "UPDATE adset_insights SET  bid_amount = %s WHERE adset_id = %s LIMIT 1"
-        val = ( init_bid+1, adset_id )
+        val = ( init_bid, adset_id )
         mycursor.execute(sql, val)
         mydb.commit()
     return

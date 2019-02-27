@@ -12,6 +12,7 @@ from facebook_business.adobjects.adcreative import AdCreative
 from facebook_business.adobjects.targeting import Targeting
 from facebook_business.api import FacebookRequest
 import copy
+import math
 import os
 import mysql_adactivity_save
 import pandas as pd
@@ -33,7 +34,6 @@ DATABASE = 'Facebook'
 DATE = datetime.datetime.now().date()# - datetime.timedelta(2)
 ACTION_BOUNDARY = 0.8
 FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-charge_type = 'LINK_CLICKS'
 
 def copy_adset(adset_id):
     request = FacebookRequest(
@@ -65,6 +65,14 @@ def modify_exists_adset(adset_id, adset_params):
     #print('update_response:' , update_response)
     remote_update_response = adset.remote_update()
     #print('remote_update_response:' , remote_update_response)
+def check_init_bid(init_bid):
+    if init_bid == None:
+        return
+    if init_bid > 100:
+        init_bid = math.ceil( init_bid*1.1 )
+    else:
+        init_bid = init_bid + 1
+    return init_bid
     
 def config_adset_params_by_age(new_adset_id, age_max, age_min, init_bid=None):
     
@@ -79,6 +87,8 @@ def config_adset_params_by_age(new_adset_id, age_max, age_min, init_bid=None):
     target['age_max'] =  age_max
     target['age_min'] =  age_min
 
+    init_bid = check_init_bid(init_bid)
+    
     if init_bid is None:
         adset_params = {
             AdSet.Field.name: original_name + ' ' + str(age_min) + '-' + str(age_max) ,
@@ -92,9 +102,9 @@ def config_adset_params_by_age(new_adset_id, age_max, age_min, init_bid=None):
         ])
     else:
         adset_params = {
-            AdSet.Field.name: original_name + ' ' + str(age_min) + '-' + str(age_max) + ' ' + str('init') + ' ' + str(init_bid+1) ,
+            AdSet.Field.name: original_name + ' ' + str(age_min) + '-' + str(age_max) + ' ' + str('init') + ' ' + str(init_bid) ,
             AdSet.Field.targeting: target,
-            AdSet.Field.bid_amount: init_bid+1,
+            AdSet.Field.bid_amount: init_bid,
             'status': AdSet.Status.active,
         }
         ad_groups = ad_set.get_ads(fields=[
@@ -128,6 +138,7 @@ def async_copy_adset(adset_id_which_want_copy):
     session_id = json.loads(r.text)['async_sessions'][0]['id']
     copied_adset_id = retrieve_copied_adset_id(session_id)
     return copied_adset_id
+
 def retrieve_copied_adset_id(session_id):
     url = "https://graph.facebook.com/v3.2/{id}".format( id=session_id )
     headers = { "Authorization":"OAuth {}".format( my_access_token ) }
@@ -188,27 +199,27 @@ def check_if_campaign_day_target_reach(campaign):
     fb.get_campaign_days_left()
     campaign_days_left = fb.campaign_days_left
     
-    print(fb.init_bid_dict)
+#     print(fb.init_bid_dict)
     achieving_rate = target / daily_charge
     print('[campaign_id]', campaign, '[achieving rate]', achieving_rate, target, daily_charge)
     if achieving_rate > ACTION_BOUNDARY and achieving_rate < 1:
+        
         try:
+            print('[success]')
 #         adjust_init_bid_of_adset(campaign, fb)
             duplicate_highest_ranking_adset(campaign, fb)
         except:
+            print('[duplicate fail]')
             pass
     elif achieving_rate < ACTION_BOUNDARY:
         adjust_init_bid_of_adset(campaign, fb)
         try:
+            print('[success]')
             duplicate_highest_ranking_adset_with_higher_bid(campaign, fb)
         except:
+            print('[duplicate fail]')
             pass
     return
-        
-#     except:
-#         print('[check_if_campaign_day_target_reach]:pass')
-#         pass
-#     adjust_init_bid_of_adset(campaign, fb)
 
 def check_adset_name(adset_id_which_want_copy):
     ad_set = AdSet(adset_id_which_want_copy)
@@ -259,25 +270,31 @@ def duplicate_highest_ranking_adset_with_higher_bid(campaign, fb):
     adset_list = adset_list[:]
     for adset_id in adset_list:
         init_bid = fb.init_bid_dict[ int(adset_id) ]
+        init_bid = check_init_bid(init_bid)
         duplicate_asset_by_more_target( int(adset_id), init_bid, bid_adjust=True )
     return
 
 def adjust_init_bid_of_adset(campaign, fb):
     mydb=mysql_adactivity_save.connectDB(DATABASE)
     try:
-        df = pd.read_sql("select * from adset_score where campaign_id=%s" %(campaign), con=mydb)
+        df = pd.read_sql("select * from adset_score where campaign_id={}".format(campaign), con=mydb)
         df = df[df.request_time.dt.date==DATE].sort_values(by=['score'], ascending=False)
         adset_list = df['adset_id']
+        assert adset_list, 'Empty List'
     except:
         df_camp = mysql_adactivity_save.get_campaign_target(campaign)
         charge_type = df_camp['charge_type'].iloc[0]
         adset_list = Campaigns(campaign, charge_type).get_adsets()
+
     for adset_id in adset_list:
+        
         if check_adset_name(adset_id) is True:
 #             init_bid = fb.init_bid_dict[ int(adset_id) ]
 #             mysql_adactivity_save.update_init_bid( int(adset_id), init_bid )
             try:
                 init_bid = fb.init_bid_dict[ int(adset_id) ]
+                init_bid = check_init_bid(init_bid)
+#                 print(campaign, '-'*30, + init_bid)
                 mysql_adactivity_save.update_init_bid( int(adset_id), init_bid )
             except:
                 print('pass')
@@ -288,10 +305,10 @@ if __name__ == "__main__":
 #     df = mysql_adactivity_save.get_campaign_target(23843212203370457)
 #     print(tabulate.tabulate(df, headers=df.columns, tablefmt='psql'))
 
-#     campaign_list = mysql_adactivity_save.get_campaign()
-#     for campaign in campaign_list:
-#         check_if_campaign_day_target_reach(campaign)
-    check_if_campaign_day_target_reach(23843223791000175)
+    campaign_list = mysql_adactivity_save.get_campaign()
+    for campaign in campaign_list:
+        check_if_campaign_day_target_reach(campaign)
+#     check_if_campaign_day_target_reach(23843223791000175)
 
 #         fb = FacebookCampaignAdapter(campaign)
 #         fb.get_df()

@@ -144,7 +144,7 @@ class FacebookAdSetAdapter(FacebookCampaignAdapter):
         return self.adset_time_target
     
     def get_adset_progress(self):
-        print(self.adset_performance, self.adset_time_target)
+#         print(self.adset_performance, self.adset_time_target)
         self.adset_progress = self.adset_performance / self.adset_time_target
         return self.adset_progress
     

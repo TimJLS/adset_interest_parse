@@ -278,6 +278,7 @@ class ObjectiveFunc(object):
                              'daily_budget':[df_camp['budget_per_day'].iloc[0]], 'charge_per_day':[df_camp['charge_per_day'].iloc[0]], 'budget_per_day':[df_camp['budget_per_day'].iloc[0]]})
         df = df.convert_objects(convert_numeric=True)
         return df
+    
     def adset_status( adset_id ):
         mydb = mysql_adactivity_save.connectDB( "Facebook" )
 
@@ -360,6 +361,26 @@ if __name__ == "__main__":
         print('optimal_weight:', optimal)
         print(datetime.datetime.now()-starttime)    
     print(datetime.datetime.now()-starttime)
+
+#     global df
+#     df = ObjectiveFunc.account_status(23843269222010540)
+#     bound = np.tile([[0], [1]], vardim)
+#     ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
+#     optimal = ga.solve()
+#     score = ObjectiveFunc.fitnessfunc(optimal, df)
+
+#     score_columns=['weight_kpi', 'weight_spend', 'weight_bid']
+#     df_score = pd.DataFrame(data=[optimal], columns=['weight_kpi', 'weight_spend', 'weight_bid'], index=[0])
+# #         score_columns=['weight_kpi', 'weight_spend', 'weight_bid', 'weight_width']
+# #         df_score = pd.DataFrame(data=[optimal], columns=['weight_kpi', 'weight_spend', 'weight_bid', 'weight_width'], index=[0])        
+
+#     df_final = pd.DataFrame({'campaign_id':camp_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
+#     df_final = pd.concat( [df_score, df_final], axis=1, sort=True, ignore_index=False)
+#     mysql_adactivity_save.check_optimal_weight(camp_id, df_final)
+#     ga_optimal_weight(camp_id)
+
+#     print('optimal_weight:', optimal)
+#     print(datetime.datetime.now()-starttime)
 
 
 

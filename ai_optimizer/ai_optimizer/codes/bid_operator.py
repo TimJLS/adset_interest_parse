@@ -32,7 +32,6 @@ def adjust(media, **status):
 #     adset_id = status.get(ADSET_ID)
     init_bid = status.get(INIT_BID)
     last_bid = status.get(LAST_BID)
-    
     ADSET_PROGRESS = ADAPTER[media].get("adset_progress")
     CAMPAIGN_PROGRESS = ADAPTER[media].get("campaign_progress")
     ADSET_ID = ADAPTER[media].get("adset_id")
@@ -47,7 +46,9 @@ def adjust(media, **status):
     else:
         bid = init_bid + BID_RANGE*init_bid*( normalized_sigmoid_fkt(CENTER, WIDTH, adset_progress) - 0.5 )
         bid = bid.astype(dtype=object)
-#     print( { ADAPTER[media].get("adset_id"):status.get(ADSET_ID), BID:bid } )
+    if not str(adset_progress).split(".")[0].isdigit():
+        bid = init_bid
+    print( { ADAPTER[media].get("adset_id"):status.get(ADSET_ID), BID:bid } )
     return { ADAPTER[media].get("adset_id"):status.get(ADSET_ID), BID:bid }
     return { ADSET_ID:adset_id, BID:bid }
 

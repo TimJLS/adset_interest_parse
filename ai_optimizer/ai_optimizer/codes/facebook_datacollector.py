@@ -181,22 +181,18 @@ class DatePreset:
 class Accounts(object):
     def __init__( self, account_id ):
         self.account_id = account_id
+        self.account_insights = dict()
+        
     def get_account_insights( self ):
         accounts = AdAccount( self.account_id )
         params = {
             'date_preset': 'today',
         }
-        account = accounts.get_insights(
+        insights = accounts.get_insights(
             params=params,
-            fields=[
-                AdsInsights.Field.account_id,
-                AdsInsights.Field.cpc,
-                AdsInsights.Field.clicks,
-                AdsInsights.Field.spend,
-                AdsInsights.Field.impressions
-            ]
+            fields=list( general_insights.values() )+list( target_insights.values() )
         )
-        return account
+        return insights[0]
     
 class Campaigns(object):
     def __init__( self, campaign_id, charge_type ):
