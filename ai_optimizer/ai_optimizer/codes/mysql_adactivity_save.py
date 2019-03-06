@@ -14,11 +14,11 @@ import MySQLdb
 
 # import fb_graph
 # In[ ]:
-DATABASE="Facebook"
+DATABASE="dev_facebook_test"
 
 def connectDB(db_name):
     mydb = mysql.connector.connect(
-        host="localhost",
+        host="aws-dev-ai-private.adgeek.cc",
         user="app",
         passwd="adgeek1234",
         database=db_name
@@ -114,52 +114,9 @@ def get_lastday_clicks(ad_id):
         lastday_clicks = df['clicks'][df.request_time ==last_day].iloc[-1].astype(dtype=object)
     return lastday_clicks
 
-def get_total_clicks( campaign_id ):
-    mydb = connectDB(DATABASE)
-    mycursor = mydb.cursor()
-    mycursor.execute( "SELECT total_clicks FROM by_campaign WHERE campaign_id=%s ORDER BY request_time DESC LIMIT 1" % (campaign_id) )
-    total_clicks = mycursor.fetchall()
-    
-    total_clicks = int(total_clicks[0][0])
-    return total_clicks
 
-#pred
 
-def update_init_bid(adset_id, init_bid):
-    DB_LIST = ["ad_activity", "Facebook"]
-    for database in DB_LIST:
-        mydb = connectDB(database)
-        mycursor = mydb.cursor()
-        sql = "UPDATE adset_insights SET  bid_amount = %s WHERE adset_id = %s LIMIT 1"
-        val = ( init_bid, adset_id )
-        mycursor.execute(sql, val)
-        mydb.commit()
-    return
 
-def update_avgspeed(ad_id, target_speed):
-    mydb = connectDB(DATABASE)
-    mycursor = mydb.cursor()
-    sql = "UPDATE pred SET avgspeed = %s WHERE ad_id = %s ORDER BY request_time DESC LIMIT 1"
-    val = ( target_speed, ad_id )
-    mycursor.execute(sql, val)
-    mydb.commit()
-    return
-
-def get_speed(ad_id):
-    mydb = connectDB(DATABASE)
-    df = pd.read_sql( "SELECT avgspeed, speed, decide_type FROM pred WHERE ad_id=%s ORDER BY request_time DESC LIMIT 1" % (ad_id), con=mydb )
-    avgspeed = df['avgspeed'].iloc[0]
-    speed = df['speed'].iloc[0]
-    decide_type = df['decide_type'].iloc[0]
-    return avgspeed, speed, decide_type
-
-def get_pred_data(ad_id):
-    mydb = connectDB(DATABASE)
-    df = pd.read_sql( "SELECT * FROM pred WHERE ad_id=%s" % (ad_id), con=mydb )
-    if len(df) !=0:
-        return df['next_cpc'].iloc[-1].astype(dtype=object), df['pred_budget'].iloc[-1].astype(dtype=object), df['decide_type'].iloc[-1]
-    else:
-        return None
     
 #status
 
@@ -191,6 +148,13 @@ def get_default( campaign_id ):
     default = str(default[0][0], encoding='utf-8')
     return default
 
+def check_default_price(campaign_id):
+    mydb = connectDB(DATABASE)
+    df = pd.read_sql( "SELECT * FROM default_price WHERE campaign_id=%s" % (campaign_id), con=mydb )
+    if df.empty:
+        return True
+    else:
+        return False
 #result
 
 def insert_result( campaign_id, mydict, datetime ):
@@ -210,21 +174,6 @@ def get_result( campaign_id ):
     results = str(results[0][0], encoding='utf-8')
     return results
 
-#all_time
-    
-def getAllTimeData(ad_id):
-    mydb = connectDB(DATABASE)
-    df = pd.read_sql( "SELECT * FROM all_time WHERE ad_id=%s" % (ad_id), con=mydb )
-    return df
-#default_price
-
-def check_default_price(campaign_id):
-    mydb = connectDB(DATABASE)
-    df = pd.read_sql( "SELECT * FROM default_price WHERE campaign_id=%s" % (campaign_id), con=mydb )
-    if df.empty:
-        return True
-    else:
-        return False
 #campaign_target
 
 def check_campaignid_target(campaign_id, destination, charge_type):
@@ -355,7 +304,7 @@ def update_campaign_target(df_camp):
     return
 
 def intoDB(table, df):
-    engine = create_engine( 'mysql://app:adgeek1234@localhost/Facebook' )
+    engine = create_engine( 'mysql://app:adgeek1234@aws-dev-ai-private.adgeek.cc/{}'.format(DATABASE) )
 #     print(df.columns)
     with engine.connect() as conn, conn.begin():
         if table == "pred":
