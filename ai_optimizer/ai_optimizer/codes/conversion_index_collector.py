@@ -357,7 +357,6 @@ def data_collect( campaign_id, total_clicks, charge_type ):
     }
     target_pair[Field.target] = target_pair.pop(Field.purchase)
     target_pair[Field.cost_per_target] = target_pair.pop(Field.cost_per_purchase)
-#     print(camp.campaign_insights)
     campaign_dict = {
         **camp.campaign_features,
         **target_pair,
@@ -374,8 +373,8 @@ def data_collect( campaign_id, total_clicks, charge_type ):
     adset_list = camp.get_adsets()
     for adset_id in adset_list:
         adset = AdSets(adset_id, charge_type)
-        adset_dict = adset.retrieve_all(date_preset=DatePreset.today)
-#         adset_dict = adset.retrieve_all(date_preset=DatePreset.lifetime) #for testing
+#         adset_dict = adset.retrieve_all(date_preset=DatePreset.today)
+        adset_dict = adset.retrieve_all(date_preset=DatePreset.lifetime) #for testing
         adset_dict['request_time'] = datetime.datetime.now()
         adset_dict['campaign_id'] = campaign_id
         df_adset = pd.DataFrame(adset_dict, index=[0])
@@ -465,29 +464,59 @@ def check_conv_metrics(campaign_id, campaign_conv_metrics):
             df_camp.to_sql("campaign_conversion_metrics", conn, if_exists='append',index=False)
         return False
     else:
-        sql = "UPDATE campaign_conversion_metrics SET spend=%s, impressions=%s, add_to_cart=%s, cost_per_add_to_cart=%s, initiate_checkout=%s, cost_per_initiate_checkout=%s, purchase=%s, cost_per_purchase=%s, view_content=%s, cost_per_view_content=%s, landing_page_view=%s, cost_per_landing_page_view=%s, link_click=%s, cost_per_link_click=%s WHERE campaign_id=%s"
-        val = (
-            campaign_conv_metrics['spend'],
-            campaign_conv_metrics['impressions'],
-            campaign_conv_metrics['add_to_cart'],
-            campaign_conv_metrics['cost_per_add_to_cart'],
-            campaign_conv_metrics['initiate_checkout'],
-            campaign_conv_metrics['cost_per_initiate_checkout'],
-            campaign_conv_metrics['purchase'],
-            campaign_conv_metrics['cost_per_purchase'],
-            campaign_conv_metrics['view_content'],
-            campaign_conv_metrics['cost_per_view_content'],
-            campaign_conv_metrics['landing_page_view'],
-            campaign_conv_metrics['cost_per_landing_page_view'],
-            campaign_conv_metrics['link_click'],
-            campaign_conv_metrics['cost_per_link_click'],
-            campaign_conv_metrics['campaign_id']
-        )
+        try:
+            sql = "UPDATE campaign_conversion_metrics SET spend=%s, impressions=%s, add_to_cart=%s, cost_per_add_to_cart=%s, initiate_checkout=%s, cost_per_initiate_checkout=%s, purchase=%s, cost_per_purchase=%s, view_content=%s, cost_per_view_content=%s, landing_page_view=%s, cost_per_landing_page_view=%s, link_click=%s, cost_per_link_click=%s WHERE campaign_id=%s"
+            val = (
+                campaign_conv_metrics['spend'],
+                campaign_conv_metrics['impressions'],
+                campaign_conv_metrics['add_to_cart'],
+                campaign_conv_metrics['cost_per_add_to_cart'],
+                campaign_conv_metrics['initiate_checkout'],
+                campaign_conv_metrics['cost_per_initiate_checkout'],
+                campaign_conv_metrics['purchase'],
+                campaign_conv_metrics['cost_per_purchase'],
+                campaign_conv_metrics['view_content'],
+                campaign_conv_metrics['cost_per_view_content'],
+                campaign_conv_metrics['landing_page_view'],
+                campaign_conv_metrics['cost_per_landing_page_view'],
+                campaign_conv_metrics['link_click'],
+                campaign_conv_metrics['cost_per_link_click'],
+                campaign_conv_metrics['campaign_id']
+            )
+            mycursor = mydb.cursor()
+            mycursor.execute(sql, val)
+            mydb.commit()
+            return True
+        except:
+            pass
+        
+def check_optimal_weight(campaign_id, df):
+    mydb = connectDB(DATABASE)
+
+    df_check = pd.read_sql( "SELECT * FROM conversion_optimal_weight WHERE campaign_id=%s" % (campaign_id), con=mydb )
+    if df_check.empty:
+        engine = create_engine( 'mysql://{}:{}@{}/{}'.format(USER, PASSWORD, HOST, DATABASE) )
+        with engine.connect() as conn, conn.begin():
+            df.to_sql("conversion_optimal_weight", conn, if_exists='append',index=False)
+        return 
+    else:
         mycursor = mydb.cursor()
+        sql = "UPDATE conversion_optimal_weight SET score=%s, w1=%s, w2=%s, w3=%s, w4=%s, w5=%s, w6=%s, w_spend=%s, w_bid=%s WHERE campaign_id=%s"
+        val = (
+            df['score'].iloc[0].astype(dtype=object),
+            df['w1'].iloc[0].astype(dtype=object),
+            df['w2'].iloc[0].astype(dtype=object),
+            df['w3'].iloc[0].astype(dtype=object),
+            df['w4'].iloc[0].astype(dtype=object),
+            df['w5'].iloc[0].astype(dtype=object),
+            df['w6'].iloc[0].astype(dtype=object),
+            df['w_spend'].iloc[0].astype(dtype=object),
+            df['w_bid'].iloc[0].astype(dtype=object),
+            df['campaign_id'].iloc[0].astype(dtype=object)
+        )
         mycursor.execute(sql, val)
         mydb.commit()
-        return True
-
+        return
 
 # In[13]:
 
@@ -501,10 +530,14 @@ def get_campaign_target():
     for campaign_id in campaignid_list:
         stop_time = df['stop_time'][df.campaign_id==campaign_id].iloc[0]
         start_time = df['start_time'][df.campaign_id==campaign_id].iloc[0]
-        if stop_time >= request_time and start_time <= request_time:
-            df_temp = df[df.campaign_id==campaign_id]
-            df_camp = pd.concat([df_camp, df_temp])
-#             campaignid_dict[campaign_id]=df['destination'][df.campaign_id==campaign_id]
+# '''
+# for testing
+        df_temp = df[df.campaign_id==campaign_id]
+        df_camp = pd.concat([df_camp, df_temp])
+# '''
+#         if stop_time >= request_time and start_time <= request_time:
+#             df_temp = df[df.campaign_id==campaign_id]
+#             df_camp = pd.concat([df_camp, df_temp])
     return df_camp
 
 

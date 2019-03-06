@@ -234,7 +234,7 @@ def check_optimal_weight(campaign_id, df):
     df_check = pd.read_sql( "SELECT * FROM optimal_weight WHERE campaign_id=%s" % (campaign_id), con=mydb )
 #     print(type(campaign_id.astype(dtype=object)))
     if df_check.empty:
-        engine = create_engine( 'mysql://app:adgeek1234@localhost/Facebook' )
+        engine = create_engine( 'mysql://app:adgeek1234@aws-dev-ai-private.adgeek.cc/dev_facebook_test' )
         with engine.connect() as conn, conn.begin():
             df.to_sql( "optimal_weight", conn, if_exists='append',index=False )
         return
@@ -319,6 +319,23 @@ def intoDB(table, df):
             df.to_sql("optimal_weight", conn, if_exists='append',index=False)
         elif table == "adset_score":
             df.to_sql("adset_score", conn, if_exists='append',index=False)
+            
+def insert_release_result( campaign_id, mydict, datetime ):
+    mydb = connectDB(DATABASE)
+    mycursor = mydb.cursor()
+    sql = "INSERT INTO release_ver_result ( campaign_id, result, request_time ) VALUES ( %s, %s, %s )"
+    val = ( campaign_id, mydict, datetime )
+    mycursor.execute(sql, val)
+    mydb.commit()
+    return
+
+def get_release_result( campaign_id ):
+    mydb = connectDB(DATABASE)
+    mycursor = mydb.cursor()
+    mycursor.execute( "SELECT result FROM release_ver_result WHERE campaign_id=%s ORDER BY request_time DESC LIMIT 1" % (campaign_id) )
+    results = mycursor.fetchall()
+    results = str(results[0][0], encoding='utf-8')
+    return results
 
 if __name__=="__main__":
     get_campaign_target()

@@ -5,7 +5,7 @@ import bid_operator
 import json
 import math
 
-DATADASE = "Facebook"
+DATADASE = "dev_facebook_test"
 START_TIME = 'start_time'
 STOP_TIME = 'stop_time'
 AD_ID = 'ad_id'
@@ -170,6 +170,7 @@ def main():
     for campaign_id in campaignid_target_dict:
         campaign_id = campaign_id.astype(dtype=object)
         result={ 'media': 'Facebook', 'campaign_id': campaign_id, 'contents':[] }
+        release_version_result = {  }
         try:
             fb = FacebookCampaignAdapter( campaign_id )
             fb.retrieve_campaign_attribute()
@@ -180,10 +181,13 @@ def main():
                 media = result['media']
                 bid = bid_operator.adjust(media, **status)
                 result['contents'].append(bid)
+                release_version_result.update( { adset: bid } )
                 del s
             mydict_json = json.dumps(result)
+            release_json = json.dumps(release_version_result)
 #             print(mydict_json)
             mysql_adactivity_save.insert_result( campaign_id, mydict_json, datetime.datetime.now() )
+            mysql_adactivity_save.insert_release_result( campaign_id, release_json, datetime.datetime.now() )
             del fb
         except:
             print('pass')

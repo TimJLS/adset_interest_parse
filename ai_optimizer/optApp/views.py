@@ -80,7 +80,8 @@ def opt_api(request):
                     df_camp = pd.DataFrame( campaign_dict, index=[0] )
                     mysql_adactivity_save.update_campaign_target(df_camp)
                     try:
-                        mydict = mysql_adactivity_save.get_result( campaign_id )
+#                         mydict = mysql_adactivity_save.get_result( campaign_id ) #new version
+                        mydict = mysql_adactivity_save.get_release_result( campaign_id ) #release version
                     except:
                         mydict = mysql_adactivity_save.get_default( campaign_id )
                 else:
