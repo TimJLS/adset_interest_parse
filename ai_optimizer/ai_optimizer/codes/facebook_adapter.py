@@ -4,7 +4,7 @@ import mysql_adactivity_save
 import bid_operator
 import json
 import math
-
+from facebook_datacollector import AdSets
 DATADASE = "dev_facebook_test"
 START_TIME = 'start_time'
 STOP_TIME = 'stop_time'
@@ -168,6 +168,7 @@ def main():
     start_time = datetime.datetime.now()
     campaignid_target_dict = mysql_adactivity_save.get_campaign_target_dict()
     for campaign_id in campaignid_target_dict:
+        print(campaign_id)
         campaign_id = campaign_id.astype(dtype=object)
         result={ 'media': 'Facebook', 'campaign_id': campaign_id, 'contents':[] }
         release_version_result = {  }
@@ -175,17 +176,22 @@ def main():
             fb = FacebookCampaignAdapter( campaign_id )
             fb.retrieve_campaign_attribute()
             adset_list = fb.get_adset_list()
+            charge_type = fb.df_camp['charge_type'].iloc[0]
             for adset in adset_list:
                 s = FacebookAdSetAdapter( adset, fb )
                 status = s.retrieve_adset_attribute()
                 media = result['media']
                 bid = bid_operator.adjust(media, **status)
                 result['contents'].append(bid)
-                release_version_result.update( { adset: bid } )
+
+                ad_list = AdSets(adset, charge_type).get_ads()
+                bid['pred_cpc'] = bid.pop('bid')
+                for ad in ad_list:
+                    release_version_result.update( { ad: bid } )
                 del s
             mydict_json = json.dumps(result)
             release_json = json.dumps(release_version_result)
-#             print(mydict_json)
+#             print(release_json)
             mysql_adactivity_save.insert_result( campaign_id, mydict_json, datetime.datetime.now() )
             mysql_adactivity_save.insert_release_result( campaign_id, release_json, datetime.datetime.now() )
             del fb

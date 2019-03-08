@@ -373,8 +373,8 @@ def data_collect( campaign_id, total_clicks, charge_type ):
     adset_list = camp.get_adsets()
     for adset_id in adset_list:
         adset = AdSets(adset_id, charge_type)
-#         adset_dict = adset.retrieve_all(date_preset=DatePreset.today)
-        adset_dict = adset.retrieve_all(date_preset=DatePreset.lifetime) #for testing
+        adset_dict = adset.retrieve_all(date_preset=DatePreset.today)
+#         adset_dict = adset.retrieve_all(date_preset=DatePreset.lifetime) #for testing
         adset_dict['request_time'] = datetime.datetime.now()
         adset_dict['campaign_id'] = campaign_id
         df_adset = pd.DataFrame(adset_dict, index=[0])
@@ -530,15 +530,16 @@ def get_campaign_target():
     for campaign_id in campaignid_list:
         stop_time = df['stop_time'][df.campaign_id==campaign_id].iloc[0]
         start_time = df['start_time'][df.campaign_id==campaign_id].iloc[0]
-# '''
-# for testing
+        if stop_time >= request_time and start_time <= request_time:
+            df_temp = df[df.campaign_id==campaign_id]
+            df_camp = pd.concat([df_camp, df_temp])
+    return df_camp
+'''
+for testing
         df_temp = df[df.campaign_id==campaign_id]
         df_camp = pd.concat([df_camp, df_temp])
 # '''
-#         if stop_time >= request_time and start_time <= request_time:
-#             df_temp = df[df.campaign_id==campaign_id]
-#             df_camp = pd.concat([df_camp, df_temp])
-    return df_camp
+
 
 
 # In[14]:
@@ -547,7 +548,7 @@ def get_campaign_target():
 def main():
     start_time = datetime.datetime.now()
     FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-    df_camp = get_campaign_target()    
+    df_camp = get_campaign_target()
     for campaign_id in df_camp.campaign_id.unique():
         destination = df_camp[df_camp.campaign_id==campaign_id].destination.iloc[0]
         charge_type = df_camp[df_camp.campaign_id==campaign_id].charge_type.iloc[0]

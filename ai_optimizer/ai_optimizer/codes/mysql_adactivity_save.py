@@ -337,5 +337,31 @@ def get_release_result( campaign_id ):
     results = str(results[0][0], encoding='utf-8')
     return results
 
+
+def insert_release_default( campaign_id, mydict, datetime ):
+    mydb = connectDB(DATABASE)
+    mycursor = mydb.cursor()
+    sql = "INSERT INTO release_default_price ( campaign_id, default_price, request_time ) VALUES ( %s, %s, %s )"
+    val = ( campaign_id, mydict, datetime )
+    mycursor.execute(sql, val)
+    mydb.commit()
+    return
+
+def get_release_default( campaign_id ):
+    mydb = connectDB(DATABASE)
+    mycursor = mydb.cursor()
+    mycursor.execute( "SELECT default_price FROM release_default_price WHERE campaign_id=%s ORDER BY request_time DESC LIMIT 1" % (campaign_id) )
+    default = mycursor.fetchall()
+    default = str(default[0][0], encoding='utf-8')
+    return default
+
+def check_release_default_price(campaign_id):
+    mydb = connectDB(DATABASE)
+    df = pd.read_sql( "SELECT * FROM release_default_price WHERE campaign_id=%s" % (campaign_id), con=mydb )
+    if df.empty:
+        return True
+    else:
+        return False
+
 if __name__=="__main__":
     get_campaign_target()

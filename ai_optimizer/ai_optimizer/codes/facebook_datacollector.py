@@ -285,7 +285,15 @@ class AdSets(object):
         self.adset = dict()
         
     # Getters
-        
+
+    def get_ads( self ):
+        ad_list=list()
+        adset = AdSet( self.adset_id )
+        ads = adset.get_ads( fields = [ Ad.Field.id ])
+        for ad in ads:
+            ad_list.append( ad.get("id") )
+        return ad_list
+    
     def get_adset_features( self ):
         adset = AdSet( self.adset_id )
         adsets = adset.remote_read( fields=list( adset_field.values() ) )
@@ -389,6 +397,7 @@ def make_default( campaign_id, charge_type ):
     adset_list = Campaigns(campaign_id, charge_type).get_adsets()
     mydict=dict()
     result={ "media": "Facebook", "campaign_id": campaign_id, "contents":[] }
+    release_version_result = {  }
     for adset_id in adset_list:
         adset_dict = AdSets(adset_id, charge_type).to_adset()
         if not bool(adset_dict):
@@ -401,10 +410,23 @@ def make_default( campaign_id, charge_type ):
                     "adset_id": str( adset_id ),
                 }
             )
+            ad_list = AdSets(adset_id, charge_type).get_ads()
+            for ad in ad_list:
+                release_version_result.update(
+                    {
+                        str( ad ):{
+                            "pred_cpc": str( adset_dict['bid_amount'] ),
+                            "pred_budget": str( adset_dict['daily_budget'] ),
+                            "adset_id": str( adset_id ),   
+                        }
+                    } 
+                )
     if result["contents"]:
         mydict_json = json.dumps(result)
         mysql_adactivity_save.insert_default( str( campaign_id ), mydict_json, datetime.datetime.now() )
         
+        release_json = json.dumps(release_version_result)
+        mysql_adactivity_save.insert_release_default( campaign_id, release_json, datetime.datetime.now() )
 #     if bool(mydict):
 #         mydict_json = json.dumps(mydict)
 #         mysql_adactivity_save.insert_default( str( campaign_id ), mydict_json, datetime.datetime.now() ) 

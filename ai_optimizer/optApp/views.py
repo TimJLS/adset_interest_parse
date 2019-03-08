@@ -47,8 +47,10 @@ def opt_api(request):
         charge_type = request.POST.get(Field.charge_type)
         media = request.POST.get(Field.media)
         print(campaign_id, destination, charge_type, media)
-        if campaign_id and destination and charge_type and media:
-            if media == 'Facebook':
+        print(media == None)
+#         if campaign_id and destination and charge_type and media: # new release version
+        if campaign_id and destination and charge_type: #temporary working version
+            if media == 'Facebook' or media is None:
                 FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
                 queue = mysql_adactivity_save.check_campaignid_target( campaign_id, destination, charge_type )
                 if mysql_adactivity_save.check_default_price(campaign_id):
@@ -83,9 +85,11 @@ def opt_api(request):
 #                         mydict = mysql_adactivity_save.get_result( campaign_id ) #new version
                         mydict = mysql_adactivity_save.get_release_result( campaign_id ) #release version
                     except:
-                        mydict = mysql_adactivity_save.get_default( campaign_id )
+#                         mydict = mysql_adactivity_save.get_default( campaign_id ) #new version
+                        mydict = mysql_adactivity_save.get_release_default( campaign_id )#release version
                 else:
-                    mydict = mysql_adactivity_save.get_default( campaign_id )
+                    mydict = mysql_adactivity_save.get_default( campaign_id ) #new version
+                    mydict = mysql_adactivity_save.get_release_default( campaign_id )#release version
                 return JsonResponse( json.loads(mydict), safe=False )
             elif media == 'Amobee':
                 queue = amobee_db.check_io_target( int(campaign_id), destination, charge_type )
@@ -93,8 +97,10 @@ def opt_api(request):
                     amobee_datacollector.make_default( int(campaign_id), media, charge_type )
                 mydict = amobee_db.get_default( campaign_id )
                 return JsonResponse( json.loads(mydict), safe=False )
+        elif campaign_id:
+            mydict = mysql_adactivity_save.get_default( campaign_id ) #new version
+            mydict = mysql_adactivity_save.get_release_default( campaign_id )#release version
+            return JsonResponse( json.loads(mydict), safe=False )
         else:
-            responseStr = '[POST] return json for adgeek_message is: missing arguments'
-            return  JsonResponse( {'response': responseStr} )
-        
+            return JsonResponse( {}, safe=False )
         
