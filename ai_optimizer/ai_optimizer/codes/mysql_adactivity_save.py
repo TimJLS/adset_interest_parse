@@ -28,95 +28,6 @@ def connectDB(db_name):
 
 # In[ ]:
 
-#by_campaign
-
-def insertData(ad_id, cpc, clicks, impressions, reach, campaign_id, spend_cap, objective, start_time, stop_time, adset_id, bid_amount, daily_budget, age_max, age_min, flexible_spec, geo_locations, total_clicks):
-    mydb = connectDB(DATABASE)
-    mycursor = mydb.cursor()
-    sql = "INSERT INTO by_campaign ( ad_id, cpc, clicks, impressions, reach, campaign_id, spend_cap, objective, start_time, stop_time, adset_id, bid_amount, daily_budget, age_max, age_min, flexible_spec, geo_locations, request_time, total_clicks ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ,%s )"
-    val = ( ad_id, cpc, clicks, impressions, reach, campaign_id, spend_cap, objective, start_time, stop_time, adset_id, bid_amount, daily_budget, age_max, age_min, flexible_spec, geo_locations, datetime.datetime.now(), total_clicks )
-    mycursor.execute(sql, val)
-    mydb.commit()
-
-def update_init_budget(ad_id, target_budget):
-    mydb = connectDB(DATABASE)
-    mycursor = mydb.cursor()
-
-    sql = "UPDATE by_campaign SET daily_budget = %s WHERE ad_id = %s ORDER BY request_time LIMIT 1"
-    val = ( target_budget, ad_id )
-    mycursor.execute(sql, val)
-    mydb.commit()
-    return
-
-def getSpeedData(ad_id):
-    mydb = connectDB(DATABASE)
-    df = pd.read_sql( "SELECT * FROM by_campaign WHERE ad_id=%s ORDER BY request_time DESC LIMIT 1" % (ad_id), con=mydb )
-    return df
-
-def getInsightData(ad_id):
-    mydb = connectDB(DATABASE)
-    df = pd.read_sql( "SELECT ad_id, cpc, clicks, impressions, reach, bid_amount FROM by_campaign WHERE ad_id=%s" % (ad_id), con=mydb )
-    return 
-
-def get_clicks_data(ad_id):
-    mydb = connectDB(DATABASE)
-    df = pd.read_sql( "SELECT total_clicks FROM by_campaign WHERE ad_id=%s ORDER BY request_time DESC LIMIT 1" % (ad_id), con=mydb )
-    return df.values[0,0]
-
-def getDataforSelection(adset_id):
-    mydb = connectDB(DATABASE)
-    df = pd.read_sql( "SELECT * FROM by_campaign WHERE adset_id=%s" % (adset_id), con=mydb )
-    return df
-
-def get_campaign_id(ad_id):
-    mydb = connectDB(DATABASE)
-    df = pd.read_sql( "SELECT campaign_id FROM by_campaign WHERE ad_id=%s ORDER BY request_time DESC LIMIT 1" % (ad_id), con=mydb )
-    return df.iloc[0,0].astype(dtype=object)
-
-def get_ad_data(ad_id):
-    mydb = connectDB(DATABASE)
-    df = pd.read_sql( "SELECT ad_id, cpc, clicks, impressions, reach, bid_amount, daily_budget FROM by_campaign WHERE ad_id=%s ORDER BY request_time DESC LIMIT 1" % (ad_id), con=mydb )
-    return df
-
-def get_ad_id(campaign_id):
-    mydb = connectDB(DATABASE)
-    df = pd.read_sql( "SELECT * FROM by_campaign WHERE campaign_id = %s" % (campaign_id) , con=mydb )
-    adid_list = df['ad_id'].unique()
-    return adid_list
-    
-def get_init_budget(ad_id):
-    mydb = connectDB(DATABASE)
-    df = pd.read_sql( "SELECT daily_budget FROM by_campaign WHERE ad_id=%s ORDER BY request_time LIMIT 1" % (ad_id), con=mydb )
-    daily_budget = df['daily_budget'].iloc[0].astype(dtype=object)
-    
-    return daily_budget
-
-def get_init_bidamount(ad_id):
-    mydb = connectDB(DATABASE)
-    df = pd.read_sql( "SELECT bid_amount FROM by_campaign WHERE ad_id=%s ORDER BY request_time LIMIT 1" % (ad_id), con=mydb )
-    bid_amount = df['bid_amount'].iloc[0].astype(dtype=object)
-    return bid_amount
-
-def get_init_cpc(ad_id):
-    mydb = connectDB(DATABASE)
-    df = pd.read_sql( "SELECT cpc FROM by_campaign WHERE ad_id=%s ORDER BY request_time LIMIT 1" % (ad_id), con=mydb )
-    return df
-
-def get_lastday_clicks(ad_id):
-    mydb = connectDB(DATABASE)
-    df = pd.read_sql( "SELECT clicks, request_time FROM by_campaign WHERE ad_id=%s ORDER BY request_time" % (ad_id), con=mydb )
-    last_day = datetime.datetime.now().date() - datetime.timedelta(1)
-    df['request_time'] = df['request_time'].dt.date
-    if df['clicks'][df.request_time ==last_day].empty:
-        last_day = last_day - datetime.timedelta(1)
-        lastday_clicks = 0
-    else:
-        lastday_clicks = df['clicks'][df.request_time ==last_day].iloc[-1].astype(dtype=object)
-    return lastday_clicks
-
-
-
-
     
 #status
 
@@ -138,6 +49,8 @@ def insert_default( campaign_id, mydict, datetime ):
     val = ( campaign_id, mydict, datetime )
     mycursor.execute(sql, val)
     mydb.commit()
+    mycursor.close()
+    mydb.close()
     return
 
 def get_default( campaign_id ):
@@ -146,11 +59,14 @@ def get_default( campaign_id ):
     mycursor.execute( "SELECT default_price FROM default_price WHERE campaign_id=%s ORDER BY request_time DESC LIMIT 1" % (campaign_id) )
     default = mycursor.fetchall()
     default = str(default[0][0], encoding='utf-8')
+    mycursor.close()
+    mydb.close()
     return default
 
 def check_default_price(campaign_id):
     mydb = connectDB(DATABASE)
     df = pd.read_sql( "SELECT * FROM default_price WHERE campaign_id=%s" % (campaign_id), con=mydb )
+    mydb.close()
     if df.empty:
         return True
     else:
@@ -164,6 +80,8 @@ def insert_result( campaign_id, mydict, datetime ):
     val = ( campaign_id, mydict, datetime )
     mycursor.execute(sql, val)
     mydb.commit()
+    mycursor.close()
+    mydb.close()
     return
 
 def get_result( campaign_id ):
@@ -172,6 +90,8 @@ def get_result( campaign_id ):
     mycursor.execute( "SELECT result FROM result WHERE campaign_id=%s ORDER BY request_time DESC LIMIT 1" % (campaign_id) )
     results = mycursor.fetchall()
     results = str(results[0][0], encoding='utf-8')
+    mycursor.close()
+    mydb.close()
     return results
 
 #campaign_target
@@ -185,6 +105,8 @@ def check_campaignid_target(campaign_id, destination, charge_type):
         val = ( campaign_id, destination, charge_type )
         mycursor.execute(sql, val)
         mydb.commit()
+        mycursor.close()
+        mydb.close()
         return False
     else:
         sql = "UPDATE campaign_target SET destination=%s, charge_type=%s WHERE campaign_id=%s"
@@ -192,6 +114,8 @@ def check_campaignid_target(campaign_id, destination, charge_type):
         mycursor = mydb.cursor()
         mycursor.execute(sql, val)
         mydb.commit()
+        mycursor.close()
+        mydb.close()
         return True
 
 def get_campaign_target_dict():
@@ -204,6 +128,7 @@ def get_campaign_target_dict():
         stop_time = df['stop_time'][df.campaign_id==campaign_id].iloc[0]
         if stop_time >= request_time:
             campaignid_dict[campaign_id]=df['destination'][df.campaign_id==campaign_id]
+    mydb.close()
     return campaignid_dict
 
 def get_campaign_target_left_dict():
@@ -218,7 +143,7 @@ def get_campaign_target_left_dict():
         stop_time = df['stop_time'][df.campaign_id==campaign_id].iloc[0]
         if stop_time >= request_time:
             campaignid_dict[campaign_id]=df['target_left'][df.campaign_id==campaign_id]
-            
+    mydb.close()
     return campaignid_dict
 
 def get_campaign():
@@ -226,6 +151,7 @@ def get_campaign():
     request_time = datetime.datetime.now()
     df = pd.read_sql( "SELECT * FROM campaign_target" , con=mydb )
     campaign_id_list = df['campaign_id'].unique()
+    mydb.close()
     return campaign_id_list
 ### optimal_weight ###
 
@@ -237,6 +163,7 @@ def check_optimal_weight(campaign_id, df):
         engine = create_engine( 'mysql://app:adgeek1234@aws-dev-ai-private.adgeek.cc/dev_facebook_test' )
         with engine.connect() as conn, conn.begin():
             df.to_sql( "optimal_weight", conn, if_exists='append',index=False )
+        engine.dispose()
         return
     else:
         mycursor = mydb.cursor()
@@ -257,12 +184,15 @@ def check_optimal_weight(campaign_id, df):
 #               )
         mycursor.execute(sql, val)
         mydb.commit()
+        mycursor.close()
+        mydb.close()
         return
 ######## NEW ######
 
 def get_campaign_target(campaign_id):
     mydb = connectDB(DATABASE)
     df_camp = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id=%s" % (campaign_id), con=mydb )
+    mydb.close()
     return df_camp
 
 def update_campaign_target(df_camp):
@@ -301,24 +231,16 @@ def update_campaign_target(df_camp):
         )
     mycursor.execute(sql, val)
     mydb.commit()
+    mycursor.close()
+    mydb.close()
     return
 
 def intoDB(table, df):
     engine = create_engine( 'mysql://app:adgeek1234@aws-dev-ai-private.adgeek.cc/{}'.format(DATABASE) )
 #     print(df.columns)
     with engine.connect() as conn, conn.begin():
-        if table == "pred":
-            df.to_sql("pred", conn, if_exists='append',index=False)
-        elif table == "ad_insights":
-            df.to_sql("ad_insights", conn, if_exists='append',index=False)
-        elif table == "adset_insights":
-            df.to_sql("adset_insights", conn, if_exists='append',index=False)
-        elif table == "campaign_target":
-            df.to_sql("campaign_target", conn, if_exists='append',index=False)
-        elif table == "optimal_weight":
-            df.to_sql("optimal_weight", conn, if_exists='append',index=False)
-        elif table == "adset_score":
-            df.to_sql("adset_score", conn, if_exists='append',index=False)
+        df.to_sql(table, conn, if_exists='append',index=False)
+        engine.dispose()
             
 def insert_release_result( campaign_id, mydict, datetime ):
     mydb = connectDB(DATABASE)
@@ -327,6 +249,8 @@ def insert_release_result( campaign_id, mydict, datetime ):
     val = ( campaign_id, mydict, datetime )
     mycursor.execute(sql, val)
     mydb.commit()
+    mycursor.close()
+    mydb.close()
     return
 
 def get_release_result( campaign_id ):
@@ -335,6 +259,8 @@ def get_release_result( campaign_id ):
     mycursor.execute( "SELECT result FROM release_ver_result WHERE campaign_id=%s ORDER BY request_time DESC LIMIT 1" % (campaign_id) )
     results = mycursor.fetchall()
     results = str(results[0][0], encoding='utf-8')
+    mycursor.close()
+    mydb.close()
     return results
 
 
@@ -345,6 +271,8 @@ def insert_release_default( campaign_id, mydict, datetime ):
     val = ( campaign_id, mydict, datetime )
     mycursor.execute(sql, val)
     mydb.commit()
+    mycursor.close()
+    mydb.close()
     return
 
 def get_release_default( campaign_id ):
@@ -353,15 +281,43 @@ def get_release_default( campaign_id ):
     mycursor.execute( "SELECT default_price FROM release_default_price WHERE campaign_id=%s ORDER BY request_time DESC LIMIT 1" % (campaign_id) )
     default = mycursor.fetchall()
     default = str(default[0][0], encoding='utf-8')
+    mycursor.close()
+    mydb.close()
     return default
 
 def check_release_default_price(campaign_id):
     mydb = connectDB(DATABASE)
     df = pd.read_sql( "SELECT * FROM release_default_price WHERE campaign_id=%s" % (campaign_id), con=mydb )
+    mydb.close()
     if df.empty:
         return True
     else:
         return False
 
+def update_init_bid(adset_id, init_bid):
+    mydb = connectDB(DATABASE)
+    mycursor = mydb.cursor()
+    sql = "UPDATE adset_insights SET bid_amount={} WHERE adset_id={} LIMIT 1".format(init_bid, adset_id)
+    mycursor.execute(sql)
+    mydb.commit()
+    mycursor.close()
+    mydb.close()
+    return
+    
+def update_init_bid_by_campaign(campaign_id):
+    df_camp = get_campaign_target(campaign_id)
+    init_bid = input("type init_bid u want to change:")
+    adset_list = Campaigns(campaign_id, df_camp['charge_type'].iloc[0]).get_adsets()
+    for adset_id in adset_list:
+        update_init_bid( int(adset_id), init_bid )
+    mydb.close()
+    return
+
 if __name__=="__main__":
-    get_campaign_target()
+#     get_campaign_target()
+    from facebook_datacollector import Campaigns
+    campaign_id = input("input campaign_id u want to change:")
+    update_init_bid_by_campaign(campaign_id)
+    
+    
+    

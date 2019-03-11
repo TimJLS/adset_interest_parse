@@ -221,6 +221,7 @@ def duplicate_high_rank_adset(fb, campaign=None, charge_type=None, name_copy=Fal
                 init_bid = fb.init_bid_dict[ int(adset_id) ]
             except:pass
             duplicate_asset_by_more_target( int(adset_id), init_bid, bid_adjust=True, split_age=False )
+            update_status(adset_id, status=AdSet.Status.active)
     else:
         for adset_id in adset_list:
             try:
@@ -231,7 +232,7 @@ def duplicate_high_rank_adset(fb, campaign=None, charge_type=None, name_copy=Fal
 
 def adjust_init_bid_of_adset(campaign, fb):
     adset_list = get_sorted_adset(campaign)
-
+    
     for adset_id in adset_list:
         
         if check_adset_name(adset_id) is True:
@@ -249,15 +250,15 @@ def adjust_init_bid_of_adset(campaign, fb):
 
 def get_sorted_adset(campaign):
     mydb=mysql_adactivity_save.connectDB(DATABASE)
-    try:
-        df = pd.read_sql("select * from adset_score where campaign_id=%s" %(campaign), con=mydb)
-        df = df[df.request_time.dt.date==DATE].sort_values(by=['score'], ascending=False)
-        adset_list = df['adset_id']
-        assert adset_list, 'Empty List'
-    except:
-        df_camp = mysql_adactivity_save.get_campaign_target(campaign)
-        charge_type = df_camp['charge_type'].iloc[0]
-        adset_list = Campaigns(campaign, charge_type).get_adsets()
+#     try:
+    df = pd.read_sql("select * from adset_score where campaign_id=%s" %(campaign), con=mydb)
+    df = df[df.request_time.dt.date==DATE].sort_values(by=['score'], ascending=False)
+    adset_list = df['adset_id']
+#     assert adset_list, 'Empty List'
+#     except:
+#         df_camp = mysql_adactivity_save.get_campaign_target(campaign)
+#         charge_type = df_camp['charge_type'].iloc[0]
+#         adset_list = Campaigns(campaign, charge_type).get_adsets()
     return adset_list
 
 def main(campaign):
@@ -265,18 +266,19 @@ def main(campaign):
     charge_type = df['charge_type'].iloc[0]
 
     daily_charge = df['daily_charge'].iloc[0]
-    day_dict = Campaigns( campaign, charge_type ).to_campaign(date_preset=DatePreset.today)
+    day_dict = Campaigns( campaign, charge_type ).to_campaign(date_preset=DatePreset.yesterday)
     lifetime_dict = Campaigns( campaign, charge_type ).to_campaign(date_preset=DatePreset.lifetime)
     try:target = int( day_dict['target'] )
-    except:target = 10000
+    except:target = 0
     fb = FacebookCampaignAdapter(campaign)
     fb.get_df()
     fb.get_bid()
     fb.get_campaign_days_left()
     campaign_days_left = fb.campaign_days_left
     achieving_rate = target / daily_charge
+#     print(target, daily_charge)
     print('[campaign_id]', campaign, '[achieving rate]', achieving_rate, target, daily_charge)
-       
+    bid_adjust=None
     if charge_type == 'CONVERSIONS':
         name_copy=True
         split_age=False
@@ -289,8 +291,7 @@ def main(campaign):
             
     elif achieving_rate < ACTION_BOUNDARY:
         bid_adjust=True
-#         adjust_init_bid_of_adset(campaign, fb)
-    duplicate_high_rank_adset(fb, campaign=campaign, charge_type=charge_type, name_copy=split_age, split_age=split_age, bid_adjust=bid_adjust)
+    duplicate_high_rank_adset(fb, campaign=campaign, charge_type=charge_type, name_copy=name_copy, split_age=split_age, bid_adjust=bid_adjust)
 #     try:
 #         duplicate_high_rank_adset(fb, campaign=campaign, charge_type=charge_type, name_copy=split_age, split_age=split_age, bid_adjust=bid_adjust)
 #         adjust_init_bid_of_adset(campaign, fb)
@@ -316,7 +317,7 @@ def check_status(adset_id):
 
 def split_adset_list(adset_list):
     import math
-    adset_list.sort(reverse=True)
+    adset_list.to_list().sort(reverse=True)
     half = math.ceil( len(adset_list) / 2 )
     return adset_list[:half], adset_list[half:]
 
@@ -330,6 +331,8 @@ if __name__=='__main__':
     df_camp = conversion_index_collector.get_campaign_target()    
     for campaign_id in df_camp.campaign_id.unique():
         main(campaign_id)
+    import gc
+    gc.collect()
 
 
 

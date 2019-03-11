@@ -258,6 +258,7 @@ class ObjectiveFunc(object):
         )
         df = pd.merge( df, df_metrics, on=['campaign_id'] )
         df = df.convert_objects(convert_numeric=True)
+        self.mydb.close()
         return df
     
     def adset_status( self, adset_id ):
@@ -265,6 +266,7 @@ class ObjectiveFunc(object):
 
         df_adset = pd.read_sql("SELECT * FROM adset_conversion_metrics WHERE adset_id={} ORDER BY request_time DESC LIMIT 1".format(adset_id), con=self.mydb)
         df_adset.fillna(value=0, inplace=True)
+        self.mydb.close()
         return df_adset
 
 def ga_optimal_weight(campaign_id, df_weight):
@@ -304,7 +306,8 @@ if __name__ == "__main__":
         print('optimal_weight:', optimal)
         print(datetime.datetime.now()-starttime)    
     print(datetime.datetime.now()-starttime)
-
+    import gc
+    gc.collect()
 
 # In[12]:
 

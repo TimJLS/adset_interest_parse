@@ -232,18 +232,18 @@ class ObjectiveFunc(object):
         return r  
 
     def account_status( campaign_id ):
-        mydb = mysql_adactivity_save.connectDB( "Facebook" )
+        mydb = mysql_adactivity_save.connectDB( "dev_facebook_test" )
         df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id=%s" %(campaign_id), con=mydb)
         df_camp['charge_per_day'] = df_camp['target']/df_camp['period']
         df_camp['campaign_bid'] = df_camp['spend_cap']/df_camp['target']
         charge_type = df_camp['charge_type'].iloc[0]
         acc_id = facebook_datacollector.Campaigns(campaign_id, charge_type).get_account_id()
         insights = facebook_datacollector.Accounts( "act_"+ str(acc_id) ).get_account_insights()
-        for insight in insights:
-            spend = int( insight.get("spend") )
-            account_cpc = float( insight.get("cpc") )
-            account_charge = int( insight.get("clicks") )
-            impressions = int( insight.get("impressions") )
+            
+        spend = int( insights.get("spend") )
+        account_cpc = float( insights.get("cpc") )
+        account_charge = int( insights.get("clicks") )
+        impressions = int( insights.get("impressions") )
         df=pd.DataFrame(
             {
                 'campaign_id':[campaign_id],
@@ -258,10 +258,11 @@ class ObjectiveFunc(object):
             }
         )
         df = df.convert_objects(convert_numeric=True)
+        mydb.close()
         return df
     
     def campaign_status( campaign_id ):
-        mydb = mysql_adactivity_save.connectDB( "Facebook" )
+        mydb = mysql_adactivity_save.connectDB( "dev_facebook_test" )
         df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id=%s" %(campaign_id), con=mydb)
         df_camp['charge_per_day'] = df_camp['target']/df_camp['period']
         df_camp['campaign_bid'] = df_camp['spend_cap']/df_camp['target']
@@ -277,10 +278,11 @@ class ObjectiveFunc(object):
                              'impressions':[impressions], 'campaign_bid':[df_camp['campaign_bid'].iloc[0]], 'spend':[spend],
                              'daily_budget':[df_camp['budget_per_day'].iloc[0]], 'charge_per_day':[df_camp['charge_per_day'].iloc[0]], 'budget_per_day':[df_camp['budget_per_day'].iloc[0]]})
         df = df.convert_objects(convert_numeric=True)
+        mydb.close()
         return df
     
     def adset_status( adset_id ):
-        mydb = mysql_adactivity_save.connectDB( "Facebook" )
+        mydb = mysql_adactivity_save.connectDB( "dev_facebook_test" )
 
         df=pd.DataFrame({'adset_id':[],'target':[], 'impressions':[], 'bid_amount':[]})
         
@@ -299,11 +301,12 @@ class ObjectiveFunc(object):
         df = pd.concat([df, df_status], ignore_index=True, sort=True)
 #         print(ad_id)
 #         print(df[['adset_id', 'charge', 'charge_cpc','bid_amount', 'impressions', 'spend']])
+        mydb.close()
         return df
 
 def ga_optimal_weight(campaign_id):
     request_time = datetime.datetime.now().date()
-    mydb = mysql_adactivity_save.connectDB( "Facebook" )
+    mydb = mysql_adactivity_save.connectDB( "dev_facebook_test" )
     df_weight = pd.read_sql("SELECT * FROM optimal_weight WHERE campaign_id=%s " %(campaign_id), con=mydb)
     df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id=%s " %(campaign_id), con=mydb)
     charge_type = df_camp['charge_type'].iloc[0]
@@ -332,6 +335,7 @@ def ga_optimal_weight(campaign_id):
 #             mysql_adactivity_save.intoDB("adset_score", df_final)
 #         except:
 #             pass
+    mydb.close()
     return
 
 if __name__ == "__main__":
@@ -361,7 +365,8 @@ if __name__ == "__main__":
         print('optimal_weight:', optimal)
         print(datetime.datetime.now()-starttime)    
     print(datetime.datetime.now()-starttime)
-
+    import gc
+    gc.collect()
 #     global df
 #     df = ObjectiveFunc.account_status(23843269222010540)
 #     bound = np.tile([[0], [1]], vardim)

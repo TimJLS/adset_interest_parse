@@ -379,6 +379,8 @@ def data_collect( campaign_id, total_clicks, charge_type ):
         adset_dict['campaign_id'] = campaign_id
         df_adset = pd.DataFrame(adset_dict, index=[0])
         insertion("adset_conversion_metrics", df_adset)
+        del adset
+    del camp
     update_campaign_target(df_camp)
     check_conv_metrics(campaign_id, campaign_conv_metrics)
     return
@@ -420,6 +422,7 @@ def insertion(table, df):
     engine = create_engine( 'mysql://{}:{}@{}/{}'.format(USER, PASSWORD, HOST, DATABASE) )
     with engine.connect() as conn, conn.begin():
         df.to_sql(table, conn, if_exists='append',index=False)
+        engine.dispose()
 
 
 # In[11]:
@@ -448,6 +451,8 @@ def update_campaign_target(df_camp):
     )
     mycursor.execute(sql, val)
     mydb.commit()
+    mycursor.close()
+    mydb.close()
     return
 
 
@@ -462,6 +467,8 @@ def check_conv_metrics(campaign_id, campaign_conv_metrics):
         engine = create_engine( 'mysql://{}:{}@{}/{}'.format(USER, PASSWORD, HOST, DATABASE) )
         with engine.connect() as conn, conn.begin():
             df_camp.to_sql("campaign_conversion_metrics", conn, if_exists='append',index=False)
+            engine.dispose()
+        mydb.close()
         return False
     else:
         try:
@@ -486,6 +493,8 @@ def check_conv_metrics(campaign_id, campaign_conv_metrics):
             mycursor = mydb.cursor()
             mycursor.execute(sql, val)
             mydb.commit()
+            mycursor.close()
+            mydb.close()
             return True
         except:
             pass
@@ -494,10 +503,13 @@ def check_optimal_weight(campaign_id, df):
     mydb = connectDB(DATABASE)
 
     df_check = pd.read_sql( "SELECT * FROM conversion_optimal_weight WHERE campaign_id=%s" % (campaign_id), con=mydb )
+    
     if df_check.empty:
         engine = create_engine( 'mysql://{}:{}@{}/{}'.format(USER, PASSWORD, HOST, DATABASE) )
         with engine.connect() as conn, conn.begin():
             df.to_sql("conversion_optimal_weight", conn, if_exists='append',index=False)
+            engine.dispose()
+        mydb.close()
         return 
     else:
         mycursor = mydb.cursor()
@@ -516,6 +528,8 @@ def check_optimal_weight(campaign_id, df):
         )
         mycursor.execute(sql, val)
         mydb.commit()
+        mycursor.close()
+        mydb.close()
         return
 
 # In[13]:
@@ -533,6 +547,7 @@ def get_campaign_target():
         if stop_time >= request_time and start_time <= request_time:
             df_temp = df[df.campaign_id==campaign_id]
             df_camp = pd.concat([df_camp, df_temp])
+    mydb.close()
     return df_camp
 '''
 for testing
@@ -547,7 +562,7 @@ for testing
 
 def main():
     start_time = datetime.datetime.now()
-    FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
+    
     df_camp = get_campaign_target()
     for campaign_id in df_camp.campaign_id.unique():
         destination = df_camp[df_camp.campaign_id==campaign_id].destination.iloc[0]
@@ -555,13 +570,15 @@ def main():
         print(campaign_id, df_camp[df_camp.campaign_id==campaign_id].charge_type.iloc[0])
         data_collect( campaign_id, destination, charge_type )#存資料
     print(datetime.datetime.now()-start_time)
-
+    import gc
+    gc.collect()
 
 # In[15]:
 
 
     
 if __name__ == "__main__":
+    FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
     main()
 
 

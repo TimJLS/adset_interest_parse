@@ -98,9 +98,13 @@ def opt_api(request):
                 mydict = amobee_db.get_default( campaign_id )
                 return JsonResponse( json.loads(mydict), safe=False )
         elif campaign_id:
-            mydict = mysql_adactivity_save.get_default( campaign_id ) #new version
-            mydict = mysql_adactivity_save.get_release_default( campaign_id )#release version
+            try:
+#                         mydict = mysql_adactivity_save.get_result( campaign_id ) #new version
+                mydict = mysql_adactivity_save.get_release_result( campaign_id ) #release version
+            except:
+#                         mydict = mysql_adactivity_save.get_default( campaign_id ) #new version
+                mydict = mysql_adactivity_save.get_release_default( campaign_id )#release version
             return JsonResponse( json.loads(mydict), safe=False )
-        else:
-            return JsonResponse( {}, safe=False )
+    else:
+        return JsonResponse( {}, safe=False )
         

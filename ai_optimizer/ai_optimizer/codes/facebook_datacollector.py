@@ -47,6 +47,7 @@ adset_field = {
     'bid_amount': AdSet.Field.bid_amount,
     'daily_budget': AdSet.Field.daily_budget,
     'targeting': AdSet.Field.targeting,
+    'status': AdSet.Field.status
 }
 campaign_insights = {
     'campaign_id': AdsInsights.Field.campaign_id,
@@ -85,6 +86,7 @@ class Field:
     age_min = 'age_min'
     flexible_spec = 'flexible_spec'
     geo_locations = 'geo_locations'
+    status = 'status'
     conversion_values = 'conversion_values'
     conversions = 'conversions'
     cost_per_10_sec_video_view = 'cost_per_10_sec_video_view'
@@ -220,17 +222,16 @@ class Campaigns(object):
             fields=list( general_insights.values() )+list( target_insights.values() )
         )
         if bool(insights):
+            spend = int( insights[0].get( Field.spend ) )
             self.campaign_insights.update( {'cost_per_target':0} )
             self.campaign_insights.update( {'target':0} )
             try:
                 for act in insights[0].get( Field.actions ):
                     if act["action_type"] == campaign_objective[ self.charge_type ]:
-                        target = act["value"]
+                        target = int( act["value"] )
                         self.campaign_insights.update( {'target':target} )
-                for act in insights[0].get( Field.cost_per_action_type ):
-                     if act["action_type"] == campaign_objective[ self.charge_type ]:
-                        cost_per_target = act["value"]
-                        self.campaign_insights.update( {'cost_per_target':cost_per_target} )
+                        self.campaign_insights.update( {'cost_per_target':spend/target} )
+                        
             except:
                 print('pass')
                 pass
@@ -305,6 +306,12 @@ class AdSets(object):
                 self.adset_features.update( { Field.geo_locations: str( adsets.get( Field.targeting ).get( Field.geo_locations ) ) } )
             else:
                 self.adset_features.update( { k:adsets.get(k) } )
+        self.status = self.adset_features.pop( Field.status )
+        self.adset_features.update( { Field.status: self.status } )
+        if self.status == 'ACTIVE':
+            self.status = True
+        elif self.status == 'PAUSED':
+            self.status = False
         return self.adset_features
     
     def get_adset_insights( self, date_preset=None ):
@@ -317,17 +324,15 @@ class AdSets(object):
             fields=list( general_insights.values() )+list( target_insights.values() )
         )
         if bool(insights):
+            spend = int( insights[0].get( Field.spend ) )
             self.adset_insights.update( {'target':'0'} )
             self.adset_insights.update( {'cost_per_target':'0'} )
             try:
                 for act in insights[0].get( Field.actions ):
                      if act["action_type"] == campaign_objective[ self.charge_type ]:
-                        target = act["value"]
+                        target = int( act["value"] )
                         self.adset_insights.update( {'target':target} )
-                for act in insights[0].get( Field.cost_per_action_type ):
-                     if act["action_type"] == campaign_objective[ self.charge_type ]:
-                        cost_per_target = act["value"]
-                        self.adset_insights.update( {'cost_per_target':cost_per_target} )
+                        self.adset_insights.update( {'cost_per_target':spend/target} )
             except:
                 pass
             finally:
@@ -399,7 +404,8 @@ def make_default( campaign_id, charge_type ):
     result={ "media": "Facebook", "campaign_id": campaign_id, "contents":[] }
     release_version_result = {  }
     for adset_id in adset_list:
-        adset_dict = AdSets(adset_id, charge_type).to_adset()
+        adset = AdSets(adset_id, charge_type)
+        adset_dict = adset.to_adset()
         if not bool(adset_dict):
             pass
         else:
@@ -410,14 +416,15 @@ def make_default( campaign_id, charge_type ):
                     "adset_id": str( adset_id ),
                 }
             )
-            ad_list = AdSets(adset_id, charge_type).get_ads()
+            ad_list = adset.get_ads()
             for ad in ad_list:
                 release_version_result.update(
                     {
                         str( ad ):{
                             "pred_cpc": str( adset_dict['bid_amount'] ),
                             "pred_budget": str( adset_dict['daily_budget'] ),
-                            "adset_id": str( adset_id ),   
+                            "adset_id": str( adset_id ),
+                            "status": adset.status
                         }
                     } 
                 )
@@ -445,3 +452,5 @@ def main():
     
 if __name__ == "__main__":
     main()
+    import gc
+    gc.collect()
