@@ -158,7 +158,7 @@ def get_campaign():
 
 def check_optimal_weight(campaign_id, df):
     mydb = connectDB(DATABASE)
-    df_check = pd.read_sql( "SELECT * FROM optimal_weight WHERE campaign_id=%s" % (campaign_id), con=mydb )
+    df_check = pd.read_sql( "SELECT * FROM optimal_weight WHERE campaign_id={}".foramt(campaign_id), con=mydb )
 #     print(type(campaign_id.astype(dtype=object)))
     if df_check.empty:
         engine = create_engine( 'mysql://app:adgeek1234@aws-dev-ai-private.adgeek.cc/dev_facebook_test' )
@@ -308,6 +308,17 @@ def update_init_bid(adset_id, init_bid):
     mydb.commit()
     mycursor.close()
     mydb.close()
+    return
+
+def check_initial_bid(adset_id, df):
+    mydb = connectDB(DATABASE)
+    df_check = pd.read_sql( "SELECT * FROM adset_initial_bid WHERE adset_id={}".format(adset_id), con=mydb )
+#     print(type(campaign_id.astype(dtype=object)))
+    if df_check.empty:
+        engine = create_engine( 'mysql://app:adgeek1234@aws-dev-ai-private.adgeek.cc/dev_facebook_test' )
+        with engine.connect() as conn, conn.begin():
+            df.to_sql( "adset_initial_bid", conn, if_exists='append',index=False )
+        engine.dispose()
     return
     
 def update_init_bid_by_campaign(campaign_id):

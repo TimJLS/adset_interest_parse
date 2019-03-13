@@ -35,19 +35,20 @@ class FacebookCampaignAdapter(object):
         self.last_bid_dict = dict()
         
     def get_df(self):
-        self.df_camp = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id=%s" %( self.campaign_id ), con=self.mydb )
+        self.df_camp = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id={}".format( self.campaign_id ), con=self.mydb )
 #         self.df_ad = pd.read_sql( "SELECT * FROM ad_insights where campaign_id = %s ORDER BY request_time DESC LIMIT %s" %( self.campaign_id, self.limit ), con=self.mydb )
-        self.df_ad = pd.read_sql( "SELECT * FROM adset_insights where campaign_id = %s" %( self.campaign_id ), con=self.mydb )
+        self.df_ad = pd.read_sql( "SELECT * FROM adset_insights where campaign_id={}".format( self.campaign_id ), con=self.mydb )
         return
     
     def get_bid(self):
 #             print(len(adset_list), self.campaign_id)
-        sql = "SELECT adset_id, bid_amount, request_time FROM adset_insights WHERE campaign_id=%s ;" % ( self.campaign_id )
+        sql = "SELECT adset_id, bid_amount, request_time FROM adset_insights WHERE campaign_id={} ;".format( self.campaign_id )
         df_adset = pd.read_sql( sql, con=self.mydb )
+        df_init_bid = pd.read_sql( "SELECT * FROM adset_initial_bid WHERE campaign_id={} ;".format( self.campaign_id ), con=self.mydb )
 #         adset_list = df_adset['adset_id'].unique()
         self.get_adset_list()
         for adset in self.adset_list:
-            init_bid = df_adset[BID_AMOUNT][df_adset.adset_id==adset].head(1).iloc[0].astype(dtype=object)
+            init_bid = df_init_bid[BID_AMOUNT][df_init_bid.adset_id==adset].head(1).iloc[0].astype(dtype=object)
             last_bid = df_adset[BID_AMOUNT][df_adset.adset_id==adset].tail(1).iloc[0].astype(dtype=object)
             self.init_bid_dict.update({ adset: init_bid })
             self.last_bid_dict.update({ adset: last_bid })
@@ -193,7 +194,7 @@ def main():
             media = result['media']
             bid = bid_operator.adjust(media, **status)
             result['contents'].append(bid)
-
+            print(status)
             adset = AdSets(adset, charge_type)
             adset.get_adset_features()
             ad_list = adset.get_ads()
@@ -202,11 +203,10 @@ def main():
             bid["status"] = adset.status
             for ad in ad_list:
                 release_version_result.update( { ad: bid } )
-                print({ ad: bid })
+#                 print({ ad: bid })
             del s
         mydict_json = json.dumps(result)
         release_json = json.dumps(release_version_result)
-        print(release_json)
         mysql_adactivity_save.insert_result( campaign_id, mydict_json, datetime.datetime.now() )
         mysql_adactivity_save.insert_release_result( campaign_id, release_json, datetime.datetime.now() )
         del fb

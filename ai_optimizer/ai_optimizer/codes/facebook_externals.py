@@ -30,6 +30,7 @@ from facebook_datacollector import Campaigns
 from facebook_datacollector import Field
 from facebook_datacollector import DatePreset
 from facebook_adapter import FacebookCampaignAdapter
+from facebook_adapter import FacebookAdSetAdapter
 import mysql_adactivity_save
 from bid_operator import *
 import math
@@ -130,6 +131,7 @@ def config_adset_params_by_age(new_adset_id, age_max, age_min, init_bid=None):
         ad_object = Ad(ad_id)
         ad_object['status'] = Ad.Status.active
         ad_object.remote_update()
+    print(new_adset_id, init_bid)
     return adset_params
 
 def async_copy_adset(adset_id_which_want_copy):
@@ -161,7 +163,10 @@ def retrieve_copied_adset_id(session_id):
     copied_adset_id = json.loads( json.loads( r.text )['result'] )['copied_adset_id']
     return copied_adset_id
 
-def duplicate_asset_by_more_target(adset_id_which_want_copy, init_bid=None, bid_adjust=False, split_age=False):
+def duplicate_asset_by_more_target(adset_id_which_want_copy,
+                                   init_bid=None,
+                                   bid_adjust=False,
+                                   split_age=False):
     # duplicate more age target , use original age interval
     ad_set = AdSet(adset_id_which_want_copy)
     ad_set_data = ad_set.remote_read(fields = [AdSet.Field.targeting])
@@ -179,7 +184,7 @@ def duplicate_asset_by_more_target(adset_id_which_want_copy, init_bid=None, bid_
     current_adset_max = current_adset_min + age_interval
     
     init_bid = check_init_bid(init_bid)
-    init_bid = math.ceil( init_bid + BID_RANGE*init_bid*( normalized_sigmoid_fkt(CENTER, WIDTH, 0) - 0.5 ) )
+#     init_bid = math.ceil( init_bid + BID_RANGE*init_bid*( normalized_sigmoid_fkt(CENTER, WIDTH, 0) - 0.5 ) )
     
     for i in range(interval_count):
 #         try:
@@ -188,6 +193,7 @@ def duplicate_asset_by_more_target(adset_id_which_want_copy, init_bid=None, bid_
 #         except:
         new_adset_id = copy_adset(adset_id_which_want_copy) #sync copy 
         if new_adset_id is not None:
+            
             if bid_adjust is True and init_bid is not None:
                 adset_params = config_adset_params_by_age(new_adset_id, current_adset_max, current_adset_min, init_bid)
             else:
@@ -224,18 +230,28 @@ def duplicate_high_rank_adset(fb, campaign=None, charge_type=None, name_copy=Fal
                 adset_list.remove(adset_id)
 
     if charge_type == 'CONVERSIONS':
-        for adset_id in adset_for_off:
-            update_status(adset_id, status=AdSet.Status.paused)
+#         for adset_id in adset_for_off:
+#             update_status(adset_id, status=AdSet.Status.paused)
         for adset_id in adset_for_copy:
+            s = FacebookAdSetAdapter( adset_id, fb )
+            status = s.retrieve_adset_attribute()
+            status['adset_progress'] = 0.0
+            status['campaign_progress'] = 0.0
             try:
                 init_bid = fb.init_bid_dict[ int(adset_id) ]
+                init_bid = adjust("Facebook", **status)['bid']
             except:pass
             duplicate_asset_by_more_target( int(adset_id), init_bid, bid_adjust=True, split_age=False )
             update_status(adset_id, status=AdSet.Status.active)
     else:
         for adset_id in adset_list:
+            s = FacebookAdSetAdapter( adset_id, fb )
+            status = s.retrieve_adset_attribute()
+            status['adset_progress'] = 0.0
+            status['campaign_progress'] = 0.0
             try:
                 init_bid = fb.init_bid_dict[ int(adset_id) ]
+                init_bid = adjust("Facebook", **status)['bid']
             except:pass
             duplicate_asset_by_more_target( int(adset_id), init_bid, bid_adjust=True, split_age=True )
     return
@@ -281,9 +297,7 @@ def main(campaign):
     try:target = int( day_dict['target'] )
     except:target = 0
     fb = FacebookCampaignAdapter(campaign)
-    fb.get_df()
-    fb.get_bid()
-    fb.get_campaign_days_left()
+    fb.retrieve_campaign_attribute()
     campaign_days_left = fb.campaign_days_left
     achieving_rate = target / daily_charge
 #     print(target, daily_charge)
@@ -341,8 +355,8 @@ if __name__=='__main__':
 #     df_camp = conversion_index_collector.get_campaign_target()    
 #     for campaign_id in df_camp.campaign_id.unique():
 #         main(campaign_id)
-    copy_adset(23843950299850337)
-#     main(23843950299930337)
+    
+    main(23843301261480540)
     import gc
     gc.collect()
 
