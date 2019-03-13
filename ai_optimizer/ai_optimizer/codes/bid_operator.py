@@ -24,6 +24,10 @@ CENTER = 1
 WIDTH = 10
 BID_RANGE = 0.8
 
+def reverse_bid_amount(bid_amount):
+    init_bid = bid_amount / ( BID_RANGE * ( normalized_sigmoid_fkt(CENTER, WIDTH, 0) - 0.5 ) + 1 )
+    return init_bid
+
 def normalized_sigmoid_fkt(center, width, progress):
     s= 1/( 1 + np.exp( width * ( progress-center ) ) )
     return s

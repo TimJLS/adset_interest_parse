@@ -11,7 +11,10 @@ import copy
 import matplotlib.pyplot as plt
 import pandas as pd
 import conversion_index_collector
+import facebook_adapter
+import datetime
 sizepop, vardim, MAXGEN, params = 2000, 8, 30, [0.9, 0.1, 0.5]
+DATE = datetime.datetime.now().date() - datetime.timedelta(1)
 class GeneticAlgorithm(object):
     '''
     The class for genetic algorithm
@@ -194,7 +197,7 @@ class GAIndividual(object):
         rnd = np.random.random(size=len)
         self.chrom = np.zeros(len)
         for i in range(0, len):
-            self.chrom[i] = self.bound[0, i] +                 (self.bound[1, i] - self.bound[0, i]) * rnd[i]
+            self.chrom[i] = self.bound[0, i] + (self.bound[1, i] - self.bound[0, i]) * rnd[i]
     def calculateFitness(self):
         '''
         calculate the fitness of the chromsome
@@ -224,6 +227,9 @@ class ObjectiveFunc(object):
         return r
 
     def adset_fitness(optimal_weight, df):
+        if df.empty:
+            return [-100]
+        df.fillna(0)
         m1 = df['purchase'] / df['initiate_checkout']
         m2 = df['initiate_checkout'] / df['add_to_cart']
         m3 = df['add_to_cart'] / df['view_content']
@@ -232,14 +238,15 @@ class ObjectiveFunc(object):
         m6 = df['link_click'] / df['impressions']
         m_spend = -( df['daily_budget'] - df['spend'] ) / df['daily_budget']
         m_bid   = ( df['bid_amount'] - df['cost_per_purchase'] ) / df['bid_amount']
-
-        status  = np.array( [m1, m2, m3, m4, m5, m6, m_spend, m_bid] )
+#         print(m1.iloc[0], m2.iloc[0], m3.iloc[0], m4.iloc[0], m5.iloc[0], m6.iloc[0], m_spend.iloc[0], m_bid.iloc[0])
+        status  = np.array( [m1.iloc[0], m2.iloc[0], m3.iloc[0], m4.iloc[0], m5.iloc[0], m6.iloc[0], m_spend.iloc[0], m_bid.iloc[0]] )
         r = np.dot( optimal_weight, status )
         return r
     
     def campaign_status( self, campaign_id ):
         df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id={}" .format(campaign_id), con=self.mydb)
         df_metrics = pd.read_sql("SELECT * FROM campaign_conversion_metrics WHERE campaign_id={}" .format(campaign_id), con=self.mydb)
+#         df_metrics = df_metrics[ df_metrics.request_time.dt.date==DATE ]
         df_camp['campaign_bid'] = df_camp['spend_cap']/df_camp['target']
         self.charge_type = df_camp['charge_type'].iloc[0]
 
@@ -264,7 +271,8 @@ class ObjectiveFunc(object):
     def adset_status( self, adset_id ):
         df=pd.DataFrame({'adset_id':[],'target':[], 'impressions':[], 'bid_amount':[]})
 
-        df_adset = pd.read_sql("SELECT * FROM adset_conversion_metrics WHERE adset_id={} ORDER BY request_time DESC LIMIT 1".format(adset_id), con=self.mydb)
+        df_adset = pd.read_sql("SELECT * FROM adset_conversion_metrics WHERE adset_id={}".format(adset_id), con=self.mydb)
+        df_adset = df_adset[ df_adset.request_time.dt.date==DATE ].tail(1)
         df_adset.fillna(value=0, inplace=True)
         self.mydb.close()
         return df_adset
@@ -275,7 +283,7 @@ def ga_optimal_weight(campaign_id, df_weight):
 #     df_weight = pd.read_sql("SELECT * FROM conversion_optimal_weight WHERE campaign_id={}".format(campaign_id), con=mydb)
     df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id={}".format(campaign_id), con=mydb)
     charge_type = df_camp['charge_type'].iloc[0]
-    adset_list = conversion_index_collector.Campaigns(campaign_id, charge_type).get_adsets()
+    adset_list = facebook_adapter.FacebookCampaignAdapter(campaign_id).get_adset_list()
     for adset_id in adset_list:
         df = ObjectiveFunc().adset_status( adset_id )
         r = ObjectiveFunc.adset_fitness( df_weight, df )
@@ -283,6 +291,7 @@ def ga_optimal_weight(campaign_id, df_weight):
         df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'score':r[0], 'request_time':request_time}, index=[0])
 
         conversion_index_collector.insertion("adset_score", df_final)
+    mydb.close()
 
 if __name__ == "__main__":
     import datetime
@@ -291,7 +300,7 @@ if __name__ == "__main__":
     for camp_id in campaign_list:
         print('campaign_id:', camp_id )
         global df
-        df = ObjectiveFunc().campaign_status(23843269222010540)
+        df = ObjectiveFunc().campaign_status(camp_id)
         bound = np.tile([[0], [10]], vardim)
         ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
         optimal = ga.solve()
@@ -299,10 +308,10 @@ if __name__ == "__main__":
         weight_columns=['w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w_spend', 'w_bid']
         df_weight = pd.DataFrame(data=[optimal], columns=weight_columns, index=[0])
 
-        df_final = pd.DataFrame({'campaign_id':23843269222010540, 'score':score}, columns=['campaign_id', 'score'], index=[0])
+        df_final = pd.DataFrame({'campaign_id':camp_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
         df_final = pd.concat( [df_weight, df_final], axis=1, sort=True, ignore_index=False)
-        conversion_index_collector.check_optimal_weight(23843269222010540, df_final)
-        ga_optimal_weight(23843269222010540, df_weight)
+        conversion_index_collector.check_optimal_weight(camp_id, df_final)
+        ga_optimal_weight(camp_id, df_weight)
         print('optimal_weight:', optimal)
         print(datetime.datetime.now()-starttime)    
     print(datetime.datetime.now()-starttime)

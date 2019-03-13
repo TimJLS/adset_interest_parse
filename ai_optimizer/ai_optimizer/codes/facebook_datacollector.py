@@ -18,6 +18,8 @@ import json
 import datetime
 import pandas as pd
 import mysql_adactivity_save
+from bid_operator import *
+import math
 
 campaign_objective = {
     'LINK_CLICKS': 'link_click',
@@ -27,7 +29,7 @@ campaign_objective = {
     'APP_INSTALLS': 'app_installs',
     'BRAND_AWARENESS': 'brand_awareness',
     'EVENT_RESPONSES': 'event_responses',
-    'LEAD_GENERATION': 'lead_generation',
+    'LEAD_GENERATION': 'leadgen.other',
     'LOCAL_AWARENESS': 'local_awareness',
     'MESSAGES': 'messages',
     'OFFER_CLAIMS': 'offer_claims',
@@ -312,6 +314,7 @@ class AdSets(object):
             self.status = True
         elif self.status == 'PAUSED':
             self.status = False
+
         return self.adset_features
     
     def get_adset_insights( self, date_preset=None ):
@@ -387,6 +390,7 @@ def data_collect( campaign_id, total_clicks, charge_type ):
         adset_dict = adset.to_adset(date_preset=DatePreset.today)
         adset_dict['request_time'] = datetime.datetime.now()
         adset_dict['campaign_id'] = campaign_id
+        adset_dict['bid_amount'] = math.ceil(reverse_bid_amount(adset_dict['bid_amount']))
         df_adset = pd.DataFrame(adset_dict, index=[0])
         mysql_adactivity_save.intoDB("adset_insights", df_adset)#insert into adset_insights
     df_camp = pd.DataFrame(campaign_dict, index=[0])

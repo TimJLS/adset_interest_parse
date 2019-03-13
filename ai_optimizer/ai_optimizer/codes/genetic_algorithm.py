@@ -239,11 +239,16 @@ class ObjectiveFunc(object):
         charge_type = df_camp['charge_type'].iloc[0]
         acc_id = facebook_datacollector.Campaigns(campaign_id, charge_type).get_account_id()
         insights = facebook_datacollector.Accounts( "act_"+ str(acc_id) ).get_account_insights()
-            
-        spend = int( insights.get("spend") )
-        account_cpc = float( insights.get("cpc") )
-        account_charge = int( insights.get("clicks") )
-        impressions = int( insights.get("impressions") )
+        if bool(insights):
+            spend = int( insights.get("spend") )
+            account_cpc = float( insights.get("cpc") )
+            account_charge = int( insights.get("clicks") )
+            impressions = int( insights.get("impressions") )
+        else:
+            spend = 0
+            account_cpc = 0
+            account_charge = 0
+            impressions = 0
         df=pd.DataFrame(
             {
                 'campaign_id':[campaign_id],
@@ -321,7 +326,6 @@ def ga_optimal_weight(campaign_id):
         df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'score':r, 'request_time':request_time}, index=[0])
 
         mysql_adactivity_save.intoDB("adset_score", df_final)
-        
 #         try:
 # #             print(ad_id)
 #             df = ObjectiveFunc.adset_status(ad_id)

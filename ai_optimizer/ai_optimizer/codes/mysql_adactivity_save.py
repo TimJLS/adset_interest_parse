@@ -125,9 +125,10 @@ def get_campaign_target_dict():
     campaignid_dict=dict()
     campaignid_list = df['campaign_id'].unique()
     for campaign_id in campaignid_list:
-        stop_time = df['stop_time'][df.campaign_id==campaign_id].iloc[0]
-        if stop_time >= request_time:
-            campaignid_dict[campaign_id]=df['destination'][df.campaign_id==campaign_id]
+        campaignid_dict[campaign_id]=df['destination'][df.campaign_id==campaign_id]
+#         stop_time = df['stop_time'][df.campaign_id==campaign_id].iloc[0]
+#         if stop_time >= request_time:
+#             campaignid_dict[campaign_id]=df['destination'][df.campaign_id==campaign_id]
     mydb.close()
     return campaignid_dict
 
@@ -258,11 +259,13 @@ def get_release_result( campaign_id ):
     mycursor = mydb.cursor()
     mycursor.execute( "SELECT result FROM release_ver_result WHERE campaign_id=%s ORDER BY request_time DESC LIMIT 1" % (campaign_id) )
     results = mycursor.fetchall()
-    results = str(results[0][0], encoding='utf-8')
-    mycursor.close()
-    mydb.close()
-    return results
-
+    try:
+        results = str(results[0][0], encoding='utf-8')
+        mycursor.close()
+        mydb.close()
+        return results
+    except:
+        return str(dict())
 
 def insert_release_default( campaign_id, mydict, datetime ):
     mydb = connectDB(DATABASE)
@@ -280,10 +283,13 @@ def get_release_default( campaign_id ):
     mycursor = mydb.cursor()
     mycursor.execute( "SELECT default_price FROM release_default_price WHERE campaign_id=%s ORDER BY request_time DESC LIMIT 1" % (campaign_id) )
     default = mycursor.fetchall()
-    default = str(default[0][0], encoding='utf-8')
-    mycursor.close()
-    mydb.close()
-    return default
+    try:
+        default = str(default[0][0], encoding='utf-8')
+        mycursor.close()
+        mydb.close()
+        return default
+    except:
+        return str(dict())
 
 def check_release_default_price(campaign_id):
     mydb = connectDB(DATABASE)

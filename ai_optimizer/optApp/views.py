@@ -28,7 +28,7 @@ class Field(object):
 
     ad_id = 'ad_id'
     campaign_id = 'campaign_id'
-    target = 'target'
+    target = 'total_clicks'
     charge_type = 'charge_type'
     media = 'media'
 

@@ -84,6 +84,10 @@ class FacebookCampaignAdapter(object):
         return self.campaign_progress
     
     def get_adset_list(self):
+        try:
+            self.df_ad
+        except:
+            self.get_df()
         self.adset_list = self.df_ad[ ADSET_ID ][
             (self.df_ad.status == 'ACTIVE') & (self.df_ad.request_time.dt.date == self.request_time.date() )
         ].unique().tolist()
@@ -134,7 +138,6 @@ class FacebookAdSetAdapter(FacebookCampaignAdapter):
         return self.adset_day_target
     
     def get_adset_performance(self):
-        
         self.adset_performance = self.df_ad[ TARGET ][self.df_ad.adset_id==self.adset_id].iloc[0]
         if math.isnan(self.adset_performance):
             self.adset_performance = 0

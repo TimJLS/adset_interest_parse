@@ -31,6 +31,8 @@ from facebook_datacollector import Field
 from facebook_datacollector import DatePreset
 from facebook_adapter import FacebookCampaignAdapter
 import mysql_adactivity_save
+from bid_operator import *
+import math
 
 campaign_objective = {
     'LINK_CLICKS': 'link_click',
@@ -39,7 +41,7 @@ campaign_objective = {
     'CONVERSIONS':'offsite_conversion',
 }
 DATABASE = 'dev_facebook_test'
-DATE = datetime.datetime.now().date()# - datetime.timedelta(2)
+DATE = datetime.datetime.now().date()# - datetime.timedelta(1)
 ACTION_BOUNDARY = 0.8
 FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
 
@@ -53,13 +55,16 @@ def copy_adset(adset_id):
     params = {
             'deep_copy': True,
     }
-    request.add_params(params)    
+    request.add_params(params)
+#     try:
     response = request.execute()
     response_json = response.json()
 #     print(response_json)
     new_adset_id = response_json.get('copied_adset_id')
 #     print(new_adset_id)
     return new_adset_id
+#     except:
+#         pass
 
 
 def modify_exists_adset(adset_id, adset_params):
@@ -83,7 +88,7 @@ def check_init_bid(init_bid):
     return init_bid
     
 def config_adset_params_by_age(new_adset_id, age_max, age_min, init_bid=None):
-    
+
     fields_adSet = [  AdSet.Field.campaign_id,  AdSet.Field.name, AdSet.Field.bid_amount, AdSet.Field.bid_strategy, AdSet.Field.daily_budget, AdSet.Field.budget_remaining, AdSet.Field.optimization_goal, AdSet.Field.bid_info, AdSet.Field.pacing_type
                     , AdSet.Field.attribution_spec, AdSet.Field.targeting]
     ad_set = AdSet(new_adset_id)
@@ -128,7 +133,7 @@ def config_adset_params_by_age(new_adset_id, age_max, age_min, init_bid=None):
     return adset_params
 
 def async_copy_adset(adset_id_which_want_copy):
-    url = "https://graph.facebook.com/v3.1/{id}/copies".format(id=adset_id_which_want_copy)
+    url = "https://graph.facebook.com/v3.2/{id}/copies".format(id=adset_id_which_want_copy)
     payload = {
         "asyncbatch":[
             {
@@ -136,6 +141,7 @@ def async_copy_adset(adset_id_which_want_copy):
                 "relative_url":"{id}/copies".format(id=adset_id_which_want_copy),
                 "name":"copy_adset_2",
                 "body":"deep_copy=true&status_option=ACTIVE"
+#                 "body":"status_option=ACTIVE"
             }
         ],
         "access_token":my_access_token
@@ -152,7 +158,6 @@ def retrieve_copied_adset_id(session_id):
     r = requests.get(url, headers=headers, params=payload)
     while not bool( json.loads( json.loads( r.text )['result'] ) ):
         r = requests.get (url, headers=headers, params=payload )
-
     copied_adset_id = json.loads( json.loads( r.text )['result'] )['copied_adset_id']
     return copied_adset_id
 
@@ -174,19 +179,24 @@ def duplicate_asset_by_more_target(adset_id_which_want_copy, init_bid=None, bid_
     current_adset_max = current_adset_min + age_interval
     
     init_bid = check_init_bid(init_bid)
+    init_bid = math.ceil( init_bid + BID_RANGE*init_bid*( normalized_sigmoid_fkt(CENTER, WIDTH, 0) - 0.5 ) )
     
     for i in range(interval_count):
-#         new_adset_id = async_copy_adset(adset_id_which_want_copy) #async copy (not available)
+#         try:
+#             print('[async copy success]')
+#             new_adset_id = async_copy_adset(adset_id_which_want_copy) #async copy (not available)
+#         except:
         new_adset_id = copy_adset(adset_id_which_want_copy) #sync copy 
-        if bid_adjust is True and init_bid is not None:
-            adset_params = config_adset_params_by_age(new_adset_id, current_adset_max, current_adset_min, init_bid)
-        else:
-            adset_params = config_adset_params_by_age(new_adset_id, current_adset_max, current_adset_min)
+        if new_adset_id is not None:
+            if bid_adjust is True and init_bid is not None:
+                adset_params = config_adset_params_by_age(new_adset_id, current_adset_max, current_adset_min, init_bid)
+            else:
+                adset_params = config_adset_params_by_age(new_adset_id, current_adset_max, current_adset_min)
 
-        modify_exists_adset(new_adset_id, adset_params)
+            modify_exists_adset(new_adset_id, adset_params)
 
-        current_adset_min += age_interval
-        current_adset_max += age_interval
+            current_adset_min += age_interval
+            current_adset_max += age_interval
 
 def check_adset_name(adset_id_which_want_copy):
     ad_set = AdSet(adset_id_which_want_copy)
@@ -251,7 +261,7 @@ def adjust_init_bid_of_adset(campaign, fb):
 def get_sorted_adset(campaign):
     mydb=mysql_adactivity_save.connectDB(DATABASE)
 #     try:
-    df = pd.read_sql("select * from adset_score where campaign_id=%s" %(campaign), con=mydb)
+    df = pd.read_sql("select * from adset_score where campaign_id={}".format(campaign), con=mydb)
     df = df[df.request_time.dt.date==DATE].sort_values(by=['score'], ascending=False)
     adset_list = df['adset_id']
 #     assert adset_list, 'Empty List'
@@ -328,9 +338,11 @@ def split_adset_list(adset_list):
 if __name__=='__main__':
     import conversion_index_collector
     FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-    df_camp = conversion_index_collector.get_campaign_target()    
-    for campaign_id in df_camp.campaign_id.unique():
-        main(campaign_id)
+#     df_camp = conversion_index_collector.get_campaign_target()    
+#     for campaign_id in df_camp.campaign_id.unique():
+#         main(campaign_id)
+    copy_adset(23843950299850337)
+#     main(23843950299930337)
     import gc
     gc.collect()
 

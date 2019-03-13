@@ -23,7 +23,8 @@ FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
 import json
 import datetime
 import pandas as pd
-
+from bid_operator import *
+import math
 
 # In[2]:
 
@@ -36,7 +37,7 @@ campaign_objective = {
     'APP_INSTALLS': 'app_installs',
     'BRAND_AWARENESS': 'brand_awareness',
     'EVENT_RESPONSES': 'event_responses',
-    'LEAD_GENERATION': 'lead_generation',
+    'LEAD_GENERATION': 'leadgen.other',
     'LOCAL_AWARENESS': 'local_awareness',
     'MESSAGES': 'messages',
     'OFFER_CLAIMS': 'offer_claims',
@@ -309,6 +310,8 @@ class AdSets(object):
             impressions = insights[0].get( Field.impressions )
             self.adset_insights.update( { Field.spend: int(spend) } )
             self.adset_insights.update( { Field.impressions: int(impressions) } )
+        try:
+            insights[0].get( Field.actions )
             for act in insights[0].get( Field.actions ):
                 if act["action_type"] in conversion_metrics:
                     self.adset_insights.update( {
@@ -317,8 +320,11 @@ class AdSets(object):
                     self.adset_insights.update( {
                         'cost_per_' + conversion_metrics[ act["action_type"] ] : float(spend) / float(act["value"])
                     } )
+        except:
+            pass
+        finally:
             return self.adset_insights
-
+        
     def retrieve_all(self, date_preset=None):
         self.get_adset_features()
         self.get_adset_insights(date_preset=date_preset)
@@ -377,6 +383,7 @@ def data_collect( campaign_id, total_clicks, charge_type ):
 #         adset_dict = adset.retrieve_all(date_preset=DatePreset.lifetime) #for testing
         adset_dict['request_time'] = datetime.datetime.now()
         adset_dict['campaign_id'] = campaign_id
+        adset_dict['bid_amount'] = math.ceil(reverse_bid_amount(adset_dict['bid_amount']))
         df_adset = pd.DataFrame(adset_dict, index=[0])
         insertion("adset_conversion_metrics", df_adset)
         del adset
