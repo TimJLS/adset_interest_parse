@@ -90,7 +90,7 @@ class FacebookCampaignAdapter(object):
         except:
             self.get_df()
         self.adset_list = self.df_ad[ ADSET_ID ][
-            (self.df_ad.status == 'ACTIVE') & (self.df_ad.request_time.dt.date == self.request_time.date() )
+            (self.df_ad.request_time.dt.date == self.request_time.date() )
         ].unique().tolist()
         return self.adset_list
     

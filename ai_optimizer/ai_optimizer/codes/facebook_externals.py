@@ -292,8 +292,8 @@ def main(campaign):
     charge_type = df['charge_type'].iloc[0]
 
     daily_charge = df['daily_charge'].iloc[0]
-    day_dict = Campaigns( campaign, charge_type ).to_campaign(date_preset=DatePreset.yesterday)
-    lifetime_dict = Campaigns( campaign, charge_type ).to_campaign(date_preset=DatePreset.lifetime)
+    day_dict = Campaigns( campaign, charge_type ).generate_campaign_info(date_preset=DatePreset.yesterday)
+    lifetime_dict = Campaigns( campaign, charge_type ).generate_campaign_info(date_preset=DatePreset.lifetime)
     try:target = int( day_dict['target'] )
     except:target = 0
     fb = FacebookCampaignAdapter(campaign)

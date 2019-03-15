@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[81]:
+# In[24]:
 
 
 # %load facebook_datacollector.py
 from pathlib import Path
 from facebook_business.api import FacebookAdsApi
 from facebook_business.adobjects.adaccount import AdAccount
-from facebook_business.adobjects.adset import AdSet
+import  facebook_business.adobjects.adset as adset
 from facebook_business.adobjects.ad import Ad
 import facebook_business.adobjects.campaign as campaign
 from facebook_business.adobjects.adcreative import AdCreative
@@ -52,11 +52,11 @@ CAMPAIGN_FIELD = {
     'stop_time': campaign.Campaign.Field.stop_time,
 }
 ADSET_FIELD = {
-    'optimization_goal': AdSet.Field.optimization_goal,
-    'bid_amount': AdSet.Field.bid_amount,
-    'daily_budget': AdSet.Field.daily_budget,
-    'targeting': AdSet.Field.targeting,
-    'status': AdSet.Field.status
+    'optimization_goal':adset.AdSet.Field.optimization_goal,
+    'bid_amount':adset.AdSet.Field.bid_amount,
+    'daily_budget':adset.AdSet.Field.daily_budget,
+    'targeting':adset.AdSet.Field.targeting,
+    'status':adset.AdSet.Field.status
 }
 CAMPAIGN_INSIGHTS_FIELD = {
     'campaign_id': AdsInsights.Field.id,
@@ -189,6 +189,10 @@ class DatePreset:
     this_week_mon_today = 'this_week_mon_today'
     this_week_sun_today = 'this_week_sun_today'
     this_year = 'this_year'
+
+class Status:
+    active = 'ACTIVE'
+    paused = 'PAUSED'
     
 class Accounts(object):
     def __init__( self, account_id ):
@@ -236,35 +240,35 @@ class Campaigns(object):
             current_campaign = insights[0]
             if current_campaign.get(Field.impressions):
                 spend = int( current_campaign.get( Field.spend ) )
-                self.campaign_insights.update( {'cost_per_target':0} )
-                self.campaign_insights.update( {'target':0} )
+                self.campaign_insights.update( { Field.cost_per_target:0 } )
+                self.campaign_insights.update( { Field.target:0 } )
                 try:
                     for act in current_campaign.get( Field.actions ):
                         if act["action_type"] == CAMPAIGN_OBJECTIVE_FIELD[ self.charge_type ]:
                             target = int( act["value"] )
-                            self.campaign_insights.update( {'target':target} )
-                            self.campaign_insights.update( {'cost_per_target':spend/target} )
+                            self.campaign_insights.update( {Field.target:target} )
+                            self.campaign_insights.update( {Field.cost_per_target:spend/target} )
 
                 except Exception as e:
                     print('[facebook_datacollector.Campaigns.get_campaign_insights]', e)
-                for k in list( GENERAL_FIELD.keys() ):
-                    self.campaign_insights.update( {k: current_campaign.get(k)} )
+                for campaign_field in list( GENERAL_FIELD.keys() ):
+                    self.campaign_insights.update( {campaign_field: current_campaign.get(campaign_field)} )
                 if self.charge_type != 'ALL_CLICKS':
                     '''clicks and cpc is only for ALL_CLICKS'''
                     self.campaign_insights.pop( Field.clicks )
                     self.campaign_insights.pop( Field.cpc )
                 else:
                     '''assign to field target and cost_per_target'''
-                    self.campaign_insights[ 'target' ] = self.campaign_insights.pop( Field.clicks )
-                    self.campaign_insights[ 'cost_per_target' ] = self.campaign_insights.pop( Field.cpc )
+                    self.campaign_insights[ Field.target ] = self.campaign_insights.pop( Field.clicks )
+                    self.campaign_insights[ Field.cost_per_target ] = self.campaign_insights.pop( Field.cpc )
                 return self.campaign_insights
 
     def get_adsets( self ):
         adset_list=list()
         camp = campaign.Campaign( self.campaign_id )
-        adsets = camp.get_ad_sets( fields = [ AdSet.Field.id ])
-        for adset in adsets:
-            adset_list.append( adset.get("id") )
+        adsets = camp.get_ad_sets( fields = [adset.AdSet.Field.id ])
+        for adset_id in adsets:
+            adset_list.append( adset_id.get("id") )
         return adset_list
 
     def get_account_id( self ):
@@ -294,84 +298,86 @@ class AdSets(object):
         self.charge_type = charge_type
         self.adset_features = dict()
         self.adset_insights = dict()
-        self.adset = dict()
+        self.adset_info = dict()
         
     # Getters
 
     def get_ads( self ):
         ad_list=list()
-        adset = AdSet( self.adset_id )
-        ads = adset.get_ads( fields = [ Ad.Field.id ])
+        adsets = adset.AdSet( self.adset_id )
+        ads = adsets.get_ads( fields = [ Ad.Field.id ])
         for ad in ads:
             ad_list.append( ad.get("id") )
         return ad_list
     
     def get_adset_features( self ):
-        adset = AdSet( self.adset_id )
-        adsets = adset.remote_read( fields=list( ADSET_FIELD.values() ) )
-        for k in list(adsets.keys()):
-            if k == Field.targeting:
-                self.adset_features.update( { Field.age_max: adsets.get( Field.targeting ).get( Field.age_max ) } )
-                self.adset_features.update( { Field.age_min: adsets.get( Field.targeting ).get( Field.age_min ) } )
-                self.adset_features.update( { Field.flexible_spec: str( adsets.get( Field.targeting ).get( Field.flexible_spec ) ) } )
-                self.adset_features.update( { Field.geo_locations: str( adsets.get( Field.targeting ).get( Field.geo_locations ) ) } )
+        adsets = adset.AdSet( self.adset_id )
+        adsets = adsets.remote_read( fields=list( ADSET_FIELD.values() ) )
+        for adset_field in list(adsets.keys()):
+            if adset_field == Field.targeting:
+                self.adset_features.update( { Field.age_max:adsets.get( Field.targeting ).get( Field.age_max ) } )
+                self.adset_features.update( { Field.age_min:adsets.get( Field.targeting ).get( Field.age_min ) } )
+                self.adset_features.update( { Field.flexible_spec: str(adsets.get( Field.targeting ).get( Field.flexible_spec ) ) } )
+                self.adset_features.update( { Field.geo_locations: str(adsets.get( Field.targeting ).get( Field.geo_locations ) ) } )
             else:
-                self.adset_features.update( { k:adsets.get(k) } )
+                self.adset_features.update( { adset_field:adsets.get(adset_field) } )
         self.status = self.adset_features.pop( Field.status )
         self.adset_features.update( { Field.status: self.status } )
-        if self.status == 'ACTIVE':
+        if self.status == Status.active:
             self.status = True
-        elif self.status == 'PAUSED':
+        elif self.status == Status.paused:
             self.status = False
 
         return self.adset_features
     
     def get_adset_insights( self, date_preset=None ):
-        adset = AdSet( self.adset_id )
+        adsets = adset.AdSet( self.adset_id )
         params = {
             'date_preset': date_preset,
         }
-        insights = adset.get_insights(
+        insights = adsets.get_insights(
             params=params,
             fields=list( GENERAL_FIELD.values() )+list( TARGET_FIELD.values() )
         )
-        if bool(insights):
-            spend = int( insights[0].get( Field.spend ) )
-            self.adset_insights.update( {'target':'0'} )
-            self.adset_insights.update( {'cost_per_target':'0'} )
+        if len(insights) > 0:
+            current_adset = insights[0]
+            if current_adset.get(Field.impressions):
+                spend = int( current_adset.get( Field.spend ) )
+                self.adset_insights.update( {Field.target:0} )
+                self.adset_insights.update( {Field.cost_per_target:0} )
             try:
-                for act in insights[0].get( Field.actions ):
+                for act in current_adset.get( Field.actions ):
                      if act["action_type"] == CAMPAIGN_OBJECTIVE_FIELD[ self.charge_type ]:
                         target = int( act["value"] )
-                        self.adset_insights.update( {'target':target} )
-                        self.adset_insights.update( {'cost_per_target':spend/target} )
-            except:
-                pass
+                        self.adset_insights.update( {Field.target:target} )
+                        self.adset_insights.update( {Field.cost_per_target:spend/target} )
+            except Exception as e:
+                print('[facebook_datacollector.AdSets.get_adset_insights]', e)
             finally:
-                for k in list( GENERAL_FIELD.keys() ):
-                    self.adset_insights.update( {k: insights[0].get(k)} )
+                for adset_field in list( GENERAL_FIELD.keys() ):
+                    self.adset_insights.update( {adset_field: current_adset.get(adset_field)} )
             if self.charge_type != 'ALL_CLICKS':
                 self.adset_insights.pop( Field.clicks )
                 self.adset_insights.pop( Field.cpc )
             else:
-                self.adset_insights[ 'target' ] = self.adset_insights.pop( Field.clicks )
-                self.adset_insights[ 'cost_per_target' ] = self.adset_insights.pop( Field.cpc )
+                self.adset_insights[ Field.target ] = self.adset_insights.pop( Field.clicks )
+                self.adset_insights[ Field.cost_per_target ] = self.adset_insights.pop( Field.cpc )
         else:
-            self.adset_insights[ Field.target ] = '0'
-            self.adset_insights[ Field.cost_per_target ] = '0'
-            self.adset_insights[ Field.impressions ] = '0'
-            self.adset_insights[ Field.reach ] = '0'
-            self.adset_insights[ Field.spend ] = '0'
+            self.adset_insights[ Field.target ] = 0
+            self.adset_insights[ Field.cost_per_target ] = 0
+            self.adset_insights[ Field.impressions ] = 0
+            self.adset_insights[ Field.reach ] = 0
+            self.adset_insights[ Field.spend ] = 0
         return self.adset_insights
 
     # Operator
     
-    def to_adset( self, date_preset=None ):
+    def generate_adset_info( self, date_preset=None ):
         self.get_adset_features()
         self.get_adset_insights( date_preset )
         self.adset_features[ Field.adset_id ] = self.adset_features.pop('id')
-        self.adset = { **self.adset_insights, **self.adset_features }
-        return self.adset
+        self.adset_info = { **self.adset_insights, **self.adset_features }
+        return self.adset_info
 
 def data_collect( campaign_id, total_clicks, charge_type ):
     camp = Campaigns( campaign_id, charge_type )
@@ -383,6 +389,8 @@ def data_collect( campaign_id, total_clicks, charge_type ):
 #     print(life_time_CAMPAIGN_FIELD)
     stop_time = datetime.datetime.strptime( life_time_campaign_insights[Field.stop_time],'%Y-%m-%d %H:%M:%S' )
     period_left = (stop_time-datetime.datetime.now()).days + 1
+    if period_left <= 0:
+        return
     charge = life_time_campaign_insights[ Field.target ]
     target_left = {'target_left': int(total_clicks) - int(charge)}
     daily_charge = {'daily_charge': int(target_left['target_left']) / period_left}
@@ -396,7 +404,7 @@ def data_collect( campaign_id, total_clicks, charge_type ):
     adset_list = camp.get_adsets()
     for adset_id in adset_list:
         adset = AdSets(adset_id, charge_type)
-        adset_dict = adset.to_adset(date_preset=DatePreset.today)
+        adset_dict = adset.generate_adset_info(date_preset=DatePreset.today)
         adset_dict['request_time'] = datetime.datetime.now()
         adset_dict['campaign_id'] = campaign_id
         adset_dict['bid_amount'] = math.ceil(reverse_bid_amount(adset_dict['bid_amount']))
@@ -420,7 +428,7 @@ def make_default( campaign_id, charge_type ):
     release_version_result = {  }
     for adset_id in adset_list:
         adset = AdSets(adset_id, charge_type)
-        adset_dict = adset.to_adset()
+        adset_dict = adset.generate_adset_info()
         if not bool(adset_dict):
             pass
         else:
@@ -458,7 +466,7 @@ def main():
     
 
 
-# In[ ]:
+# In[25]:
 
 
 if __name__ == "__main__":
@@ -467,10 +475,10 @@ if __name__ == "__main__":
     gc.collect()
 
 
-# In[33]:
+# In[84]:
 
 
-get_ipython().system('jupyter nbconvert --to script facebook_datacollector.ipynb')
+# get_ipython().system('jupyter nbconvert --to script facebook_datacollector.ipynb')
 
 
 # In[ ]:

@@ -13,7 +13,7 @@ import pandas as pd
 import conversion_index_collector
 import facebook_adapter
 import datetime
-sizepop, vardim, MAXGEN, params = 2000, 8, 30, [0.9, 0.1, 0.5]
+sizepop, vardim, MAXGEN, params = 1000, 8, 30, [0.9, 0.1, 0.5]
 DATE = datetime.datetime.now().date() - datetime.timedelta(1)
 class GeneticAlgorithm(object):
     '''
@@ -284,12 +284,12 @@ def ga_optimal_weight(campaign_id, df_weight):
     df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id={}".format(campaign_id), con=mydb)
     charge_type = df_camp['charge_type'].iloc[0]
     adset_list = facebook_adapter.FacebookCampaignAdapter(campaign_id).get_adset_list()
+    adset_list = conversion_index_collector.Campaigns(campaign_id, charge_type).get_adsets()
     for adset_id in adset_list:
         df = ObjectiveFunc().adset_status( adset_id )
         r = ObjectiveFunc.adset_fitness( df_weight, df )
-        print(r)
+        print('[ga_optimal_weight]:', r)
         df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'score':r[0], 'request_time':request_time}, index=[0])
-
         conversion_index_collector.insertion("adset_score", df_final)
     mydb.close()
 
