@@ -1,15 +1,21 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# In[30]:
+
+
+#!/usr/bin/env python
+# coding: utf-8
+
 # In[1]:
 
 
 from pathlib import Path
 from facebook_business.api import FacebookAdsApi
 from facebook_business.adobjects.adaccount import AdAccount
-from facebook_business.adobjects.adset import AdSet
-from facebook_business.adobjects.ad import Ad
-from facebook_business.adobjects.campaign import Campaign
+import facebook_business.adobjects.adset as adset
+import facebook_business.adobjects.ad as ad
+import facebook_business.adobjects.campaign as campaign
 from facebook_business.adobjects.adcreative import AdCreative
 from facebook_business.adobjects.adactivity import AdActivity
 from facebook_business.adobjects.insightsresult import InsightsResult
@@ -29,11 +35,11 @@ import math
 # In[2]:
 
 
-campaign_objective = {
+CAMPAIGN_OBJECTIVE_FIELD = {
     'LINK_CLICKS': 'link_click',
-    'POST_ENGAGEMENT': 'post_engagement', 
-    'VIDEO_VIEWS': 'video_view', 
-    'CONVERSIONS':'offsite_conversion.fb_pixel_purchase',
+    'POST_ENGAGEMENT': 'post_engagement',
+    'VIDEO_VIEWS': 'video_view',
+    'CONVERSIONS': 'offsite_conversion.fb_pixel_purchase',
     'APP_INSTALLS': 'app_installs',
     'BRAND_AWARENESS': 'brand_awareness',
     'EVENT_RESPONSES': 'event_responses',
@@ -46,43 +52,41 @@ campaign_objective = {
     'REACH': 'reach',
     'ALL_CLICKS': 'clicks',
 }
-
-
-# In[3]:
-
-
-campaign_field = {
-    'spend_cap': Campaign.Field.spend_cap,
-    'objective': Campaign.Field.objective,
-    'start_time': Campaign.Field.start_time,
-    'stop_time': Campaign.Field.stop_time,
+CAMPAIGN_FIELD = {
+    'spend_cap': campaign.Campaign.Field.spend_cap,
+    'objective': campaign.Campaign.Field.objective,
+    'start_time': campaign.Campaign.Field.start_time,
+    'stop_time': campaign.Campaign.Field.stop_time,
 }
-adset_field = {
-    'bid_amount': AdSet.Field.bid_amount,
-    'daily_budget': AdSet.Field.daily_budget
+ADSET_FIELD = {
+    'bid_amount': adset.AdSet.Field.bid_amount,
+    'daily_budget': adset.AdSet.Field.daily_budget
 }
-
-
-# In[4]:
-
-
-general_insights = {
+CAMPAIGN_INSIGHTS_FIELD = {
+    'campaign_id': AdsInsights.Field.id,
+}
+ADSET_INSIGHTS_FIELD = {
+    'adset_id': AdsInsights.Field.adset_id,
+}
+GENERAL_FIELD = {
     'impressions': AdsInsights.Field.impressions,
+    'reach': AdsInsights.Field.reach,
     'spend': AdsInsights.Field.spend,
+    'cpc': AdsInsights.Field.cpc,
+    'clicks': AdsInsights.Field.clicks,
 }
-target_insights = {
+TARGET_FIELD = {
     'actions': AdsInsights.Field.actions,
-#     'cost_per_actions': AdsInsights.Field.cost_per_action_type,
+    'cost_per_actions': AdsInsights.Field.cost_per_action_type,
 }
-conversion_metrics = {
-    'offsite_conversion.fb_pixel_add_to_cart': 'add_to_cart',
-    'offsite_conversion.fb_pixel_initiate_checkout': 'initiate_checkout',
-    'offsite_conversion.fb_pixel_purchase': 'purchase',
-    'offsite_conversion.fb_pixel_view_content': 'view_content',
+LEAD_METRICS = {
+    'fb_pixel_complete_registration':'fb_pixel_complete_registration',
+    'fb_pixel_lead':'fb_pixel_lead',
+    'leadgen.other':'leadgen.other',
+    'offsite_conversion.fb_pixel_view_content': 'fb_pixel_view_content',
     'landing_page_view': 'landing_page_view',
     'link_click': 'link_click'
 }
-
 
 # In[5]:
 
@@ -212,68 +216,79 @@ class Campaigns(object):
         self.charge_type = charge_type
         self.campaign_insights = dict()
         self.campaign_features = dict()
-        self.status = dict()
+        self.campaign_info = dict()
         
     # Getters
     
     def get_campaign_features( self ):
-        ad_campaign = Campaign( self.campaign_id )
-        adcamps = ad_campaign.remote_read( fields=list(campaign_field.values()) )
-        for k in list(adcamps.keys()):
-            self.campaign_features.update( {k:adcamps.get(k)} )
+        ad_campaign =campaign.Campaign( self.campaign_id )
+        adcamps = ad_campaign.remote_read( fields=list(CAMPAIGN_FIELD.values()) )
+        for campaign_field in list(adcamps.keys()):
+            self.campaign_features.update( {campaign_field:adcamps.get(campaign_field)} )
         return self.campaign_features
         
     def get_campaign_insights( self, date_preset=None ):
-        campaign = Campaign( self.campaign_id )
+        campaigns = campaign.Campaign( self.campaign_id )
         params = {
             'date_preset': date_preset,
         }
-        insights = campaign.get_insights(
+        insights = campaigns.get_insights(
             params=params,
-            fields=list( general_insights.values() )+list( target_insights.values() )
+            fields=list( GENERAL_FIELD.values() )+list( TARGET_FIELD.values() )
         )
-        if bool(insights):
-
-            spend = insights[0].get( Field.spend )
-            impressions = insights[0].get( Field.impressions )
-            self.campaign_insights.update( { Field.spend: int(spend) } )
-            self.campaign_insights.update( { Field.impressions: int(impressions) } )
-            for act in insights[0].get( Field.actions ):
-                if act["action_type"] in conversion_metrics:
-                    self.campaign_insights.update( {
-                        conversion_metrics[ act["action_type"] ]: int(act["value"])
-                    } )
-                    self.campaign_insights.update( {
-                        'cost_per_' + conversion_metrics[ act["action_type"] ] : float(spend) / float(act["value"])
-                    } )
+        if len(insights) > 0:
+            current_campaign = insights[0]
+            if current_campaign.get(Field.impressions):
+                spend = current_campaign.get( Field.spend )
+                impressions = current_campaign.get( Field.impressions )
+                self.campaign_insights.update( { Field.spend: int(spend) } )
+                self.campaign_insights.update( { Field.impressions: int(impressions) } )
+                try:
+                    for act in current_campaign.get( Field.actions ):
+                        if act["action_type"] in LEAD_METRICS:
+                            self.campaign_insights.update( {
+                                LEAD_METRICS[ act["action_type"] ]: int(act["value"])
+                            } )
+                            self.campaign_insights.update( {
+                                'cost_per_' + LEAD_METRICS[ act["action_type"] ] : float(spend) / float(act["value"])
+                            } )
+                except Exception as e:
+                    print('[conversion_index_collector.Campaigns.get_campaign_insights]', e)
             return self.campaign_insights
     
     def get_adsets( self ):
         adset_list=list()
-        campaign = Campaign( self.campaign_id )
-        adsets = campaign.get_ad_sets( fields = [ AdSet.Field.id ])
-        ads = campaign.get_ad_sets( fields = [ AdSet.Field.id ])
-        for adset in adsets:
-            adset_list.append( adset.get("id") )
+        campaigns = campaign.Campaign( self.campaign_id )
+        adsets = campaigns.get_ad_sets( fields = [ adset.AdSet.Field.id ])
+        ads = campaigns.get_ad_sets( fields = [ adset.AdSet.Field.id ])
+        for adset_id in adsets:
+            adset_list.append( adset_id.get("id") )
         return adset_list
     
-    def retrieve_all(self, date_preset=None):
+    def generate_campaign_info(self, date_preset=None):
         self.get_campaign_features()
         self.get_campaign_insights(date_preset=date_preset)
         
         self.campaign_features[ Field.campaign_id ] = self.campaign_features.pop('id')
         self.campaign_features[ Field.target_type ] = self.campaign_features.pop('objective')
         self.campaign_features[ Field.start_time ] = datetime.datetime.strptime( self.campaign_features[Field.start_time],'%Y-%m-%dT%H:%M:%S+%f' )
-        self.campaign_features[ Field.stop_time ] = datetime.datetime.strptime( self.campaign_features[Field.stop_time],'%Y-%m-%dT%H:%M:%S+%f' )
+        ### for test
+        try:
+            self.campaign_features[ Field.stop_time ] = datetime.datetime.strptime( self.campaign_features[Field.stop_time],'%Y-%m-%dT%H:%M:%S+%f' )
+        except:
+            self.campaign_features[ Field.stop_time ] = datetime.datetime.now() + datetime.timedelta(1)
+        ###
         self.campaign_features[ Field.period ] = ( self.campaign_features[Field.stop_time] - self.campaign_features[Field.start_time] ).days
         self.campaign_features[ Field.start_time ] = self.campaign_features[Field.start_time].strftime( '%Y-%m-%d %H:%M:%S' )
         self.campaign_features[ Field.stop_time ] = self.campaign_features[Field.stop_time].strftime( '%Y-%m-%d %H:%M:%S' )
-        self.campaign_features[ Field.daily_budget ] = int( self.campaign_features[Field.spend_cap] )/self.campaign_features[Field.period]
+        try:
+            self.campaign_features[ Field.daily_budget ] = int( self.campaign_features[Field.spend_cap] )/self.campaign_features[Field.period]
+        except:
+            self.campaign_features[ Field.daily_budget ] = 50000/self.campaign_features[Field.period]
         
         
-        
-        self.status = { **self.campaign_insights, **self.campaign_features }
-        return self.status
+        self.campaign_info = { **self.campaign_insights, **self.campaign_features }
+        return self.campaign_info
 
 
 # In[7]:
@@ -285,52 +300,53 @@ class AdSets(object):
         self.charge_type = charge_type
         self.adset_features = dict()
         self.adset_insights = dict()
-        self.status = dict()
+        self.adset_info = dict()
         
     # Getters
         
     def get_adset_features( self ):
-        adset = AdSet( self.adset_id )
-        adsets = adset.remote_read( fields=list( adset_field.values() ) )
-        for k in list(adsets.keys()):
-            self.adset_features.update( { k:adsets.get(k) } )
+        adsets = adset.AdSet( self.adset_id )
+        adsets = adsets.remote_read( fields=list( ADSET_FIELD.values() ) )
+        for adset_field in list(adsets.keys()):
+            self.adset_features.update( { adset_field:adsets.get(adset_field) } )
         return self.adset_features
     
     def get_adset_insights( self, date_preset=None ):
-        adset = AdSet( self.adset_id )
+        adsets = adset.AdSet( self.adset_id )
         params = {
             'date_preset': date_preset,
         }
-        insights = adset.get_insights(
+        insights = adsets.get_insights(
             params=params,
-            fields=list( general_insights.values() )+list( target_insights.values() )
+            fields=list( GENERAL_FIELD.values() )+list( TARGET_FIELD.values() )
         )
-        if bool(insights):
-            spend = insights[0].get( Field.spend )
-            impressions = insights[0].get( Field.impressions )
-            self.adset_insights.update( { Field.spend: int(spend) } )
-            self.adset_insights.update( { Field.impressions: int(impressions) } )
-        try:
-            insights[0].get( Field.actions )
-            for act in insights[0].get( Field.actions ):
-                if act["action_type"] in conversion_metrics:
-                    self.adset_insights.update( {
-                        conversion_metrics[ act["action_type"] ]: int(act["value"])
-                    } )
-                    self.adset_insights.update( {
-                        'cost_per_' + conversion_metrics[ act["action_type"] ] : float(spend) / float(act["value"])
-                    } )
-        except:
-            pass
-        finally:
-            return self.adset_insights
+        if len(insights) > 0:
+            current_adset = insights[0]
+            if current_adset.get(Field.impressions):
+                spend = current_adset.get( Field.spend )
+                impressions = current_adset.get( Field.impressions )
+                self.adset_insights.update( { Field.spend: int(spend) } )
+                self.adset_insights.update( { Field.impressions: int(impressions) } )
+            try:
+                for act in current_adset.get( Field.actions ):
+                    if act["action_type"] in LEAD_METRICS:
+                        self.adset_insights.update( {
+                            LEAD_METRICS[ act["action_type"] ]: int(act["value"])
+                        } )
+                        self.adset_insights.update( {
+                            'cost_per_' + LEAD_METRICS[ act["action_type"] ] : float(spend) / float(act["value"])
+                        } )
+            except Exception as e:
+                print('[conversion_index_collector.AdSets.get_adset_insights]', e)
+            finally:
+                return self.adset_insights
         
-    def retrieve_all(self, date_preset=None):
+    def generate_adset_info(self, date_preset=None):
         self.get_adset_features()
         self.get_adset_insights(date_preset=date_preset)
         self.adset_features[ Field.adset_id ] = self.adset_features.pop('id')
-        self.status = { **self.adset_insights, **self.adset_features }
-        return self.status
+        self.adset_info = { **self.adset_insights, **self.adset_features }
+        return self.adset_info
 
 
 # In[8]:
@@ -338,7 +354,7 @@ class AdSets(object):
 
 def data_collect( campaign_id, total_clicks, charge_type ):
     camp = Campaigns( campaign_id, charge_type )
-    life_time_campaign_status = camp.retrieve_all( date_preset=DatePreset.lifetime )
+    life_time_campaign_status = camp.generate_campaign_info( date_preset=DatePreset.lifetime )
     stop_time = datetime.datetime.strptime( life_time_campaign_status[Field.stop_time],'%Y-%m-%d %H:%M:%S' )
     period_left = (stop_time-datetime.datetime.now()).days + 1
     try:
@@ -355,7 +371,6 @@ def data_collect( campaign_id, total_clicks, charge_type ):
         }
     
     campaign_status = {
-#         'request_time': datetime.datetime.now(),
         'charge_type': charge_type,
         'destination': total_clicks,
         'target_left': target_left,
@@ -372,24 +387,28 @@ def data_collect( campaign_id, total_clicks, charge_type ):
     }
     df_camp = pd.DataFrame(campaign_dict, index=[0])
     df_camp[df_camp.columns] = df_camp[df_camp.columns].apply(pd.to_numeric, errors='ignore')
-    campaign_conv_metrics = {
+    campaign_metrics = {
         **camp.campaign_insights,
-        Field.campaign_id:campaign_id
     }
     adset_list = camp.get_adsets()
     for adset_id in adset_list:
         adset = AdSets(adset_id, charge_type)
-        adset_dict = adset.retrieve_all(date_preset=DatePreset.today)
-#         adset_dict = adset.retrieve_all(date_preset=DatePreset.lifetime) #for testing
+#         adset_dict = adset.generate_adset_info(date_preset=DatePreset.today)
+        adset_dict = adset.generate_adset_info(date_preset=DatePreset.lifetime) #for testing
         adset_dict['request_time'] = datetime.datetime.now()
         adset_dict['campaign_id'] = campaign_id
-        adset_dict['bid_amount'] = math.ceil(reverse_bid_amount(adset_dict['bid_amount']))
+        ### for test
+        try:
+            adset_dict['bid_amount'] = math.ceil(reverse_bid_amount(adset_dict['bid_amount']))
+        except:
+            adset_dict['bid_amount'] = 50
+        ###
         df_adset = pd.DataFrame(adset_dict, index=[0])
-        insertion("adset_conversion_metrics", df_adset)
+        insertion("adset_leads_metrics", df_adset)
         del adset
     del camp
-    update_campaign_target(df_camp)
-    check_conv_metrics(campaign_id, campaign_conv_metrics)
+#     update_campaign_target(df_camp)
+    check_campaign_metrics(campaign_id, campaign_metrics, table="campaign_leads_metrics")
     return
 
 
@@ -466,40 +485,25 @@ def update_campaign_target(df_camp):
 # In[12]:
 
 
-def check_conv_metrics(campaign_id, campaign_conv_metrics):
+def check_campaign_metrics(campaign_id, campaign_metrics, table=None):
     mydb = connectDB(DATABASE)
-    df = pd.read_sql( "SELECT * FROM campaign_conversion_metrics WHERE campaign_id={}".format(campaign_id), con=mydb )
-    df_camp = pd.DataFrame(campaign_conv_metrics, index=[0])
+    df = pd.read_sql( "SELECT * FROM {} WHERE campaign_id={}".format(table, campaign_id), con=mydb )
+    df_camp = pd.DataFrame(campaign_metrics, index=[0])
+    df_camp['campaign_id'] = campaign_id
     if df.empty:
         engine = create_engine( 'mysql://{}:{}@{}/{}'.format(USER, PASSWORD, HOST, DATABASE) )
         with engine.connect() as conn, conn.begin():
-            df_camp.to_sql("campaign_conversion_metrics", conn, if_exists='append',index=False)
+            df_camp.to_sql(table, conn, if_exists='append',index=False)
             engine.dispose()
         mydb.close()
         return False
-    else:
+    else:      
         try:
-            sql = "UPDATE campaign_conversion_metrics SET spend=%s, impressions=%s, add_to_cart=%s, cost_per_add_to_cart=%s, initiate_checkout=%s, cost_per_initiate_checkout=%s, purchase=%s, cost_per_purchase=%s, view_content=%s, cost_per_view_content=%s, landing_page_view=%s, cost_per_landing_page_view=%s, link_click=%s, cost_per_link_click=%s WHERE campaign_id=%s"
-            val = (
-                campaign_conv_metrics['spend'],
-                campaign_conv_metrics['impressions'],
-                campaign_conv_metrics['add_to_cart'],
-                campaign_conv_metrics['cost_per_add_to_cart'],
-                campaign_conv_metrics['initiate_checkout'],
-                campaign_conv_metrics['cost_per_initiate_checkout'],
-                campaign_conv_metrics['purchase'],
-                campaign_conv_metrics['cost_per_purchase'],
-                campaign_conv_metrics['view_content'],
-                campaign_conv_metrics['cost_per_view_content'],
-                campaign_conv_metrics['landing_page_view'],
-                campaign_conv_metrics['cost_per_landing_page_view'],
-                campaign_conv_metrics['link_click'],
-                campaign_conv_metrics['cost_per_link_click'],
-                campaign_conv_metrics['campaign_id']
-            )
             mycursor = mydb.cursor()
-            mycursor.execute(sql, val)
-            mydb.commit()
+            for col in campaign_metrics.keys():
+                sql = "UPDATE {} SET {}={} where campaign_id={}".format(table, col, campaign_metrics[col], campaign_id)
+                mycursor.execute(sql)
+                mydb.commit()
             mycursor.close()
             mydb.close()
             return True
@@ -580,13 +584,15 @@ def main():
     import gc
     gc.collect()
 
-# In[15]:
+
+# In[29]:
 
 
-    
-if __name__ == "__main__":
-    FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-    main()
+FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
+data_collect(23843003561380761, 70, "LEAD_GENERATION")
+
+
+# In[ ]:
 
 
 
