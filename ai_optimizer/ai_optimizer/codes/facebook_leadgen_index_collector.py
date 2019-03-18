@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[30]:
+# In[1]:
 
 
 #!/usr/bin/env python
@@ -512,19 +512,19 @@ def check_campaign_metrics(campaign_id, campaign_metrics, table=None):
         
 def check_optimal_weight(campaign_id, df):
     mydb = connectDB(DATABASE)
-
-    df_check = pd.read_sql( "SELECT * FROM conversion_optimal_weight WHERE campaign_id=%s" % (campaign_id), con=mydb )
+    print(df)
+    df_check = pd.read_sql( "SELECT * FROM leadgen_optimal_weight WHERE campaign_id=%s" % (campaign_id), con=mydb )
     
     if df_check.empty:
         engine = create_engine( 'mysql://{}:{}@{}/{}'.format(USER, PASSWORD, HOST, DATABASE) )
         with engine.connect() as conn, conn.begin():
-            df.to_sql("conversion_optimal_weight", conn, if_exists='append',index=False)
+            df.to_sql("leadgen_optimal_weight", conn, if_exists='append',index=False)
             engine.dispose()
         mydb.close()
         return 
     else:
         mycursor = mydb.cursor()
-        sql = "UPDATE conversion_optimal_weight SET score=%s, w1=%s, w2=%s, w3=%s, w4=%s, w5=%s, w6=%s, w_spend=%s, w_bid=%s WHERE campaign_id=%s"
+        sql = "UPDATE leadgen_optimal_weight SET score=%s, w1=%s, w2=%s, w3=%s, w4=%s, w5=%s, w_spend=%s, w_bid=%s WHERE campaign_id=%s"
         val = (
             df['score'].iloc[0].astype(dtype=object),
             df['w1'].iloc[0].astype(dtype=object),
@@ -532,7 +532,6 @@ def check_optimal_weight(campaign_id, df):
             df['w3'].iloc[0].astype(dtype=object),
             df['w4'].iloc[0].astype(dtype=object),
             df['w5'].iloc[0].astype(dtype=object),
-            df['w6'].iloc[0].astype(dtype=object),
             df['w_spend'].iloc[0].astype(dtype=object),
             df['w_bid'].iloc[0].astype(dtype=object),
             df['campaign_id'].iloc[0].astype(dtype=object)
@@ -585,11 +584,19 @@ def main():
     gc.collect()
 
 
-# In[29]:
+# In[2]:
 
 
-FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-data_collect(23843003561380761, 70, "LEAD_GENERATION")
+if __name__=='__main__':
+    FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
+    main()
+#     data_collect(23843003561380761, 70, "LEAD_GENERATION")
+
+
+# In[4]:
+
+
+#get_ipython().system('jupyter nbconvert --to script facebook_leadgen_index_collector.ipynb')
 
 
 # In[ ]:
