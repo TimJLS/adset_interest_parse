@@ -10,7 +10,7 @@ import random
 import copy
 import matplotlib.pyplot as plt
 import pandas as pd
-import facebook_conversion_index_collector
+import index_collector_conversion_facebook
 sizepop, vardim, MAXGEN, params = 2000, 8, 3, [0.9, 0.1, 0.5]
 class GeneticAlgorithm(object):
     '''
@@ -306,10 +306,10 @@ if __name__ == "__main__":
     print(datetime.datetime.now()-starttime)
 
 
-# In[2]:
+# In[1]:
 
 
-get_ipython().system('jupyter nbconvert --to script facebook_conversion_gentic_algorithm.ipynb')
+#get_ipython().system('jupyter nbconvert --to script gentic_algorithm_conversion_facebook.ipynb')
 
 
 # In[ ]:

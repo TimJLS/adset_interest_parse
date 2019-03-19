@@ -350,13 +350,13 @@ def split_adset_list(adset_list):
 
 
 if __name__=='__main__':
-    import conversion_index_collector
+    import facebook_conversion_index_collector
     FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-#     df_camp = conversion_index_collector.get_campaign_target()    
-#     for campaign_id in df_camp.campaign_id.unique():
-#         main(campaign_id)
+    df_camp = facebook_conversion_index_collector.get_campaign_target()    
+    for campaign_id in df_camp.campaign_id.unique():
+        main(campaign_id)
     
-    main(23843301261480540)
+#     main(23843301261480540)
     import gc
     gc.collect()
 

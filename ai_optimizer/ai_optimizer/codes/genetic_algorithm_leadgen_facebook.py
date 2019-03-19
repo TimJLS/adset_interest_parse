@@ -16,7 +16,7 @@ import random
 import copy
 import matplotlib.pyplot as plt
 import pandas as pd
-import facebook_leadgen_index_collector
+import index_collector_leadgen_facebook
 sizepop, vardim, MAXGEN, params = 200, 7, 3, [0.9, 0.1, 0.5]
 
 
@@ -361,8 +361,14 @@ if __name__ == "__main__":
 # print('optimal_weight:', optimal)
 
 
+# In[1]:
+
+
+#get_ipython().system('jupyter nbconvert --to script genetic_algorithm_leadgen_facebook.ipynb')
+
+
 # In[ ]:
 
 
-#get_ipython().system('jupyter nbconvert --to script ')
+
 

@@ -58,7 +58,7 @@ def opt_api(request):
                 if queue:
                     print(campaign_id, destination)
                     campaign = Campaigns( int(campaign_id), charge_type )
-                    campaign_dict = campaign.to_campaign()
+                    campaign_dict = campaign.generate_campaign_info()
                     try:lifetime_target = campaign_dict['target']
                     except:lifetime_target=0
                     try:
