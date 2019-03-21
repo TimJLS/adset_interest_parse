@@ -63,7 +63,7 @@ ADSET_FIELD = {
     'daily_budget': adset.AdSet.Field.daily_budget
 }
 CAMPAIGN_INSIGHTS_FIELD = {
-    'campaign_id': AdsInsights.Field.id,
+    'campaign_id': AdsInsights.Field.campaign_id,
 }
 ADSET_INSIGHTS_FIELD = {
     'adset_id': AdsInsights.Field.adset_id,
@@ -112,6 +112,8 @@ class Field:
     geo_locations = 'geo_locations'
     conversion_values = 'conversion_values'
     conversions = 'conversions'
+    leadgen_other = 'leadgen.other'
+    cost_per_leadgen_other = 'cost_per_leadgen.other'
     purchase = 'purchase'
     cost_per_purchase = 'cost_per_purchase'
     cost_per_10_sec_video_view = 'cost_per_10_sec_video_view'
@@ -358,26 +360,31 @@ def data_collect( campaign_id, total_clicks, charge_type ):
     stop_time = datetime.datetime.strptime( life_time_campaign_status[Field.stop_time],'%Y-%m-%d %H:%M:%S' )
     period_left = (stop_time-datetime.datetime.now()).days + 1
     try:
-        target_left = int(total_clicks) - int(life_time_campaign_status[ Field.purchase ])
+        target_left = int(total_clicks) - int(life_time_campaign_status[ Field.leadgen_other ])
         target_pair = {
-            Field.purchase: camp.campaign_insights[Field.purchase],
-            Field.cost_per_purchase: camp.campaign_insights[Field.cost_per_purchase]
+            Field.leadgen_other: camp.campaign_insights[Field.leadgen_other],
+            Field.cost_per_leadgen_other: camp.campaign_insights[Field.cost_per_leadgen_other]
         }
     except:
         target_left = int(total_clicks)
         target_pair = {
-            Field.purchase: 0,
-            Field.cost_per_purchase: 0
+            Field.leadgen_other: 0,
+            Field.cost_per_leadgen_other: 0
         }
-    
+    try:
+        camp.campaign_insights[Field.spend]
+        camp.campaign_insights[Field.impressions]
+    except:
+        camp.campaign_insights[Field.spend]=0
+        camp.campaign_insights[Field.impressions]=0
     campaign_status = {
         'charge_type': charge_type,
         'destination': total_clicks,
         'target_left': target_left,
         'daily_charge': target_left / period_left,
     }
-    target_pair[Field.target] = target_pair.pop(Field.purchase)
-    target_pair[Field.cost_per_target] = target_pair.pop(Field.cost_per_purchase)
+    target_pair[Field.target] = target_pair.pop(Field.leadgen_other)
+    target_pair[Field.cost_per_target] = target_pair.pop(Field.cost_per_leadgen_other)
     campaign_dict = {
         **camp.campaign_features,
         **target_pair,

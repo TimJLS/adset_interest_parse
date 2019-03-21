@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[4]:
 
 
 import numpy as np
@@ -206,7 +206,7 @@ class ObjectiveFunc(object):
     objective function of genetic algorithm
     '''
     def __init__(self, campaign_id=None):
-        self.mydb = facebook_conversion_index_collector.connectDB( "dev_facebook_test" )
+        self.mydb = index_collector_conversion_facebook.connectDB( "dev_facebook_test" )
         
     def fitness_function(optimal_weight, df):
         
@@ -220,6 +220,7 @@ class ObjectiveFunc(object):
         m_bid   = ( df['campaign_bid'] - df['cost_per_purchase'] ) / df['campaign_bid']
 
         status  = np.array( [m1, m2, m3, m4, m5, m6, m_spend, m_bid] )
+        status = np.nan_to_num(status)
         r = np.dot( optimal_weight, status )
         return r
 
@@ -234,6 +235,7 @@ class ObjectiveFunc(object):
         m_bid   = ( df['bid_amount'] - df['cost_per_purchase'] ) / df['bid_amount']
 
         status  = np.array( [m1, m2, m3, m4, m5, m6, m_spend, m_bid] )
+        status = np.nan_to_num(status)
         r = np.dot( optimal_weight, status )
         return r
     
@@ -257,6 +259,7 @@ class ObjectiveFunc(object):
             }
         )
         df = pd.merge( df, df_metrics, on=['campaign_id'] )
+        df.fillna(value=0, inplace=True)
         df = df.convert_objects(convert_numeric=True)
         return df
     
@@ -269,23 +272,23 @@ class ObjectiveFunc(object):
 
 def ga_optimal_weight(campaign_id, df_weight):
     request_time = datetime.datetime.now().date()
-    mydb = facebook_conversion_index_collector.connectDB( "dev_facebook_test" )
+    mydb = index_collector_conversion_facebook.connectDB( "dev_facebook_test" )
 #     df_weight = pd.read_sql("SELECT * FROM conversion_optimal_weight WHERE campaign_id={}".format(campaign_id), con=mydb)
     df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id={}".format(campaign_id), con=mydb)
     charge_type = df_camp['charge_type'].iloc[0]
-    adset_list = facebook_conversion_index_collector.Campaigns(campaign_id, charge_type).get_adsets()
+    adset_list = index_collector_conversion_facebook.Campaigns(campaign_id, charge_type).get_adsets()
     for adset_id in adset_list:
         df = ObjectiveFunc().adset_status( adset_id )
         r = ObjectiveFunc.adset_fitness( df_weight, df )
         print(r)
         df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'score':r[0], 'request_time':request_time}, index=[0])
 
-        facebook_conversion_index_collector.insertion("adset_score", df_final)
+        index_collector_conversion_facebook.insertion("adset_score", df_final)
 
 if __name__ == "__main__":
     import datetime
     starttime = datetime.datetime.now()
-    campaign_list = facebook_conversion_index_collector.get_campaign_target()['campaign_id'].unique()
+    campaign_list = index_collector_conversion_facebook.get_campaign_target()['campaign_id'].unique()
     for camp_id in campaign_list:
         print('campaign_id:', camp_id )
         global df
@@ -299,17 +302,17 @@ if __name__ == "__main__":
 
         df_final = pd.DataFrame({'campaign_id':camp_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
         df_final = pd.concat( [df_weight, df_final], axis=1, sort=True, ignore_index=False)
-        facebook_conversion_index_collector.check_optimal_weight(camp_id, df_final)
+        index_collector_conversion_facebook.check_optimal_weight(camp_id, df_final)
         ga_optimal_weight(camp_id, df_weight)
         print('optimal_weight:', optimal)
         print(datetime.datetime.now()-starttime)    
     print(datetime.datetime.now()-starttime)
 
 
-# In[1]:
+# In[5]:
 
 
-#get_ipython().system('jupyter nbconvert --to script gentic_algorithm_conversion_facebook.ipynb')
+get_ipython().system('jupyter nbconvert --to script genetic_algorithm_conversion_facebook.ipynb')
 
 
 # In[ ]:
