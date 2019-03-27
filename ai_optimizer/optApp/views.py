@@ -46,7 +46,6 @@ def opt_api(request):
         destination = request.POST.get(Field.target)
         charge_type = request.POST.get(Field.charge_type)
         media = request.POST.get(Field.media)
-        print(campaign_id, destination, charge_type, media)
         print(campaign_id and destination and charge_type, datetime.datetime.now())
 #         if campaign_id and destination and charge_type and media: # new release version
         if campaign_id and destination and charge_type: #temporary working version
@@ -56,7 +55,6 @@ def opt_api(request):
                 if mysql_adactivity_save.check_default_price(campaign_id):
                     facebook_datacollector.make_default( int(campaign_id), charge_type )
                 if queue:
-                    print(campaign_id, destination)
                     campaign = Campaigns( int(campaign_id), charge_type )
                     campaign_dict = campaign.generate_campaign_info()
                     try:lifetime_target = campaign_dict['target']
@@ -79,7 +77,7 @@ def opt_api(request):
                         **target_dict,
                         **target_left_dict,
                     }
-                    print(campaign_dict)
+                    print('[campaign_dict] ', campaign_dict)
                     df_camp = pd.DataFrame( campaign_dict, index=[0] )
                     df_camp[df_camp.columns] = df_camp[df_camp.columns].apply(pd.to_numeric, errors='ignore')
                     mysql_adactivity_save.update_campaign_target(df_camp)
@@ -90,7 +88,7 @@ def opt_api(request):
 #                         mydict = mysql_adactivity_save.get_default( campaign_id ) #new version
                         mydict = mysql_adactivity_save.get_release_default( campaign_id )#release version
                 else:
-                    mydict = mysql_adactivity_save.get_default( campaign_id ) #new version
+#                     mydict = mysql_adactivity_save.get_default( campaign_id ) #new version
                     mydict = mysql_adactivity_save.get_release_default( campaign_id )#release version
                 return JsonResponse( json.loads(mydict), safe=False )
             elif media == 'Amobee':
