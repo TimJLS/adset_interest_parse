@@ -414,7 +414,7 @@ def data_collect( campaign_id, total_clicks, charge_type ):
         insertion("adset_leads_metrics", df_adset)
         del adset
     del camp
-#     update_campaign_target(df_camp)
+    update_campaign_target(df_camp)
     check_campaign_metrics(campaign_id, campaign_metrics, table="campaign_leads_metrics")
     return
 

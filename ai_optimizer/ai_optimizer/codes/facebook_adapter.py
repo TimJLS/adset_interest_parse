@@ -63,13 +63,7 @@ class FacebookCampaignAdapter(object):
         return self.campaign_days
     
     def get_campaign_performance(self):
-        dfs = pd.DataFrame(columns=[ ADSET_ID, TARGET ])
-        for ad_id in self.adset_list:
-            df_ad = self.df_ad[self.df_ad.adset_id==ad_id]
-            df = df_ad[[ TARGET, REQUEST_TIME ]][df_ad.request_time.dt.date==self.request_time]
-            dfs = pd.concat([dfs, df], axis=0, sort=False)
-        dfs = dfs.sort_values(by=[ TARGET ], ascending=False).reset_index(drop=True)
-        self.campaign_performance = dfs[ TARGET ].sum()
+        self.campaign_performance = self.df_camp[ TARGET ].sum()
         return self.campaign_performance
     
     def get_campaign_target(self):
@@ -186,6 +180,7 @@ def main():
         release_version_result = {  }
 #         try:
         fb = FacebookCampaignAdapter( campaign_id )
+        fb.get_df()
         fb.retrieve_campaign_attribute()
         adset_list = fb.get_adset_list()
         charge_type = fb.df_camp['charge_type'].iloc[0]

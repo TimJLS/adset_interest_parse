@@ -59,3 +59,198 @@ optimal_weight: [7.84728221 0.79634007 3.51883245 5.52806027 1.8742109  8.759918
  0.54504943 9.98458135]
 0:01:15.956868
 0:01:15.956884
+campaign_id: 23843950299930337
+Generation 0: optimal function value is: -0.990183; average function value is -0.981767
+Generation 1: optimal function value is: 101.869195; average function value is 63.617906
+Generation 2: optimal function value is: 101.869195; average function value is 68.344663
+Optimal function value is: 101.869195; 
+Optimal solution is:
+m1--m2--m3--m4--m5--m6--mspend--mbid
+[4.92786244 9.0550026  6.07890008 9.98617389 8.31843419 0.37100444
+ 9.8474995  6.84656548]
+[[-3.00093401]]
+[[-3.00093401]]
+[[-3.00093401]]
+[[-3.00093401]]
+[[-3.00093401]]
+[[-3.00093401]]
+optimal_weight: [4.92786244 9.0550026  6.07890008 9.98617389 8.31843419 0.37100444
+ 9.8474995  6.84656548]
+0:00:26.994749
+campaign_id: 23843965453120337
+Generation 0: optimal function value is: -0.981116; average function value is -0.966280
+Generation 1: optimal function value is: 52.955429; average function value is 32.693775
+Generation 2: optimal function value is: 52.955429; average function value is 34.336550
+Optimal function value is: 52.955429; 
+Optimal solution is:
+m1--m2--m3--m4--m5--m6--mspend--mbid
+[9.09494533 9.82745374 0.27769631 8.48166415 7.72516674 6.84742716
+ 9.80281437 7.48553561]
+[[28.51549977]]
+[[-2.30355482]]
+[[7.29542896]]
+[[7.94948493]]
+[[18.10749501]]
+[[7.69651731]]
+[[-2.31727876]]
+[[-2.31727876]]
+[[-2.31727876]]
+optimal_weight: [9.09494533 9.82745374 0.27769631 8.48166415 7.72516674 6.84742716
+ 9.80281437 7.48553561]
+0:00:51.335111
+campaign_id: 23843286422270175
+Generation 0: optimal function value is: -0.940926; average function value is -0.883260
+Generation 1: optimal function value is: 16.927940; average function value is 9.973544
+Generation 2: optimal function value is: 16.927940; average function value is 10.760518
+Optimal function value is: 16.927940; 
+Optimal solution is:
+m1--m2--m3--m4--m5--m6--mspend--mbid
+[0.96548596 9.26866075 3.63158913 6.99177707 7.10508806 7.99614102
+ 9.96599744 9.66479466]
+[[0.27045072]]
+[[0.18559202]]
+[[0.23148913]]
+[[0.29695596]]
+[[-0.29920958]]
+[]
+campaign_id: 23843950299930337
+Generation 0: optimal function value is: -0.989164; average function value is -0.980155
+Generation 1: optimal function value is: 92.281724; average function value is 58.208678
+Generation 2: optimal function value is: 92.281724; average function value is 61.525844
+Optimal function value is: 92.281724; 
+Optimal solution is:
+m1--m2--m3--m4--m5--m6--mspend--mbid
+[9.16346684 7.5866322  4.35223147 6.47082641 8.84788581 4.02394195
+ 9.8629211  8.91406654]
+[[-0.94885456]]
+[[-0.94885456]]
+[[-0.94885456]]
+[[-0.94885456]]
+[[-0.94885456]]
+[[-0.94885456]]
+[[-0.94885456]]
+[[-0.94885456]]
+optimal_weight: [9.16346684 7.5866322  4.35223147 6.47082641 8.84788581 4.02394195
+ 9.8629211  8.91406654]
+0:00:26.760484
+campaign_id: 23843286422270175
+Generation 0: optimal function value is: -0.863104; average function value is -0.733174
+Generation 1: optimal function value is: 7.304828; average function value is 4.897692
+Generation 2: optimal function value is: 7.304828; average function value is 5.295670
+Optimal function value is: 7.304828; 
+Optimal solution is:
+m1--m2--m3--m4--m5--m6--mspend--mbid
+[8.91134775 5.07713587 2.29516375 3.20484546 8.41832551 8.80246276
+ 9.9981056  6.87545681]
+[[-3.12264879]]
+[[-3.12264879]]
+[[-3.12264879]]
+[[-3.12264879]]
+[[-3.12264879]]
+[[-3.12264879]]
+[[-3.12264879]]
+[[-3.12264879]]
+[[-3.12264879]]
+[[-3.12264879]]
+[[-3.12264879]]
+[[-3.12264879]]
+optimal_weight: [8.91134775 5.07713587 2.29516375 3.20484546 8.41832551 8.80246276
+ 9.9981056  6.87545681]
+0:00:50.863728
+0:00:50.863745
+campaign_id: 23843950299930337
+Generation 0: optimal function value is: -0.989326; average function value is -0.979850
+Generation 1: optimal function value is: 93.686331; average function value is 57.452028
+Generation 2: optimal function value is: 93.686331; average function value is 61.464247
+Optimal function value is: 93.686331; 
+Optimal solution is:
+m1--m2--m3--m4--m5--m6--mspend--mbid
+[7.8882979  9.74861192 3.32328746 8.75729877 9.20995434 7.10879571
+ 9.72429134 7.97843339]
+[[-1.74585795]]
+[[-1.74585795]]
+[[-1.74585795]]
+[[-1.74585795]]
+[[-1.74585795]]
+[[-1.74585795]]
+[[-1.74585795]]
+[[-1.74585795]]
+optimal_weight: [7.8882979  9.74861192 3.32328746 8.75729877 9.20995434 7.10879571
+ 9.72429134 7.97843339]
+0:00:26.451069
+campaign_id: 23843286422270175
+Generation 0: optimal function value is: -0.862962; average function value is -0.733530
+Generation 1: optimal function value is: 7.297241; average function value is 4.783636
+Generation 2: optimal function value is: 7.297241; average function value is 5.187672
+Optimal function value is: 7.297241; 
+Optimal solution is:
+m1--m2--m3--m4--m5--m6--mspend--mbid
+[4.40902512 7.12709788 3.19567065 1.85323507 1.9514859  9.93585154
+ 9.9500303  2.47126532]
+[[-7.47876497]]
+[[-7.47876497]]
+[[-7.47876497]]
+[[-7.47876497]]
+[[-7.47876497]]
+[[-7.47876497]]
+[[-7.47876497]]
+[[-7.47876497]]
+[[-7.47876497]]
+[[-7.47876497]]
+[[-7.47876497]]
+[[-7.47876497]]
+optimal_weight: [4.40902512 7.12709788 3.19567065 1.85323507 1.9514859  9.93585154
+ 9.9500303  2.47126532]
+0:00:50.597411
+0:00:50.597426
+campaign_id: 23843286422270175
+Generation 0: optimal function value is: -0.862825; average function value is -0.726854
+Generation 1: optimal function value is: 7.289965; average function value is 4.879393
+Generation 2: optimal function value is: 7.289965; average function value is 5.325398
+Optimal function value is: 7.289965; 
+Optimal solution is:
+m1--m2--m3--m4--m5--m6--mspend--mbid
+[0.28103464 2.92952638 2.69788052 2.85669385 1.46945707 9.18261098
+ 9.96463214 2.73828229]
+[[-7.22634985]]
+[[-7.22634985]]
+[[-7.22634985]]
+[[-7.22634985]]
+[[-7.22634985]]
+[[-7.22634985]]
+[[-7.22634985]]
+[[-7.22634985]]
+[[-7.22634985]]
+[[-7.22634985]]
+[[-7.22634985]]
+[[-7.22634985]]
+optimal_weight: [0.28103464 2.92952638 2.69788052 2.85669385 1.46945707 9.18261098
+ 9.96463214 2.73828229]
+0:00:26.290090
+0:00:26.290106
+campaign_id: 23843286422270175
+Generation 0: optimal function value is: -0.941167; average function value is -0.884315
+Generation 1: optimal function value is: 16.997323; average function value is 10.124619
+Generation 2: optimal function value is: 16.997323; average function value is 10.793385
+Optimal function value is: 16.997323; 
+Optimal solution is:
+m1--m2--m3--m4--m5--m6--mspend--mbid
+[6.66243961 6.17829446 4.42130526 6.06172044 5.95360071 8.32187302
+ 9.84652233 9.8113758 ]
+[[-0.03514653]]
+[[-0.03514653]]
+[[-0.03514653]]
+[[-0.03514653]]
+[[-0.03514653]]
+[[-0.03514653]]
+[[-0.03514653]]
+[[-0.03514653]]
+[[-0.03514653]]
+[[-0.03514653]]
+[[-0.03514653]]
+[[-0.03514653]]
+optimal_weight: [6.66243961 6.17829446 4.42130526 6.06172044 5.95360071 8.32187302
+ 9.84652233 9.8113758 ]
+0:00:27.634950
+0:00:27.634965
+campaign_id: 23843286422270175

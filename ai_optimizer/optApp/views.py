@@ -47,7 +47,7 @@ def opt_api(request):
         charge_type = request.POST.get(Field.charge_type)
         media = request.POST.get(Field.media)
         print(campaign_id, destination, charge_type, media)
-        print(campaign_id and destination and charge_type)
+        print(campaign_id and destination and charge_type, datetime.datetime.now())
 #         if campaign_id and destination and charge_type and media: # new release version
         if campaign_id and destination and charge_type: #temporary working version
             if media == 'Facebook' or media is None:

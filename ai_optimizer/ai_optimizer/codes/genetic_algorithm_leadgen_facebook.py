@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[34]:
+# In[40]:
 
 
-# %load facebook_conversion_gentic_algorithm.py
 #!/usr/bin/env python
 
 # In[1]:
@@ -17,7 +16,7 @@ import copy
 import matplotlib.pyplot as plt
 import pandas as pd
 import index_collector_leadgen_facebook
-sizepop, vardim, MAXGEN, params = 200, 7, 3, [0.9, 0.1, 0.5]
+sizepop, vardim, MAXGEN, params = 2000, 7, 15, [0.9, 0.1, 0.5]
 
 
 class GeneticAlgorithm(object):
@@ -218,11 +217,11 @@ class ObjectiveFunc(object):
     '''
 
     def __init__(self, campaign_id=None):
-        self.mydb = facebook_leadgen_index_collector.connectDB(
+        self.mydb = index_collector_leadgen_facebook.connectDB(
             "dev_facebook_test")
 
-    def fitness_function(optimal_weight, df):        
-        
+    def fitness_function(optimal_weight, df):
+        df = df.drop(['charge_type'], axis=1)
         m1 = df['fb_pixel_lead'] / df['fb_pixel_complete_registration']
         m2 = df['fb_pixel_complete_registration'] / df['fb_pixel_view_content']
         m3 = df['fb_pixel_view_content'] / df['landing_page_view']
@@ -232,11 +231,11 @@ class ObjectiveFunc(object):
         m_bid = (df['campaign_bid'] - df['cost_per_fb_pixel_lead']) / df['campaign_bid']
 
         status = np.array([m1, m2, m3, m4, m5, m_spend, m_bid])
+        status = np.nan_to_num(status)
         r = np.dot(optimal_weight, status)
         return r
 
     def adset_fitness(optimal_weight, df):
-        
         m1 = df['fb_pixel_lead'] / df['fb_pixel_complete_registration']
         m2 = df['fb_pixel_complete_registration'] / df['fb_pixel_view_content']
         m3 = df['fb_pixel_view_content'] / df['landing_page_view']
@@ -267,12 +266,13 @@ class ObjectiveFunc(object):
                 'campaign_cost_per_target': [campaign_cost_per_target],
                 'campaign_target': [campaign_target],
                 'campaign_bid': [df_camp['campaign_bid'].iloc[0]],
-                'daily_budget': [df_camp['daily_budget'].iloc[0]]
+                'daily_budget': [df_camp['daily_budget'].iloc[0]],
+                'charge_type': [df_camp['charge_type'].iloc[0]]
             }
         )
         df = pd.merge(df, df_metrics, on=['campaign_id'])
-        df = df.convert_objects(convert_numeric=True)
         df.fillna(value=0, inplace=True)
+        df = df.convert_objects(convert_numeric=True)
         return df
 
     def adset_status(self, adset_id):
@@ -287,12 +287,12 @@ class ObjectiveFunc(object):
 
 def ga_optimal_weight(campaign_id, df_weight):
     request_time = datetime.datetime.now().date()
-    mydb = facebook_leadgen_index_collector.connectDB("dev_facebook_test")
+    mydb = index_collector_leadgen_facebook.connectDB("dev_facebook_test")
 #     df_weight = pd.read_sql("SELECT * FROM conversion_optimal_weight WHERE campaign_id={}".format(campaign_id), con=mydb)
     df_camp = pd.read_sql(
         "SELECT * FROM campaign_target WHERE campaign_id={}".format(campaign_id), con=mydb)
     charge_type = df_camp['charge_type'].iloc[0]
-    adset_list = facebook_leadgen_index_collector.Campaigns(campaign_id, charge_type).get_adsets()
+    adset_list = index_collector_leadgen_facebook.Campaigns(campaign_id, charge_type).get_adsets()
     for adset_id in adset_list:
         df = ObjectiveFunc().adset_status(adset_id)
         r = ObjectiveFunc.adset_fitness(df_weight, df)
@@ -300,38 +300,39 @@ def ga_optimal_weight(campaign_id, df_weight):
         df_final = pd.DataFrame({'campaign_id': campaign_id, 'adset_id': adset_id,
                                  'score': r[0], 'request_time': request_time}, index=[0])
 
-        facebook_leadgen_index_collector.insertion("adset_score", df_final)
+        index_collector_leadgen_facebook.insertion("adset_score", df_final)
 
 
-# In[35]:
+# In[41]:
 
 
 
 if __name__ == "__main__":
     import datetime
     starttime = datetime.datetime.now()
-    campaign_list = facebook_leadgen_index_collector.get_campaign_target()['campaign_id'].unique()
+    campaign_list = index_collector_leadgen_facebook.get_campaign_target()['campaign_id'].unique()
     for camp_id in campaign_list:
         print('campaign_id:', camp_id)
         global df
         df = ObjectiveFunc().campaign_status(camp_id)
-        bound = np.tile([[0], [10]], vardim)
-        ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
-        optimal = ga.solve()
-        score = ObjectiveFunc.fitness_function(optimal, df)
-        weight_columns = ['w1', 'w2', 'w3', 'w4',
-                          'w5', 'w_spend', 'w_bid']
-        df_weight = pd.DataFrame(
-            data=[optimal], columns=weight_columns, index=[0])
+        if df['charge_type'].iloc[0] == 'LEAD_GENERATION':
+            bound = np.tile([[0], [10]], vardim)
+            ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
+            optimal = ga.solve()
+            score = ObjectiveFunc.fitness_function(optimal, df)
+            weight_columns = ['w1', 'w2', 'w3', 'w4',
+                              'w5', 'w_spend', 'w_bid']
+            df_weight = pd.DataFrame(
+                data=[optimal], columns=weight_columns, index=[0])
 
-        df_final = pd.DataFrame({'campaign_id': camp_id, 'score': score}, columns=[
-                                'campaign_id', 'score'], index=[0])
-        df_final = pd.concat([df_weight, df_final], axis=1,
-                             sort=True, ignore_index=False)
-        facebook_leadgen_index_collector.check_optimal_weight(camp_id, df_final)
-        ga_optimal_weight(camp_id, df_weight)
-        print('optimal_weight:', optimal)
-        print(datetime.datetime.now()-starttime)
+            df_final = pd.DataFrame({'campaign_id': camp_id, 'score': score}, columns=[
+                                    'campaign_id', 'score'], index=[0])
+            df_final = pd.concat([df_weight, df_final], axis=1,
+                                 sort=True, ignore_index=False)
+            index_collector_leadgen_facebook.check_optimal_weight(camp_id, df_final)
+            ga_optimal_weight(camp_id, df_weight)
+            print('optimal_weight:', optimal)
+            print(datetime.datetime.now()-starttime)
     print(datetime.datetime.now()-starttime)
 
 
@@ -361,7 +362,7 @@ if __name__ == "__main__":
 # print('optimal_weight:', optimal)
 
 
-# In[1]:
+# In[43]:
 
 
 #get_ipython().system('jupyter nbconvert --to script genetic_algorithm_leadgen_facebook.ipynb')

@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# In[2]:
+
+
+# %load genetic_algorithm_conversion_facebook.py
+#!/usr/bin/env python
+
 # In[4]:
 
 
@@ -11,7 +17,13 @@ import copy
 import matplotlib.pyplot as plt
 import pandas as pd
 import index_collector_conversion_facebook
-sizepop, vardim, MAXGEN, params = 2000, 8, 3, [0.9, 0.1, 0.5]
+sizepop, vardim, MAXGEN, params = 2000, 8, 15, [0.9, 0.1, 0.5]
+
+COST_PER_ACTION = {
+    'CONVERSIONS':'cost_per_purchase',
+    'ADD_TO_CART':'cost_per_add_to_cart',
+}
+
 class GeneticAlgorithm(object):
     '''
     The class for genetic algorithm
@@ -209,6 +221,7 @@ class ObjectiveFunc(object):
         self.mydb = index_collector_conversion_facebook.connectDB( "dev_facebook_test" )
         
     def fitness_function(optimal_weight, df):
+        charge_type = df['charge_type'].iloc[0]
         
         m1 = df['purchase'] / df['initiate_checkout']
         m2 = df['initiate_checkout'] / df['add_to_cart']
@@ -217,14 +230,15 @@ class ObjectiveFunc(object):
         m5 = df['landing_page_view'] / df['link_click']
         m6 = df['link_click'] / df['impressions']
         m_spend = -( df['daily_budget'] - df['spend'] ) / df['daily_budget']
-        m_bid   = ( df['campaign_bid'] - df['cost_per_purchase'] ) / df['campaign_bid']
+        m_bid   = ( df['campaign_bid'] - df[ COST_PER_ACTION[charge_type] ] ) / df['campaign_bid']
 
         status  = np.array( [m1, m2, m3, m4, m5, m6, m_spend, m_bid] )
         status = np.nan_to_num(status)
         r = np.dot( optimal_weight, status )
         return r
 
-    def adset_fitness(optimal_weight, df):
+    def adset_fitness(optimal_weight, df, charge_type):
+        
         m1 = df['purchase'] / df['initiate_checkout']
         m2 = df['initiate_checkout'] / df['add_to_cart']
         m3 = df['add_to_cart'] / df['view_content']
@@ -232,8 +246,8 @@ class ObjectiveFunc(object):
         m5 = df['landing_page_view'] / df['link_click']
         m6 = df['link_click'] / df['impressions']
         m_spend = -( df['daily_budget'] - df['spend'] ) / df['daily_budget']
-        m_bid   = ( df['bid_amount'] - df['cost_per_purchase'] ) / df['bid_amount']
-
+        m_bid   = ( df['bid_amount'] - df[ COST_PER_ACTION[charge_type] ] ) / df['bid_amount']
+        
         status  = np.array( [m1, m2, m3, m4, m5, m6, m_spend, m_bid] )
         status = np.nan_to_num(status)
         r = np.dot( optimal_weight, status )
@@ -255,7 +269,8 @@ class ObjectiveFunc(object):
                 'campaign_cost_per_target':[ campaign_cost_per_target ],
                 'campaign_target':[ campaign_target ],
                 'campaign_bid':[ df_camp['campaign_bid'].iloc[0] ],
-                'daily_budget':[ df_camp['daily_budget'].iloc[0] ]
+                'daily_budget':[ df_camp['daily_budget'].iloc[0] ],
+                'charge_type':[ df_camp['charge_type'].iloc[0] ]
             }
         )
         df = pd.merge( df, df_metrics, on=['campaign_id'] )
@@ -279,11 +294,15 @@ def ga_optimal_weight(campaign_id, df_weight):
     adset_list = index_collector_conversion_facebook.Campaigns(campaign_id, charge_type).get_adsets()
     for adset_id in adset_list:
         df = ObjectiveFunc().adset_status( adset_id )
-        r = ObjectiveFunc.adset_fitness( df_weight, df )
+        r = ObjectiveFunc.adset_fitness( df_weight, df, charge_type )
         print(r)
         df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'score':r[0], 'request_time':request_time}, index=[0])
 
         index_collector_conversion_facebook.insertion("adset_score", df_final)
+
+
+# In[ ]:
+
 
 if __name__ == "__main__":
     import datetime
@@ -309,10 +328,10 @@ if __name__ == "__main__":
     print(datetime.datetime.now()-starttime)
 
 
-# In[5]:
+# In[4]:
 
 
-get_ipython().system('jupyter nbconvert --to script genetic_algorithm_conversion_facebook.ipynb')
+#get_ipython().system('jupyter nbconvert --to script genetic_algorithm_conversion_facebook.ipynb')
 
 
 # In[ ]:

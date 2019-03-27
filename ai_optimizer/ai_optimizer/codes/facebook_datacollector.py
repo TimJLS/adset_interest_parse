@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# In[3]:
+
+
+# %load facebook_datacollector.py
+#!/usr/bin/env python
+
 # In[24]:
 
 
@@ -390,7 +396,6 @@ def data_collect( campaign_id, total_clicks, charge_type ):
     charge_dict = {'charge_type': charge_type}
     target_dict = {'destination': total_clicks}
     life_time_campaign_insights = camp.generate_campaign_info( date_preset=DatePreset.lifetime )
-#     print(life_time_CAMPAIGN_FIELD)
     stop_time = datetime.datetime.strptime( life_time_campaign_insights[Field.stop_time],'%Y-%m-%d %H:%M:%S' )
     period_left = (stop_time-datetime.datetime.now()).days + 1
     if period_left <= 0:
@@ -405,6 +410,7 @@ def data_collect( campaign_id, total_clicks, charge_type ):
         **target_dict,
         **daily_charge,
     }
+    print(campaign_dict)
     adset_list = camp.get_adsets()
     for adset_id in adset_list:
         adset = AdSets(adset_id, charge_type)
@@ -465,17 +471,20 @@ def make_default( campaign_id, charge_type ):
 def main():
     start_time = datetime.datetime.now()
     FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-    campaignid_target_dict = mysql_adactivity_save.get_campaign_target_dict()    
-    for campaign_id in campaignid_target_dict:
-        charge = campaignid_target_dict.get(campaign_id)
+    campaignid_list = mysql_adactivity_save.get_campaign()
+    print(campaignid_list)
+    for campaign_id in campaignid_list:
         df = mysql_adactivity_save.get_campaign_target(campaign_id)
-        print(campaign_id, df['charge_type'])
-        data_collect( campaign_id.astype(dtype=object), charge.iloc[0].astype(dtype=object), df['charge_type'].iloc[0] )#存資料
+        if len(df) == 0:
+            pass
+        else:
+            print(campaign_id, df['charge_type'])
+            data_collect( int(campaign_id), df['destination'].iloc[0], df['charge_type'].iloc[0] )
     print(datetime.datetime.now()-start_time)
     
 
 
-# In[25]:
+# In[2]:
 
 
 if __name__ == "__main__":
@@ -484,14 +493,8 @@ if __name__ == "__main__":
     gc.collect()
 
 
-# In[84]:
+# In[3]:
 
 
-# get_ipython().system('jupyter nbconvert --to script facebook_datacollector.ipynb')
-
-
-# In[ ]:
-
-
-
+#!jupyter nbconvert --to script facebook_datacollector.ipynb
 
