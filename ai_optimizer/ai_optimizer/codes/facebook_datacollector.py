@@ -417,9 +417,11 @@ def data_collect( campaign_id, total_clicks, charge_type ):
         adset_dict = adset.generate_adset_info(date_preset=DatePreset.today)
         adset_dict['request_time'] = datetime.datetime.now()
         adset_dict['campaign_id'] = campaign_id
-        adset_dict['bid_amount'] = math.ceil(reverse_bid_amount(adset_dict['bid_amount']))
         df_adset = pd.DataFrame(adset_dict, index=[0])
         mysql_adactivity_save.intoDB("adset_insights", df_adset)#insert into ADSET_FIELD
+        
+        adset_dict['bid_amount'] = math.ceil(reverse_bid_amount(adset_dict['bid_amount']))
+        df_adset = pd.DataFrame(adset_dict, index=[0])
         mysql_adactivity_save.check_initial_bid(adset_id, df_adset[[Field.campaign_id, Field.adset_id, Field.bid_amount]])
 #         mysql_adactivity_save.intoDB("adset_initial_bid", df_adset[[Field.campaign_id, Field.adset_id, Field.bid_amount]])
     df_camp = pd.DataFrame(campaign_dict, index=[0])

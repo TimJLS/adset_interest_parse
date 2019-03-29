@@ -28,6 +28,10 @@ def reverse_bid_amount(bid_amount):
     init_bid = bid_amount / ( BID_RANGE * ( normalized_sigmoid_fkt(CENTER, WIDTH, 0) - 0.5 ) + 1 )
     return init_bid
 
+def revert_bid_amount(bid_amount):
+    init_bid = bid_amount * ( BID_RANGE * ( normalized_sigmoid_fkt(CENTER, WIDTH, 0) - 0.5 ) + 1 )
+    return init_bid
+
 def normalized_sigmoid_fkt(center, width, progress):
     s= 1/( 1 + np.exp( width * ( progress-center ) ) )
     return s
@@ -47,18 +51,20 @@ def adjust(media, **status):
         bid = math.ceil(init_bid)
     elif adset_progress > 1 and campaign_progress < 1:
         bid = last_bid
+        print(status.get(ADSET_ID), bid)
     else:
+#         init_bid = reverse_bid_amount(init_bid)
         bid = init_bid + BID_RANGE*init_bid*( normalized_sigmoid_fkt(CENTER, WIDTH, adset_progress) - 0.5 )
         bid = bid.astype(dtype=object)
     if not str(adset_progress).split(".")[0].isdigit():
         bid = init_bid
-    print( { ADAPTER[media].get("adset_id"):status.get(ADSET_ID), BID:bid } )
+#     print( { ADAPTER[media].get("adset_id"):status.get(ADSET_ID), BID:bid } )
     return { ADAPTER[media].get("adset_id"):status.get(ADSET_ID), BID:bid }
     return { ADSET_ID:adset_id, BID:bid }
 
 if __name__=='__main__':
-    status = {'campaign_progress': -0.0, 'adset_id': 23843355587230564, 'init_bid': 11, 'adset_progress': -0.7373064458048254, 'last_bid': 15}
-    media = "Facebook"
-    status = {'package_progress': 0.0, 'io_progress': 0.0, 'package_id': 1605818545, 'last_bid': 450, 'init_bid': 450}
-    media = 'Amobee'
+#     status = {'campaign_progress': -0.0, 'adset_id': 23843355587230564, 'init_bid': 11, 'adset_progress': -0.7373064458048254, 'last_bid': 15}
+#     media = "Facebook"
+#     status = {'package_progress': 0.0, 'io_progress': 0.0, 'package_id': 1605818545, 'last_bid': 450, 'init_bid': 450}
+#     media = 'Amobee'
     adjust(media, **status)

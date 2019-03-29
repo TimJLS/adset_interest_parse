@@ -50,6 +50,8 @@ class FacebookCampaignAdapter(object):
         for adset in self.adset_list:
             init_bid = df_init_bid[BID_AMOUNT][df_init_bid.adset_id==adset].head(1).iloc[0].astype(dtype=object)
             last_bid = df_adset[BID_AMOUNT][df_adset.adset_id==adset].tail(1).iloc[0].astype(dtype=object)
+#             init_bid = bid_operator.revert_bid_amount(init_bid)
+#             last_bid = bid_operator.reverse_bid_amount(last_bid)
             self.init_bid_dict.update({ adset: init_bid })
             self.last_bid_dict.update({ adset: last_bid })
         return
@@ -134,7 +136,11 @@ class FacebookAdSetAdapter(FacebookCampaignAdapter):
         return self.adset_day_target
     
     def get_adset_performance(self):
-        self.adset_performance = self.df_ad[ TARGET ][self.df_ad.adset_id==self.adset_id].iloc[0]
+        try:
+            self.adset_performance = self.df_ad[self.df_ad.adset_id==self.adset_id][[ TARGET ]].tail(1).iloc[0,0]
+        except ValueError as e:
+            print('[facebook_adapter.FacebookAdSetAdapter.get_adset_performance()]', e)
+            self.adset_performance = 0
         if math.isnan(self.adset_performance):
             self.adset_performance = 0
         return self.adset_performance
@@ -178,37 +184,37 @@ def main():
         campaign_id = campaign_id.astype(dtype=object)
         result={ 'media': 'Facebook', 'campaign_id': campaign_id, 'contents':[] }
         release_version_result = {  }
-#         try:
-        fb = FacebookCampaignAdapter( campaign_id )
-        fb.get_df()
-        fb.retrieve_campaign_attribute()
-        adset_list = fb.get_adset_list()
-        charge_type = fb.df_camp['charge_type'].iloc[0]
-        for adset in adset_list:
-            s = FacebookAdSetAdapter( adset, fb )
-            status = s.retrieve_adset_attribute()
-            media = result['media']
-            bid = bid_operator.adjust(media, **status)
-            result['contents'].append(bid)
-            print(status)
-            adset = AdSets(adset, charge_type)
-            adset.get_adset_features()
-            ad_list = adset.get_ads()
-            bid['pred_cpc'] = bid.pop('bid')
-            bid['pred_cpc'] = int( bid['pred_cpc'] )
-            bid["status"] = adset.status
-            for ad in ad_list:
-                release_version_result.update( { ad: bid } )
-#                 print({ ad: bid })
-            del s
-        mydict_json = json.dumps(result)
-        release_json = json.dumps(release_version_result)
-        mysql_adactivity_save.insert_result( campaign_id, mydict_json, datetime.datetime.now() )
-        mysql_adactivity_save.insert_release_result( campaign_id, release_json, datetime.datetime.now() )
-        del fb
-#         except:
-#             print('pass')
-#             pass
+        try:
+            fb = FacebookCampaignAdapter( campaign_id )
+            fb.get_df()
+            fb.retrieve_campaign_attribute()
+            adset_list = fb.get_adset_list()
+            charge_type = fb.df_camp['charge_type'].iloc[0]
+            for adset in adset_list:
+                s = FacebookAdSetAdapter( adset, fb )
+                status = s.retrieve_adset_attribute()
+                media = result['media']
+                bid = bid_operator.adjust(media, **status)
+                result['contents'].append(bid)
+#                 print(status)
+                adset = AdSets(adset, charge_type)
+                adset.get_adset_features()
+                ad_list = adset.get_ads()
+                bid['pred_cpc'] = bid.pop('bid')
+                bid['pred_cpc'] = int( bid['pred_cpc'] )
+                bid["status"] = adset.status
+                for ad in ad_list:
+                    release_version_result.update( { ad: bid } )
+    # #                 print({ ad: bid })
+                del s
+            mydict_json = json.dumps(result)
+            release_json = json.dumps(release_version_result)
+            mysql_adactivity_save.insert_result( campaign_id, mydict_json, datetime.datetime.now() )
+            mysql_adactivity_save.insert_release_result( campaign_id, release_json, datetime.datetime.now() )
+            del fb
+        except:
+            print('pass')
+            pass
         
 #     campaign_id = 23843269222010540
 #     result={ 'media': 'Facebook', 'campaign_id': campaign_id, 'contents':[] }
