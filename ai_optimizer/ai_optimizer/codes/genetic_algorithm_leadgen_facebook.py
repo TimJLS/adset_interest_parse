@@ -311,10 +311,13 @@ if __name__ == "__main__":
     import datetime
     starttime = datetime.datetime.now()
     campaign_list = index_collector_leadgen_facebook.get_campaign_target()['campaign_id'].unique()
+    print(campaign_list)
     for camp_id in campaign_list:
         print('campaign_id:', camp_id)
         global df
         df = ObjectiveFunc().campaign_status(camp_id)
+#         if len(df):
+#         print(len(df))
         if df['charge_type'].iloc[0] == 'LEAD_GENERATION':
             bound = np.tile([[0], [10]], vardim)
             ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)

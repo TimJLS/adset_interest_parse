@@ -564,6 +564,8 @@ def get_campaign_target():
         if stop_time >= request_time and start_time <= request_time:
             df_temp = df[df.campaign_id==campaign_id]
             df_camp = pd.concat([df_camp, df_temp])
+#         df_temp = df[df.campaign_id==campaign_id]
+#         df_camp = pd.concat([df_camp, df_temp])
     mydb.close()
     return df_camp
 '''

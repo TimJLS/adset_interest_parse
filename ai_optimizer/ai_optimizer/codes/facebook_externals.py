@@ -4,8 +4,11 @@
 # In[ ]:
 
 
-# %load facebook_externals.py
-#!/usr/bin/env python
+#get_ipython().system('jupyter nbconvert --to script facebook_externals.ipynb')
+
+
+# In[ ]:
+
 
 # In[4]:
 
@@ -245,6 +248,7 @@ def main(campaign):
 
     elif achieving_rate < ACTION_BOUNDARY:
         bid_adjust = True
+        mysql_adactivity_save.adjust_init_bid(campaign)
     else:
         return
     copy_name_with_copy = False
@@ -307,26 +311,15 @@ def main(campaign):
             copy_adset(adset_id, actions_copy, origin_adset_params)
 
 
+
 # In[ ]:
 
 
 if __name__ == '__main__':
-#     import index_collector_conversion_facebook
-#     FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-#     df_camp = index_collector_conversion_facebook.get_campaign_target()
-#     for campaign_id in df_camp.campaign_id.unique():
-#         main(campaign_id)
-    main(23843310773940232)
-
-
-# In[6]:
-
-
-#get_ipython().system('jupyter nbconvert --to script facebook_externals.ipynb')
-
-
-# In[ ]:
-
-
-
+    import index_collector_conversion_facebook
+    FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
+    df_camp = index_collector_conversion_facebook.get_campaign_target()
+    for campaign_id in df_camp.campaign_id.unique():
+        main(campaign_id)
+#     main(23843310773940232)
 

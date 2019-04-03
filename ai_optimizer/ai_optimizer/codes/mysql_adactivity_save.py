@@ -316,6 +316,26 @@ def update_init_bid(adset_id, init_bid):
     mydb.close()
     return
 
+def adjust_init_bid(campaign_id):
+    mydb = mysql_adactivity_save.connectDB("dev_facebook_test")
+    mycursor = mydb.cursor()
+    ### select
+    sql = "SELECT bid_amount FROM adset_initial_bid WHERE campaign_id={}".format(campaign_id)
+    mycursor.execute(sql)
+    init_bid = mycursor.fetchall()
+    init_bid = int(init_bid[0][0])
+    if init_bid > 100:
+        init_bid = init_bid*1.1
+    else:
+        init_bid += 1
+    ### update
+    sql = "UPDATE adset_initial_bid SET bid_amount={} WHERE campaign_id={}".format(init_bid, campaign_id)
+    mycursor.execute(sql)
+    mydb.commit()
+    mycursor.close()
+    mydb.close()    
+    return
+
 def check_initial_bid(adset_id, df):
     mydb = connectDB(DATABASE)
     df_check = pd.read_sql( "SELECT * FROM adset_initial_bid WHERE adset_id={}".format(adset_id), con=mydb )

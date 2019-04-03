@@ -39,6 +39,7 @@ CAMPAIGN_OBJECTIVE_FIELD = {
     'POST_ENGAGEMENT': 'post_engagement', 
     'VIDEO_VIEWS': 'video_view', 
     'CONVERSIONS':'offsite_conversion.fb_pixel_purchase',
+    'ADD_TO_CART':'offsite_conversion.fb_pixel_add_to_cart',
     'APP_INSTALLS': 'app_installs',
     'BRAND_AWARENESS': 'brand_awareness',
     'EVENT_RESPONSES': 'event_responses',
