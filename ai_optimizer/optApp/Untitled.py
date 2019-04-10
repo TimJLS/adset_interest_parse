@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[3]:
+# In[7]:
 
 
 from django.shortcuts import render
@@ -16,9 +16,10 @@ import json
 import numpy as np
 import pandas as pd
 from sklearn.externals import joblib
+
 from ai_optimizer.codes import mysql_adactivity_save
-from ai_optimizer.codes import gdn_db
-from ai_optimizer.codes import gdn_datacollector
+from ai_optimizer.codes import amobee_db
+from ai_optimizer.codes import amobee_datacollector
 from facebook_business.api import FacebookAdsApi
 from facebook_datacollector import Campaigns
 import facebook_datacollector
@@ -108,26 +109,23 @@ def opt_api(request):
             return JsonResponse( json.loads(mydict), safe=False )
         if media == 'GDN':
             if account_id and campaign_id and destination and destination_type:
-                if not gdn_db.check_campaignid_target(account_id, campaign_id, destination, destination_type):
-                    gdn_datacollector.data_collect(account_id, campaign_id, destination, destination_type)
-                    return JsonResponse( {}, safe=False )
-                else:
-                    try:
-    #                         mydict = mysql_adactivity_save.get_result( campaign_id ) #new version
-                        mydict = mysql_adactivity_save.get_release_result( campaign_id ) #release version
-                    except:
-    #                         mydict = mysql_adactivity_save.get_default( campaign_id ) #new version
-                        mydict = mysql_adactivity_save.get_release_default( campaign_id )#release version
+                gdn_db.check_campaignid_target(account_id, campaign_id, destination, charge_type)
+                try:
+#                         mydict = mysql_adactivity_save.get_result( campaign_id ) #new version
+                    mydict = mysql_adactivity_save.get_release_result( campaign_id ) #release version
+                except:
+#                         mydict = mysql_adactivity_save.get_default( campaign_id ) #new version
+                    mydict = mysql_adactivity_save.get_release_default( campaign_id )#release version
                 return JsonResponse( json.loads(mydict), safe=False )
     else:
         return JsonResponse( {}, safe=False )
         
 
 
-# In[4]:
+# In[11]:
 
 
-#get_ipython().system("jupyter nbconvert --output-dir='/home/tim_su/ai_optimizer/opt/ai_optimizer/optApp/' --to script /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/notebook/views.ipynb")
+get_ipython().system("jupyter nbconvert --output-dir= '/home/tim_su/ai_optimizer/opt/ai_optimizer/optApp/' --to script /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/notebook/Untitled.ipynb")
 
 
 # In[ ]:

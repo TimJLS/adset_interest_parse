@@ -206,16 +206,17 @@ class Accounts(object):
         self.account_id = account_id
         self.account_insights = dict()
         
-    def get_account_insights( self ):
+    def get_account_insights( self, date_preset=DatePreset.yesterday ):
         accounts = AdAccount( self.account_id )
         params = {
-            'date_preset': 'today',
+            'date_preset': date_preset,
         }
         insights = accounts.get_insights(
             params=params,
             fields=list( GENERAL_FIELD.values() )+list( TARGET_FIELD.values() )
         )
-        current_account = insight[0]
+#         print(insights)
+        current_account = insights[0]
         return current_account
     
 class Campaigns(object):
@@ -279,7 +280,7 @@ class Campaigns(object):
 
     def get_account_id( self ):
         camp = campaign.Campaign( self.campaign_id )
-        account = camp.get_insights(fields=[campaign.CampaignField.account_id])
+        account = camp.get_ad_sets(fields=[campaign.Campaign.Field.account_id])
         current_account = account[0]
         return current_account.get( Field.account_id )
     # Operator
@@ -474,7 +475,8 @@ def make_default( campaign_id, charge_type ):
 def main():
     start_time = datetime.datetime.now()
     FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-    campaignid_list = mysql_adactivity_save.get_campaign()
+#     campaignid_list = mysql_adactivity_save.get_campaign() # if extend period, use this
+    campaignid_list = mysql_adactivity_save.get_campaign_target_left_dict().keys()
     print(campaignid_list)
     for campaign_id in campaignid_list:
         df = mysql_adactivity_save.get_campaign_target(campaign_id)

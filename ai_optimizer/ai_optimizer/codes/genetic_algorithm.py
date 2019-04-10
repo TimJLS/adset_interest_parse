@@ -205,7 +205,6 @@ class ObjectiveFunc(object):
     objective function of genetic algorithm
     '''
     def fitnessfunc(optimal_weight, df):
-
         m_kpi   = df['campaign_charge'] / df['charge_per_day']
         m_spend = -( df['budget_per_day'] - df['spend'] ) / df['budget_per_day']
         m_bid   = ( df['campaign_bid'] - df['campaign_cpc'] ) / df['campaign_bid']
@@ -213,6 +212,7 @@ class ObjectiveFunc(object):
 #         m_ctr   = ctr/target_ctr 
 
         status  = np.array( [m_kpi, m_spend, m_bid] )
+#         print(df['campaign_bid'].iloc[0], df['campaign_cpc'].iloc[0], df['campaign_bid'].iloc[0])
 #         status  = np.array( [m_kpi, m_spend, m_bid, m_width] )
         r = np.dot( optimal_weight, status )
         return r
@@ -235,6 +235,7 @@ class ObjectiveFunc(object):
         mydb = mysql_adactivity_save.connectDB( "dev_facebook_test" )
         df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id=%s" %(campaign_id), con=mydb)
         df_camp['charge_per_day'] = df_camp['target']/df_camp['period']
+#         print(df_camp['spend_cap'],df_camp['target'])
         df_camp['campaign_bid'] = df_camp['spend_cap']/df_camp['target']
         charge_type = df_camp['charge_type'].iloc[0]
         acc_id = facebook_datacollector.Campaigns(campaign_id, charge_type).get_account_id()
@@ -345,8 +346,8 @@ def ga_optimal_weight(campaign_id):
 if __name__ == "__main__":
     starttime = datetime.datetime.now()
 
-    camp_dict = mysql_adactivity_save.get_campaign_target_dict()
-    for camp_id in camp_dict.keys():
+    camp_id_list = mysql_adactivity_save.get_campaign_target_left_dict()
+    for camp_id in camp_id_list.keys():
 #         ga_optimal_weight(camp_id)
         print('campaign_id:', camp_id )
         global df

@@ -133,10 +133,10 @@ def get_campaign_target_dict():
     return campaignid_dict
 
 def get_campaign_target_left_dict():
-    DATABASE = "ad_activity"
     mydb = connectDB(DATABASE)
     request_time = datetime.datetime.now()
     df = pd.read_sql( "SELECT * FROM campaign_target" , con=mydb )
+    mydb.close()
     campaignid_dict=dict()
     campaignid_list = df['campaign_id'].unique()
     for campaign_id in campaignid_list:
@@ -144,7 +144,6 @@ def get_campaign_target_left_dict():
         stop_time = df['stop_time'][df.campaign_id==campaign_id].iloc[0]
         if stop_time >= request_time:
             campaignid_dict[campaign_id]=df['target_left'][df.campaign_id==campaign_id]
-    mydb.close()
     return campaignid_dict
 
 def get_campaign():
@@ -317,7 +316,7 @@ def update_init_bid(adset_id, init_bid):
     return
 
 def adjust_init_bid(campaign_id):
-    mydb = mysql_adactivity_save.connectDB("dev_facebook_test")
+    mydb = connectDB(DATABASE)
     mycursor = mydb.cursor()
     ### select
     sql = "SELECT bid_amount FROM adset_initial_bid WHERE campaign_id={}".format(campaign_id)

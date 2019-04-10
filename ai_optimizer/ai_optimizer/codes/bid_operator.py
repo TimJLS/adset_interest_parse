@@ -13,6 +13,12 @@ ADAPTER = {
         "campaign_id":"campaign_id",
         "adset_progress":"adset_progress",
         "campaign_progress":"campaign_progress"
+    },
+    "GDN":{
+        "adset_id":"adgroup_id",
+        "campaign_id":"campaign_id",
+        "adset_progress":"adgroup_progress",
+        "campaign_progress":"campaign_progress"
     }
 }
 
@@ -51,7 +57,6 @@ def adjust(media, **status):
         bid = math.ceil(init_bid)
     elif adset_progress > 1 and campaign_progress < 1:
         bid = last_bid
-        print(status.get(ADSET_ID), bid)
     else:
 #         init_bid = reverse_bid_amount(init_bid)
         bid = init_bid + BID_RANGE*init_bid*( normalized_sigmoid_fkt(CENTER, WIDTH, adset_progress) - 0.5 )
