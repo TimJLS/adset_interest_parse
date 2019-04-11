@@ -9,7 +9,8 @@ import facebook_datacollector
 import pandas as pd
 import mysql_adactivity_save
 
-sizepop, vardim, MAXGEN, params = 2000, 3, 30, [0.9, 0.5, 0.5]
+# sizepop, vardim, MAXGEN, params = 2000, 3, 30, [0.9, 0.5, 0.5]
+sizepop, vardim, MAXGEN, params = 1000, 3, 10, [0.9, 0.5, 0.5]
 
 class GeneticAlgorithm(object):
     '''
@@ -325,8 +326,8 @@ def ga_optimal_weight(campaign_id):
 #         print('[score]', r, ad_id)
 
         df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'score':r, 'request_time':request_time}, index=[0])
-
-        mysql_adactivity_save.intoDB("adset_score", df_final)
+        print(adset_id, df_final['score'].iloc[0])
+#         mysql_adactivity_save.intoDB("adset_score", df_final)
 #         try:
 # #             print(ad_id)
 #             df = ObjectiveFunc.adset_status(ad_id)
@@ -364,6 +365,8 @@ if __name__ == "__main__":
 
         df_final = pd.DataFrame({'campaign_id':camp_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
         df_final = pd.concat( [df_score, df_final], axis=1, sort=True, ignore_index=False)
+        
+        print(df_final)
         mysql_adactivity_save.check_optimal_weight(camp_id, df_final)
         ga_optimal_weight(camp_id)
         

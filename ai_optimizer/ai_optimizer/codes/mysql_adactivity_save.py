@@ -157,8 +157,7 @@ def get_campaign():
 
 def check_optimal_weight(campaign_id, df):
     mydb = connectDB(DATABASE)
-    df_check = pd.read_sql( "SELECT * FROM optimal_weight WHERE campaign_id={}".foramt(campaign_id), con=mydb )
-#     print(type(campaign_id.astype(dtype=object)))
+    df_check = pd.read_sql( "SELECT * FROM optimal_weight WHERE campaign_id={}".format(campaign_id), con=mydb )
     if df_check.empty:
         engine = create_engine( 'mysql://app:adgeek1234@aws-dev-ai-private.adgeek.cc/dev_facebook_test' )
         with engine.connect() as conn, conn.begin():
@@ -167,26 +166,20 @@ def check_optimal_weight(campaign_id, df):
         return
     else:
         mycursor = mydb.cursor()
-        sql = "UPDATE optimal_weight SET score=%s, weight_kpi=%s, weight_spend=%s, weight_bid=%s WHERE campaign_id=%s"
-        val = ( df['score'].iloc[0].astype(dtype=object),
-                df['weight_kpi'].iloc[0].astype(dtype=object),
-                df['weight_spend'].iloc[0].astype(dtype=object),
-                df['weight_bid'].iloc[0].astype(dtype=object),
-                df['campaign_id'].iloc[0].astype(dtype=object)
-              )
-#         sql = "UPDATE optimal_weight SET score=%s, weight_kpi=%s, weight_spend=%s, weight_bid=%s, weight_width=%s WHERE campaign_id=%s"
-#         val = ( df['score'].iloc[0].astype(dtype=object),
-#                 df['weight_kpi'].iloc[0].astype(dtype=object),
-#                 df['weight_spend'].iloc[0].astype(dtype=object),
-#                 df['weight_bid'].iloc[0].astype(dtype=object),
-#                 df['weight_width'].iloc[0].astype(dtype=object),
-#                 df['campaign_id'].iloc[0].astype(dtype=object)
-#               )
-        mycursor.execute(sql, val)
-        mydb.commit()
+        campaign_id = df['campaign_id'].iloc[0]
+        df.drop(['campaign_id'], axis=1)
+        for column in df.columns:
+            try:
+                sql = ("UPDATE optimal_weight SET {}='{}' WHERE campaign_id={}".format( column, df[column].iloc[0], campaign_id))
+                mycursor.execute(sql)
+                mydb.commit()
+            except Exception as e:
+                print(e)
+                pass
         mycursor.close()
         mydb.close()
         return
+
 ######## NEW ######
 
 def get_campaign_target(campaign_id):

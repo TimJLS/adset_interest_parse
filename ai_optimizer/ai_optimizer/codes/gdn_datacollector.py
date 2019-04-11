@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[14]:
+# In[1]:
 
 
 import uuid
@@ -37,10 +37,12 @@ DB_ADGROUP_COLUMN_NAME_LIST = [
 BIDDING_INDEX = {
     'cpc': 'cpc_bid',
     'cpa': 'cpa_bid',
+    'LINK_CLICKS': 'clicks',
+    'CONVERSIONS':'conversions',
 }
 
 
-# In[15]:
+# In[2]:
 
 
 class Field:
@@ -142,7 +144,7 @@ class Campaign(object):
         return self.insights_dict
 
 
-# In[16]:
+# In[3]:
 
 
 class AdGroup(Campaign):
@@ -215,7 +217,40 @@ class AdGroup(Campaign):
 #     adgroup_insights = get_adgroup_insights(client, campaign_id=campaign_id)
 
 
-# In[17]:
+# In[4]:
+
+
+def update_adgroup_bid(customer_id, ad_group_id, bid_micro_amount=None, client=client):
+    # Initialize appropriate service.
+    client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
+    client.SetClientCustomerId(customer_id)
+    ad_group_service = client.GetService('AdGroupService', version='v201809')
+    
+    # Construct operations and update an ad group.
+    operations = [{
+        'operator': 'SET',
+        'operand': {
+            'id': ad_group_id,
+            'status': 'ENABLED'
+        }
+    }]
+  
+    if bid_micro_amount:
+        bid_micro_amount = int(bid_micro_amount * 1000000)
+        operations[0]['operand']['biddingStrategyConfiguration'] = {
+            'bids': [{
+                'xsi_type': 'CpcBid',
+                'bid': {
+                    'microAmount': bid_micro_amount,
+                }
+            }]
+        }
+  
+    ad_groups = ad_group_service.mutate(operations)
+    return ad_groups
+
+
+# In[5]:
 
 
 def data_collect(customer_id, campaign_id, destination, destination_type):
@@ -247,14 +282,14 @@ def data_collect(customer_id, campaign_id, destination, destination_type):
         df_adgroup = pd.DataFrame(adgroup_today_insights, index=[0])
         gdn_db.into_table(df_adgroup, table="adgroup_insights")
         
-        bidding_type = BIDDING_INDEX[ df_adgroup['bidding_type'].iloc[0] ]
+        bidding_type = BIDDING_INDEX[ destination_type ]
         df_adgroup['bid_amount'] = df_adgroup[bidding_type]
 #         df_adgroup['bid_amount'] = math.ceil(reverse_bid_amount(df_adgroup[bidding_type]))
         gdn_db.check_initial_bid(adgroup_id, df_adgroup[[Field.campaign_id, Field.adgroup_id, Field.bid_amount]])
     return df_adgroup
 
 
-# In[18]:
+# In[6]:
 
 
 def main():
@@ -271,7 +306,7 @@ def main():
     print(datetime.datetime.now()-start_time)
 
 
-# In[19]:
+# In[7]:
 
 
 if __name__=='__main__':
@@ -279,8 +314,14 @@ if __name__=='__main__':
 #     df_campaign = data_collect(camp.customer_id, camp.campaign_id, 10000, camp.destination_type)
 
 
-# In[7]:
+# In[ ]:
 
 
-#get_ipython().system('jupyter nbconvert --to script gdn_datacollector.ipynb')
+
+
+
+# In[ ]:
+
+
+
 

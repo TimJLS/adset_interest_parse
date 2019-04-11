@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[7]:
+# In[1]:
 
 
 import mysql.connector
@@ -95,10 +95,22 @@ def check_initial_bid(adgroup_id, df):
     return
 
 
-# In[5]:
+def insert_result( campaign_id, mydict ):
+    mydb = connectDB(DATABASE)
+    mycursor = mydb.cursor()
+    sql = "INSERT INTO result ( campaign_id, result ) VALUES ( %s, %s )"
+    val = ( campaign_id, mydict )
+    mycursor.execute(sql, val)
+    mydb.commit()
+    mycursor.close()
+    mydb.close()
+    return
 
 
-#get_ipython().system('jupyter nbconvert --to script gdn_db.ipynb')
+# In[2]:
+
+
+
 
 
 # In[ ]:

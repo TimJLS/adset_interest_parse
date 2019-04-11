@@ -90,3 +90,37 @@ Generation 29: optimal function value is: 2.139707; average function value is 1.
 Optimal function value is: 2.139707; 
 Optimal solution is:
 [0.99539789 0.9914003  0.91600906]
+campaign_id: 23843417989430316
+Generation 0: optimal function value is: -0.523242; average function value is 0.023332
+Generation 1: optimal function value is: 2.097501; average function value is 1.221315
+Generation 2: optimal function value is: 2.125528; average function value is 1.331863
+Generation 3: optimal function value is: 2.125528; average function value is 1.413895
+Generation 4: optimal function value is: 2.125528; average function value is 1.473253
+Generation 5: optimal function value is: 2.125528; average function value is 1.511612
+Generation 6: optimal function value is: 2.125528; average function value is 1.546217
+Generation 7: optimal function value is: 2.125528; average function value is 1.565605
+Generation 8: optimal function value is: 2.125528; average function value is 1.585687
+Generation 9: optimal function value is: 2.125528; average function value is 1.601973
+Generation 10: optimal function value is: 2.125528; average function value is 1.629333
+Generation 11: optimal function value is: 2.125528; average function value is 1.643802
+Generation 12: optimal function value is: 2.125528; average function value is 1.643925
+Generation 13: optimal function value is: 2.125528; average function value is 1.647515
+Generation 14: optimal function value is: 2.125528; average function value is 1.653473
+Generation 15: optimal function value is: 2.125528; average function value is 1.662890
+Generation 16: optimal function value is: 2.126847; average function value is 1.662738
+Generation 17: optimal function value is: 2.126847; average function value is 1.676120
+Generation 18: optimal function value is: 2.126847; average function value is 1.685820
+Generation 19: optimal function value is: 2.126847; average function value is 1.690822
+Generation 20: optimal function value is: 2.126847; average function value is 1.696949
+Generation 21: optimal function value is: 2.126847; average function value is 1.696766
+Generation 22: optimal function value is: 2.126847; average function value is 1.705898
+Generation 23: optimal function value is: 2.126847; average function value is 1.713682
+Generation 24: optimal function value is: 2.126847; average function value is 1.719170
+Generation 25: optimal function value is: 2.126847; average function value is 1.712966
+Generation 26: optimal function value is: 2.126847; average function value is 1.717929
+Generation 27: optimal function value is: 2.126847; average function value is 1.720327
+Generation 28: optimal function value is: 2.126847; average function value is 1.725763
+Generation 29: optimal function value is: 2.126847; average function value is 1.734602
+Optimal function value is: 2.126847; 
+Optimal solution is:
+[0.9887213  0.9941691  0.18742169]

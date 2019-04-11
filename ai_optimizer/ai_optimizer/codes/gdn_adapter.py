@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[31]:
+# In[6]:
 
 
 import datetime
 import pandas as pd
 import gdn_db
+import gdn_datacollector
 import bid_operator
 import json
 import math
@@ -30,10 +31,14 @@ CAMPAIGN_PROGRESS = 'campaign_progress'
 BIDDING_INDEX = {
     'cpc': 'cpc_bid',
     'cpa': 'conversions',
+    'LINK_CLICKS': 'clicks',
+    'CONVERSIONS':'conversions',
 }
 DESTINATION_INDEX = {
     'cpc': 'clicks',
     'cpa': 'conversions',
+    'LINK_CLICKS': 'clicks',
+    'CONVERSIONS':'conversions',
 }
 class CampaignAdapter(object):
     def __init__(self, campaign_id):
@@ -200,18 +205,18 @@ def main():
         camp.retrieve_campaign_attribute()
         adgroup_list = camp.get_adgroup_list()
         destination_type = camp.df_camp['destination_type'].iloc[0]
+        account_id = camp.df_camp['customer_id'].iloc[0]
         for adgroup in adgroup_list:
             s = AdGroupAdapter( adgroup, camp )
             status = s.retrieve_adgroup_attribute()
             media = result['media']
-            bid = bid_operator.adjust(media, **status)
-            result['contents'].append(bid)
+            bid_dict = bid_operator.adjust(media, **status)
+            gdn_datacollector.update_adgroup_bid(account_id, adgroup, bid_dict['bid'])
+            result['contents'].append(bid_dict)
             del s
         mydict_json = json.dumps(result)
         release_json = json.dumps(release_version_result)
-        print(mydict_json)
-#         gdn_db.insert_result( campaign_id, mydict_json, datetime.datetime.now() )
-#         gdn_db.insert_release_result( campaign_id, release_json, datetime.datetime.now() )
+        gdn_db.insert_result( campaign_id, mydict_json )
         del camp
 #         except:
 #             print('pass')
@@ -240,3 +245,16 @@ if __name__=='__main__':
     import gc
     gc.collect()
     
+
+
+# In[7]:
+
+
+
+
+
+# In[ ]:
+
+
+
+

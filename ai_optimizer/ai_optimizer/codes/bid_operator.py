@@ -64,7 +64,7 @@ def adjust(media, **status):
     if not str(adset_progress).split(".")[0].isdigit():
         bid = init_bid
 #     print( { ADAPTER[media].get("adset_id"):status.get(ADSET_ID), BID:bid } )
-    return { ADAPTER[media].get("adset_id"):status.get(ADSET_ID), BID:bid }
+    return { ADAPTER[media].get("adset_id"):status.get(ADSET_ID), BID:np.round(bid, 2) }
     return { ADSET_ID:adset_id, BID:bid }
 
 if __name__=='__main__':
