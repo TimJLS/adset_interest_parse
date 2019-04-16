@@ -106,6 +106,40 @@ def insert_result( campaign_id, mydict ):
     mydb.close()
     return
 
+def get_result( campaign_id ):
+    mydb = connectDB(DATABASE)
+    mycursor = mydb.cursor()
+    mycursor.execute( "SELECT result FROM result WHERE campaign_id=%s ORDER BY request_time DESC LIMIT 1" % (campaign_id) )
+    results = mycursor.fetchall()
+    results = str(results[0][0], encoding='utf-8')
+    mycursor.close()
+    mydb.close()
+    return results
+
+def check_optimal_weight(campaign_id, df):
+    mydb = connectDB(DATABASE)
+    df_check = pd.read_sql( "SELECT * FROM optimal_weight WHERE campaign_id={}".format(campaign_id), con=mydb )
+    if df_check.empty:
+        engine = create_engine( 'mysql://app:adgeek1234@aws-dev-ai-private.adgeek.cc/{}'.format(DATABASE) )
+        with engine.connect() as conn, conn.begin():
+            df.to_sql( "optimal_weight", conn, if_exists='append',index=False )
+        engine.dispose()
+        return
+    else:
+        mycursor = mydb.cursor()
+        df.drop(['campaign_id'], axis=1)
+        for column in df.columns:
+            try:
+                sql = ("UPDATE optimal_weight SET {}='{}' WHERE campaign_id={}".format( column, df[column].iloc[0], campaign_id))
+                mycursor.execute(sql)
+                mydb.commit()
+            except Exception as e:
+                print(e)
+                pass
+        mycursor.close()
+        mydb.close()
+        return
+
 
 # In[2]:
 

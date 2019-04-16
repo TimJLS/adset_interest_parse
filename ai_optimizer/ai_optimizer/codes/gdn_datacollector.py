@@ -37,12 +37,12 @@ DB_ADGROUP_COLUMN_NAME_LIST = [
 BIDDING_INDEX = {
     'cpc': 'cpc_bid',
     'cpa': 'cpa_bid',
-    'LINK_CLICKS': 'clicks',
-    'CONVERSIONS':'conversions',
+    'LINK_CLICKS': 'cpc_bid',
+    'CONVERSIONS':'cpc_bid',
 }
 
 
-# In[2]:
+# In[1]:
 
 
 class Field:
@@ -142,14 +142,34 @@ class Campaign(object):
         df.rename( columns=dict( zip(df.columns, DB_CAMPAIGN_COLUMN_NAME_LIST) ), inplace=True )
         self.insights_dict = df.to_dict(orient='records')[0]
         return self.insights_dict
+    
+    def update_status(client=client, status='PAUSED'):
+        # Initialize appropriate service.
+        client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
+        client.SetClientCustomerId(customer_id)
+        campaign_service = client.GetService('CampaignService', version='v201809')
+
+        # Construct operations and update an ad group.
+        operations = [{
+            'operator': 'SET',
+            'operand': {
+                'id': self.campaign_id,
+                'status': status
+            }
+        }]
+
+        campaigns = campaign_service.mutate(operations)
+        return campaigns
 
 
-# In[3]:
+# In[10]:
 
 
 class AdGroup(Campaign):
     def __init__(self, customer_id, campaign_id, destination_type, adgroup_id):
         super().__init__(customer_id, campaign_id, destination_type)
+        self.customer_id = customer_id
+        self.campaign_id = campaign_id
         self.adgroup_id = adgroup_id
         self.report_downloader = client.GetReportDownloader(version='v201809')
         
@@ -210,6 +230,23 @@ class AdGroup(Campaign):
         self.insights_dict = df.reset_index(drop=True).to_dict(orient='records')[0]
         return self.insights_dict
 
+    def update_status(self, client=client, status='PAUSED'):
+        # Initialize appropriate service.
+        client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
+        client.SetClientCustomerId(self.customer_id)
+        ad_group_service = client.GetService('AdGroupService', version='v201809')
+
+        # Construct operations and update an ad group.
+        operations = [{
+            'operator': 'SET',
+            'operand': {
+                'id': self.adgroup_id,
+                'status': status
+            }
+        }]
+
+        adgroups = ad_group_service.mutate(operations)
+        return adgroups
 # if __name__ == '__main__':
 #     # Initialize client object.
 #     client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
@@ -217,7 +254,7 @@ class AdGroup(Campaign):
 #     adgroup_insights = get_adgroup_insights(client, campaign_id=campaign_id)
 
 
-# In[4]:
+# In[6]:
 
 
 def update_adgroup_bid(customer_id, ad_group_id, bid_micro_amount=None, client=client):
@@ -250,7 +287,7 @@ def update_adgroup_bid(customer_id, ad_group_id, bid_micro_amount=None, client=c
     return ad_groups
 
 
-# In[5]:
+# In[7]:
 
 
 def data_collect(customer_id, campaign_id, destination, destination_type):
@@ -289,7 +326,7 @@ def data_collect(customer_id, campaign_id, destination, destination_type):
     return df_adgroup
 
 
-# In[6]:
+# In[8]:
 
 
 def main():
@@ -314,7 +351,7 @@ if __name__=='__main__':
 #     df_campaign = data_collect(camp.customer_id, camp.campaign_id, 10000, camp.destination_type)
 
 
-# In[ ]:
+# In[9]:
 
 
 

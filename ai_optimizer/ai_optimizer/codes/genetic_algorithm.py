@@ -326,21 +326,21 @@ def ga_optimal_weight(campaign_id):
 #         print('[score]', r, ad_id)
 
         df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'score':r, 'request_time':request_time}, index=[0])
-        print(adset_id, df_final['score'].iloc[0])
-#         mysql_adactivity_save.intoDB("adset_score", df_final)
-#         try:
-# #             print(ad_id)
-#             df = ObjectiveFunc.adset_status(ad_id)
-#             r = ObjectiveFunc.adset_fitness( df_weight, df )
-#             print('[score]', r)
-#             df_ad=pd.read_sql("SELECT adset_id FROM ad_insights WHERE ad_id=%s LIMIT 1" %(ad_id), con=mydb)
-#             adset_id = df_ad['adset_id'].iloc[0].astype(dtype=object) 
+#         print(adset_id, df_final['score'].iloc[0])
+        mysql_adactivity_save.intoDB("adset_score", df_final)
+        try:
+#             print(ad_id)
+            df = ObjectiveFunc.adset_status(ad_id)
+            r = ObjectiveFunc.adset_fitness( df_weight, df )
+            print('[score]', r)
+            df_ad=pd.read_sql("SELECT adset_id FROM ad_insights WHERE ad_id=%s LIMIT 1" %(ad_id), con=mydb)
+            adset_id = df_ad['adset_id'].iloc[0].astype(dtype=object) 
 
-#             df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'ad_id':ad_id, 'score':r, 'request_time':request_time}, index=[0])
+            df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'ad_id':ad_id, 'score':r, 'request_time':request_time}, index=[0])
             
-#             mysql_adactivity_save.intoDB("adset_score", df_final)
-#         except:
-#             pass
+            mysql_adactivity_save.intoDB("adset_score", df_final)
+        except:
+            pass
     mydb.close()
     return
 

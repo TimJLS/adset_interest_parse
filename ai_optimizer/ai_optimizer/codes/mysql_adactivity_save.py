@@ -187,9 +187,9 @@ def get_campaign_target(campaign_id):
     request_time = datetime.datetime.now()
     df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id=%s" % (campaign_id), con=mydb )
     df_camp = pd.DataFrame(columns=df.columns)
-    stop_time = df['stop_time'][df.campaign_id==campaign_id].iloc[0]
+    stop_time = df['stop_time'].iloc[0]
     if stop_time >= request_time:
-        df_camp= pd.concat( [ df_camp, df[df.campaign_id==campaign_id] ], axis=0 )
+        df_camp= pd.concat( [ df_camp, df ], axis=0 )
     mydb.close()
     return df_camp
 
@@ -299,9 +299,10 @@ def check_release_default_price(campaign_id):
         return False
 
 def update_init_bid(adset_id, init_bid):
+#     print(adset_id, ': ', init_bid)
     mydb = connectDB(DATABASE)
     mycursor = mydb.cursor()
-    sql = "UPDATE adset_insights SET bid_amount={} WHERE adset_id={} LIMIT 1".format(init_bid, adset_id)
+    sql = "UPDATE adset_initial_bid SET bid_amount={} WHERE adset_id={} LIMIT 1".format(init_bid, adset_id)
     mycursor.execute(sql)
     mydb.commit()
     mycursor.close()
@@ -345,7 +346,6 @@ def update_init_bid_by_campaign(campaign_id):
     adset_list = Campaigns(campaign_id, df_camp['charge_type'].iloc[0]).get_adsets()
     for adset_id in adset_list:
         update_init_bid( int(adset_id), init_bid )
-    mydb.close()
     return
 
 if __name__=="__main__":
@@ -353,6 +353,6 @@ if __name__=="__main__":
     from facebook_datacollector import Campaigns
     campaign_id = input("input campaign_id u want to change:")
     update_init_bid_by_campaign(campaign_id)
-    
+#     update_init_bid(23843440572460316, 5)
     
     

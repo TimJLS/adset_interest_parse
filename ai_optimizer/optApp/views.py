@@ -112,12 +112,11 @@ def opt_api(request):
                     gdn_datacollector.data_collect(account_id, campaign_id, destination, destination_type)
                     return JsonResponse( {}, safe=False )
                 else:
-                    try:
-    #                         mydict = mysql_adactivity_save.get_result( campaign_id ) #new version
-                        mydict = mysql_adactivity_save.get_release_result( campaign_id ) #release version
-                    except:
-    #                         mydict = mysql_adactivity_save.get_default( campaign_id ) #new version
-                        mydict = mysql_adactivity_save.get_release_default( campaign_id )#release version
+                    mydict = gdn_db.get_result( campaign_id ) #new version
+#                         mydict = gdn_db.get_release_result( campaign_id ) #release version
+#                     except:
+#     #                         mydict = gdn_db.get_default( campaign_id ) #new version
+#                         mydict = gdn_db.get_release_default( campaign_id )#release version
                 return JsonResponse( json.loads(mydict), safe=False )
     else:
         return JsonResponse( {}, safe=False )

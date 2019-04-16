@@ -6,6 +6,7 @@
 
 import datetime
 import pandas as pd
+import numpy as np
 import gdn_db
 import gdn_datacollector
 import bid_operator
@@ -30,9 +31,9 @@ ADGROUP_PROGRESS = 'adgroup_progress'
 CAMPAIGN_PROGRESS = 'campaign_progress'
 BIDDING_INDEX = {
     'cpc': 'cpc_bid',
-    'cpa': 'conversions',
-    'LINK_CLICKS': 'clicks',
-    'CONVERSIONS':'conversions',
+    'cpa': 'cpc_bid',
+    'LINK_CLICKS': 'cpc_bid',
+    'CONVERSIONS':'cpc_bid',
 }
 DESTINATION_INDEX = {
     'cpc': 'clicks',
@@ -72,11 +73,17 @@ class CampaignAdapter(object):
         return
     
     def get_periods_left(self):
-        self.periods_left = ( self.df_camp[ STOP_TIME ].iloc[0] - self.request_time ).days + 1
+        try:
+            self.periods_left = ( self.df_camp[ STOP_TIME ].iloc[0] - self.request_time ).days + 1
+        except:
+            self.periods_left = ( datetime.datetime.now() - self.request_time ).days + 1
         return self.periods_left
     
     def get_periods(self):
-        self.periods = ( self.df_camp[ STOP_TIME ].iloc[0] - self.df_camp[ START_TIME ].iloc[0] ).days
+        try:
+            self.periods = ( self.df_camp[ STOP_TIME ].iloc[0] - self.df_camp[ START_TIME ].iloc[0] ).days
+        except:
+            self.periods = ( datetime.datetime.now() - self.df_camp[ START_TIME ].iloc[0] ).days
         return self.periods
     
     def get_campaign_performance(self):
@@ -192,6 +199,16 @@ class AdGroupAdapter(CampaignAdapter):
             CAMPAIGN_PROGRESS:self.campaign_progress
         }
 
+class MyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return super(MyEncoder, self).default(obj)
 def main():
     start_time = datetime.datetime.now()
     campaign_id_list = gdn_db.get_campaign()['campaign_id'].unique()
@@ -214,7 +231,8 @@ def main():
             gdn_datacollector.update_adgroup_bid(account_id, adgroup, bid_dict['bid'])
             result['contents'].append(bid_dict)
             del s
-        mydict_json = json.dumps(result)
+        
+        mydict_json = json.dumps(result, cls=MyEncoder)
         release_json = json.dumps(release_version_result)
         gdn_db.insert_result( campaign_id, mydict_json )
         del camp
