@@ -1,6 +1,18 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# In[8]:
+
+
+
+
+
+# In[ ]:
+
+
+# %load gdn_adapter.py
+#!/usr/bin/env python
+
 # In[6]:
 
 
@@ -65,6 +77,7 @@ class CampaignAdapter(object):
         target_bidding_index = BIDDING_INDEX[self.df_camp['destination_type'].iloc[0]]
         for adgroup in self.adgroup_list:
             init_bid = df_init_bid[BID_AMOUNT][df_init_bid.adgroup_id==adgroup].head(1).iloc[0].astype(dtype=object)
+#             init_bid = bid_operator.revert_bid_amount(init_bid)
             last_bid = self.df_adgroup[ target_bidding_index ][self.df_adgroup.adgroup_id==adgroup].tail(1).iloc[0].astype(dtype=object)
 #             init_bid = bid_operator.revert_bid_amount(init_bid)
 #             last_bid = bid_operator.reverse_bid_amount(last_bid)
@@ -73,11 +86,13 @@ class CampaignAdapter(object):
         return
     
     def get_periods_left(self):
+        self.periods_left = 0
         try:
-            self.periods_left = ( self.df_camp[ STOP_TIME ].iloc[0] - self.request_time ).days + 1
+            self.periods_left = ( self.df_camp[ STOP_TIME ].iloc[0] - self.request_time.date() ).days + 1
         except:
-            self.periods_left = ( datetime.datetime.now() - self.request_time ).days + 1
-        return self.periods_left
+            self.periods_left = ( datetime.datetime.now().date() - self.request_time.date() ).days + 1
+        finally:
+            return self.periods_left
     
     def get_periods(self):
         try:
@@ -228,7 +243,8 @@ def main():
             status = s.retrieve_adgroup_attribute()
             media = result['media']
             bid_dict = bid_operator.adjust(media, **status)
-            gdn_datacollector.update_adgroup_bid(account_id, adgroup, bid_dict['bid'])
+#             print(bid_dict)
+            update_result = gdn_datacollector.update_adgroup_bid(account_id, adgroup, bid_dict['bid'])
             result['contents'].append(bid_dict)
             del s
         
@@ -266,6 +282,12 @@ if __name__=='__main__':
 
 
 # In[7]:
+
+
+
+
+
+# In[ ]:
 
 
 

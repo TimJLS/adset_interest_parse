@@ -1,6 +1,18 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# In[2]:
+
+
+
+
+
+# In[ ]:
+
+
+# %load gdn_db.py
+#!/usr/bin/env python
+
 # In[1]:
 
 
@@ -57,7 +69,7 @@ def get_campaign(campaign_id=None):
         df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
         df_camp = pd.DataFrame(columns=df.columns)
         stop_time = df['stop_time'][df.campaign_id==campaign_id].iloc[0]
-        if stop_time >= request_time:
+        if stop_time.date() >= request_time.date():
             df_camp= pd.concat( [ df_camp, df[df.campaign_id==campaign_id] ], axis=0 )
         mydb.close()
         return df_camp
@@ -142,6 +154,12 @@ def check_optimal_weight(campaign_id, df):
 
 
 # In[2]:
+
+
+
+
+
+# In[ ]:
 
 
 

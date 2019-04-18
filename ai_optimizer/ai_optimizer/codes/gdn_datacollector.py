@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# In[ ]:
+
+
+#!/usr/bin/env python
+
 # In[1]:
 
 
@@ -268,7 +273,6 @@ def update_adgroup_bid(customer_id, ad_group_id, bid_micro_amount=None, client=c
         'operator': 'SET',
         'operand': {
             'id': ad_group_id,
-            'status': 'ENABLED'
         }
     }]
   
@@ -299,7 +303,7 @@ def data_collect(customer_id, campaign_id, destination, destination_type):
     addition_column_list = [ 'period', 'period_left', 'target', 'target_left', 'daily_target', 'destination', 'destination_type' ]
     stop_time = campaign_lifetime_insights[ "stop_time" ]
     period = ( campaign_lifetime_insights[ "stop_time" ] - campaign_lifetime_insights[ "start_time" ] ).days + 1
-    period_left = ( stop_time-datetime.datetime.now() ).days + 1
+    period_left = ( stop_time.date()-datetime.datetime.now().date() ).days + 1
     target = campaign_lifetime_insights[ CAMPAIGN_OBJECTIVE_FIELD[ destination_type ] ]
     target_left = int(destination) - campaign_lifetime_insights[ CAMPAIGN_OBJECTIVE_FIELD[ destination_type ] ]
     daily_target = target_left / period_left
@@ -323,7 +327,8 @@ def data_collect(customer_id, campaign_id, destination, destination_type):
         df_adgroup['bid_amount'] = df_adgroup[bidding_type]
 #         df_adgroup['bid_amount'] = math.ceil(reverse_bid_amount(df_adgroup[bidding_type]))
         gdn_db.check_initial_bid(adgroup_id, df_adgroup[[Field.campaign_id, Field.adgroup_id, Field.bid_amount]])
-    return df_adgroup
+
+    return
 
 
 # In[8]:
@@ -343,18 +348,12 @@ def main():
     print(datetime.datetime.now()-start_time)
 
 
-# In[7]:
+# In[ ]:
 
 
 if __name__=='__main__':
     main()
 #     df_campaign = data_collect(camp.customer_id, camp.campaign_id, 10000, camp.destination_type)
-
-
-# In[9]:
-
-
-
 
 
 # In[ ]:
