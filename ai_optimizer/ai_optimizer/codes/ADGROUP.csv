@@ -1,0 +1,4 @@
+Customer ID,Campaign ID,Ad group type,Ad group ID,Ad group state,Max. CPM,Max. CPV,Default max. CPC,Target CPA,Bid Strategy Type,Cost,Avg. Cost,Impressions,Clicks,Conversions,Avg. CPC,Cost / conv.
+3637290511,1777436620,Display,72012809987,enabled, --, --,3000000, --,cpc,456594859,3804957,70619,120,0.00,3804957,0
+3637290511,1777436620,Display,67966950646,paused, --, --,3000000, --,cpc,83325429,3622845,13195,23,0.00,3622845,0
+3637290511,1777436620,Display,71763883120,enabled, --, --,3000000, --,cpc,207247213,3188419,22172,65,0.00,3188419,0

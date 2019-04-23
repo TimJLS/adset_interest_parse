@@ -193,43 +193,19 @@ def get_campaign_target(campaign_id):
     mydb.close()
     return df_camp
 
-def update_campaign_target(df_camp):
+def update_campaign_target(df):
     mydb = connectDB(DATABASE)
     mycursor = mydb.cursor()
-    try:
-        sql = ("UPDATE campaign_target SET charge_type = %s, cost_per_target = %s, daily_budget = %s, destination = %s, impressions = %s, period = %s, reach = %s, spend = %s, spend_cap = %s, start_time = %s , stop_time=%s, target=%s, target_left=%s, target_type=%s WHERE campaign_id = %s")
-        val = ( 
-            df_camp['charge_type'].iloc[0],
-            df_camp['cost_per_target'].iloc[0].astype(dtype=object),
-            df_camp['daily_budget'].iloc[0].astype(dtype=object),
-    #         df_camp['daily_charge'].iloc[0].astype(dtype=object),
-            df_camp['destination'].iloc[0].astype(dtype=object),
-            df_camp['impressions'].iloc[0].astype(dtype=object),
-            df_camp['period'].iloc[0].astype(dtype=object),
-            df_camp['reach'].iloc[0].astype(dtype=object),
-            df_camp['spend'].iloc[0].astype(dtype=object),
-            df_camp['spend_cap'].iloc[0].astype(dtype=object),
-            df_camp['start_time'].iloc[0],
-            df_camp['stop_time'].iloc[0],
-            df_camp['target'].iloc[0].astype(dtype=object),
-            df_camp['target_left'].iloc[0].astype(dtype=object),
-            df_camp['target_type'].iloc[0],
-            df_camp['campaign_id'].iloc[0].astype(dtype=object)
-        )
-    except KeyError as e:
-        print('my_sql_adactivity.update_campaign_target', e)
-        sql = "UPDATE campaign_target SET target_type = %s,spend_cap = %s, start_time = %s, stop_time = %s , period=%s, daily_budget=%s WHERE campaign_id = %s"
-        val = ( 
-            df_camp['target_type'].iloc[0], 
-            df_camp['spend_cap'].iloc[0].astype(dtype=object), 
-            df_camp['start_time'].iloc[0], 
-            df_camp['stop_time'].iloc[0], 
-            df_camp['period'].iloc[0].astype(dtype=object), 
-            df_camp['daily_budget'].iloc[0].astype(dtype=object), 
-            df_camp['campaign_id'].iloc[0].astype(dtype=object)
-        )
-    mycursor.execute(sql, val)
-    mydb.commit()
+    campaign_id = df['campaign_id'].iloc[0]
+    df.drop(['campaign_id'], axis=1)
+    for column in df.columns:
+        try:
+            sql = ("UPDATE campaign_target SET {}='{}' WHERE campaign_id={}".format( column, df[column].iloc[0], campaign_id) )
+            mycursor.execute(sql)
+            mydb.commit()
+        except Exception as e:
+            print(e)
+            pass
     mycursor.close()
     mydb.close()
     return

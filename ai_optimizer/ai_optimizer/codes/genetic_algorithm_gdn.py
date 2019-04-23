@@ -261,10 +261,10 @@ class ObjectiveFunc(object):
     def campaign_status(self, campaign_id):
         df_camp = pd.read_sql(
             "SELECT * FROM campaign_target WHERE campaign_id=%s" % (campaign_id), con=self.mydb)
-        gdn_datacollector.Campaign(
-            df_camp['customer_id'].iloc[0],
-            campaign_id,
-            df_camp['destination_type'].iloc[0]).get_campaign_insights(client=self.client, date_preset='YESTERDAY')
+#         gdn_datacollector.Campaign(
+#             df_camp['customer_id'].iloc[0],
+#             campaign_id,
+#             df_camp['destination_type'].iloc[0]).get_campaign_insights(client=self.client, date_preset='ALL_TIME')
 
         daily_destination = (df_camp['destination']/df_camp['period']).iloc[0]
         campaign_bid = (df_camp['daily_budget'] /
@@ -330,28 +330,14 @@ def ga_optimal_weight(campaign_id):
     adgroup_list = df_adgroup['adgroup_id'].unique()
     for adgroup_id in adgroup_list:
 
-        #         print(adgroup_id)
         df = ObjectiveFunc().adgroup_status(adgroup_id)
         r = ObjectiveFunc.adgroup_fitness(df_weight, df)
-#         print('[score]', r, adgroup_id)
 
         df_final = pd.DataFrame({'campaign_id': campaign_id, 'adgroup_id': adgroup_id,
                                  'score': r, 'request_time': request_time}, index=[0])
         print(adgroup_id, df_final['score'].iloc[0])
         gdn_db.into_table(df_final, table="adgroup_score")
-#         try:
-# #             print(adgroup_id)
-#             df = ObjectiveFunc.adgroup_status(adgroup_id)
-#             r = ObjectiveFunc.adgroup_fitness( df_weight, df )
-#             print('[score]', r)
-#             df_ad=pd.read_sql("SELECT adgroup_id FROM ad_insights WHERE adgroup_id=%s LIMIT 1" %(adgroup_id), con=self.mydb)
-#             adgroup_id = df_ad['adgroup_id'].iloc[0].astype(dtype=object)
 
-#             df_final = pd.DataFrame({'campaign_id':campaign_id, 'adgroup_id':adgroup_id, 'adgroup_id':adgroup_id, 'score':r, 'request_time':request_time}, index=[0])
-
-#             gdn_db.intoDB("adgroup_score", df_final)
-#         except:
-#             pass
     mydb.close()
     return
 
@@ -390,6 +376,12 @@ if __name__ == "__main__":
     print(datetime.datetime.now()-starttime)
     import gc
     gc.collect()    
+
+
+# In[86]:
+
+
+
 
 
 # In[ ]:

@@ -311,6 +311,7 @@ def main(campaign):
 
 if __name__ == '__main__':
     import index_collector_conversion_facebook
+    print(datetime.datetime.now())
     FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
     df_camp = index_collector_conversion_facebook.get_campaign_target()
     for campaign_id in df_camp.campaign_id.unique():
@@ -321,5 +322,5 @@ if __name__ == '__main__':
 # In[13]:
 
 
-get_ipython().system('jupyter nbconvert --to script facebook_externals.ipynb')
+
 

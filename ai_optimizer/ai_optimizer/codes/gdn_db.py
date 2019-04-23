@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[4]:
 
 
 
 
 
-# In[ ]:
+# In[1]:
 
 
 # %load gdn_db.py
@@ -41,6 +41,16 @@ def into_table(df, table=None):
     with engine.connect() as conn, conn.begin():
         df.to_sql(table, conn, if_exists='append',index=False)
         engine.dispose()
+
+def get_table(campaign_id=None, table=None):
+    engine = create_engine( 'mysql://app:adgeek1234@aws-dev-ai-private.adgeek.cc/{}'.format(DATABASE) )
+    with engine.connect() as conn, conn.begin():
+        if campaign_id:
+            df = pd.read_sql("SELECT * FROM {} WHERE campaign_id='{}'".format(table, campaign_id), con=conn)
+        else:
+            df = pd.read_sql("SELECT * FROM {}".format(table), con=conn)
+    engine.dispose()
+    return df
 
 def update_table(df, table=None):
     mydb = connectDB(DATABASE)
