@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[3]:
 
 
 #!/usr/bin/env python
@@ -28,11 +28,11 @@ CAMPAIGN_OBJECTIVE_FIELD = {
 CAMPAIGN_FIELDS = ['ExternalCustomerId','CampaignId','AdvertisingChannelType', 'CampaignStatus',
                    'BiddingStrategyType','Amount','StartDate','EndDate','Cost',
                    'AverageCost','Impressions', 'Clicks','Conversions',
-                   'AverageCpc','CostPerConversion']
+                   'AverageCpc','CostPerConversion', 'Ctr']
 ADGROUP_FIELDS = ['ExternalCustomerId','CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus',
                   'CpmBid','CpvBid', 'CpcBid', 'TargetCpa', 'BiddingStrategyType','Cost',
                    'AverageCost','Impressions', 'Clicks','Conversions',
-                   'AverageCpc','CostPerConversion']
+                   'AverageCpc','CostPerConversion', 'Ctr']
 DB_CAMPAIGN_COLUMN_NAME_LIST = [
     'customer_id', 'campaign_id', 'channel_type', 'status', 'bidding_type', 'daily_budget', 'start_time', 'stop_time', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion'
 ]
@@ -45,7 +45,68 @@ BIDDING_INDEX = {
     'LINK_CLICKS': 'cpc_bid',
     'CONVERSIONS':'cpc_bid',
 }
+DATABASE_INDEX = {
+    'ADGROUP': 'adgroup_insights',
+    'URL': 'url_insights',
+    'CRITERIA': 'criteria_insights',
+    'AUDIENCE': 'audience_insights',
+    'AGE_RANGE': 'age_range_insights',
+    'DISPLAY_KEYWORD': 'display_keyword_insights',
+}
+class ReportField:
+    # URL
+    URL_LIST = [
+        'ExternalCustomerId', 'CampaignId', 'AdGroupId', 'AdGroupStatus', 'Cost', 'AverageCost',
+        'Impressions', 'Clicks', 'Conversions', 'AverageCpc', 'CostPerConversion', 'DisplayName', ]
+    # CRITERIA,
+    CRITERIA_LIST = [
+        'ExternalCustomerId', 'CampaignId', 'AdGroupId', 'Criteria', 'Id', 'AdGroupStatus', 'CpmBid', 'CpcBid',
+        'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AverageCpc', 'CostPerConversion']
+    # AUDIENCE, AGE_RANGE, DISPLAY_KEYWORD
+    BIDDABLE_LIST = [
+        'ExternalCustomerId', 'CampaignId', 'AdGroupId', 'Criteria', 'Id', 'AdGroupStatus', 'CpmBid', 'CpcBid',
+        'BiddingStrategyType', 'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AverageCpc', 'CostPerConversion']
+    # ADGROUP
+    ADGROUP_LIST = [
+        'ExternalCustomerId', 'CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus', 'CpmBid', 'CpvBid', 'CpcBid', 'TargetCpa',
+        'BiddingStrategyType', 'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AverageCpc', 'CostPerConversion']
 
+    NON_NUMERIC_LIST = [
+        'Ad group type', 'Ad group state', 'Bid Strategy Type', 'Keyword', 'Age Range', 'Audience', 'Keyword / Placement', 'Criteria Display Name']
+
+    NUMERIC_LIST = [
+        'Max. CPM', 'Max. CPV', 'Max. CPC', 'Default max. CPC', 'Target CPA', 'Cost', 'Avg. Cost', 'Avg. CPC', 'Cost / conv.']
+
+    INDEX = {
+        'ADGROUP': ADGROUP_LIST,
+        'URL': URL_LIST,
+        'CRITERIA': CRITERIA_LIST,
+        'AUDIENCE': BIDDABLE_LIST,
+        'AGE_RANGE': BIDDABLE_LIST,
+        'DISPLAY_KEYWORD': BIDDABLE_LIST,
+    }
+class ReportColumn:
+    ADGROUP_LIST  = [
+        'customer_id', 'campaign_id', 'channel_type', 'adgroup_id', 'status', 'cpm_bid', 'cpv_bid', 'cpc_bid', 'cpa_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion']
+    URL_LIST      = [
+        'customer_id', 'campaign_id', 'adgroup_id', 'status', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'url_display_name']
+    CRITERIA_LIST = [
+        'customer_id', 'campaign_id', 'adgroup_id', 'keyword_placement', 'keyword_id', 'status', 'cpm_bid', 'cpc_bid', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion']
+    AUDIENCE_LIST = [
+        'customer_id', 'campaign_id', 'adgroup_id', 'audience', 'criterion_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion']
+    AGE_RANGE_LIST = [
+        'customer_id', 'campaign_id', 'adgroup_id', 'age_range', 'criterion_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion']
+    BIDDABLE_LIST = [
+        'customer_id', 'campaign_id', 'adgroup_id', 'keyword', 'keyword_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion']
+
+    INDEX = {
+        'ADGROUP': ADGROUP_LIST,
+        'URL': URL_LIST,
+        'CRITERIA': CRITERIA_LIST,
+        'AUDIENCE': AUDIENCE_LIST,
+        'AGE_RANGE': AGE_RANGE_LIST,
+        'DISPLAY_KEYWORD': BIDDABLE_LIST,
+    }
 
 # In[1]:
 
@@ -76,11 +137,12 @@ class Campaign(object):
         self.customer_id = customer_id
         self.campaign_id = campaign_id
         self.destination_type = destination_type
-        client.SetClientCustomerId(self.customer_id)
-        self.report_downloader = client.GetReportDownloader(version='v201809')
+        self.client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
+        self.client.SetClientCustomerId(self.customer_id)
+        self.report_downloader = self.client.GetReportDownloader(version='v201809')
     
     def get_adgroup_id_list(self):
-        ad_group_service = client.GetService('AdGroupService', version='v201809')
+        ad_group_service = self.client.GetService('AdGroupService', version='v201809')
         # Construct selector and get all ad groups.
         selector = {
             'fields': ['Id', 'Name', 'Status'],
@@ -139,10 +201,11 @@ class Campaign(object):
                 columns=CAMPAIGN_FIELDS
             )
             df = df.append(df_temp)
+            df['Ctr'] = df.Ctr.str.split('%', expand = True)[0]
         df[df.columns.difference(['CampaignStatus', 'AdvertisingChannelType', 'BiddingStrategyType', 'StartDate', 'EndDate'])] = df[df.columns.difference(
             ['CampaignStatus', 'AdvertisingChannelType', 'BiddingStrategyType', 'StartDate', 'EndDate'])].apply(pd.to_numeric, errors='coerce')
-        df[df.columns.difference(['ExternalCustomerId', 'CampaignId', 'AdvertisingChannelType', 'CampaignStatus', 'BiddingStrategyType', 'StartDate', 'EndDate', 'Impressions', 'Clicks', 'Conversions'])] = df[df.columns.difference(
-            ['ExternalCustomerId', 'CampaignId', 'CampaignStatus', 'AdvertisingChannelType', 'BiddingStrategyType', 'StartDate', 'EndDate', 'Impressions', 'Clicks', 'Conversions'])].div(1000000)
+        df[df.columns.difference(['ExternalCustomerId', 'CampaignId', 'AdvertisingChannelType', 'CampaignStatus', 'BiddingStrategyType', 'StartDate', 'EndDate', 'Impressions', 'Clicks', 'Conversions', 'Ctr'])] = df[df.columns.difference(
+            ['ExternalCustomerId', 'CampaignId', 'CampaignStatus', 'AdvertisingChannelType', 'BiddingStrategyType', 'StartDate', 'EndDate', 'Impressions', 'Clicks', 'Conversions', 'Ctr'])].div(1000000)
         df[['StartDate','EndDate']] = df[['StartDate','EndDate']].apply( pd.to_datetime, errors='coerce' )
         df.rename( columns=dict( zip(df.columns, DB_CAMPAIGN_COLUMN_NAME_LIST) ), inplace=True )
         self.insights_dict = df.to_dict(orient='records')[0]
@@ -165,7 +228,52 @@ class Campaign(object):
 
         campaigns = campaign_service.mutate(operations)
         return campaigns
+    
+    def get_performance_insights(self, client=None,
+                                 campaign_id=None,
+                                 date_preset=None, performance_type='ADGROUP'):
+        report_downloader = self.client.GetReportDownloader(version='v201809')
+        if date_preset is None:
+            date_preset = 'ALL_TIME'
+        else:
+            date_preset = date_preset
+        # Create report definition.
+        if self.campaign_id:
+            operand = {
+                'field': 'CampaignId',
+                'operator': 'EQUALS',
+                'values': [self.campaign_id]
+            }
+            fields = ReportField.INDEX[performance_type]
+            columns = ReportColumn.INDEX[performance_type]
 
+        else:
+            print('get_performance_insights: Missing arguments campaign_id or adgroup_id.')
+            operand = None
+            return
+        report = {
+            'downloadFormat': 'CSV',
+            'reportName': performance_type+'_PERFORMANCE_REPORT',
+            'reportType': performance_type+'_PERFORMANCE_REPORT',
+            'dateRangeType': date_preset,
+            'selector': {
+                'fields': fields,
+                'predicates': [operand]
+            }
+        }
+        # Print out the report as a string
+        with open(performance_type+'.csv', 'wb') as output_file:
+            report_downloader.DownloadReport(
+                report, output=output_file, skip_report_header=True, skip_column_header=False,
+                skip_report_summary=True, include_zero_impressions=False)
+        with open(performance_type+'.csv')as csv_file:
+            df = pd.read_csv(csv_file, sep=",", quotechar='"')
+            df[df.columns.difference( ReportField.NON_NUMERIC_LIST )] = df[df.columns.difference( ReportField.NON_NUMERIC_LIST )].apply(pd.to_numeric, errors='coerce')
+            df[df.columns.intersection( ReportField.NUMERIC_LIST )] = df[df.columns.intersection( ReportField.NUMERIC_LIST )].div(1000000)
+            df.columns = columns
+            df.sort_values(by=['impressions'], ascending=False).reset_index(drop=True)
+            gdn_db.into_table( df, DATABASE_INDEX[performance_type] )
+            return df
 
 # In[10]:
 
@@ -227,10 +335,11 @@ class AdGroup(Campaign):
                 columns=ADGROUP_FIELDS
             )
             df = df.append(df_temp)
+            df['Ctr'] = df.Ctr.str.split('%', expand = True)[0]
         df[df.columns.difference(['AdGroupType', 'AdGroupStatus', 'BiddingStrategyType'])] = df[df.columns.difference(
             ['AdGroupType', 'AdGroupStatus', 'BiddingStrategyType'])].apply(pd.to_numeric, errors='coerce')
-        df[df.columns.difference( ['ExternalCustomerId', 'CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus', 'BiddingStrategyType','Impressions','Clicks', 'Conversions'] )] = df[df.columns.difference(
-            ['ExternalCustomerId', 'CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus', 'BiddingStrategyType','Impressions','Clicks', 'Conversions'])].div(1000000)
+        df[df.columns.difference( ['ExternalCustomerId', 'CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus', 'BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'] )] = df[df.columns.difference(
+            ['ExternalCustomerId', 'CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus', 'BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'])].div(1000000)
         df.rename( columns=dict( zip(df.columns, DB_ADGROUP_COLUMN_NAME_LIST) ), inplace=True )
         self.insights_dict = df.reset_index(drop=True).to_dict(orient='records')[0]
         return self.insights_dict
@@ -354,6 +463,19 @@ def main():
 if __name__=='__main__':
     main()
 #     df_campaign = data_collect(camp.customer_id, camp.campaign_id, 10000, camp.destination_type)
+
+
+# In[2]:
+
+
+
+
+
+# In[5]:
+
+
+
+        
 
 
 # In[ ]:

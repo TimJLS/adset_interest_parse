@@ -351,6 +351,7 @@ if __name__ == "__main__":
     for camp_id in camp_id_list.keys():
 #         ga_optimal_weight(camp_id)
         print('campaign_id:', camp_id )
+        print('current time: ', starttime )
         global df
         df = ObjectiveFunc.account_status(camp_id)
         bound = np.tile([[0], [1]], vardim)

@@ -1,19 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[4]:
+# In[7]:
 
 
 
 
 
-# In[1]:
-
-
-# %load gdn_db.py
-#!/usr/bin/env python
-
-# In[1]:
+# In[9]:
 
 
 import mysql.connector
@@ -133,7 +127,10 @@ def get_result( campaign_id ):
     mycursor = mydb.cursor()
     mycursor.execute( "SELECT result FROM result WHERE campaign_id=%s ORDER BY request_time DESC LIMIT 1" % (campaign_id) )
     results = mycursor.fetchall()
-    results = str(results[0][0], encoding='utf-8')
+    try:
+        results = str(results[0][0], encoding='utf-8')
+    except:
+        results = '{}'
     mycursor.close()
     mydb.close()
     return results
@@ -161,18 +158,6 @@ def check_optimal_weight(campaign_id, df):
         mycursor.close()
         mydb.close()
         return
-
-
-# In[2]:
-
-
-
-
-
-# In[ ]:
-
-
-
 
 
 # In[ ]:

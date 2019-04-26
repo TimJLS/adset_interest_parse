@@ -244,7 +244,11 @@ def main():
             media = result['media']
             bid_dict = bid_operator.adjust(media, **status)
 #             print(bid_dict)
-            update_result = gdn_datacollector.update_adgroup_bid(account_id, adgroup, bid_dict['bid'])
+            try:
+                update_result = gdn_datacollector.update_adgroup_bid(account_id, adgroup, bid_dict['bid'])
+            except Exception as e:
+                print('[main.update_adgroup_bid]: ', e)
+                pass
             result['contents'].append(bid_dict)
             del s
         

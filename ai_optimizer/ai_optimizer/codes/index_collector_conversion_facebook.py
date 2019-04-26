@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[15]:
+# In[1]:
 
 
 # %load conversion_index_collector.py
@@ -76,6 +76,7 @@ ADSET_FIELD = {
 GENERAL_INSIGHTS = {
     'impressions': AdsInsights.Field.impressions,
     'spend': AdsInsights.Field.spend,
+    'ctr': AdsInsights.Field.ctr
 }
 TARGET_INSIGHTS = {
     'actions': AdsInsights.Field.actions,
@@ -580,21 +581,23 @@ for testing
 # In[14]:
 
 
-def main():
+def main(campaign_id=None, destination=None, charge_type=None):
     start_time = datetime.datetime.now()
-    
-    df_camp = get_campaign_target()
-    for campaign_id in df_camp.campaign_id.unique():
-        destination = df_camp[df_camp.campaign_id==campaign_id].destination.iloc[0]
-        charge_type = df_camp[df_camp.campaign_id==campaign_id].charge_type.iloc[0]
-        print(campaign_id, df_camp[df_camp.campaign_id==campaign_id].charge_type.iloc[0])
+    if campaign_id:
         data_collect( campaign_id, destination, charge_type )#存資料
+    else:
+        df_camp = get_campaign_target()
+        for campaign_id in df_camp.campaign_id.unique():
+            destination = df_camp[df_camp.campaign_id==campaign_id].destination.iloc[0]
+            charge_type = df_camp[df_camp.campaign_id==campaign_id].charge_type.iloc[0]
+            print(campaign_id, df_camp[df_camp.campaign_id==campaign_id].charge_type.iloc[0])
+            data_collect( campaign_id, destination, charge_type )#存資料
     print(datetime.datetime.now()-start_time)
     import gc
     gc.collect()
 
 
-# In[14]:
+# In[2]:
 
 
 if __name__ == "__main__":
@@ -602,10 +605,10 @@ if __name__ == "__main__":
     main()
 
 
-# In[3]:
+# In[4]:
 
 
-#get_ipython().system('jupyter nbconvert --to script index_collector_conversion_facebook.ipynb')
+
 
 
 # In[ ]:
