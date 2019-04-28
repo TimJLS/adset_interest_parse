@@ -1,6 +1,8 @@
 import math
 import numpy as np
-
+import pandas as pd
+import copy
+import ai_engine_db
 ADAPTER = {
     "Amobee":{
         "adset_id":"package_id",
@@ -52,7 +54,7 @@ def adjust(media, **status):
     
     adset_progress = status.get(ADSET_PROGRESS)
     campaign_progress = status.get(CAMPAIGN_PROGRESS)
-    
+
     if adset_progress > 1 and campaign_progress > 1:
         bid = math.ceil(init_bid)
     elif adset_progress > 1 and campaign_progress < 1:
@@ -63,8 +65,16 @@ def adjust(media, **status):
         bid = bid.astype(dtype=object)
     if not str(adset_progress).split(".")[0].isdigit():
         bid = init_bid
-#     print( { ADAPTER[media].get("adset_id"):status.get(ADSET_ID), BID:bid } )
-    return { ADAPTER[media].get("adset_id"):status.get(ADSET_ID), BID:np.round(bid, 2) }
+    status.update( {
+        'media': media,
+        'bid': bid
+    } )
+    status['id'] = status.pop( ADAPTER[media]['adset_id'] )
+    status['campaign_progress'] = status.pop( ADAPTER[media]['campaign_progress'] )
+    status['adset_progress'] = status.pop( ADAPTER[media]['adset_progress'] )
+    df_status = pd.DataFrame( status, index=[0] )
+    ai_engine_db.into_table( df_status, "bidding_computation" )
+    return { ADAPTER[media].get("adset_id"):status['id'], BID:np.round(bid, 2) }
     return { ADSET_ID:adset_id, BID:bid }
 
 if __name__=='__main__':
