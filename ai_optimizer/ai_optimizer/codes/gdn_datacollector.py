@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[3]:
+# In[17]:
 
 
 #!/usr/bin/env python
@@ -57,19 +57,19 @@ class ReportField:
     # URL
     URL_LIST = [
         'ExternalCustomerId', 'CampaignId', 'AdGroupId', 'AdGroupStatus', 'Cost', 'AverageCost',
-        'Impressions', 'Clicks', 'Conversions', 'AverageCpc', 'CostPerConversion', 'DisplayName', ]
+        'Impressions', 'Clicks', 'Conversions', 'AverageCpc', 'CostPerConversion', 'DisplayName', 'Ctr']
     # CRITERIA,
     CRITERIA_LIST = [
         'ExternalCustomerId', 'CampaignId', 'AdGroupId', 'Criteria', 'Id', 'AdGroupStatus', 'CpmBid', 'CpcBid',
-        'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AverageCpc', 'CostPerConversion']
+        'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AverageCpc', 'CostPerConversion', 'Ctr']
     # AUDIENCE, AGE_RANGE, DISPLAY_KEYWORD
     BIDDABLE_LIST = [
         'ExternalCustomerId', 'CampaignId', 'AdGroupId', 'Criteria', 'Id', 'AdGroupStatus', 'CpmBid', 'CpcBid',
-        'BiddingStrategyType', 'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AverageCpc', 'CostPerConversion']
+        'BiddingStrategyType', 'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AverageCpc', 'CostPerConversion', 'Ctr']
     # ADGROUP
     ADGROUP_LIST = [
         'ExternalCustomerId', 'CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus', 'CpmBid', 'CpvBid', 'CpcBid', 'TargetCpa',
-        'BiddingStrategyType', 'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AverageCpc', 'CostPerConversion']
+        'BiddingStrategyType', 'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AverageCpc', 'CostPerConversion', 'Ctr']
 
     NON_NUMERIC_LIST = [
         'Ad group type', 'Ad group state', 'Bid Strategy Type', 'Keyword', 'Age Range', 'Audience', 'Keyword / Placement', 'Criteria Display Name']
@@ -87,17 +87,17 @@ class ReportField:
     }
 class ReportColumn:
     ADGROUP_LIST  = [
-        'customer_id', 'campaign_id', 'channel_type', 'adgroup_id', 'status', 'cpm_bid', 'cpv_bid', 'cpc_bid', 'cpa_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion']
+        'customer_id', 'campaign_id', 'channel_type', 'adgroup_id', 'status', 'cpm_bid', 'cpv_bid', 'cpc_bid', 'cpa_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'ctr']
     URL_LIST      = [
-        'customer_id', 'campaign_id', 'adgroup_id', 'status', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'url_display_name']
+        'customer_id', 'campaign_id', 'adgroup_id', 'status', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'url_display_name', 'ctr']
     CRITERIA_LIST = [
-        'customer_id', 'campaign_id', 'adgroup_id', 'keyword_placement', 'keyword_id', 'status', 'cpm_bid', 'cpc_bid', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion']
+        'customer_id', 'campaign_id', 'adgroup_id', 'keyword_placement', 'keyword_id', 'status', 'cpm_bid', 'cpc_bid', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'ctr']
     AUDIENCE_LIST = [
-        'customer_id', 'campaign_id', 'adgroup_id', 'audience', 'criterion_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion']
+        'customer_id', 'campaign_id', 'adgroup_id', 'audience', 'criterion_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'ctr']
     AGE_RANGE_LIST = [
-        'customer_id', 'campaign_id', 'adgroup_id', 'age_range', 'criterion_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion']
+        'customer_id', 'campaign_id', 'adgroup_id', 'age_range', 'criterion_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'ctr']
     BIDDABLE_LIST = [
-        'customer_id', 'campaign_id', 'adgroup_id', 'keyword', 'keyword_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion']
+        'customer_id', 'campaign_id', 'adgroup_id', 'keyword', 'keyword_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'ctr']
 
     INDEX = {
         'ADGROUP': ADGROUP_LIST,
@@ -268,6 +268,7 @@ class Campaign(object):
                 skip_report_summary=True, include_zero_impressions=False)
         with open(performance_type+'.csv')as csv_file:
             df = pd.read_csv(csv_file, sep=",", quotechar='"')
+            df['CTR'] = df.CTR.str.split('%', expand = True)[0]
             df[df.columns.difference( ReportField.NON_NUMERIC_LIST )] = df[df.columns.difference( ReportField.NON_NUMERIC_LIST )].apply(pd.to_numeric, errors='coerce')
             df[df.columns.intersection( ReportField.NUMERIC_LIST )] = df[df.columns.intersection( ReportField.NUMERIC_LIST )].div(1000000)
             df.columns = columns
@@ -290,8 +291,6 @@ class AdGroup(Campaign):
         
         if date_preset is None:
             date_preset = 'ALL_TIME'
-        else:
-            date_preset = date_preset
         # Create report definition.
         if self.campaign_id is not None and self.adgroup_id is None:
             operand = {
@@ -465,17 +464,10 @@ if __name__=='__main__':
 #     df_campaign = data_collect(camp.customer_id, camp.campaign_id, 10000, camp.destination_type)
 
 
-# In[2]:
+# In[6]:
 
 
 
-
-
-# In[5]:
-
-
-
-        
 
 
 # In[ ]:
