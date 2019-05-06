@@ -14,8 +14,8 @@ import pandas as pd
 import gdn_datacollector
 import gdn_db
 from googleads import adwords
-# sizepop, vardim, MAXGEN, params = 2000, 3, 30, [0.9, 0.5, 0.5]
-sizepop, vardim, MAXGEN, params = 1000, 3, 10, [0.9, 0.5, 0.5]
+sizepop, vardim, MAXGEN, params = 2000, 3, 30, [0.9, 0.5, 0.5]
+# sizepop, vardim, MAXGEN, params = 1000, 3, 10, [0.9, 0.5, 0.5]
 BIDDING_INDEX = {
     'cpc': 'cpc_bid',
     'cpa': 'cpa_bid',
@@ -85,7 +85,7 @@ class GeneticAlgorithm(object):
         evaluation of the population fitnesses
         '''
         for i in range(0, self.sizepop):
-            self.population[i].calculateFitness()
+            self.population[i].calculate_fitness()
             self.fitness[i] = self.population[i].fitness
 
     def solve(self):
@@ -105,9 +105,9 @@ class GeneticAlgorithm(object):
             self.t, self.trace[self.t, 0], self.trace[self.t, 1]))
         while (self.t < self.MAXGEN - 1):
             self.t += 1
-            self.selectionOperation()
-            self.crossoverOperation()
-            self.mutationOperation()
+            self.selection_operation()
+            self.crossover_operation()
+            self.mutation_operation()
             self.evaluate()
             best = np.max(self.fitness)
             bestIndex = np.argmax(self.fitness)
@@ -125,10 +125,10 @@ class GeneticAlgorithm(object):
               self.trace[self.t, 0])
         print("Optimal solution is:")
         print(self.best.chrom)
-        self.printResult()
+        self.print_result()
         return self.best.chrom
 
-    def selectionOperation(self):
+    def selection_operation(self):
         '''
         selection operation for Genetic Algorithm
         '''
@@ -154,7 +154,7 @@ class GeneticAlgorithm(object):
             newpop.append(self.population[idx])
         self.population = newpop
 
-    def crossoverOperation(self):
+    def crossover_operation(self):
         '''
         crossover operation for genetic algorithm
         '''
@@ -175,7 +175,7 @@ class GeneticAlgorithm(object):
                     newpop[i + 1].chrom[j] = newpop[i + 1].chrom[j] * self.params[2] +                         (1 - self.params[2]) * newpop[i].chrom[j]
         self.population = newpop
 
-    def mutationOperation(self):
+    def mutation_operation(self):
         '''
         mutation operation for genetic algorithm
         '''
@@ -194,7 +194,7 @@ class GeneticAlgorithm(object):
                         mutatePos] + (self.bound[1, mutatePos] - newpop[i].chrom[mutatePos]) * (1 - random.random() ** (1 - self.t / self.MAXGEN))
         self.population = newpop
 
-    def printResult(self):
+    def print_result(self):
         '''
         plot the result of the genetic algorithm
         '''
@@ -234,7 +234,7 @@ class GAIndividual(object):
         for i in range(0, len):
             self.chrom[i] = self.bound[0, i] +                 (self.bound[1, i] - self.bound[0, i]) * rnd[i]
 
-    def calculateFitness(self):
+    def calculate_fitness(self):
         '''
         calculate the fitness of the chromsome
         '''
@@ -379,7 +379,7 @@ def retrive_all_criteria_insights():
             camp.get_performance_insights( performance_type=criteria )
 
 
-# In[3]:
+# In[1]:
 
 
 def get_criteria_score( campaign_id=None, criteria=None):
@@ -405,10 +405,9 @@ def get_criteria_score( campaign_id=None, criteria=None):
                 r = ObjectiveFunc.adgroup_fitness(df_weight, df)
                 df['score'] = r
                 df_final = df[ SCORE_COLUMN_INDEX[criteria] ]
-                gdn_db.into_table(df_final, table=SCORE_INDEX[criteria]+"_score")
-            
-            mydb.close()
-            return 
+                gdn_db.into_table(df_final, table=SCORE_INDEX[criteria]+"_score")   
+    mydb.close()
+    return 
 
 
 # In[4]:
@@ -447,7 +446,7 @@ if __name__ == "__main__":
     gc.collect()    
 
 
-# In[ ]:
+# In[5]:
 
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[159]:
 
 
 # %load genetic_algorithm_conversion_facebook.py
@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import index_collector_conversion_facebook
 sizepop, vardim, MAXGEN, params = 2000, 8, 15, [0.9, 0.1, 0.5]
-
+DATABASE = "dev_facebook_test"
 COST_PER_ACTION = {
     'CONVERSIONS':'cost_per_purchase',
     'ADD_TO_CART':'cost_per_add_to_cart',
@@ -218,7 +218,7 @@ class ObjectiveFunc(object):
     objective function of genetic algorithm
     '''
     def __init__(self, campaign_id=None):
-        self.mydb = index_collector_conversion_facebook.connectDB( "dev_facebook_test" )
+        self.mydb = index_collector_conversion_facebook.connectDB( DATABASE )
         
     def fitness_function(optimal_weight, df):
         charge_type = df['charge_type'].iloc[0]
@@ -238,7 +238,7 @@ class ObjectiveFunc(object):
         return r
 
     def adset_fitness(optimal_weight, df, charge_type):
-        
+        df = df.fillna(0)
         m1 = df['purchase'] / df['initiate_checkout']
         m2 = df['initiate_checkout'] / df['add_to_cart']
         m3 = df['add_to_cart'] / df['view_content']
@@ -249,6 +249,9 @@ class ObjectiveFunc(object):
         m_bid   = ( df['bid_amount'] - df[ COST_PER_ACTION[charge_type] ] ) / df['bid_amount']
         
         status  = np.array( [m1, m2, m3, m4, m5, m6, m_spend, m_bid] )
+        for idx, j in enumerate(status[:,0]):
+            if np.isinf(j) or np.isneginf(j):
+                status[idx,0] = -100
         status = np.nan_to_num(status)
         r = np.dot( optimal_weight, status )
         return r
@@ -287,7 +290,7 @@ class ObjectiveFunc(object):
 
 def ga_optimal_weight(campaign_id, df_weight):
     request_time = datetime.datetime.now().date()
-    mydb = index_collector_conversion_facebook.connectDB( "dev_facebook_test" )
+    mydb = index_collector_conversion_facebook.connectDB( DATABASE )
 #     df_weight = pd.read_sql("SELECT * FROM conversion_optimal_weight WHERE campaign_id={}".format(campaign_id), con=mydb)
     df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id={}".format(campaign_id), con=mydb)
     charge_type = df_camp['charge_type'].iloc[0]
@@ -309,32 +312,28 @@ if __name__ == "__main__":
     starttime = datetime.datetime.now()
     campaign_list = index_collector_conversion_facebook.get_campaign_target()['campaign_id'].unique()
     for camp_id in campaign_list:
-        print('campaign_id:', camp_id )
         global df
         df = ObjectiveFunc().campaign_status(camp_id)
-        bound = np.tile([[0], [10]], vardim)
-        ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
-        optimal = ga.solve()
-        score = ObjectiveFunc.fitness_function(optimal, df)
-        weight_columns=['w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w_spend', 'w_bid']
-        df_weight = pd.DataFrame(data=[optimal], columns=weight_columns, index=[0])
+        if df['charge_type'].iloc[0] == 'CONVERSIONS' or df['charge_type'].iloc[0] == 'ADD_TO_CART':
+            
+            print('campaign_id:', camp_id )
+            bound = np.tile([[0], [10]], vardim)
+            ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
+            optimal = ga.solve()
+            score = ObjectiveFunc.fitness_function(optimal, df)
+            weight_columns=['w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w_spend', 'w_bid']
+            df_weight = pd.DataFrame(data=[optimal], columns=weight_columns, index=[0])
 
-        df_final = pd.DataFrame({'campaign_id':camp_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
-        df_final = pd.concat( [df_weight, df_final], axis=1, sort=True, ignore_index=False)
-        index_collector_conversion_facebook.check_optimal_weight(camp_id, df_final)
-        ga_optimal_weight(camp_id, df_weight)
-        print('optimal_weight:', optimal)
-        print(datetime.datetime.now()-starttime)    
+            df_final = pd.DataFrame({'campaign_id':camp_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
+            df_final = pd.concat( [df_weight, df_final], axis=1, sort=True, ignore_index=False)
+            index_collector_conversion_facebook.check_optimal_weight(camp_id, df_final)
+            ga_optimal_weight(camp_id, df_weight)
+            print('optimal_weight:', optimal)
+            print(datetime.datetime.now()-starttime)    
     print(datetime.datetime.now()-starttime)
 
 
-# In[4]:
-
-
-#get_ipython().system('jupyter nbconvert --to script genetic_algorithm_conversion_facebook.ipynb')
-
-
-# In[ ]:
+# In[89]:
 
 
 

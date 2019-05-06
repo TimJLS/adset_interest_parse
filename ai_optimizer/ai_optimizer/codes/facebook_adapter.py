@@ -42,7 +42,7 @@ class FacebookCampaignAdapter(object):
     
     def get_bid(self):
 #             print(len(adset_list), self.campaign_id)
-        sql = "SELECT adset_id, bid_amount, request_time FROM adset_insights WHERE campaign_id={} ;".format( self.campaign_id )
+        sql = "select * from (select * from adset_insights WHERE campaign_id = {} order by request_time desc) as a group by adset_id;".format( self.campaign_id )
         df_adset = pd.read_sql( sql, con=self.mydb )
         df_init_bid = pd.read_sql( "SELECT * FROM adset_initial_bid WHERE campaign_id={} ;".format( self.campaign_id ), con=self.mydb )
 #         adset_list = df_adset['adset_id'].unique()

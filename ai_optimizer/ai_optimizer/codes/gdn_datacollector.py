@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[17]:
+# In[ ]:
+
+
+
+
+
+# In[ ]:
 
 
 #!/usr/bin/env python
@@ -152,11 +158,11 @@ class Campaign(object):
                     'operator': 'EQUALS',
                     'values': [self.campaign_id]
                 },
-#                 {
-#                     'field': 'Status',
-#                     'operator': 'EQUALS',
-#                     'values': ['ENABLED']
-#                 }
+                {
+                    'field': 'Status',
+                    'operator': 'NOT_EQUALS',
+                    'values': ['REMOVED']
+                }
             ]
         }
         self.adgroup_id_list = list()
@@ -167,10 +173,8 @@ class Campaign(object):
         return self.adgroup_id_list
     
     def get_campaign_insights(self, client, date_preset=None):
-        if date_preset is None:
+        if not date_preset:
             date_preset = 'ALL_TIME'
-        else:
-            date_preset = date_preset
         # Create report definition.
         report = {
             'reportName': 'CAMPAIGN_PERFORMANCE_REPORT',
@@ -181,13 +185,11 @@ class Campaign(object):
             'selector': {
                 'fields': CAMPAIGN_FIELDS,
     #             'dateRange': {'min': '20190301','max': '20190401'},
-                'predicates': [
-                    {
-                        'field': 'CampaignId',
-                        'operator': 'EQUALS',
-                        'values':[self.campaign_id]
-                    }
-                ]
+                'predicates': [{
+                    'field': 'CampaignId',
+                    'operator': 'EQUALS',
+                    'values':[self.campaign_id]
+                }]
             }
         }
         csv = self.report_downloader.DownloadReportAsString(  
@@ -233,10 +235,8 @@ class Campaign(object):
                                  campaign_id=None,
                                  date_preset=None, performance_type='ADGROUP'):
         report_downloader = self.client.GetReportDownloader(version='v201809')
-        if date_preset is None:
+        if not date_preset:
             date_preset = 'ALL_TIME'
-        else:
-            date_preset = date_preset
         # Create report definition.
         if self.campaign_id:
             operand = {
@@ -289,7 +289,7 @@ class AdGroup(Campaign):
         
     def get_adgroup_insights(self, client, date_preset=None):
         
-        if date_preset is None:
+        if not date_preset:
             date_preset = 'ALL_TIME'
         # Create report definition.
         if self.campaign_id is not None and self.adgroup_id is None:
@@ -433,7 +433,7 @@ def data_collect(customer_id, campaign_id, destination, destination_type):
         
         bidding_type = BIDDING_INDEX[ destination_type ]
         df_adgroup['bid_amount'] = df_adgroup[bidding_type]
-#         df_adgroup['bid_amount'] = math.ceil(reverse_bid_amount(df_adgroup[bidding_type]))
+        df_adgroup['bid_amount'] = math.ceil(reverse_bid_amount(df_adgroup[bidding_type]))
         gdn_db.check_initial_bid(adgroup_id, df_adgroup[[Field.campaign_id, Field.adgroup_id, Field.bid_amount]])
 
     return
@@ -464,7 +464,7 @@ if __name__=='__main__':
 #     df_campaign = data_collect(camp.customer_id, camp.campaign_id, 10000, camp.destination_type)
 
 
-# In[6]:
+# In[ ]:
 
 
 

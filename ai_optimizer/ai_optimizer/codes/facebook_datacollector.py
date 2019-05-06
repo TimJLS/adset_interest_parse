@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[3]:
+# In[2]:
 
 
-# %load facebook_datacollector.py
-#!/usr/bin/env python
-
-# In[24]:
 
 
-# %load facebook_datacollector.py
+
+# In[1]:
+
+
 from pathlib import Path
 from facebook_business.api import FacebookAdsApi
 from facebook_business.adobjects.adaccount import AdAccount
@@ -249,7 +248,7 @@ class Campaigns(object):
         if len(insights) > 0:
             current_campaign = insights[0]
             if current_campaign.get(Field.impressions):
-                spend = int( current_campaign.get( Field.spend ) )
+                spend = int( float( current_campaign.get( Field.spend ) ) )
                 try:
                     for act in current_campaign.get( Field.actions ):
                         if act["action_type"] == CAMPAIGN_OBJECTIVE_FIELD[ self.charge_type ]:
@@ -354,7 +353,7 @@ class AdSets(object):
         if len(insights) > 0:
             current_adset = insights[0]
             if current_adset.get(Field.impressions):
-                spend = int( current_adset.get( Field.spend ) )
+                spend = int( float( current_adset.get( Field.spend ) ) )
                 self.adset_insights.update( {Field.target:0} )
                 self.adset_insights.update( {Field.cost_per_target:0} )
             try:
@@ -475,21 +474,20 @@ def make_default( campaign_id, charge_type ):
 def main():
     start_time = datetime.datetime.now()
     FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-#     campaignid_list = mysql_adactivity_save.get_campaign() # if extend period, use this
-    campaignid_list = mysql_adactivity_save.get_campaign_target_left_dict().keys()
-    print(campaignid_list)
-    for campaign_id in campaignid_list:
-        df = mysql_adactivity_save.get_campaign_target(campaign_id)
+    df_camp = mysql_adactivity_save.get_campaign() # if extend period, use this
+#     campaignid_list = mysql_adactivity_save.get_campaign_target_left_dict().keys()
+    print(df_camp['campaign_id'].unique())
+    for campaign_id in df_camp['campaign_id'].unique():
+        df = df_camp[df_camp.campaign_id == campaign_id].iloc[0]
         if len(df) == 0:
             pass
         else:
             print(campaign_id, df['charge_type'])
-            data_collect( int(campaign_id), df['destination'].iloc[0], df['charge_type'].iloc[0] )
+            data_collect( int(campaign_id), df['destination'], df['charge_type'] )
     print(datetime.datetime.now()-start_time)
-    
 
 
-# In[2]:
+# In[ ]:
 
 
 if __name__ == "__main__":
@@ -499,8 +497,8 @@ if __name__ == "__main__":
     gc.collect()
 
 
-# In[3]:
+# In[ ]:
 
 
-#!jupyter nbconvert --to script facebook_datacollector.ipynb
+
 

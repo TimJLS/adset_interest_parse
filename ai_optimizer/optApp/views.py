@@ -56,7 +56,7 @@ def opt_api(request):
         print(campaign_id and destination and destination_type, datetime.datetime.now())
 #         if campaign_id and destination and destination_type and media: # new release version
         if campaign_id and destination and destination_type: #temporary working version
-            if media == 'Facebook' or media is None:
+            if media == 'Facebook' or not media:
                 FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
                 queue = mysql_adactivity_save.check_campaignid_target( campaign_id, destination, destination_type )
                 if mysql_adactivity_save.check_default_price(campaign_id):
@@ -99,6 +99,7 @@ def opt_api(request):
                     mydict = mysql_adactivity_save.get_release_default( campaign_id )#release version
                 return JsonResponse( json.loads(mydict), safe=False )
         elif campaign_id:
+            print(campaign_id)
             try:
 #                         mydict = mysql_adactivity_save.get_result( campaign_id ) #new version
                 mydict = mysql_adactivity_save.get_release_result( campaign_id ) #release version

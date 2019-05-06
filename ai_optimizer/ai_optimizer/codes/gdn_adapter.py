@@ -1,19 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[8]:
+# In[2]:
 
 
 
 
 
-# In[ ]:
-
-
-# %load gdn_adapter.py
-#!/usr/bin/env python
-
-# In[6]:
+# In[3]:
 
 
 import datetime
@@ -66,7 +60,7 @@ class CampaignAdapter(object):
         
     def _get_df(self):
         campaign_sql = "SELECT * FROM campaign_target WHERE campaign_id={}".format( self.campaign_id )
-        adgroup_sql = "SELECT * FROM adgroup_insights WHERE campaign_id={}".format( self.campaign_id )
+        adgroup_sql = "select * from (select * from adgroup_insights WHERE campaign_id = {} order by request_time desc) as a group by adgroup_id".format( self.campaign_id )
         self.df_camp = pd.read_sql( campaign_sql, con=self.mydb )
         self.df_adgroup = pd.read_sql( adgroup_sql, con=self.mydb )
         return
@@ -224,6 +218,7 @@ class MyEncoder(json.JSONEncoder):
             return obj.tolist()
         else:
             return super(MyEncoder, self).default(obj)
+        
 def main():
     start_time = datetime.datetime.now()
     campaign_id_list = gdn_db.get_campaign()['campaign_id'].unique()
@@ -240,15 +235,11 @@ def main():
         account_id = camp.df_camp['customer_id'].iloc[0]
         for adgroup in adgroup_list:
             s = AdGroupAdapter( adgroup, camp )
-            status = s.retrieve_adgroup_attribute()
+            status_dict = s.retrieve_adgroup_attribute()
             media = result['media']
-            bid_dict = bid_operator.adjust(media, **status)
+            bid_dict = bid_operator.adjust(media, **status_dict)
 #             print(bid_dict)
-            try:
-                update_result = gdn_datacollector.update_adgroup_bid(account_id, adgroup, bid_dict['bid'])
-            except Exception as e:
-                print('[main.update_adgroup_bid]: ', e)
-                pass
+            gdn_datacollector.update_adgroup_bid(account_id, adgroup, bid_dict['bid'])
             result['contents'].append(bid_dict)
             del s
         
@@ -278,27 +269,13 @@ def main():
     print(datetime.datetime.now()-start_time)
     return
     
+
+
+# In[ ]:
+
+
 if __name__=='__main__':
     main()
     import gc
     gc.collect()
-    
-
-
-# In[7]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
 

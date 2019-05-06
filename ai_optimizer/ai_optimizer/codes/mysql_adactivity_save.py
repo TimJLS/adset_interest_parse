@@ -146,13 +146,6 @@ def get_campaign_target_left_dict():
             campaignid_dict[campaign_id]=df['target_left'][df.campaign_id==campaign_id]
     return campaignid_dict
 
-def get_campaign():
-    mydb = connectDB(DATABASE)
-    request_time = datetime.datetime.now()
-    df = pd.read_sql( "SELECT * FROM campaign_target" , con=mydb )
-    campaign_id_list = df['campaign_id'].unique()
-    mydb.close()
-    return campaign_id_list
 ### optimal_weight ###
 
 def check_optimal_weight(campaign_id, df):
@@ -192,6 +185,22 @@ def get_campaign_target(campaign_id):
         df_camp= pd.concat( [ df_camp, df ], axis=0 )
     mydb.close()
     return df_camp
+
+def get_campaign(campaign_id=None):
+    mydb = connectDB(DATABASE)
+    request_time = datetime.datetime.now()
+    if campaign_id is None:
+        df = pd.read_sql( "SELECT * FROM campaign_target", con=mydb )
+        mydb.close()
+        return df
+    else:
+        df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
+        df_camp = pd.DataFrame(columns=df.columns)
+        stop_time = df['stop_time'][df.campaign_id==campaign_id].iloc[0]
+        if stop_time.date() >= request_time.date():
+            df_camp= pd.concat( [ df_camp, df[df.campaign_id==campaign_id] ], axis=0 )
+        mydb.close()
+        return df_camp
 
 def update_campaign_target(df):
     mydb = connectDB(DATABASE)
@@ -239,6 +248,8 @@ def get_release_result( campaign_id ):
         mydb.close()
         return results
     except:
+        mycursor.close()
+        mydb.close()
         return str(dict())
 
 def insert_release_default( campaign_id, mydict, datetime ):

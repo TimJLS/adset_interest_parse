@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[7]:
+# In[1]:
 
 
 
@@ -57,7 +57,7 @@ def update_table(df, table=None):
             mycursor.execute(sql)
             mydb.commit()
         except Exception as e:
-            print(e)
+            print('[gdn_db.update_table]: ', e)
             pass
     mycursor.close()
     mydb.close()
@@ -68,6 +68,7 @@ def get_campaign(campaign_id=None):
     request_time = datetime.datetime.now()
     if campaign_id is None:
         df = pd.read_sql( "SELECT * FROM campaign_target", con=mydb )
+        mydb.close()
         return df
     else:
         df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
@@ -153,11 +154,31 @@ def check_optimal_weight(campaign_id, df):
                 mycursor.execute(sql)
                 mydb.commit()
             except Exception as e:
-                print(e)
+                print('[gdn_db.check_optimal_weight]: ', e)
                 pass
         mycursor.close()
         mydb.close()
         return
+
+def adjust_init_bid(campaign_id):
+    mydb = connectDB(DATABASE)
+    mycursor = mydb.cursor()
+    ### select
+    sql = "SELECT bid_amount FROM adset_initial_bid WHERE campaign_id={}".format(campaign_id)
+    mycursor.execute(sql)
+    init_bid = mycursor.fetchall()
+    init_bid = int(init_bid[0][0])
+    if init_bid > 100:
+        init_bid = init_bid*1.1
+    else:
+        init_bid += 1
+    ### update
+    sql = "UPDATE adset_initial_bid SET bid_amount={} WHERE campaign_id={}".format(init_bid, campaign_id)
+    mycursor.execute(sql)
+    mydb.commit()
+    mycursor.close()
+    mydb.close()    
+    return
 
 
 # In[ ]:

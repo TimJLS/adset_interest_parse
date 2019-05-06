@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[12]:
 
 
-# %load conversion_index_collector.py
-#!/usr/bin/env python
 
-# In[1]:
+
+
+# In[ ]:
 
 
 from pathlib import Path
@@ -22,7 +22,7 @@ from facebook_business.adobjects.insightsresult import InsightsResult
 from facebook_business.adobjects.adsinsights import AdsInsights
 my_app_id = '958842090856883'
 my_app_secret = 'a952f55afca38572cea2994d440d674b'
-my_access_token = 'EAANoD9I4obMBAPcoZA5V7OZBQaPa3Tk7NMAT0ZBZCepdD8zZBcwMZBMHAM1zPeQiRY4Yw07rscee4LMRn9lMsJGuNZAYBA4nCYdZA6tsyL0KGTfQKIAFls3T5jul9Am6t95nbvcGXFmcFDYEyZAX2FpAuVesVGyiHuLFRKxlXfh5t6AZDZD'
+my_access_token = 'EAANoD9I4obMBALrHTgMWgRujnWcZA3ZB823phs6ynDDtQxnzIZASyRQZCHfr5soXBZA7NM9Dc4j9O8FtnlIzxiPCsYt4tmPQ6ZAT3yJLPuYQqjnWZBWX5dsOVzNhEqsHYj1jVJ3RAVVueW7RSxRDbNXKvK3W23dcAjNMjxIjQGIOgZDZD'
 
 FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
 
@@ -60,6 +60,7 @@ CAMPAIGN_OBJECTIVE = {
 
 CAMPAIGN_FIELD = {
     'spend_cap': campaign.Campaign.Field.spend_cap,
+    'lifetime_budget': campaign.Campaign.Field.lifetime_budget,
     'objective': campaign.Campaign.Field.objective,
     'start_time': campaign.Campaign.Field.start_time,
     'stop_time': campaign.Campaign.Field.stop_time,
@@ -156,6 +157,7 @@ class Field:
     relevance_score = 'relevance_score'
     spend = 'spend'
     spend_cap = 'spend_cap'
+    lifetime_budget = 'lifetime_budget'
     unique_actions = 'unique_actions'
     unique_clicks = 'unique_clicks'
     unique_conversions = 'unique_conversions'
@@ -245,7 +247,7 @@ class Campaigns(object):
             if current_campaign.get(Field.impressions):
                 spend = current_campaign.get(Field.spend)
                 impressions = current_campaign.get(Field.impressions)
-                self.campaign_insights.update( { Field.spend: int(spend) } )
+                self.campaign_insights.update( { Field.spend: int(float(spend)) } )
                 self.campaign_insights.update( { Field.impressions: int(impressions) } )
                 try:
                     for act in current_campaign.get( Field.actions ):
@@ -281,8 +283,12 @@ class Campaigns(object):
         self.campaign_features[ Field.period ] = ( self.campaign_features[Field.stop_time] - self.campaign_features[Field.start_time] ).days
         self.campaign_features[ Field.start_time ] = self.campaign_features[Field.start_time].strftime( '%Y-%m-%d %H:%M:%S' )
         self.campaign_features[ Field.stop_time ] = self.campaign_features[Field.stop_time].strftime( '%Y-%m-%d %H:%M:%S' )
-        self.campaign_features[ Field.daily_budget ] = int( self.campaign_features[Field.spend_cap] )/self.campaign_features[Field.period]
-        
+        try:
+            self.campaign_features[ Field.daily_budget ] = int( self.campaign_features[Field.spend_cap] )/self.campaign_features[Field.period]
+        except Exception as e:
+            print('[index_collector_conversion_facebook.Campaigns.retrieve_all]:', e)
+            self.campaign_features[Field.lifetime_budget] = float(self.campaign_features[Field.lifetime_budget]) / 100
+            self.campaign_features[ Field.daily_budget ] = float( self.campaign_features[Field.lifetime_budget] )/self.campaign_features[Field.period]
         
         
         self.info = { **self.campaign_insights, **self.campaign_features }
@@ -323,7 +329,7 @@ class AdSets(object):
             if current_adset.get(Field.impressions):
                 spend = insights[0].get( Field.spend )
                 impressions = insights[0].get( Field.impressions )
-                self.adset_insights.update( { Field.spend: int(spend) } )
+                self.adset_insights.update( { Field.spend: int(float(spend)) } )
                 self.adset_insights.update( { Field.impressions: int(impressions) } )
             try:
                 for act in insights[0].get( Field.actions ):
@@ -452,30 +458,26 @@ def insertion(table, df):
 def update_campaign_target(df_camp):
     mydb = connectDB(DATABASE)
     mycursor = mydb.cursor()
-    sql = ("UPDATE campaign_target SET charge_type = %s, cost_per_target = %s, daily_budget = %s, daily_charge = %s, destination = %s, impressions = %s, period = %s, spend = %s, spend_cap = %s, start_time = %s , stop_time=%s, target=%s, target_left=%s, target_type=%s WHERE campaign_id = %s")
-    val = ( 
-        df_camp['charge_type'].iloc[0],
-        df_camp['cost_per_target'].iloc[0].astype(dtype=object),
-        df_camp['daily_budget'].iloc[0].astype(dtype=object),
-        df_camp['daily_charge'].iloc[0].astype(dtype=object),
-        df_camp['destination'].iloc[0].astype(dtype=object),
-        df_camp['impressions'].iloc[0].astype(dtype=object),
-        df_camp['period'].iloc[0].astype(dtype=object),
-        df_camp['spend'].iloc[0].astype(dtype=object),
-        df_camp['spend_cap'].iloc[0].astype(dtype=object),
-        df_camp['start_time'].iloc[0],
-        df_camp['stop_time'].iloc[0],
-        df_camp['target'].iloc[0].astype(dtype=object),
-        df_camp['target_left'].iloc[0].astype(dtype=object),
-        df_camp['target_type'].iloc[0],
-        df_camp['campaign_id'].iloc[0].astype(dtype=object)
-    )
-    mycursor.execute(sql, val)
-    mydb.commit()
+    campaign_id = df_camp['campaign_id'].iloc[0]
+    df_camp.drop(['campaign_id'], axis=1)
+    try:
+        spend_cap = df_camp['spend_cap'].iloc[0]
+    except Exception as e:
+        print('[index_collector_conversion_facebook.update_campaign_target]: ', e)
+        lifetime_budget = df_camp['lifetime_budget'].iloc[0]
+        df_camp['spend_cap'] = df_camp['lifetime_budget']
+        df_camp = df_camp.drop(['lifetime_budget'], axis=1)
+    for column in df_camp.columns:
+        try:
+            sql = ("UPDATE campaign_target SET {} = '{}' WHERE campaign_id={}".format(column, df_camp[column].iloc[0], campaign_id))
+            mycursor.execute(sql)
+            mydb.commit()
+        except Exception as e:
+            print('[gdn_db.update_table]: ', e)
+            pass
     mycursor.close()
     mydb.close()
     return
-
 
 # In[12]:
 
@@ -606,6 +608,12 @@ if __name__ == "__main__":
 
 
 # In[4]:
+
+
+
+
+
+# In[ ]:
 
 
 
