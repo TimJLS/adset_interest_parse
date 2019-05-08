@@ -23,7 +23,7 @@ import mysql_adactivity_save
 from facebook_datacollector import Campaigns
 from facebook_datacollector import DatePreset
 from facebook_adapter import FacebookCampaignAdapter
-
+import bid_operator
 my_app_id = '958842090856883'
 my_app_secret = 'a952f55afca38572cea2994d440d674b'
 my_access_token = 'EAANoD9I4obMBALrHTgMWgRujnWcZA3ZB823phs6ynDDtQxnzIZASyRQZCHfr5soXBZA7NM9Dc4j9O8FtnlIzxiPCsYt4tmPQ6ZAT3yJLPuYQqjnWZBWX5dsOVzNhEqsHYj1jVJ3RAVVueW7RSxRDbNXKvK3W23dcAjNMjxIjQGIOgZDZD'
@@ -125,7 +125,9 @@ def update_interest(adset_id=None, adset_params=None):
 
 def update_status(adset_id, status=AdSet.Status.active):
     adset = AdSet(adset_id)
-    adset[AdSet.Field.status] = status
+    adset.update({
+        AdSet.Field.status: status
+    })
     adset.remote_update()
     return
 
@@ -176,7 +178,7 @@ def copy_adset(adset_id, actions, adset_params=None):
     new_adset_params[AdSet.Field.id] = None
     for i, action in enumerate(actions.keys()):
         if action == 'bid':
-            new_adset_params[ACTION_DICT[action]] = actions[action]  # for bid
+            new_adset_params[ACTION_DICT[action]] = bid_operator.revert_bid_amount( actions[action] ) # for bid
 
         elif action == 'age':
             age_list = actions[action][0].split('-')
@@ -254,15 +256,16 @@ def main(campaign):
     elif charge_type == 'LINK_CLICKS':
         copy_name_with_copy = False
         split_age = True
-
+    print('[main.adset_for_off_list]: ', adset_for_off)
     for adset_id in adset_for_off:
         update_status(adset_id, status=AdSet.Status.paused)
-    print(adset_for_copy)
+    print('[main.adset_for_copy_list]: ', adset_for_copy)
     for adset_id in adset_for_copy:
         # bid adjust
         bid = fb.init_bid_dict[int(adset_id)]
         if bid_adjust:
             bid = check_init_bid(bid)
+        
         actions.update({'bid': bid})
         origin_adset_params = retrieve_origin_adset_params(adset_id)
         origin_adset_params[AdSet.Field.id] = None
@@ -317,7 +320,8 @@ if __name__ == '__main__':
     df_camp = index_collector_conversion_facebook.get_campaign_target()
     for campaign_id in df_camp.campaign_id.unique():
         main(campaign_id)
-#     main(23843310773940232)
+#     main(23843582099980495)
+#     assign_copied_ad_to_new_adset(new_adset_id=23843315047330240, ad_id=23843306827840240)
 
 
 # In[1]:

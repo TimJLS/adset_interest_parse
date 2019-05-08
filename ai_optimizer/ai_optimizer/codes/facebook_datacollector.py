@@ -1,21 +1,10 @@
-#!/usr/bin/env python
-# coding: utf-8
 
-# In[2]:
-
-
-
-
-
-# In[1]:
-
-
+import facebook_business.adobjects.adset as adset
+import facebook_business.adobjects.campaign as campaign
 from pathlib import Path
 from facebook_business.api import FacebookAdsApi
 from facebook_business.adobjects.adaccount import AdAccount
-import facebook_business.adobjects.adset as adset
 from facebook_business.adobjects.ad import Ad
-import facebook_business.adobjects.campaign as campaign
 from facebook_business.adobjects.adcreative import AdCreative
 from facebook_business.adobjects.adactivity import AdActivity
 from facebook_business.adobjects.insightsresult import InsightsResult

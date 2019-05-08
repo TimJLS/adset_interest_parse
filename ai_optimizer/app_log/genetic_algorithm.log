@@ -1176,3 +1176,45 @@ optimal_weight: [0.13673688 0.16054663 0.00308635]
 0:01:10.896014
 campaign_id: 23843420208720408
 current time:  2019-05-06 00:05:08.695736
+campaign_id: 23843306827810240
+current time:  2019-05-07 00:05:08.777644
+Generation 0: optimal function value is: -5.649487; average function value is -1.172754
+Generation 1: optimal function value is: -0.215077; average function value is -7.147883
+Generation 2: optimal function value is: -0.215077; average function value is -7.654836
+Generation 3: optimal function value is: -0.215077; average function value is -8.058408
+Generation 4: optimal function value is: -0.215077; average function value is -8.356308
+Generation 5: optimal function value is: -0.215077; average function value is -8.451570
+Generation 6: optimal function value is: -0.215077; average function value is -8.558010
+Generation 7: optimal function value is: -0.215077; average function value is -8.593428
+Generation 8: optimal function value is: -0.215077; average function value is -8.620179
+Generation 9: optimal function value is: -0.215077; average function value is -8.654377
+Optimal function value is: -0.215077; 
+Optimal solution is:
+[0.15815769 0.04445953 0.01574776]
+   weight_kpi  weight_spend  weight_bid        campaign_id     score
+0    0.158158       0.04446    0.015748  23843306827810240 -0.215077
+optimal_weight: [0.15815769 0.04445953 0.01574776]
+0:01:46.454560
+campaign_id: 23843420208720408
+current time:  2019-05-07 00:05:08.777644
+campaign_id: 23843306827810240
+current time:  2019-05-08 00:05:08.393329
+Generation 0: optimal function value is: nan; average function value is nan
+Generation 1: optimal function value is: nan; average function value is nan
+Generation 2: optimal function value is: nan; average function value is nan
+Generation 3: optimal function value is: nan; average function value is nan
+Generation 4: optimal function value is: nan; average function value is nan
+Generation 5: optimal function value is: nan; average function value is nan
+Generation 6: optimal function value is: nan; average function value is nan
+Generation 7: optimal function value is: nan; average function value is nan
+Generation 8: optimal function value is: nan; average function value is nan
+Generation 9: optimal function value is: nan; average function value is nan
+Optimal function value is: nan; 
+Optimal solution is:
+[0.84437479 0.44959263 0.38325978]
+   weight_kpi  weight_spend  weight_bid        campaign_id  score
+0    0.844375      0.449593     0.38326  23843306827810240    NaN
+optimal_weight: [0.84437479 0.44959263 0.38325978]
+0:01:50.779899
+campaign_id: 23843420208720408
+current time:  2019-05-08 00:05:08.393329

@@ -20,7 +20,9 @@ from googleads import adwords
 import sys
 import pandas as pd
 import numpy as np
+import math
 import datetime
+from bid_operator import reverse_bid_amount
 AUTH_FILE_PATH = '/home/tim_su/ai_optimizer/opt/ai_optimizer/googleads.yaml'
 client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
 import gdn_db
@@ -412,9 +414,13 @@ def data_collect(customer_id, campaign_id, destination, destination_type):
     stop_time = campaign_lifetime_insights[ "stop_time" ]
     period = ( campaign_lifetime_insights[ "stop_time" ] - campaign_lifetime_insights[ "start_time" ] ).days + 1
     period_left = ( stop_time.date()-datetime.datetime.now().date() ).days + 1
+    if period_left == 0:
+        period_left = 1
     target = campaign_lifetime_insights[ CAMPAIGN_OBJECTIVE_FIELD[ destination_type ] ]
     target_left = int(destination) - campaign_lifetime_insights[ CAMPAIGN_OBJECTIVE_FIELD[ destination_type ] ]
+#     try:
     daily_target = target_left / period_left
+        
     addition_value_list = [period, period_left, target, target_left, daily_target, destination, destination_type]
     addition_dict = dict( zip(addition_column_list, addition_value_list))
     campaign_dict = {
@@ -444,17 +450,16 @@ def data_collect(customer_id, campaign_id, destination, destination_type):
 
 def main():
     start_time = datetime.datetime.now()
-    campaignid_list = gdn_db.get_campaign()['campaign_id'].unique()
-    print(campaignid_list)
-    for campaign_id in campaignid_list:
-        df = gdn_db.get_campaign(campaign_id=campaign_id)
+    df_camp = gdn_db.get_campaign()
+    print(df_camp['campaign_id'].unique())
+    for campaign_id in df_camp['campaign_id'].unique():
+        df = df_camp[df_camp.campaign_id == campaign_id].iloc[0]
         if len(df) == 0:
             pass
         else:
             print(campaign_id, df['destination_type'])
-            data_collect( df['customer_id'].iloc[0], int(campaign_id), df['destination'].iloc[0], df['destination_type'].iloc[0] )
+            data_collect( df['customer_id'], int(campaign_id), df['destination'], df['destination_type'] )
     print(datetime.datetime.now()-start_time)
-
 
 # In[ ]:
 

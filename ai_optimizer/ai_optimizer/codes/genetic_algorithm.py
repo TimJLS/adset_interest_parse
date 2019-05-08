@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[24]:
+
+
+# %load genetic_algorithm.py
 import numpy as np
 import random
 import copy
@@ -134,8 +141,7 @@ class GeneticAlgorithm(object):
                 for j in range(crossPos, self.vardim):
                     newpop[i].chrom[j] = newpop[i].chrom[
                         j] * self.params[2] + (1 - self.params[2]) * newpop[i + 1].chrom[j]
-                    newpop[i + 1].chrom[j] = newpop[i + 1].chrom[j] * self.params[2] + \
-                        (1 - self.params[2]) * newpop[i].chrom[j]
+                    newpop[i + 1].chrom[j] = newpop[i + 1].chrom[j] * self.params[2] +                         (1 - self.params[2]) * newpop[i].chrom[j]
         self.population = newpop
 
     def mutationOperation(self):
@@ -193,8 +199,7 @@ class GAIndividual(object):
         rnd = np.random.random(size=len)
         self.chrom = np.zeros(len)
         for i in range(0, len):
-            self.chrom[i] = self.bound[0, i] + \
-                (self.bound[1, i] - self.bound[0, i]) * rnd[i]
+            self.chrom[i] = self.bound[0, i] +                 (self.bound[1, i] - self.bound[0, i]) * rnd[i]
     def calculateFitness(self):
         '''
         calculate the fitness of the chromsome
@@ -219,14 +224,24 @@ class ObjectiveFunc(object):
         return r
 
     def adset_fitness(optimal_weight, df):
-        m_kpi   = df['target'] / df['daily_charge'] * 10
+        df = df.fillna(0)
+        m_kpi = df['target'] / df['daily_charge'] * 10
         if df['target'].iloc[0] == 0:
             m_kpi = -10
         m_spend = -( df['daily_budget'] - df['spend'] ) / df['daily_budget']
         m_bid   = ( df['bid_amount'] - df['cost_per_target'] ) / df['bid_amount']
-    #     m_width = df['impressions'] / df['daily_budget']
         status  = np.array( [m_kpi, m_spend, m_bid] )
-        optimal_weight = np.array([optimal_weight['weight_kpi'].iloc[0], optimal_weight['weight_spend'].iloc[0], optimal_weight['weight_bid'].iloc[0]])
+
+        for idx, j in enumerate(status[:,0]):
+            if np.isinf(j) or np.isneginf(j):
+                status[idx,0] = -100
+        status = np.nan_to_num(status)
+
+        optimal_weight = np.array([
+            optimal_weight['weight_kpi'].iloc[0],
+            optimal_weight['weight_spend'].iloc[0],
+            optimal_weight['weight_bid'].iloc[0]
+        ])
         r = np.dot( optimal_weight, status )
 #         print(status)
 #         print(optimal_weight)
@@ -319,41 +334,48 @@ def ga_optimal_weight(campaign_id):
     charge_type = df_camp['charge_type'].iloc[0]
     adset_list = facebook_datacollector.Campaigns(campaign_id, charge_type).get_adsets()
     for adset_id in adset_list:
-        
-#         print(ad_id)
         df = ObjectiveFunc.adset_status( adset_id )
         r = ObjectiveFunc.adset_fitness( df_weight, df )
-#         print('[score]', r, ad_id)
-
+        print('[score]', r)
         df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'score':r, 'request_time':request_time}, index=[0])
-#         print(adset_id, df_final['score'].iloc[0])
         mysql_adactivity_save.intoDB("adset_score", df_final)
-        try:
-#             print(ad_id)
-            df = ObjectiveFunc.adset_status(ad_id)
-            r = ObjectiveFunc.adset_fitness( df_weight, df )
-            print('[score]', r)
-            df_ad=pd.read_sql("SELECT adset_id FROM ad_insights WHERE ad_id=%s LIMIT 1" %(ad_id), con=mydb)
-            adset_id = df_ad['adset_id'].iloc[0].astype(dtype=object) 
-
-            df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'ad_id':ad_id, 'score':r, 'request_time':request_time}, index=[0])
-            
-            mysql_adactivity_save.intoDB("adset_score", df_final)
-        except:
-            pass
     mydb.close()
     return
 
-if __name__ == "__main__":
+def main(campaign_id=None):
     starttime = datetime.datetime.now()
+    global df
+    if not campaign_id:
+        camp_id_list = mysql_adactivity_save.get_campaign_target_left_dict()
+        for camp_id in camp_id_list.keys():
+    #         ga_optimal_weight(camp_id)
+            print('campaign_id:', camp_id )
+            print('current time: ', starttime )
+            df = ObjectiveFunc.account_status(camp_id)
+            bound = np.tile([[0], [1]], vardim)
+            ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
+            optimal = ga.solve()
+            score = ObjectiveFunc.fitnessfunc(optimal, df)
 
-    camp_id_list = mysql_adactivity_save.get_campaign_target_left_dict()
-    for camp_id in camp_id_list.keys():
-#         ga_optimal_weight(camp_id)
-        print('campaign_id:', camp_id )
+            score_columns=['weight_kpi', 'weight_spend', 'weight_bid']
+            df_score = pd.DataFrame(data=[optimal], columns=['weight_kpi', 'weight_spend', 'weight_bid'], index=[0])
+    #         score_columns=['weight_kpi', 'weight_spend', 'weight_bid', 'weight_width']
+    #         df_score = pd.DataFrame(data=[optimal], columns=['weight_kpi', 'weight_spend', 'weight_bid', 'weight_width'], index=[0])        
+
+            df_final = pd.DataFrame({'campaign_id':camp_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
+            df_final = pd.concat( [df_score, df_final], axis=1, sort=True, ignore_index=False)
+
+            print(df_final)
+            mysql_adactivity_save.check_optimal_weight(camp_id, df_final)
+            ga_optimal_weight(camp_id)
+
+            print('optimal_weight:', optimal)
+            print(datetime.datetime.now()-starttime)    
+        print(datetime.datetime.now()-starttime)
+    else:
+        print('campaign_id:', campaign_id )
         print('current time: ', starttime )
-        global df
-        df = ObjectiveFunc.account_status(camp_id)
+        df = ObjectiveFunc.account_status(campaign_id)
         bound = np.tile([[0], [1]], vardim)
         ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
         optimal = ga.solve()
@@ -364,41 +386,36 @@ if __name__ == "__main__":
 #         score_columns=['weight_kpi', 'weight_spend', 'weight_bid', 'weight_width']
 #         df_score = pd.DataFrame(data=[optimal], columns=['weight_kpi', 'weight_spend', 'weight_bid', 'weight_width'], index=[0])        
 
-        df_final = pd.DataFrame({'campaign_id':camp_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
+        df_final = pd.DataFrame({'campaign_id':campaign_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
         df_final = pd.concat( [df_score, df_final], axis=1, sort=True, ignore_index=False)
-        
+
         print(df_final)
-        mysql_adactivity_save.check_optimal_weight(camp_id, df_final)
-        ga_optimal_weight(camp_id)
-        
+        mysql_adactivity_save.check_optimal_weight(campaign_id, df_final)
+        ga_optimal_weight(campaign_id)
+
         print('optimal_weight:', optimal)
-        print(datetime.datetime.now()-starttime)    
-    print(datetime.datetime.now()-starttime)
+    return
+
+
+# In[18]:
+
+
+if __name__ == "__main__":
+    main()
     import gc
     gc.collect()
-#     global df
-#     df = ObjectiveFunc.account_status(23843269222010540)
-#     bound = np.tile([[0], [1]], vardim)
-#     ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
-#     optimal = ga.solve()
-#     score = ObjectiveFunc.fitnessfunc(optimal, df)
+#     main(campaign_id=23843582099980495)
+#     ga_optimal_weight(23843582099980495)
 
-#     score_columns=['weight_kpi', 'weight_spend', 'weight_bid']
-#     df_score = pd.DataFrame(data=[optimal], columns=['weight_kpi', 'weight_spend', 'weight_bid'], index=[0])
-# #         score_columns=['weight_kpi', 'weight_spend', 'weight_bid', 'weight_width']
-# #         df_score = pd.DataFrame(data=[optimal], columns=['weight_kpi', 'weight_spend', 'weight_bid', 'weight_width'], index=[0])        
 
-#     df_final = pd.DataFrame({'campaign_id':camp_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
-#     df_final = pd.concat( [df_score, df_final], axis=1, sort=True, ignore_index=False)
-#     mysql_adactivity_save.check_optimal_weight(camp_id, df_final)
-#     ga_optimal_weight(camp_id)
-
-#     print('optimal_weight:', optimal)
-#     print(datetime.datetime.now()-starttime)
+# In[25]:
 
 
 
 
-    
 
-    
+# In[ ]:
+
+
+
+

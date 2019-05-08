@@ -286,3 +286,216 @@ campaign_id: 23843306827810240
 campaign_id: 23843306827810240
 campaign_id: 23843306827810240
 campaign_id: 23843306827810240
+campaign_id: 23843420208720408
+Generation 0: optimal function value is: -0.955435; average function value is -0.903023
+Generation 1: optimal function value is: 22.438996; average function value is 12.072765
+Generation 2: optimal function value is: 22.438996; average function value is 12.650091
+Generation 3: optimal function value is: 22.438996; average function value is 13.468613
+Generation 4: optimal function value is: 22.438996; average function value is 13.918959
+Generation 5: optimal function value is: 22.438996; average function value is 14.270460
+Generation 6: optimal function value is: 22.438996; average function value is 14.562098
+Generation 7: optimal function value is: 22.438996; average function value is 14.575756
+Generation 8: optimal function value is: 22.438996; average function value is 14.686617
+Generation 9: optimal function value is: 22.438996; average function value is 14.807375
+Generation 10: optimal function value is: 22.438996; average function value is 14.943288
+Generation 11: optimal function value is: 22.438996; average function value is 15.037380
+Generation 12: optimal function value is: 22.438996; average function value is 15.207965
+Generation 13: optimal function value is: 22.438996; average function value is 15.271398
+Generation 14: optimal function value is: 22.438996; average function value is 15.338392
+Optimal function value is: 22.438996; 
+Optimal solution is:
+m1--m2--m3--m4--m5--m6--mspend--mbid
+[7.68760686 8.06912862 8.34870077 5.45374112 6.12140161 8.4157983
+ 0.05214823 9.52471737]
+[[9.52471737]]
+[[9.52471737]]
+[[9.52471737]]
+[[9.52471737]]
+[[9.52471737]]
+optimal_weight: [7.68760686 8.06912862 8.34870077 5.45374112 6.12140161 8.4157983
+ 0.05214823 9.52471737]
+0:04:10.688551
+campaign_id: 23843467729120098
+Generation 0: optimal function value is: -0.983301; average function value is -0.970946
+Generation 1: optimal function value is: 59.884580; average function value is 37.872992
+Generation 2: optimal function value is: 59.884580; average function value is 39.799835
+Generation 3: optimal function value is: 59.884580; average function value is 40.759721
+Generation 4: optimal function value is: 59.884580; average function value is 41.695139
+Generation 5: optimal function value is: 59.884580; average function value is 42.282498
+Generation 6: optimal function value is: 59.884580; average function value is 42.518434
+Generation 7: optimal function value is: 59.884580; average function value is 42.920946
+Generation 8: optimal function value is: 59.884580; average function value is 43.213497
+Generation 9: optimal function value is: 59.884580; average function value is 43.323789
+Generation 10: optimal function value is: 59.884580; average function value is 43.599983
+Generation 11: optimal function value is: 59.884580; average function value is 43.761990
+Generation 12: optimal function value is: 59.884580; average function value is 44.108270
+Generation 13: optimal function value is: 59.884580; average function value is 44.302536
+Generation 14: optimal function value is: 59.884580; average function value is 44.458834
+Optimal function value is: 59.884580; 
+Optimal solution is:
+m1--m2--m3--m4--m5--m6--mspend--mbid
+[9.73140727 4.31884354 2.01069364 7.1496357  9.46976285 8.67015153
+ 9.53208072 9.7458144 ]
+[[9.7458144]]
+[[-943.46225784]]
+optimal_weight: [9.73140727 4.31884354 2.01069364 7.1496357  9.46976285 8.67015153
+ 9.53208072 9.7458144 ]
+0:06:28.232897
+campaign_id: 23843411521600003
+Generation 0: optimal function value is: -0.949421; average function value is -0.899283
+Generation 1: optimal function value is: 19.771102; average function value is 11.781095
+Generation 2: optimal function value is: 19.771102; average function value is 12.625793
+Generation 3: optimal function value is: 19.771102; average function value is 13.127342
+Generation 4: optimal function value is: 19.771102; average function value is 13.548319
+Generation 5: optimal function value is: 19.771102; average function value is 13.815639
+Generation 6: optimal function value is: 19.771102; average function value is 14.070705
+Generation 7: optimal function value is: 19.771102; average function value is 14.127328
+Generation 8: optimal function value is: 19.771102; average function value is 14.179985
+Generation 9: optimal function value is: 19.771102; average function value is 14.244703
+Generation 10: optimal function value is: 19.771102; average function value is 14.251755
+Generation 11: optimal function value is: 19.771102; average function value is 14.280311
+Generation 12: optimal function value is: 19.771102; average function value is 14.342305
+Generation 13: optimal function value is: 19.771102; average function value is 14.353740
+Generation 14: optimal function value is: 19.771102; average function value is 14.361293
+Optimal function value is: 19.771102; 
+Optimal solution is:
+m1--m2--m3--m4--m5--m6--mspend--mbid
+[3.73054701 3.95944976 6.48049706 2.16621579 9.92673531 8.80933996
+ 9.67695734 7.30620982]
+[[7.30620982]]
+[[7.30620982]]
+[[7.30620982]]
+[[7.30620982]]
+[[7.30620982]]
+[[7.30620982]]
+[[7.30620982]]
+[[7.30620982]]
+[[7.30620982]]
+[[7.30620982]]
+[[7.30620982]]
+[[7.30620982]]
+[[7.30620982]]
+[[7.30620982]]
+[[7.30620982]]
+[[7.30620982]]
+[[7.30620982]]
+[[7.30620982]]
+[[7.30620982]]
+optimal_weight: [3.73054701 3.95944976 6.48049706 2.16621579 9.92673531 8.80933996
+ 9.67695734 7.30620982]
+0:08:48.974977
+campaign_id: 23843428894750431
+Generation 0: optimal function value is: -0.967677; average function value is -0.935018
+Generation 1: optimal function value is: 30.937624; average function value is 18.279424
+Generation 2: optimal function value is: 30.937624; average function value is 19.869380
+Generation 3: optimal function value is: 30.937624; average function value is 20.591247
+Generation 4: optimal function value is: 30.937624; average function value is 20.907812
+Generation 5: optimal function value is: 30.937624; average function value is 21.053892
+Generation 6: optimal function value is: 30.937624; average function value is 21.346528
+Generation 7: optimal function value is: 30.937624; average function value is 21.528382
+Generation 8: optimal function value is: 30.937624; average function value is 21.607962
+Generation 9: optimal function value is: 30.937624; average function value is 21.652317
+Generation 10: optimal function value is: 30.937624; average function value is 21.646132
+Generation 11: optimal function value is: 30.937624; average function value is 21.656450
+Generation 12: optimal function value is: 30.937624; average function value is 21.695941
+Generation 13: optimal function value is: 30.937624; average function value is 21.675676
+Generation 14: optimal function value is: 30.937624; average function value is 21.712970
+Optimal function value is: 30.937624; 
+Optimal solution is:
+m1--m2--m3--m4--m5--m6--mspend--mbid
+[0.04901909 1.74291907 1.96327771 5.28878793 9.82190134 0.08032667
+ 9.917857   3.80374757]
+[[-987.98195271]]
+[[-987.98195271]]
+[[3.80374757]]
+optimal_weight: [0.04901909 1.74291907 1.96327771 5.28878793 9.82190134 0.08032667
+ 9.917857   3.80374757]
+0:12:28.867130
+0:12:28.885095
+campaign_id: 23843420208720408
+Generation 0: optimal function value is: -0.951767; average function value is -0.900002
+Generation 1: optimal function value is: 20.732777; average function value is 11.545401
+Generation 2: optimal function value is: 20.732777; average function value is 12.298763
+Generation 3: optimal function value is: 20.732777; average function value is 12.928347
+Generation 4: optimal function value is: 20.732777; average function value is 13.285206
+Generation 5: optimal function value is: 20.732777; average function value is 13.557744
+Generation 6: optimal function value is: 20.732777; average function value is 13.795928
+Generation 7: optimal function value is: 20.732777; average function value is 13.900057
+Generation 8: optimal function value is: 20.732777; average function value is 14.063953
+Generation 9: optimal function value is: 20.732777; average function value is 14.180825
+Generation 10: optimal function value is: 20.732777; average function value is 14.273218
+Generation 11: optimal function value is: 20.732777; average function value is 14.364569
+Generation 12: optimal function value is: 20.732777; average function value is 14.506452
+Generation 13: optimal function value is: 20.732777; average function value is 14.536821
+Generation 14: optimal function value is: 20.732777; average function value is 14.611511
+Optimal function value is: 20.732777; 
+Optimal solution is:
+m1--m2--m3--m4--m5--m6--mspend--mbid
+[9.25797199 6.24212247 9.99128087 5.92536782 6.28311964 7.9326154
+ 0.71404339 9.26240748]
+[[9.26240748]]
+[[9.26240748]]
+[[9.26240748]]
+[[9.26240748]]
+[[9.26240748]]
+[[9.26240748]]
+[[9.26240748]]
+[[9.26240748]]
+optimal_weight: [9.25797199 6.24212247 9.99128087 5.92536782 6.28311964 7.9326154
+ 0.71404339 9.26240748]
+0:04:10.427788
+campaign_id: 23843467729120098
+Generation 0: optimal function value is: -0.985742; average function value is -0.974172
+Generation 1: optimal function value is: 70.138015; average function value is 43.594050
+Generation 2: optimal function value is: 70.138015; average function value is 46.478129
+Generation 3: optimal function value is: 70.138015; average function value is 47.831291
+Generation 4: optimal function value is: 70.138015; average function value is 48.928344
+Generation 5: optimal function value is: 70.138015; average function value is 49.489666
+Generation 6: optimal function value is: 70.138015; average function value is 49.772575
+Generation 7: optimal function value is: 70.138015; average function value is 50.019414
+Generation 8: optimal function value is: 70.138015; average function value is 50.241436
+Generation 9: optimal function value is: 70.138015; average function value is 50.554331
+Generation 10: optimal function value is: 70.138015; average function value is 50.754161
+Generation 11: optimal function value is: 70.138015; average function value is 50.879311
+Generation 12: optimal function value is: 70.138015; average function value is 51.140398
+Generation 13: optimal function value is: 70.138015; average function value is 51.221818
+Generation 14: optimal function value is: 70.138015; average function value is 51.337927
+Optimal function value is: 70.138015; 
+Optimal solution is:
+m1--m2--m3--m4--m5--m6--mspend--mbid
+[9.70217683 6.78169868 6.25439264 7.52757259 9.22374695 0.87274931
+ 9.40098353 9.99754002]
+[[9.99754002]]
+[[9.99754002]]
+[[9.99754002]]
+optimal_weight: [9.70217683 6.78169868 6.25439264 7.52757259 9.22374695 0.87274931
+ 9.40098353 9.99754002]
+0:06:26.763356
+campaign_id: 23843428894750431
+Generation 0: optimal function value is: -0.967197; average function value is -0.936457
+Generation 1: optimal function value is: 30.484583; average function value is 18.998912
+Generation 2: optimal function value is: 30.484583; average function value is 20.236335
+Generation 3: optimal function value is: 30.624738; average function value is 21.016452
+Generation 4: optimal function value is: 30.624738; average function value is 21.759106
+Generation 5: optimal function value is: 30.624738; average function value is 22.172511
+Generation 6: optimal function value is: 30.624738; average function value is 22.481418
+Generation 7: optimal function value is: 30.624738; average function value is 22.544418
+Generation 8: optimal function value is: 30.624738; average function value is 22.690361
+Generation 9: optimal function value is: 30.624738; average function value is 22.726283
+Generation 10: optimal function value is: 30.624738; average function value is 22.840745
+Generation 11: optimal function value is: 30.624738; average function value is 22.850598
+Generation 12: optimal function value is: 30.624738; average function value is 22.872423
+Generation 13: optimal function value is: 30.624738; average function value is 22.921283
+Generation 14: optimal function value is: 30.624738; average function value is 22.938111
+Optimal function value is: 30.624738; 
+Optimal solution is:
+m1--m2--m3--m4--m5--m6--mspend--mbid
+[5.61232084 3.4733805  7.24228541 5.6467514  9.99465456 9.78522986
+ 9.66421269 5.26655618]
+[[5.26655618]]
+[[5.26655618]]
+[[5.26655618]]
+optimal_weight: [5.61232084 3.4733805  7.24228541 5.6467514  9.99465456 9.78522986
+ 9.66421269 5.26655618]
+0:08:42.005469
+0:08:42.023859
