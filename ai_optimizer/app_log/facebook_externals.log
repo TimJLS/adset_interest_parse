@@ -2036,3 +2036,9 @@ Series([], Name: adset_id, dtype: int64)
 [campaign_id] 23843428894750431 [achieving rate] 0.0 0 7.33333
 [main.adset_for_off_list]:  ['23843428897360431']
 [main.adset_for_copy_list]:  ['23843428897770431', '23843428897370431']
+2019-05-09 00:30:03.235151
+[facebook_datacollector.Campaigns.get_campaign_insights] 'VIDEIO_VIEWS'
+[facebook_datacollector.Campaigns.get_campaign_insights] 'VIDEIO_VIEWS'
+[campaign_id] 23843306827810240 [achieving rate] 0.0 0 3809.43
+[main.adset_for_off_list]:  ['23843314318560240', '23843314318310240', '23843306827890240', '23843306827880240', '23843306827870240', '23843306827860240', '23843306827790240']
+[main.adset_for_copy_list]:  ['23843316113920240', '23843316113680240', '23843316113530240', '23843316113150240', '23843316107990240', '23843315047330240', '23843314323660240']

@@ -286,12 +286,12 @@ def get_sorted_adgroup(campaign_id):
         customer_id = df_camp['customer_id'][df_camp.campaign_id == campaign_id].iloc[0]
         adgroup_list = Campaign( customer_id, campaign_id, destination_type).get_adgroup_id_list()
     mydb.close()
-    return adgroup_list.tolist()
+    return adgroup_list
 
 
 def split_adgroup_list(adgroup_list):
     import math
-    adgroup_list.sort(reverse=True)
+    adgroup_list[::-1]
     half = math.ceil(len(adgroup_list) / 2)
     return adgroup_list[:half], adgroup_list[half:]
 
@@ -535,7 +535,7 @@ def make_adgroup_criterion_by_score(campaign_id, new_ad_group_id):
     return criterions
 
 
-def make_adgroup_with_criterion(adwords_client, old_ad_group_id):
+def make_adgroup_with_criterion(adwords_client, campaign_id, old_ad_group_id):
     # Params
     ad_group_params = make_ad_group(adwords_client, old_ad_group_id)
     new_ad_group_id = ad_group_params['value'][0]['id']
@@ -568,6 +568,7 @@ def main(campaign_id=None):
     if not campaign_id:
         df_camp = gdn_db.get_campaign()
         campaign_id_list = df_camp['campaign_id'].unique()
+
         for campaign_id in campaign_id_list:
             customer_id = df_camp['customer_id'][df_camp.campaign_id==campaign_id].iloc[0]
             destination_type = df_camp['destination_type'][df_camp.campaign_id==campaign_id].iloc[0]
@@ -575,20 +576,25 @@ def main(campaign_id=None):
             adwords_client.SetClientCustomerId( customer_id )
 
             camp = Campaign(customer_id, campaign_id, destination_type)
-            day_dict = camp.get_campaign_insights(
+            day_dict = camp.get_campaign_insights(adwords_client,
                 date_preset=DatePreset.yesterday)
-            lifetime_dict = camp.get_campaign_insights(
+            lifetime_dict = camp.get_campaign_insights(adwords_client,
                 date_preset=DatePreset.lifetime)
+            if destination_type == 'CONVERSIONS':
+                day_dict['target'] = day_dict['conversions']
+                day_dict['cost_per_target'] = day_dict['cost_per_conversion']
+            elif destination_type == 'LINK_CLICKS':
+                day_dict['target'] = day_dict['clicks']
+                day_dict['cost_per_target'] = day_dict['cost_per_click']
             target = int( day_dict['target'] )
             achieving_rate = target / daily_target
             print('[campaign_id]', campaign_id, '[achieving rate]',
                   achieving_rate, target, daily_target)
-
             if achieving_rate < 1:
                 adgroup_list = get_sorted_adgroup(campaign_id)
                 adgroup_for_copy, adgroup_for_off = split_adgroup_list(adgroup_list)
                 for adgroup_id in adgroup_for_copy:
-                    make_adgroup_with_criterion(adgroup_id)
+                    make_adgroup_with_criterion(adwords_client, campaign_id, adgroup_id)
                     gdn_db.adjust_init_bid(campaign_id)
                     
                 for adgroup_id in adgroup_for_off:
@@ -599,9 +605,24 @@ def main(campaign_id=None):
         adwords_client.SetClientCustomerId(df_camp['customer_id'].iloc[0])
         adgroup_list = get_sorted_adgroup(campaign_id)
         adgroup_for_copy, adgroup_for_off = split_adgroup_list(adgroup_list)
-        for adgroup_id in adgroup_for_copy:
-    #         make_adgroup_with_criterion(adwords_client, adgroup_id)
-            new_ad_group_criterion = make_adgroup_with_criterion(adwords_client, adgroup_id)
+        camp = Campaign(customer_id, campaign_id, destination_type)
+        day_dict = camp.get_campaign_insights(
+            date_preset=DatePreset.yesterday)
+        lifetime_dict = camp.get_campaign_insights(
+            date_preset=DatePreset.lifetime)
+        target = int( day_dict['target'] )
+        achieving_rate = target / daily_target
+        print('[campaign_id]', campaign_id, '[achieving rate]',
+              achieving_rate, target, daily_target)
+        if achieving_rate < 1:
+            adgroup_list = get_sorted_adgroup(campaign_id)
+            adgroup_for_copy, adgroup_for_off = split_adgroup_list(adgroup_list)
+            for adgroup_id in adgroup_for_copy:
+        #         make_adgroup_with_criterion(adwords_client, adgroup_id)
+                new_ad_group_criterion = make_adgroup_with_criterion(adwords_client, adgroup_id)
+            for adgroup_id in adgroup_for_off:
+                adgroup = AdGroup( customer_id, campaign_id, destination_type, adgroup_id )
+                adgroup.update_status(client = adwords_client)
     return
 
 
