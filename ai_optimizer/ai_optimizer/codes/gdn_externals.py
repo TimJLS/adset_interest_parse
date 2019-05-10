@@ -132,7 +132,7 @@ class Make(object):
             'operator': 'ADD',
             'operand': {
                 'campaignId': campaign_id,
-                'name':  'Mutant {}'.format(name),
+                'name':  'Mutant {} - {}'.format(name, datetime.datetime.today().date().strftime('%Y-%m-%d')),
                 'status': 'ENABLED',
                 'biddingStrategyConfiguration': {
                     'bids': [{
@@ -326,7 +326,7 @@ def make_ad_group(adwords_client, ad_group_id):
         'operator': 'ADD',
         'operand': {
             'campaignId': campaign_id,
-            'name':  'Mutant {}'.format(name),
+            'name':  'Mutant {} - {}'.format(name, datetime.datetime.today().date().strftime('%Y-%m-%d')),
             'status': 'ENABLED',
             'biddingStrategyConfiguration': {
                 'bids': [
@@ -467,6 +467,7 @@ def assign_criterion_to_ad_group(adwords_client, ad_group_id, ad_group_criterion
         'AdGroupCriterionService', version='v201809')
     # Create the ad group criteria.
     # Create operations.
+    print(ad_group_criterion)
     operations = []
     for criterion in ad_group_criterion:
         operations.append({
@@ -602,14 +603,23 @@ def main(campaign_id=None):
                     adgroup.update_status(client = adwords_client)
     else:
         df_camp = gdn_db.get_campaign(campaign_id)
+        customer_id = df_camp['customer_id'].iloc[0]
+        destination_type = df_camp['destination_type'].iloc[0]
+        daily_target = df_camp['daily_target'].iloc[0]
         adwords_client.SetClientCustomerId(df_camp['customer_id'].iloc[0])
         adgroup_list = get_sorted_adgroup(campaign_id)
         adgroup_for_copy, adgroup_for_off = split_adgroup_list(adgroup_list)
         camp = Campaign(customer_id, campaign_id, destination_type)
-        day_dict = camp.get_campaign_insights(
+        day_dict = camp.get_campaign_insights(adwords_client,
             date_preset=DatePreset.yesterday)
-        lifetime_dict = camp.get_campaign_insights(
+        lifetime_dict = camp.get_campaign_insights(adwords_client,
             date_preset=DatePreset.lifetime)
+        if destination_type == 'CONVERSIONS':
+            day_dict['target'] = day_dict['conversions']
+            day_dict['cost_per_target'] = day_dict['cost_per_conversion']
+        elif destination_type == 'LINK_CLICKS':
+            day_dict['target'] = day_dict['clicks']
+            day_dict['cost_per_target'] = day_dict['cost_per_click']
         target = int( day_dict['target'] )
         achieving_rate = target / daily_target
         print('[campaign_id]', campaign_id, '[achieving rate]',
@@ -619,7 +629,7 @@ def main(campaign_id=None):
             adgroup_for_copy, adgroup_for_off = split_adgroup_list(adgroup_list)
             for adgroup_id in adgroup_for_copy:
         #         make_adgroup_with_criterion(adwords_client, adgroup_id)
-                new_ad_group_criterion = make_adgroup_with_criterion(adwords_client, adgroup_id)
+                new_ad_group_criterion = make_adgroup_with_criterion(adwords_client, campaign_id, adgroup_id)
             for adgroup_id in adgroup_for_off:
                 adgroup = AdGroup( customer_id, campaign_id, destination_type, adgroup_id )
                 adgroup.update_status(client = adwords_client)
@@ -633,6 +643,7 @@ if __name__=="__main__":
     start_time = datetime.datetime.now()
     print(start_time)
     main()
+#     main(campaign_id=1865315025)
     print(datetime.datetime.now() - start_time)
 #     make_adgroup_with_criterion(adgroup_id)
 

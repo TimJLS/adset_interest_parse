@@ -270,7 +270,11 @@ class Campaign(object):
                 skip_report_summary=True, include_zero_impressions=False)
         with open(performance_type+'.csv')as csv_file:
             df = pd.read_csv(csv_file, sep=",", quotechar='"')
-            df['CTR'] = df.CTR.str.split('%', expand = True)[0]
+            try:
+                df['CTR'] = df.CTR.str.split('%', expand = True)[0]
+            except KeyError as e:
+                print('[gdn_datacollector.Campaign.get_performance_insights]', e)
+                pass
             df[df.columns.difference( ReportField.NON_NUMERIC_LIST )] = df[df.columns.difference( ReportField.NON_NUMERIC_LIST )].apply(pd.to_numeric, errors='coerce')
             df[df.columns.intersection( ReportField.NUMERIC_LIST )] = df[df.columns.intersection( ReportField.NUMERIC_LIST )].div(1000000)
             df.columns = columns

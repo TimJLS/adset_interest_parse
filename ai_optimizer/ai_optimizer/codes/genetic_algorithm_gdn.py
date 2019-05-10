@@ -432,13 +432,13 @@ if __name__ == "__main__":
 
         df_final = pd.DataFrame({'campaign_id':campaign_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
         df_final = pd.concat( [df_score, df_final], axis=1, sort=True, ignore_index=False)
-        
+
         print(df_final)
         gdn_db.check_optimal_weight(campaign_id, df_final)
         for criteria in CRITERIA_LIST:
             get_criteria_score( campaign_id=campaign_id, criteria=criteria )
-#         ga_optimal_weight(campaign_id)
-        
+    #         ga_optimal_weight(campaign_id)
+
         print('optimal_weight:', optimal)
         print(datetime.datetime.now()-starttime)    
     print(datetime.datetime.now()-starttime)
