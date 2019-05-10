@@ -32,6 +32,7 @@ CREATE TABLE `adset_conversion_metrics` (
   `landing_page_view` int(11) DEFAULT NULL,
   `link_click` int(11) DEFAULT NULL,
   `impressions` int(11) DEFAULT NULL,
+  `ctr` float DEFAULT NULL,
   `cost_per_purchase` float DEFAULT NULL,
   `cost_per_add_to_cart` float DEFAULT NULL,
   `cost_per_initiate_checkout` float DEFAULT NULL,
@@ -41,6 +42,21 @@ CREATE TABLE `adset_conversion_metrics` (
   `spend` int(11) DEFAULT NULL,
   `bid_amount` int(11) DEFAULT NULL,
   `daily_budget` int(11) DEFAULT NULL,
+  `request_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `adset_initial_bid`
+--
+
+DROP TABLE IF EXISTS `adset_initial_bid`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `adset_initial_bid` (
+  `campaign_id` bigint(20) DEFAULT NULL,
+  `adset_id` bigint(20) DEFAULT NULL,
+  `bid_amount` int(11) DEFAULT NULL,
   `request_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -75,6 +91,37 @@ CREATE TABLE `adset_insights` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `adset_leads_metrics`
+--
+
+DROP TABLE IF EXISTS `adset_leads_metrics`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `adset_leads_metrics` (
+  `campaign_id` bigint(11) DEFAULT NULL,
+  `adset_id` bigint(20) DEFAULT NULL,
+  `leadgen.other` int(11) DEFAULT NULL,
+  `fb_pixel_complete_registration` int(11) DEFAULT NULL,
+  `fb_pixel_lead` int(11) DEFAULT NULL,
+  `fb_pixel_view_content` int(11) DEFAULT NULL,
+  `landing_page_view` int(11) DEFAULT NULL,
+  `link_click` int(11) DEFAULT NULL,
+  `impressions` int(11) DEFAULT NULL,
+  `ctr` float DEFAULT NULL,
+  `cost_per_leadgen.other` float DEFAULT NULL,
+  `cost_per_fb_pixel_complete_registration` float DEFAULT NULL,
+  `cost_per_fb_pixel_lead` float DEFAULT NULL,
+  `cost_per_fb_pixel_view_content` float DEFAULT NULL,
+  `cost_per_landing_page_view` float DEFAULT NULL,
+  `cost_per_link_click` float DEFAULT NULL,
+  `spend` int(11) DEFAULT NULL,
+  `bid_amount` int(11) DEFAULT NULL,
+  `daily_budget` int(11) DEFAULT NULL,
+  `request_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `adset_score`
 --
 
@@ -105,10 +152,37 @@ CREATE TABLE `campaign_conversion_metrics` (
   `landing_page_view` int(11) DEFAULT NULL,
   `link_click` int(11) DEFAULT NULL,
   `impressions` int(11) DEFAULT NULL,
+  `ctr` float DEFAULT NULL,
   `cost_per_purchase` float DEFAULT NULL,
   `cost_per_add_to_cart` float DEFAULT NULL,
   `cost_per_initiate_checkout` float DEFAULT NULL,
   `cost_per_view_content` float DEFAULT NULL,
+  `cost_per_landing_page_view` float DEFAULT NULL,
+  `cost_per_link_click` float DEFAULT NULL,
+  `spend` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `campaign_leads_metrics`
+--
+
+DROP TABLE IF EXISTS `campaign_leads_metrics`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `campaign_leads_metrics` (
+  `campaign_id` bigint(11) DEFAULT NULL,
+  `leadgen.other` int(11) DEFAULT NULL,
+  `fb_pixel_complete_registration` int(11) DEFAULT NULL,
+  `fb_pixel_lead` int(11) DEFAULT NULL,
+  `fb_pixel_view_content` int(11) DEFAULT NULL,
+  `landing_page_view` int(11) DEFAULT NULL,
+  `link_click` int(11) DEFAULT NULL,
+  `impressions` int(11) DEFAULT NULL,
+  `cost_per_leadgen.other` float DEFAULT NULL,
+  `cost_per_fb_pixel_view_content` float DEFAULT NULL,
+  `cost_per_fb_pixel_lead` float DEFAULT NULL,
+  `cost_per_fb_pixel_complete_registration` float DEFAULT NULL,
   `cost_per_landing_page_view` float DEFAULT NULL,
   `cost_per_link_click` float DEFAULT NULL,
   `spend` int(11) DEFAULT NULL
@@ -130,6 +204,7 @@ CREATE TABLE `campaign_target` (
   `daily_budget` float DEFAULT NULL,
   `daily_charge` float DEFAULT NULL,
   `impressions` int(11) DEFAULT NULL,
+  `ctr` float DEFAULT NULL,
   `period` int(11) DEFAULT NULL,
   `spend` int(11) DEFAULT NULL,
   `spend_cap` int(11) DEFAULT NULL,
@@ -174,6 +249,26 @@ CREATE TABLE `default_price` (
   `campaign_id` bigint(11) DEFAULT NULL,
   `default_price` blob,
   `request_time` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `leadgen_optimal_weight`
+--
+
+DROP TABLE IF EXISTS `leadgen_optimal_weight`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `leadgen_optimal_weight` (
+  `campaign_id` bigint(20) DEFAULT NULL,
+  `score` float DEFAULT NULL,
+  `w1` float DEFAULT NULL,
+  `w2` float DEFAULT NULL,
+  `w3` float DEFAULT NULL,
+  `w4` float DEFAULT NULL,
+  `w5` float DEFAULT NULL,
+  `w_spend` float DEFAULT NULL,
+  `w_bid` float DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -244,4 +339,4 @@ CREATE TABLE `result` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-03-12 15:30:59
+-- Dump completed on 2019-05-10 12:28:27
