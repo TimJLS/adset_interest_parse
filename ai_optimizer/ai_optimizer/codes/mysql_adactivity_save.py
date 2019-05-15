@@ -174,17 +174,17 @@ def check_optimal_weight(campaign_id, df):
         return
 
 ######## NEW ######
-
-def get_campaign_target(campaign_id):
+def get_campaign_target(campaign_id=None):
     mydb = connectDB(DATABASE)
     request_time = datetime.datetime.now()
-    df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id=%s" % (campaign_id), con=mydb )
-    df_camp = pd.DataFrame(columns=df.columns)
-    stop_time = df['stop_time'].iloc[0]
-    if stop_time >= request_time:
-        df_camp= pd.concat( [ df_camp, df ], axis=0 )
-    mydb.close()
-    return df_camp
+    if campaign_id:
+        df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
+    else:
+        df = pd.read_sql( "SELECT * FROM campaign_target" , con=mydb )
+        
+    df_is_running = df[ df['stop_time'] >= request_time]    
+    return df_is_running
+
 
 def get_campaign(campaign_id=None):
     mydb = connectDB(DATABASE)
