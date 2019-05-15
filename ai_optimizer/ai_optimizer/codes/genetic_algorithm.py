@@ -225,16 +225,16 @@ class ObjectiveFunc(object):
 
     def adset_fitness(optimal_weight, df):
         df = df.fillna(0)
-        m_kpi = df['target'] / df['daily_charge'] * 10
+        m_kpi = df['target'].iloc[0] / df['daily_charge'].iloc[0] * 10
         if df['target'].iloc[0] == 0:
             m_kpi = -10
         m_spend = -( df['daily_budget'] - df['spend'] ) / df['daily_budget']
         m_bid   = ( df['bid_amount'] - df['cost_per_target'] ) / df['bid_amount']
-        status  = np.array( [m_kpi, m_spend, m_bid] )
-
-        for idx, j in enumerate(status[:,0]):
+        status  = np.array( [m_kpi, m_spend.iloc[0], m_bid.iloc[0]] )
+        print(type(m_kpi),type(m_spend.iloc[0]),type(m_bid.iloc[0]),)
+        for idx, j in enumerate(status):
             if np.isinf(j) or np.isneginf(j):
-                status[idx,0] = -100
+                status[idx] = -100
         status = np.nan_to_num(status)
 
         optimal_weight = np.array([
@@ -257,7 +257,7 @@ class ObjectiveFunc(object):
         acc_id = facebook_datacollector.Campaigns(campaign_id, charge_type).get_account_id()
         insights = facebook_datacollector.Accounts( "act_"+ str(acc_id) ).get_account_insights()
         if bool(insights):
-            spend = int( insights.get("spend") )
+            spend = int( float( insights.get("spend") ) )
             account_cpc = float( insights.get("cpc") )
             account_charge = int( insights.get("clicks") )
             impressions = int( insights.get("impressions") )
@@ -307,12 +307,8 @@ class ObjectiveFunc(object):
         mydb = mysql_adactivity_save.connectDB( "dev_facebook_test" )
 
         df=pd.DataFrame({'adset_id':[],'target':[], 'impressions':[], 'bid_amount':[]})
-        
-#         df_ad = pd.read_sql("SELECT * FROM ad_insights WHERE ad_id=%s ORDER BY request_time DESC LIMIT 1" %(ad_id), con=mydb)
-#         df_ad = df_ad.apply(pd.to_numeric)
         df_adset = pd.read_sql("SELECT * FROM adset_insights WHERE adset_id=%s ORDER BY request_time DESC LIMIT 1" %(adset_id), con=mydb)
         df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id=%s" %(df_adset['campaign_id'].iloc[0]), con=mydb)
-#         df_camp['charge_per_day'] = df_camp['target']/df_camp['campaign_days']
         df_temp = pd.merge( df_adset[['campaign_id', 'adset_id', 'target', 'cost_per_target', 'impressions']],
                               df_adset[['adset_id','spend','bid_amount','daily_budget']],
                               on=['adset_id'] )
@@ -321,8 +317,6 @@ class ObjectiveFunc(object):
                               df_camp[['campaign_id', 'daily_charge', 'campaign_daily_budget']],
                               on=['campaign_id'] )
         df = pd.concat([df, df_status], ignore_index=True, sort=True)
-#         print(ad_id)
-#         print(df[['adset_id', 'charge', 'charge_cpc','bid_amount', 'impressions', 'spend']])
         mydb.close()
         return df
 
@@ -336,7 +330,7 @@ def ga_optimal_weight(campaign_id):
     for adset_id in adset_list:
         df = ObjectiveFunc.adset_status( adset_id )
         r = ObjectiveFunc.adset_fitness( df_weight, df )
-        print('[score]', r)
+#         print('[score]', r)
         df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'score':r, 'request_time':request_time}, index=[0])
         mysql_adactivity_save.intoDB("adset_score", df_final)
     mydb.close()
@@ -365,7 +359,7 @@ def main(campaign_id=None):
             df_final = pd.DataFrame({'campaign_id':camp_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
             df_final = pd.concat( [df_score, df_final], axis=1, sort=True, ignore_index=False)
 
-            print(df_final)
+#             print(df_final)
             mysql_adactivity_save.check_optimal_weight(camp_id, df_final)
             ga_optimal_weight(camp_id)
 
@@ -380,7 +374,6 @@ def main(campaign_id=None):
         ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
         optimal = ga.solve()
         score = ObjectiveFunc.fitnessfunc(optimal, df)
-
         score_columns=['weight_kpi', 'weight_spend', 'weight_bid']
         df_score = pd.DataFrame(data=[optimal], columns=['weight_kpi', 'weight_spend', 'weight_bid'], index=[0])
 #         score_columns=['weight_kpi', 'weight_spend', 'weight_bid', 'weight_width']
@@ -389,7 +382,7 @@ def main(campaign_id=None):
         df_final = pd.DataFrame({'campaign_id':campaign_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
         df_final = pd.concat( [df_score, df_final], axis=1, sort=True, ignore_index=False)
 
-        print(df_final)
+#         print(df_final)
         mysql_adactivity_save.check_optimal_weight(campaign_id, df_final)
         ga_optimal_weight(campaign_id)
 
@@ -404,7 +397,8 @@ if __name__ == "__main__":
     main()
     import gc
     gc.collect()
-#     main(campaign_id=23843582099980495)
+#     main(campaign_id=23843358370700576)
+#     main(campaign_id=23843467729120098)
 #     ga_optimal_weight(23843582099980495)
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[9]:
+# In[1]:
 
 
 # In[4]:
@@ -13,12 +13,14 @@ import time
 import pytz
 import datetime
 import math
+import pandas as pd
 from copy import deepcopy
 from facebook_business.adobjects.adset import AdSet
 from facebook_business.adobjects.targeting import Targeting
 from facebook_business.adobjects.ad import Ad
 from facebook_business.api import FacebookAdsApi
 
+from bid_operator import revert_bid_amount
 import mysql_adactivity_save
 from facebook_datacollector import Campaigns
 from facebook_datacollector import DatePreset
@@ -132,17 +134,19 @@ def update_status(adset_id, status=AdSet.Status.active):
 
 def get_sorted_adset(campaign):
     mydb = mysql_adactivity_save.connectDB(DATABASE)
-    try:
-        df = pd.read_sql(
-            "select * from adset_score where campaign_id=%s" % (campaign), con=mydb)
+
+    df = pd.read_sql(
+        "select * from adset_score where campaign_id=%s" % (campaign), con=mydb)
+    adset_list = []
+    if len(df) > 0:
         df = df[df.request_time.dt.date == DATE].sort_values(
             by=['score'], ascending=False)
-        adset_list = df['adset_id']
-        assert adset_list, 'Empty List'
-    except:
-        df_camp = mysql_adactivity_save.get_campaign_target(campaign)
+        adset_list = df['adset_id'].tolist()
+    else:  
+        df_camp = mysql_adactivity_save.get_campaign_target()
         charge_type = df_camp['charge_type'].iloc[0]
         adset_list = Campaigns(campaign, charge_type).get_adsets()
+        
     return adset_list
 
 
@@ -176,7 +180,7 @@ def copy_adset(adset_id, actions, adset_params=None):
     new_adset_params[AdSet.Field.id] = None
     for i, action in enumerate(actions.keys()):
         if action == 'bid':
-            new_adset_params[ACTION_DICT[action]] = actions[action]  # for bid
+            new_adset_params[ACTION_DICT[action]] = math.ceil( revert_bid_amount(actions[action]) )  # for bid
 
         elif action == 'age':
             age_list = actions[action][0].split('-')
@@ -209,33 +213,36 @@ def make_adset(adset_params):
     return new_adset[AdSet.Field.id]
 
 
-def main(campaign):
+def handle_campaign_copy(campaign):
+    print('[handle_campaign_copy] campaign ',campaign)
     df = mysql_adactivity_save.get_campaign_target(campaign)
+    
+    # charge_type attribute of first row
     charge_type = df['charge_type'].iloc[0]
     daily_charge = df['daily_charge'].iloc[0]
     day_dict = Campaigns(campaign, charge_type).generate_campaign_info(
         date_preset=DatePreset.yesterday)
     lifetime_dict = Campaigns(campaign, charge_type).generate_campaign_info(
         date_preset=DatePreset.lifetime)
-    
-    try:
+#     print('[handle_campaign_copy] day_dict ',day_dict)
+#     print('[handle_campaign_copy] lifetime_dict ',lifetime_dict)
+
+    target = 0 # get by insight
+    if 'target' in day_dict:
         target = int(day_dict['target'])
-    except:
-        target = 10000
+    
     fb = FacebookCampaignAdapter(campaign)
-    fb.get_df()
-    fb.get_bid()
-    fb.get_campaign_days_left()
     campaign_days_left = fb.campaign_days_left
     achieving_rate = target / daily_charge
-    print('[campaign_id]', campaign, '[achieving rate]',
-          achieving_rate, target, daily_charge)
+    print('[campaign_id]', campaign, '[achieving rate]', achieving_rate, target, daily_charge)
 
     adset_list = get_sorted_adset(campaign)
+    print('Nate', adset_list)
     adset_for_copy, adset_for_off = split_adset_list(adset_list)
     # get ready to duplicate
     actions = {'bid': None, 'age': list(), 'interest': None}
     actions_list = list()
+    return 'Nate'
 
     bid_adjust = False
     if achieving_rate > ACTION_BOUNDARY and achieving_rate < 1:
@@ -307,23 +314,27 @@ def main(campaign):
 
 
 
-# In[ ]:
+# In[2]:
 
 
 if __name__ == '__main__':
     import index_collector_conversion_facebook
-    print(datetime.datetime.now())
+    current_time = datetime.datetime.now()
+    print('[facebook_externals] current_time:', current_time)
     FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-    df_camp = index_collector_conversion_facebook.get_campaign_target()
-    for campaign_id in df_camp.campaign_id.unique():
-        main(campaign_id)
-#     main(23843582099980495)
+    df_is_running = mysql_adactivity_save.get_campaign_target()
+#     print('[facebook_externals] len:', len(df_is_running))
+#     print('[facebook_externals] df_is_running', df_is_running)
+       
+    for campaign_id in df_is_running.campaign_id.unique():
+        handle_campaign_copy(campaign_id)
+    #handle_campaign_copy(23843310773940232)
 
 
-# In[12]:
+# In[ ]:
 
 
-
+get_ipython().system('jupyter nbconvert --to script facebook_externals.ipynb')
 
 
 # In[ ]:

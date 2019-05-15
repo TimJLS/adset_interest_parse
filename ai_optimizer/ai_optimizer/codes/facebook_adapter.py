@@ -34,73 +34,59 @@ class FacebookCampaignAdapter(object):
         self.init_bid_dict = dict()
         self.last_bid_dict = dict()
         
+        self.df_camp = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id={}".format( campaign_id ), con=self.mydb )
+        self.campaign_days_left = ( self.df_camp[ STOP_TIME ].iloc[0] - self.request_time ).days + 1
+        self.campaign_days = ( self.df_camp[ STOP_TIME ].iloc[0] - self.df_camp[ START_TIME ].iloc[0] ).days
+        self.campaign_performance = self.df_camp[ TARGET ].sum()
+        self.campaign_target = self.df_camp[ TARGET_LEFT ].iloc[0].astype(dtype=object)
+        self.campaign_day_target = self.campaign_target / self.campaign_days_left
+        self.campaign_progress = self.campaign_performance / self.campaign_day_target
+        self.mydb.close()
+            
     def get_df(self):
-        self.df_camp = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id={}".format( self.campaign_id ), con=self.mydb )
-#         self.df_ad = pd.read_sql( "SELECT * FROM ad_insights where campaign_id = %s ORDER BY request_time DESC LIMIT %s" %( self.campaign_id, self.limit ), con=self.mydb )
-        self.df_ad = pd.read_sql( "SELECT * FROM adset_insights where campaign_id={}".format( self.campaign_id ), con=self.mydb )
         return
     
     def get_bid(self):
-#             print(len(adset_list), self.campaign_id)
         sql = "select * from (select * from adset_insights WHERE campaign_id = {} order by request_time desc) as a group by adset_id;".format( self.campaign_id )
         df_adset = pd.read_sql( sql, con=self.mydb )
         df_init_bid = pd.read_sql( "SELECT * FROM adset_initial_bid WHERE campaign_id={} ;".format( self.campaign_id ), con=self.mydb )
-#         adset_list = df_adset['adset_id'].unique()
+
         self.get_adset_list()
         for adset in self.adset_list:
             init_bid = df_init_bid[BID_AMOUNT][df_init_bid.adset_id==adset].head(1).iloc[0].astype(dtype=object)
             last_bid = df_adset[BID_AMOUNT][df_adset.adset_id==adset].tail(1).iloc[0].astype(dtype=object)
-#             init_bid = bid_operator.revert_bid_amount(init_bid)
-#             last_bid = bid_operator.reverse_bid_amount(last_bid)
             self.init_bid_dict.update({ adset: init_bid })
             self.last_bid_dict.update({ adset: last_bid })
         return
     
     def get_campaign_days_left(self):
-        self.campaign_days_left = ( self.df_camp[ STOP_TIME ].iloc[0] - self.request_time ).days + 1
-        return self.campaign_days_left
-    
+        return campaign_days_left
+        
     def get_campaign_days(self):
-        self.campaign_days = ( self.df_camp[ STOP_TIME ].iloc[0] - self.df_camp[ START_TIME ].iloc[0] ).days
         return self.campaign_days
     
     def get_campaign_performance(self):
-        self.campaign_performance = self.df_camp[ TARGET ].sum()
         return self.campaign_performance
     
     def get_campaign_target(self):
-        self.campaign_target = self.df_camp[ TARGET_LEFT ].iloc[0].astype(dtype=object)
         return self.campaign_target
     
     def get_campaign_day_target(self):
-        self.campaign_day_target = self.campaign_target / self.campaign_days_left
         return self.campaign_day_target
 
     def get_campaign_progress(self):
-        self.campaign_progress = self.campaign_performance / self.campaign_day_target
         return self.campaign_progress
     
     def get_adset_list(self):
-        try:
-            self.df_ad
-        except:
-            self.get_df()
-#         print(self.df_ad[ ADSET_ID ])
-        self.adset_list = self.df_ad[ ADSET_ID ][
-            ( self.df_ad.request_time.dt.date == self.request_time.date() )
-        ].unique().tolist()
         return self.adset_list
     
     def retrieve_campaign_attribute(self):
-        self.get_df()
-        self.get_adset_list()
+        self.mydb = mysql_adactivity_save.connectDB( DATADASE )
+        
+        self.df_ad = pd.read_sql( "SELECT * FROM adset_insights where campaign_id={}".format( self.campaign_id ), con=self.mydb )
+        self.adset_list = self.df_ad[ADSET_ID][( self.df_ad.request_time.dt.date == self.request_time.date())].unique().tolist()
         self.get_bid()
-        self.get_campaign_days_left()
-        self.get_campaign_days()
-        self.get_campaign_performance()
-        self.get_campaign_target()
-        self.get_campaign_day_target()
-        self.get_campaign_progress()
+        
         self.mydb.close()
         return
 

@@ -1252,3 +1252,794 @@ Optimal solution is:
 [0.262195  0.0671219 0.001375 ]
    weight_kpi  weight_spend  weight_bid        campaign_id     score
 0    0.262195      0.067122    0.001375  23843306827810240 -0.188841
+campaign_id: 23843306827810240
+current time:  2019-05-11 00:05:07.976413
+Generation 0: optimal function value is: -5.268197; average function value is -1.148352
+Generation 1: optimal function value is: -0.234291; average function value is -8.744740
+Generation 2: optimal function value is: -0.234291; average function value is -9.300649
+Generation 3: optimal function value is: -0.234291; average function value is -9.697134
+Generation 4: optimal function value is: -0.234291; average function value is -9.801265
+Generation 5: optimal function value is: -0.234291; average function value is -9.842055
+Generation 6: optimal function value is: -0.234291; average function value is -9.909395
+Generation 7: optimal function value is: -0.234291; average function value is -9.993814
+Generation 8: optimal function value is: -0.234291; average function value is -10.038391
+Generation 9: optimal function value is: -0.234291; average function value is -10.164419
+Optimal function value is: -0.234291; 
+Optimal solution is:
+[0.29958955 0.11459994 0.01080858]
+optimal_weight: [0.29958955 0.11459994 0.01080858]
+0:02:29.721512
+campaign_id: 23843420208720408
+current time:  2019-05-11 00:05:07.976413
+Generation 0: optimal function value is: -0.995545; average function value is -0.991279
+Generation 1: optimal function value is: 224.482192; average function value is 149.773577
+Generation 2: optimal function value is: 224.482192; average function value is 165.009965
+Generation 3: optimal function value is: 224.482192; average function value is 172.562661
+Generation 4: optimal function value is: 224.482192; average function value is 178.872798
+Generation 5: optimal function value is: 224.482192; average function value is 184.516886
+Generation 6: optimal function value is: 224.482192; average function value is 188.341624
+Generation 7: optimal function value is: 224.482192; average function value is 195.544978
+Generation 8: optimal function value is: 224.482192; average function value is 200.058868
+Generation 9: optimal function value is: 224.482192; average function value is 201.573946
+Optimal function value is: 224.482192; 
+Optimal solution is:
+[0.99986916 0.79903507 0.93975317]
+optimal_weight: [0.99986916 0.79903507 0.93975317]
+0:04:39.797756
+campaign_id: 23843467729120098
+current time:  2019-05-11 00:05:07.976413
+Generation 0: optimal function value is: -0.999443; average function value is -0.998902
+Generation 1: optimal function value is: 1796.658068; average function value is 1170.782458
+Generation 2: optimal function value is: 1796.658068; average function value is 1315.366876
+Generation 3: optimal function value is: 1796.658068; average function value is 1409.121959
+Generation 4: optimal function value is: 1797.615746; average function value is 1459.894843
+Generation 5: optimal function value is: 1797.615746; average function value is 1502.737126
+Generation 6: optimal function value is: 1798.642582; average function value is 1528.715890
+Generation 7: optimal function value is: 1798.642582; average function value is 1539.970374
+Generation 8: optimal function value is: 1798.642582; average function value is 1561.270683
+Generation 9: optimal function value is: 1798.642582; average function value is 1574.266581
+Optimal function value is: 1798.642582; 
+Optimal solution is:
+[0.99924706 0.90176594 0.39936785]
+optimal_weight: [0.99924706 0.90176594 0.39936785]
+0:06:08.771286
+campaign_id: 23843582099980495
+current time:  2019-05-11 00:05:07.976413
+Generation 0: optimal function value is: -0.188542; average function value is 0.968960
+Generation 1: optimal function value is: 1.255236; average function value is 0.668946
+Generation 2: optimal function value is: 1.294652; average function value is 0.753201
+Generation 3: optimal function value is: 1.294652; average function value is 0.801613
+Generation 4: optimal function value is: 1.305063; average function value is 0.831112
+Generation 5: optimal function value is: 1.305063; average function value is 0.864814
+Generation 6: optimal function value is: 1.305063; average function value is 0.876723
+Generation 7: optimal function value is: 1.305063; average function value is 0.886830
+Generation 8: optimal function value is: 1.305063; average function value is 0.894946
+Generation 9: optimal function value is: 1.305063; average function value is 0.897996
+Optimal function value is: 1.305063; 
+Optimal solution is:
+[0.99484059 0.05091744 0.91344734]
+optimal_weight: [0.99484059 0.05091744 0.91344734]
+0:07:48.007668
+campaign_id: 23843451709300010
+current time:  2019-05-11 00:05:07.976413
+Generation 0: optimal function value is: -0.999747; average function value is -0.999515
+Generation 1: optimal function value is: 3967.383701; average function value is 2630.844858
+Generation 2: optimal function value is: 3982.503107; average function value is 3012.128418
+Generation 3: optimal function value is: 3983.943595; average function value is 3166.528823
+Generation 4: optimal function value is: 3983.943595; average function value is 3226.767392
+Generation 5: optimal function value is: 3983.943595; average function value is 3301.290399
+Generation 6: optimal function value is: 3983.943595; average function value is 3361.476359
+Generation 7: optimal function value is: 3983.943595; average function value is 3412.514003
+Generation 8: optimal function value is: 3983.943595; average function value is 3503.566659
+Generation 9: optimal function value is: 3983.943595; average function value is 3538.474491
+Optimal function value is: 3983.943595; 
+Optimal solution is:
+[0.99989584 0.97058082 0.41042136]
+optimal_weight: [0.99989584 0.97058082 0.41042136]
+0:09:13.683377
+campaign_id: 23843319164090240
+current time:  2019-05-11 00:05:07.976413
+Generation 0: optimal function value is: nan; average function value is nan
+Generation 1: optimal function value is: nan; average function value is nan
+Generation 2: optimal function value is: nan; average function value is nan
+Generation 3: optimal function value is: nan; average function value is nan
+Generation 4: optimal function value is: nan; average function value is nan
+Generation 5: optimal function value is: nan; average function value is nan
+Generation 6: optimal function value is: nan; average function value is nan
+Generation 7: optimal function value is: nan; average function value is nan
+Generation 8: optimal function value is: nan; average function value is nan
+Generation 9: optimal function value is: nan; average function value is nan
+Optimal function value is: nan; 
+Optimal solution is:
+[0.16221779 0.925324   0.10379529]
+optimal_weight: [0.16221779 0.925324   0.10379529]
+0:11:17.356852
+campaign_id: 23843358370700576
+current time:  2019-05-11 00:05:07.976413
+campaign_id: 23843306827810240
+current time:  2019-05-12 00:05:08.451977
+Generation 0: optimal function value is: 2.166281; average function value is -1.130188
+Generation 1: optimal function value is: 0.315828; average function value is -10.003068
+Generation 2: optimal function value is: 0.315828; average function value is -10.799457
+Generation 3: optimal function value is: 0.315828; average function value is -11.053865
+Generation 4: optimal function value is: 0.315828; average function value is -11.167510
+Generation 5: optimal function value is: 0.315828; average function value is -11.292514
+Generation 6: optimal function value is: 0.315828; average function value is -11.634495
+Generation 7: optimal function value is: 0.315828; average function value is -11.741455
+Generation 8: optimal function value is: 0.315828; average function value is -11.697324
+Generation 9: optimal function value is: 0.315828; average function value is -11.821865
+Optimal function value is: 0.315828; 
+Optimal solution is:
+[0.31520793 0.9500245  0.00632205]
+optimal_weight: [0.31520793 0.9500245  0.00632205]
+0:02:50.639172
+campaign_id: 23843420208720408
+current time:  2019-05-12 00:05:08.451977
+Generation 0: optimal function value is: -0.995107; average function value is -0.989653
+Generation 1: optimal function value is: 204.690701; average function value is 125.501540
+Generation 2: optimal function value is: 204.690701; average function value is 144.859597
+Generation 3: optimal function value is: 204.690701; average function value is 159.037172
+Generation 4: optimal function value is: 204.690701; average function value is 166.057613
+Generation 5: optimal function value is: 204.690701; average function value is 168.445337
+Generation 6: optimal function value is: 204.690701; average function value is 174.426389
+Generation 7: optimal function value is: 204.690701; average function value is 178.891967
+Generation 8: optimal function value is: 204.690701; average function value is 180.168284
+Generation 9: optimal function value is: 204.690701; average function value is 183.802727
+Optimal function value is: 204.690701; 
+Optimal solution is:
+[0.99887312 0.52224499 0.79505604]
+optimal_weight: [0.99887312 0.52224499 0.79505604]
+0:05:21.061893
+campaign_id: 23843467729120098
+current time:  2019-05-12 00:05:08.451977
+Generation 0: optimal function value is: nan; average function value is nan
+Generation 1: optimal function value is: inf; average function value is inf
+Generation 2: optimal function value is: inf; average function value is inf
+Generation 3: optimal function value is: inf; average function value is inf
+Generation 4: optimal function value is: inf; average function value is inf
+Generation 5: optimal function value is: inf; average function value is inf
+Generation 6: optimal function value is: inf; average function value is inf
+Generation 7: optimal function value is: inf; average function value is inf
+Generation 8: optimal function value is: inf; average function value is inf
+Generation 9: optimal function value is: inf; average function value is inf
+Optimal function value is: inf; 
+Optimal solution is:
+[0.52431169 0.81843036 0.28725885]
+optimal_weight: [0.52431169 0.81843036 0.28725885]
+0:06:41.251658
+campaign_id: 23843582099980495
+current time:  2019-05-12 00:05:08.451977
+Generation 0: optimal function value is: -0.047675; average function value is 1.463339
+Generation 1: optimal function value is: 1.050062; average function value is 0.556411
+Generation 2: optimal function value is: 1.050062; average function value is 0.607622
+Generation 3: optimal function value is: 1.050062; average function value is 0.655056
+Generation 4: optimal function value is: 1.050062; average function value is 0.677634
+Generation 5: optimal function value is: 1.050062; average function value is 0.705535
+Generation 6: optimal function value is: 1.050062; average function value is 0.719589
+Generation 7: optimal function value is: 1.050062; average function value is 0.724209
+Generation 8: optimal function value is: 1.050062; average function value is 0.736078
+Generation 9: optimal function value is: 1.050062; average function value is 0.751677
+Optimal function value is: 1.050062; 
+Optimal solution is:
+[0.91877895 0.01063525 0.957996  ]
+campaign_id: 23843306827810240
+current time:  2019-05-13 00:05:08.386507
+Generation 0: optimal function value is: 65.945067; average function value is -1.150535
+Generation 1: optimal function value is: 0.014938; average function value is -9.087222
+Generation 2: optimal function value is: 0.014938; average function value is -9.793095
+Generation 3: optimal function value is: 0.014938; average function value is -10.356194
+Generation 4: optimal function value is: 0.014938; average function value is -10.508746
+Generation 5: optimal function value is: 0.014938; average function value is -10.787726
+Generation 6: optimal function value is: 0.014938; average function value is -10.902015
+Generation 7: optimal function value is: 0.014938; average function value is -11.038007
+Generation 8: optimal function value is: 0.014938; average function value is -11.105731
+Generation 9: optimal function value is: 0.014938; average function value is -11.201323
+Optimal function value is: 0.014938; 
+Optimal solution is:
+[5.04919477e-01 3.73879256e-01 3.65861434e-04]
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [5.04919477e-01 3.73879256e-01 3.65861434e-04]
+0:03:07.381195
+campaign_id: 23843420208720408
+current time:  2019-05-13 00:05:08.386507
+Generation 0: optimal function value is: -0.994940; average function value is -0.990034
+Generation 1: optimal function value is: 198.401846; average function value is 128.089217
+Generation 2: optimal function value is: 198.414368; average function value is 145.104680
+Generation 3: optimal function value is: 198.414368; average function value is 153.536130
+Generation 4: optimal function value is: 198.677682; average function value is 159.084949
+Generation 5: optimal function value is: 198.677682; average function value is 165.167731
+Generation 6: optimal function value is: 198.677682; average function value is 169.933616
+Generation 7: optimal function value is: 198.677682; average function value is 170.569996
+Generation 8: optimal function value is: 198.677682; average function value is 173.341164
+Generation 9: optimal function value is: 198.677682; average function value is 177.874439
+Optimal function value is: 198.677682; 
+Optimal solution is:
+[0.99913125 0.12710686 0.86906993]
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [0.99913125 0.12710686 0.86906993]
+0:05:38.053474
+campaign_id: 23843467729120098
+current time:  2019-05-13 00:05:08.386507
+Generation 0: optimal function value is: -0.873443; average function value is -1.000573
+Generation 1: optimal function value is: 7.901582; average function value is -2252.557356
+Generation 2: optimal function value is: 7.901582; average function value is -2592.390024
+Generation 3: optimal function value is: 7.901582; average function value is -2782.686739
+Generation 4: optimal function value is: 7.901582; average function value is -2864.073264
+Generation 5: optimal function value is: 7.901582; average function value is -2904.183691
+Generation 6: optimal function value is: 7.901582; average function value is -2951.000210
+Generation 7: optimal function value is: 7.901582; average function value is -2995.276875
+Generation 8: optimal function value is: 7.901582; average function value is -3022.531474
+Generation 9: optimal function value is: 7.901582; average function value is -3080.816446
+Optimal function value is: 7.901582; 
+Optimal solution is:
+[1.28373656e-04 8.42100563e-01 8.01946545e-01]
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [1.28373656e-04 8.42100563e-01 8.01946545e-01]
+0:06:58.443374
+campaign_id: 23843451709300010
+current time:  2019-05-13 00:05:08.386507
+Generation 0: optimal function value is: -0.999780; average function value is -0.999579
+Generation 1: optimal function value is: 4552.345231; average function value is 2986.021658
+Generation 2: optimal function value is: 4552.345231; average function value is 3319.619118
+Generation 3: optimal function value is: 4552.345231; average function value is 3534.836608
+Generation 4: optimal function value is: 4553.116111; average function value is 3707.937361
+Generation 5: optimal function value is: 4553.116111; average function value is 3777.392340
+Generation 6: optimal function value is: 4553.875399; average function value is 3859.567376
+Generation 7: optimal function value is: 4553.949429; average function value is 3879.934906
+Generation 8: optimal function value is: 4553.949429; average function value is 3922.755145
+Generation 9: optimal function value is: 4553.949429; average function value is 3966.103142
+Optimal function value is: 4553.949429; 
+Optimal solution is:
+[0.99858707 0.92107781 0.61070552]
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [0.99858707 0.92107781 0.61070552]
+0:08:22.233329
+campaign_id: 23843319164090240
+current time:  2019-05-13 00:05:08.386507
+Generation 0: optimal function value is: -0.514124; average function value is -0.031307
+Generation 1: optimal function value is: 2.058137; average function value is 1.191796
+Generation 2: optimal function value is: 2.069940; average function value is 1.316159
+Generation 3: optimal function value is: 2.069940; average function value is 1.358132
+Generation 4: optimal function value is: 2.069940; average function value is 1.414397
+Generation 5: optimal function value is: 2.069940; average function value is 1.461209
+Generation 6: optimal function value is: 2.069940; average function value is 1.494364
+Generation 7: optimal function value is: 2.069940; average function value is 1.514033
+Generation 8: optimal function value is: 2.069940; average function value is 1.522417
+Generation 9: optimal function value is: 2.069940; average function value is 1.551526
+Optimal function value is: 2.069940; 
+Optimal solution is:
+[0.98926266 0.14275072 0.99913011]
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [0.98926266 0.14275072 0.99913011]
+0:09:45.101677
+campaign_id: 23843358370700576
+current time:  2019-05-13 00:05:08.386507
+campaign_id: 23843306827810240
+current time:  2019-05-14 00:05:08.944411
+Generation 0: optimal function value is: -0.083581; average function value is -1.115092
+Generation 1: optimal function value is: 1.091203; average function value is -11.743831
+Generation 2: optimal function value is: 1.091203; average function value is -13.044813
+Generation 3: optimal function value is: 1.091203; average function value is -13.740820
+Generation 4: optimal function value is: 1.091203; average function value is -13.840338
+Generation 5: optimal function value is: 1.091203; average function value is -13.891533
+Generation 6: optimal function value is: 1.091203; average function value is -14.005025
+Generation 7: optimal function value is: 1.091203; average function value is -14.078357
+Generation 8: optimal function value is: 1.091203; average function value is -14.146132
+Generation 9: optimal function value is: 1.091203; average function value is -14.228092
+Optimal function value is: 1.091203; 
+Optimal solution is:
+[0.07782526 0.97637353 0.00111945]
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'numpy.float64'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [0.07782526 0.97637353 0.00111945]
+0:07:39.982686
+campaign_id: 23843420208720408
+current time:  2019-05-14 00:05:08.944411
+Generation 0: optimal function value is: -0.995472; average function value is -0.991190
+Generation 1: optimal function value is: 220.853299; average function value is 140.969268
+Generation 2: optimal function value is: 221.198930; average function value is 159.688621
+Generation 3: optimal function value is: 221.198930; average function value is 170.765087
+Generation 4: optimal function value is: 221.198930; average function value is 177.900066
+Generation 5: optimal function value is: 221.198930; average function value is 184.015963
+Generation 6: optimal function value is: 221.198930; average function value is 188.414831
+Generation 7: optimal function value is: 221.198930; average function value is 190.957520
+Generation 8: optimal function value is: 221.198930; average function value is 192.176250
+Generation 9: optimal function value is: 221.198930; average function value is 193.550014
+Optimal function value is: 221.198930; 
+Optimal solution is:
+[0.99933365 0.25131108 0.59605154]
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [0.99933365 0.25131108 0.59605154]
+0:09:19.445012
+campaign_id: 23843467729120098
+current time:  2019-05-14 00:05:08.944411
+Generation 0: optimal function value is: -0.761500; average function value is -1.000875
+Generation 1: optimal function value is: 4.192877; average function value is -1485.175964
+Generation 2: optimal function value is: 4.192877; average function value is -1704.249066
+Generation 3: optimal function value is: 4.192877; average function value is -1807.973199
+Generation 4: optimal function value is: 4.192877; average function value is -1902.360607
+Generation 5: optimal function value is: 4.192877; average function value is -1956.700310
+Generation 6: optimal function value is: 4.192877; average function value is -1969.800595
+Generation 7: optimal function value is: 4.192877; average function value is -2020.582379
+Generation 8: optimal function value is: 4.192877; average function value is -2030.140466
+Generation 9: optimal function value is: 4.192877; average function value is -2086.936103
+Optimal function value is: 4.192877; 
+Optimal solution is:
+[5.47465938e-04 8.64265104e-01 6.00416370e-01]
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [5.47465938e-04 8.64265104e-01 6.00416370e-01]
+0:11:26.405418
+campaign_id: 23843451709300010
+current time:  2019-05-14 00:05:08.944411
+Generation 0: optimal function value is: -0.999848; average function value is -0.999699
+Generation 1: optimal function value is: 6599.938271; average function value is 4322.179651
+Generation 2: optimal function value is: 6599.938271; average function value is 4710.286086
+Generation 3: optimal function value is: 6599.938271; average function value is 5137.864815
+Generation 4: optimal function value is: 6601.182364; average function value is 5325.767319
+Generation 5: optimal function value is: 6601.182364; average function value is 5515.899839
+Generation 6: optimal function value is: 6601.182364; average function value is 5515.915495
+Generation 7: optimal function value is: 6601.182364; average function value is 5606.295206
+Generation 8: optimal function value is: 6601.182364; average function value is 5708.553639
+Generation 9: optimal function value is: 6601.182364; average function value is 5819.157259
+Optimal function value is: 6601.182364; 
+Optimal solution is:
+[0.99986338 0.90156806 0.54912089]
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [0.99986338 0.90156806 0.54912089]
+0:13:44.115839
+campaign_id: 23843319164090240
+current time:  2019-05-14 00:05:08.944411
+Generation 0: optimal function value is: -0.687970; average function value is -0.408996
+Generation 1: optimal function value is: 3.252670; average function value is 1.881096
+Generation 2: optimal function value is: 3.252670; average function value is 2.057248
+Generation 3: optimal function value is: 3.252670; average function value is 2.176722
+Generation 4: optimal function value is: 3.254107; average function value is 2.272546
+Generation 5: optimal function value is: 3.254107; average function value is 2.323300
+Generation 6: optimal function value is: 3.254107; average function value is 2.365240
+Generation 7: optimal function value is: 3.254107; average function value is 2.399511
+Generation 8: optimal function value is: 3.254107; average function value is 2.418677
+Generation 9: optimal function value is: 3.254107; average function value is 2.435895
+Optimal function value is: 3.254107; 
+Optimal solution is:
+[0.9769173  0.86535318 0.97723965]
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'numpy.float64'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'numpy.float64'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [0.9769173  0.86535318 0.97723965]
+0:15:45.109599
+campaign_id: 23843358370700576
+current time:  2019-05-14 00:05:08.944411
+Generation 0: optimal function value is: nan; average function value is nan
+Generation 1: optimal function value is: nan; average function value is nan
+Generation 2: optimal function value is: nan; average function value is nan
+Generation 3: optimal function value is: nan; average function value is nan
+Generation 4: optimal function value is: nan; average function value is nan
+Generation 5: optimal function value is: nan; average function value is nan
+Generation 6: optimal function value is: nan; average function value is nan
+Generation 7: optimal function value is: nan; average function value is nan
+Generation 8: optimal function value is: nan; average function value is nan
+Generation 9: optimal function value is: nan; average function value is nan
+Optimal function value is: nan; 
+Optimal solution is:
+[0.17081918 0.11590907 0.35222391]
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [0.17081918 0.11590907 0.35222391]
+0:17:28.207178
+campaign_id: 23843321565300240
+current time:  2019-05-14 00:05:08.944411
+Generation 0: optimal function value is: -0.822627; average function value is -0.665941
+Generation 1: optimal function value is: 5.683801; average function value is 3.283623
+Generation 2: optimal function value is: 5.683801; average function value is 3.417610
+Generation 3: optimal function value is: 5.683801; average function value is 3.673608
+Generation 4: optimal function value is: 5.783377; average function value is 3.781938
+Generation 5: optimal function value is: 5.783377; average function value is 3.818890
+Generation 6: optimal function value is: 5.783377; average function value is 3.944447
+Generation 7: optimal function value is: 5.783377; average function value is 4.110785
+Generation 8: optimal function value is: 5.783377; average function value is 4.169836
+Generation 9: optimal function value is: 5.783377; average function value is 4.214414
+Optimal function value is: 5.783377; 
+Optimal solution is:
+[0.98135861 0.95084489 0.93917453]
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [0.98135861 0.95084489 0.93917453]
+0:18:50.284385
+campaign_id: 23843321565280240
+current time:  2019-05-14 00:05:08.944411
+Generation 0: optimal function value is: -0.836751; average function value is -0.698598
+Generation 1: optimal function value is: 6.291503; average function value is 3.746654
+Generation 2: optimal function value is: 6.321046; average function value is 4.005377
+Generation 3: optimal function value is: 6.334964; average function value is 4.145405
+Generation 4: optimal function value is: 6.334964; average function value is 4.339852
+Generation 5: optimal function value is: 6.334964; average function value is 4.416514
+Generation 6: optimal function value is: 6.334964; average function value is 4.557005
+Generation 7: optimal function value is: 6.334964; average function value is 4.616838
+Generation 8: optimal function value is: 6.334964; average function value is 4.690654
+Generation 9: optimal function value is: 6.334964; average function value is 4.731080
+Optimal function value is: 6.334964; 
+Optimal solution is:
+[0.98363214 0.97367594 0.76296307]
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [0.98363214 0.97367594 0.76296307]
+0:20:35.856794
+campaign_id: 23843321565240240
+current time:  2019-05-14 00:05:08.944411
+Generation 0: optimal function value is: -0.847422; average function value is -0.699450
+Generation 1: optimal function value is: 6.554019; average function value is 3.691091
+Generation 2: optimal function value is: 6.554019; average function value is 3.980209
+Generation 3: optimal function value is: 6.554019; average function value is 4.186488
+Generation 4: optimal function value is: 6.554019; average function value is 4.282468
+Generation 5: optimal function value is: 6.554019; average function value is 4.408325
+Generation 6: optimal function value is: 6.554019; average function value is 4.553127
+Generation 7: optimal function value is: 6.554019; average function value is 4.677288
+Generation 8: optimal function value is: 6.554019; average function value is 4.713582
+Generation 9: optimal function value is: 6.554019; average function value is 4.798819
+Optimal function value is: 6.554019; 
+Optimal solution is:
+[0.99999333 0.96271631 0.97088999]
+<class 'numpy.float64'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [0.99999333 0.96271631 0.97088999]
+0:22:59.272505
+campaign_id: 23843382144850534
+current time:  2019-05-14 00:05:08.944411
+campaign_id: 23843306827810240
+current time:  2019-05-15 00:05:08.265480
+Generation 0: optimal function value is: -0.389252; average function value is -1.081091
+Generation 1: optimal function value is: 1.637336; average function value is -16.460775
+Generation 2: optimal function value is: 1.637336; average function value is -17.657803
+Generation 3: optimal function value is: 1.637336; average function value is -18.371877
+Generation 4: optimal function value is: 1.637336; average function value is -18.873113
+Generation 5: optimal function value is: 1.637336; average function value is -19.141402
+Generation 6: optimal function value is: 1.637336; average function value is -19.261908
+Generation 7: optimal function value is: 1.637336; average function value is -19.356247
+Generation 8: optimal function value is: 1.637336; average function value is -19.553051
+Generation 9: optimal function value is: 1.637336; average function value is -19.502681
+Optimal function value is: 1.637336; 
+Optimal solution is:
+[0.9055943  0.93349448 0.00131976]
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [0.9055943  0.93349448 0.00131976]
+0:11:14.528840
+campaign_id: 23843420208720408
+current time:  2019-05-15 00:05:08.265480
+Generation 0: optimal function value is: -0.998920; average function value is -0.997857
+Generation 1: optimal function value is: 925.724591; average function value is 598.675463
+Generation 2: optimal function value is: 925.724591; average function value is 682.284017
+Generation 3: optimal function value is: 925.784592; average function value is 740.438502
+Generation 4: optimal function value is: 925.784592; average function value is 765.762778
+Generation 5: optimal function value is: 925.784592; average function value is 786.974079
+Generation 6: optimal function value is: 925.784592; average function value is 807.544946
+Generation 7: optimal function value is: 925.784592; average function value is 813.610674
+Generation 8: optimal function value is: 925.784592; average function value is 822.144282
+Generation 9: optimal function value is: 925.784592; average function value is 830.502670
+Optimal function value is: 925.784592; 
+Optimal solution is:
+[0.99941295 0.69081395 0.58643075]
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [0.99941295 0.69081395 0.58643075]
+0:26:10.418376
+campaign_id: 23843467729120098
+current time:  2019-05-15 00:05:08.265480
+Generation 0: optimal function value is: -0.078485; average function value is -1.001276
+Generation 1: optimal function value is: 1.085170; average function value is -1029.885390
+Generation 2: optimal function value is: 1.085170; average function value is -1134.402326
+Generation 3: optimal function value is: 1.085170; average function value is -1221.564986
+Generation 4: optimal function value is: 1.085170; average function value is -1255.244586
+Generation 5: optimal function value is: 1.085170; average function value is -1287.993058
+Generation 6: optimal function value is: 1.085170; average function value is -1308.328420
+Generation 7: optimal function value is: 1.085170; average function value is -1331.311573
+Generation 8: optimal function value is: 1.085170; average function value is -1355.381904
+Generation 9: optimal function value is: 1.085170; average function value is -1373.647424
+Optimal function value is: 1.085170; 
+Optimal solution is:
+[0.00339848 0.78156857 0.83668646]
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [0.00339848 0.78156857 0.83668646]
+0:40:02.023835
+campaign_id: 23843451709300010
+current time:  2019-05-15 00:05:08.265480
+Generation 0: optimal function value is: -0.999852; average function value is -0.999705
+Generation 1: optimal function value is: 6754.963004; average function value is 4332.649028
+Generation 2: optimal function value is: 6758.634013; average function value is 4931.078352
+Generation 3: optimal function value is: 6759.232179; average function value is 5082.757148
+Generation 4: optimal function value is: 6759.232179; average function value is 5318.136433
+Generation 5: optimal function value is: 6759.232179; average function value is 5423.131754
+Generation 6: optimal function value is: 6759.232179; average function value is 5627.633384
+Generation 7: optimal function value is: 6759.232179; average function value is 5747.707932
+Generation 8: optimal function value is: 6759.232179; average function value is 5806.854564
+Generation 9: optimal function value is: 6759.232179; average function value is 5910.312754
+Optimal function value is: 6759.232179; 
+Optimal solution is:
+[0.99994127 0.86735553 0.44958246]
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [0.99994127 0.86735553 0.44958246]
+0:55:32.963657
+campaign_id: 23843319164090240
+current time:  2019-05-15 00:05:08.265480
+Generation 0: optimal function value is: -0.730578; average function value is -0.501838
+Generation 1: optimal function value is: 3.781760; average function value is 2.186469
+Generation 2: optimal function value is: 3.781760; average function value is 2.337509
+Generation 3: optimal function value is: 3.781760; average function value is 2.475599
+Generation 4: optimal function value is: 3.817623; average function value is 2.543934
+Generation 5: optimal function value is: 3.817623; average function value is 2.610757
+Generation 6: optimal function value is: 3.817623; average function value is 2.685343
+Generation 7: optimal function value is: 3.817623; average function value is 2.720744
+Generation 8: optimal function value is: 3.817623; average function value is 2.762449
+Generation 9: optimal function value is: 3.817623; average function value is 2.825429
+Optimal function value is: 3.817623; 
+Optimal solution is:
+[0.99745843 0.96793887 0.86951444]
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'numpy.float64'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'numpy.float64'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'numpy.float64'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [0.99745843 0.96793887 0.86951444]
+1:34:22.008010
+campaign_id: 23843358370700576
+current time:  2019-05-15 00:05:08.265480
+Generation 0: optimal function value is: -345.422139; average function value is -4.699283
+Generation 1: optimal function value is: -0.002903; average function value is -0.325033
+Generation 2: optimal function value is: -0.002903; average function value is -0.351142
+Generation 3: optimal function value is: -0.002903; average function value is -0.366092
+Generation 4: optimal function value is: -0.002903; average function value is -0.377129
+Generation 5: optimal function value is: -0.002903; average function value is -0.387964
+Generation 6: optimal function value is: -0.002903; average function value is -0.395989
+Generation 7: optimal function value is: -0.002903; average function value is -0.398471
+Generation 8: optimal function value is: -0.002903; average function value is -0.398703
+Generation 9: optimal function value is: -0.002903; average function value is -0.402642
+Optimal function value is: -0.002903; 
+Optimal solution is:
+[0.19032581 0.00833454 0.00770008]
+<class 'numpy.float64'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'numpy.float64'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'numpy.float64'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'numpy.float64'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'numpy.float64'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'numpy.float64'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'numpy.float64'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'numpy.float64'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [0.19032581 0.00833454 0.00770008]
+2:20:02.210272
+campaign_id: 23843321565300240
+current time:  2019-05-15 00:05:08.265480
+Generation 0: optimal function value is: -0.847272; average function value is -0.711550
+Generation 1: optimal function value is: 6.707535; average function value is 3.805615
+Generation 2: optimal function value is: 6.707535; average function value is 4.137149
+Generation 3: optimal function value is: 6.707535; average function value is 4.378171
+Generation 4: optimal function value is: 6.707535; average function value is 4.547556
+Generation 5: optimal function value is: 6.707535; average function value is 4.668701
+Generation 6: optimal function value is: 6.707535; average function value is 4.751294
+Generation 7: optimal function value is: 6.707535; average function value is 4.815488
+Generation 8: optimal function value is: 6.707535; average function value is 4.874529
+Generation 9: optimal function value is: 6.707535; average function value is 4.938337
+Optimal function value is: 6.707535; 
+Optimal solution is:
+[0.9982302  0.98045974 0.78266391]
+<class 'numpy.float64'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+<class 'int'> <class 'numpy.float64'> <class 'numpy.float64'>
+optimal_weight: [0.9982302  0.98045974 0.78266391]
+3:00:11.527810
+campaign_id: 23843321565280240
+current time:  2019-05-15 00:05:08.265480
+Generation 0: optimal function value is: -0.868101; average function value is -0.738920
+Generation 1: optimal function value is: 7.581552; average function value is 4.372627
+Generation 2: optimal function value is: 7.581552; average function value is 4.673362
+Generation 3: optimal function value is: 7.581552; average function value is 5.004491
+Generation 4: optimal function value is: 7.646214; average function value is 5.221218
+Generation 5: optimal function value is: 7.646214; average function value is 5.379228
+Generation 6: optimal function value is: 7.646214; average function value is 5.477650
+Generation 7: optimal function value is: 7.646214; average function value is 5.645541
+Generation 8: optimal function value is: 7.646214; average function value is 5.700672
+Generation 9: optimal function value is: 7.646214; average function value is 5.709865
+Optimal function value is: 7.646214; 
+Optimal solution is:
+[0.988504   0.98544126 0.95717093]

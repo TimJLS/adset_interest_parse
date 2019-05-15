@@ -39,6 +39,7 @@ CAMPAIGN_OBJECTIVE_FIELD = {
     'PRODUCT_CATALOG_SALES': 'product_catalog_sales',
     'REACH': 'reach',
     'ALL_CLICKS': 'clicks',
+    'IMPRESSIONS': 'impressions',
 }
 CAMPAIGN_FIELD = {
     'spend_cap': campaign.Campaign.Field.spend_cap,
@@ -481,7 +482,7 @@ def main():
 
 if __name__ == "__main__":
     main()
-#     data_collect( int(23843335814370399), 44167, 'VIDEO_VIEWS' )
+#     data_collect( int(23843358370700576), 562500, 'VIDEO_VIEWS' )
     import gc
     gc.collect()
 

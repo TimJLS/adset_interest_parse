@@ -2049,3 +2049,621 @@ Series([], Name: adset_id, dtype: int64)
 ['23843437131750408', '23843433199620408', '23843433197810408', '23843433190000408', '23843433174740408', '23843430139570408', '23843430137030408']
 [campaign_id] 23843467729120098 [achieving rate] 0.6666666666666666 2 3.0
 ['23843475974440098', '23843467729820098']
+2019-05-11 00:30:05.159830
+[campaign_id] 23843306827810240 [achieving rate] -3.7540106951871657 2808 -748.0
+['23843319992500240', '23843319991910240', '23843319991500240', '23843319991390240', '23843319991250240', '23843319990660240', '23843319985020240', '23843316113920240', '23843316113680240', '23843316113530240', '23843316113150240']
+2019-05-12 00:30:04.109038
+[campaign_id] 23843306827810240 [achieving rate] -1.7643868635131064 2928 -1659.5
+['23843321901950240', '23843321901660240', '23843321901460240', '23843321901300240', '23843321901100240', '23843321895750240', '23843319992500240', '23843319991910240', '23843319991500240', '23843319991390240', '23843319991250240', '23843319990660240', '23843319985020240', '23843316113920240']
+2019-05-13 00:30:04.938062
+[campaign_id] 23843306827810240 [achieving rate] -0.8921383856272908 2826 -3167.67
+['23843323319890240', '23843323319390240', '23843323314070240', '23843321901950240', '23843321901660240', '23843321901460240', '23843321901300240', '23843321901100240', '23843321895750240', '23843319992500240', '23843319991910240', '23843319991500240', '23843319991390240', '23843319991250240', '23843319990660240']
+2019-05-14 00:30:05.759028
+[campaign_id] 23843451709300010 [achieving rate] 2.916659375018229 5 1.71429
+2019-05-15 00:30:15.711904
+[campaign_id] 23843306827810240 [achieving rate] -0.22104870775347912 3558 -16096.0
+['23843327808450240', '23843327808010240', '23843327807510240', '23843327806200240', '23843327802910240', '23843325260980240', '23843325260690240', '23843319985020240', '23843316113920240']
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_388689501726787/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '388689501726787', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 30, 'bid_info': '{"ACTIONS":27}', 'billing_event': 'THRUPLAY', 'budget_remaining': '0', 'campaign_id': '23843306827810240', 'configured_status': 'ACTIVE', 'created_time': '2019-05-14T15:19:56+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-15T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT_購物 Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39']", 'optimization_goal': 'THRUPLAY', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-14T15:19:56+0800', 'targeting': '{"age_max":39,"age_min":13,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6003167425934","name":"Shopping and fashion"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram"]}', 'updated_time': '2019-05-14T15:22:14+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_subcode": 1487793,
+        "is_transient": false,
+        "error_user_title": "Campaign Schedule Is Too Short",
+        "error_user_msg": "Ad sets using a daily budget or a daily max spend limit must be scheduled to run for at least 24 hours. Please extend the schedule for this ad set.",
+        "fbtrace_id": "HKkDIt5IvBQ"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_388689501726787/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '388689501726787', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 30, 'bid_info': '{"ACTIONS":20}', 'billing_event': 'THRUPLAY', 'budget_remaining': '0', 'campaign_id': '23843306827810240', 'configured_status': 'ACTIVE', 'created_time': '2019-05-14T15:19:41+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-15T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT_購物 Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39']", 'optimization_goal': 'THRUPLAY', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-14T15:19:41+0800', 'targeting': '{"age_max":39,"age_min":13,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6003167425934","name":"Shopping and fashion"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram"]}', 'updated_time': '2019-05-15T00:30:29+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_subcode": 1487793,
+        "is_transient": false,
+        "error_user_title": "Campaign Schedule Is Too Short",
+        "error_user_msg": "Ad sets using a daily budget or a daily max spend limit must be scheduled to run for at least 24 hours. Please extend the schedule for this ad set.",
+        "fbtrace_id": "FnDglpOGrLk"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_388689501726787/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '388689501726787', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 30, 'bid_info': '{"ACTIONS":20}', 'billing_event': 'THRUPLAY', 'budget_remaining': '0', 'campaign_id': '23843306827810240', 'configured_status': 'ACTIVE', 'created_time': '2019-05-14T15:19:24+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-15T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT_購物 Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39']", 'optimization_goal': 'THRUPLAY', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-14T15:19:24+0800', 'targeting': '{"age_max":39,"age_min":13,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6003167425934","name":"Shopping and fashion"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram"]}', 'updated_time': '2019-05-15T00:30:29+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_subcode": 1487793,
+        "is_transient": false,
+        "error_user_title": "Campaign Schedule Is Too Short",
+        "error_user_msg": "Ad sets using a daily budget or a daily max spend limit must be scheduled to run for at least 24 hours. Please extend the schedule for this ad set.",
+        "fbtrace_id": "DAWfzcPz59H"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_388689501726787/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '388689501726787', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 30, 'bid_info': '{"ACTIONS":20}', 'billing_event': 'THRUPLAY', 'budget_remaining': '0', 'campaign_id': '23843306827810240', 'configured_status': 'ACTIVE', 'created_time': '2019-05-14T15:19:08+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-15T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT_購物 Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39']", 'optimization_goal': 'THRUPLAY', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-14T15:19:09+0800', 'targeting': '{"age_max":39,"age_min":13,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6003167425934","name":"Shopping and fashion"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram"]}', 'updated_time': '2019-05-15T00:30:28+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_subcode": 1487793,
+        "is_transient": false,
+        "error_user_title": "Campaign Schedule Is Too Short",
+        "error_user_msg": "Ad sets using a daily budget or a daily max spend limit must be scheduled to run for at least 24 hours. Please extend the schedule for this ad set.",
+        "fbtrace_id": "A6jUjepXMls"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_388689501726787/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '388689501726787', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 30, 'bid_info': '{"ACTIONS":20}', 'billing_event': 'THRUPLAY', 'budget_remaining': '0', 'campaign_id': '23843306827810240', 'configured_status': 'ACTIVE', 'created_time': '2019-05-14T15:18:53+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-15T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT_購物 Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39']", 'optimization_goal': 'THRUPLAY', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-14T15:18:53+0800', 'targeting': '{"age_max":39,"age_min":13,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6003167425934","name":"Shopping and fashion"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram"]}', 'updated_time': '2019-05-15T00:30:28+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_subcode": 1487793,
+        "is_transient": false,
+        "error_user_title": "Campaign Schedule Is Too Short",
+        "error_user_msg": "Ad sets using a daily budget or a daily max spend limit must be scheduled to run for at least 24 hours. Please extend the schedule for this ad set.",
+        "fbtrace_id": "Hn85DxQMDbS"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_388689501726787/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '388689501726787', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 28, 'bid_info': '{"ACTIONS":19}', 'billing_event': 'THRUPLAY', 'budget_remaining': '0', 'campaign_id': '23843306827810240', 'configured_status': 'ACTIVE', 'created_time': '2019-05-13T10:20:17+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-15T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT_購物 Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39']", 'optimization_goal': 'THRUPLAY', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-13T10:20:17+0800', 'targeting': '{"age_max":39,"age_min":13,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6003167425934","name":"Shopping and fashion"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram"]}', 'updated_time': '2019-05-15T00:30:27+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_subcode": 1487793,
+        "is_transient": false,
+        "error_user_title": "Campaign Schedule Is Too Short",
+        "error_user_msg": "Ad sets using a daily budget or a daily max spend limit must be scheduled to run for at least 24 hours. Please extend the schedule for this ad set.",
+        "fbtrace_id": "A3RGITNXHrq"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_388689501726787/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '388689501726787', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 28, 'bid_info': '{"ACTIONS":19}', 'billing_event': 'THRUPLAY', 'budget_remaining': '0', 'campaign_id': '23843306827810240', 'configured_status': 'ACTIVE', 'created_time': '2019-05-13T10:20:02+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-15T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT_購物 Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39']", 'optimization_goal': 'THRUPLAY', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-13T10:20:02+0800', 'targeting': '{"age_max":39,"age_min":13,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6003167425934","name":"Shopping and fashion"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram"]}', 'updated_time': '2019-05-15T00:30:26+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_subcode": 1487793,
+        "is_transient": false,
+        "error_user_title": "Campaign Schedule Is Too Short",
+        "error_user_msg": "Ad sets using a daily budget or a daily max spend limit must be scheduled to run for at least 24 hours. Please extend the schedule for this ad set.",
+        "fbtrace_id": "F5EDc7mSlOb"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_388689501726787/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '388689501726787', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 28, 'bid_info': '{"ACTIONS":19}', 'billing_event': 'THRUPLAY', 'budget_remaining': '0', 'campaign_id': '23843306827810240', 'configured_status': 'ACTIVE', 'created_time': '2019-05-10T00:30:19+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-15T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT_購物 Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39']", 'optimization_goal': 'THRUPLAY', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-10T00:30:19+0800', 'targeting': '{"age_max":39,"age_min":13,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6003167425934","name":"Shopping and fashion"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram"]}', 'updated_time': '2019-05-15T00:30:25+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_subcode": 1487793,
+        "is_transient": false,
+        "error_user_title": "Campaign Schedule Is Too Short",
+        "error_user_msg": "Ad sets using a daily budget or a daily max spend limit must be scheduled to run for at least 24 hours. Please extend the schedule for this ad set.",
+        "fbtrace_id": "CXa/xEjLO/1"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_388689501726787/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '388689501726787', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 28, 'bid_info': '{"ACTIONS":19}', 'billing_event': 'THRUPLAY', 'budget_remaining': '0', 'campaign_id': '23843306827810240', 'configured_status': 'ACTIVE', 'created_time': '2019-05-08T00:31:01+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-15T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT_購物 Copy - ['13-39'] Copy - ['13-39']", 'optimization_goal': 'THRUPLAY', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-08T00:31:01+0800', 'targeting': '{"age_max":39,"age_min":13,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6003167425934","name":"Shopping and fashion"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram"]}', 'updated_time': '2019-05-15T00:30:25+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_subcode": 1487793,
+        "is_transient": false,
+        "error_user_title": "Campaign Schedule Is Too Short",
+        "error_user_msg": "Ad sets using a daily budget or a daily max spend limit must be scheduled to run for at least 24 hours. Please extend the schedule for this ad set.",
+        "fbtrace_id": "CLxrigxjO9j"
+      }
+    }
+
+[campaign_id] 23843420208720408 [achieving rate] 0.0 0 9.14286
+['23843446362490408', '23843446361610408', '23843446360580408', '23843446359730408', '23843446358640408', '23843446357340408', '23843446356390408', '23843446355340408', '23843446354420408', '23843446353210408', '23843439099690408', '23843439097840408', '23843439095580408', '23843439093920408', '23843439092420408']
+[campaign_id] 23843467729120098 [achieving rate] -7.083336875001771 5 -0.705882
+['23843488687130098', '23843488686050098', '23843483932390098']
+[campaign_id] 23843451709300010 [achieving rate] 0.0 0 1.71429
+['23843469364520010', '23843469362650010', '23843451709830010']
+[campaign_id] 23843319164090240 [achieving rate] 0.4651313725702294 86 184.894
+['23843327817460240', '23843327816720240', '23843327815950240', '23843327815380240', '23843327814290240', '23843327813090240']
+[campaign_id] 23843358370700576 [achieving rate] 0.6138721918306086 5861 9547.59
+['23843358370790576', '23843358370770576', '23843358370720576']
+[campaign_id] 23843321565300240 [achieving rate] 0.25737334416446156 32 124.333
+['23843321565540240', '23843321565500240', '23843321565460240']
+[campaign_id] 23843321565280240 [achieving rate] 0.31484163465776716 35 111.167
+['23843321565550240', '23843321565520240', '23843321565490240']
+[campaign_id] 23843321565240240 [achieving rate] 0.3428581740095459 38 110.833
+['23843321565530240', '23843321565510240', '23843321565480240']
+[campaign_id] 23843382144850534 [achieving rate] 0.0 0 24155.3
+['23843382144900534', '23843382144890534', '23843382144880534']
+[campaign_id] 23843372439710187 [achieving rate] 0.6604230923257431 94 142.333
+['23843372439870187', '23843372439860187', '23843372439850187', '23843372439840187', '23843372439830187']
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_1701218699973034/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '1701218699973034', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 13, 'bid_info': '{"ACTIONS":11}', 'billing_event': 'LINK_CLICKS', 'budget_remaining': '0', 'campaign_id': '23843372439710187', 'configured_status': 'ACTIVE', 'created_time': '2019-05-14T10:46:52+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-26T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT 居酒屋調酒師 Copy - ['42-66']", 'optimization_goal': 'LINK_CLICKS', 'promoted_object': '{"page_id":"1626585037613026"}', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-14T10:46:52+0800', 'targeting': '{"age_max":66,"age_min":42,"audience_network_positions":["classic","rewarded_video"],"brand_safety_content_filter_levels":["FACEBOOK_STANDARD","AN_STANDARD"],"device_platforms":["mobile","desktop"],"facebook_positions":["feed","right_hand_column","suggested_video","instant_article","story"],"flexible_spec":[{"interests":[{"id":"6003453057871","name":"Izakaya"},{"id":"6003487130431","name":"Bartender"}]}],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram","audience_network"]}', 'updated_time': '2019-05-15T01:13:00+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_data": {
+          "blame_field": "targeting"
+        },
+        "error_subcode": 1487843,
+        "is_transient": false,
+        "error_user_title": "INVALID_AGE_MAX",
+        "error_user_msg": "The maximum age you have selected can't be used. Please choose a different maximum age and try again.",
+        "fbtrace_id": "DHkEgNto1d4"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_1701218699973034/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '1701218699973034', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 13, 'bid_info': '{"ACTIONS":10}', 'billing_event': 'LINK_CLICKS', 'budget_remaining': '0', 'campaign_id': '23843372439710187', 'configured_status': 'ACTIVE', 'created_time': '2019-05-14T10:46:32+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-26T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT 美食美食廣場料理 Copy - ['42-66', '18-65']", 'optimization_goal': 'LINK_CLICKS', 'promoted_object': '{"page_id":"1626585037613026"}', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-14T10:46:35+0800', 'targeting': '{"age_max":66,"age_min":42,"audience_network_positions":["classic","rewarded_video"],"brand_safety_content_filter_levels":["FACEBOOK_STANDARD","AN_STANDARD"],"device_platforms":["mobile","desktop"],"facebook_positions":["feed","right_hand_column","suggested_video","instant_article","story"],"flexible_spec":[{"interests":[{"id":"6002964239317","name":"Mexican cuisine"},{"id":"6003102729234","name":"Italian cuisine"},{"id":"6003143976566","name":"Food court"},{"id":"6003195797498","name":"Cuisine"},{"id":"6003374983581","name":"Omelette"},{"id":"6003420024431","name":"French cuisine"}]}],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram","audience_network"]}', 'updated_time': '2019-05-15T01:13:00+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_data": {
+          "blame_field": "targeting"
+        },
+        "error_subcode": 1487843,
+        "is_transient": false,
+        "error_user_title": "INVALID_AGE_MAX",
+        "error_user_msg": "The maximum age you have selected can't be used. Please choose a different maximum age and try again.",
+        "fbtrace_id": "C4VHtLRbPry"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_1701218699973034/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '1701218699973034', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 13, 'bid_info': '{"ACTIONS":11}', 'billing_event': 'LINK_CLICKS', 'budget_remaining': '0', 'campaign_id': '23843372439710187', 'configured_status': 'ACTIVE', 'created_time': '2019-05-14T10:46:32+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-26T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "PT 18+ ALL Copy - ['42-66', '18-65', '18-65']", 'optimization_goal': 'LINK_CLICKS', 'promoted_object': '{"page_id":"1626585037613026"}', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-14T10:46:33+0800', 'targeting': '{"age_max":66,"age_min":42,"audience_network_positions":["classic","rewarded_video"],"brand_safety_content_filter_levels":["FACEBOOK_STANDARD","AN_STANDARD"],"device_platforms":["mobile","desktop"],"facebook_positions":["feed","right_hand_column","suggested_video","instant_article","story"],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram","audience_network"]}', 'updated_time': '2019-05-15T01:12:59+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_data": {
+          "blame_field": "targeting"
+        },
+        "error_subcode": 1487843,
+        "is_transient": false,
+        "error_user_title": "INVALID_AGE_MAX",
+        "error_user_msg": "The maximum age you have selected can't be used. Please choose a different maximum age and try again.",
+        "fbtrace_id": "HJ/N+dOx5e8"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_1701218699973034/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '1701218699973034', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 13, 'bid_info': '{"ACTIONS":11}', 'billing_event': 'LINK_CLICKS', 'budget_remaining': '0', 'campaign_id': '23843372439710187', 'configured_status': 'ACTIVE', 'created_time': '2019-05-14T10:46:32+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-26T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT 派對園遊會戶外休閒活動 Copy - ['42-66', '18-65', '18-65', '18-65']", 'optimization_goal': 'LINK_CLICKS', 'promoted_object': '{"page_id":"1626585037613026"}', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-14T10:46:36+0800', 'targeting': '{"age_max":66,"age_min":42,"audience_network_positions":["classic","rewarded_video"],"brand_safety_content_filter_levels":["FACEBOOK_STANDARD","AN_STANDARD"],"device_platforms":["mobile","desktop"],"facebook_positions":["feed","right_hand_column","suggested_video","instant_article","story"],"flexible_spec":[{"interests":[{"id":"6002985584323","name":"Outdoor recreation"},{"id":"6003147868152","name":"Parties"},{"id":"6003386015218","name":"Garden party"}]}],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram","audience_network"]}', 'updated_time': '2019-05-15T01:12:59+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_data": {
+          "blame_field": "targeting"
+        },
+        "error_subcode": 1487843,
+        "is_transient": false,
+        "error_user_title": "INVALID_AGE_MAX",
+        "error_user_msg": "The maximum age you have selected can't be used. Please choose a different maximum age and try again.",
+        "fbtrace_id": "BYqdRz4Gyra"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_1701218699973034/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '1701218699973034', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 13, 'bid_info': '{"ACTIONS":10}', 'billing_event': 'LINK_CLICKS', 'budget_remaining': '0', 'campaign_id': '23843372439710187', 'configured_status': 'ACTIVE', 'created_time': '2019-05-14T10:46:32+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-26T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT 日式燒肉日本料理燒烤 Copy - ['42-66', '18-65', '18-65', '18-65', '18-65']", 'optimization_goal': 'LINK_CLICKS', 'promoted_object': '{"page_id":"1626585037613026"}', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-14T10:46:39+0800', 'targeting': '{"age_max":66,"age_min":42,"audience_network_positions":["classic","rewarded_video"],"brand_safety_content_filter_levels":["FACEBOOK_STANDARD","AN_STANDARD"],"device_platforms":["mobile","desktop"],"facebook_positions":["feed","right_hand_column","suggested_video","instant_article","story"],"flexible_spec":[{"interests":[{"id":"6002998123892","name":"Japanese cuisine"},{"id":"6003301857428","name":"Yakiniku"},{"id":"6003435096731","name":"Barbecue"}]}],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram","audience_network"]}', 'updated_time': '2019-05-15T01:12:58+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_data": {
+          "blame_field": "targeting"
+        },
+        "error_subcode": 1487843,
+        "is_transient": false,
+        "error_user_title": "INVALID_AGE_MAX",
+        "error_user_msg": "The maximum age you have selected can't be used. Please choose a different maximum age and try again.",
+        "fbtrace_id": "ADFs/ykx5od"
+      }
+    }
+
+[campaign_id] 23843307694520535 [achieving rate] 0.003961351613170414 11 2776.83
+['23843307956730535', '23843307694640535', '23843307694630535', '23843307694620535']
+[campaign_id] 23843546765400616 [achieving rate] 0.6556203050651711 260 396.571
+['23843546822480616', '23843546817720616']
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_314105632545330/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '314105632545330', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 13, 'bid_info': '{"ACTIONS":11}', 'bid_strategy': 'LOWEST_COST_WITH_BID_CAP', 'billing_event': 'LINK_CLICKS', 'budget_remaining': '300', 'campaign_id': '23843546765400616', 'configured_status': 'ACTIVE', 'created_time': '2019-05-03T18:27:05+0800', 'daily_budget': '300', 'destination_type': 'UNDEFINED', 'effective_status': 'CAMPAIGN_PAUSED', 'end_time': '2019-07-30T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_budget': '0', 'lifetime_imps': 0, 'name': "BT_身體部位 Copy - ['43-66']", 'optimization_goal': 'LINK_CLICKS', 'pacing_type': '["standard"]', 'recurring_budget_semantics': 'true', 'start_time': '2019-05-03T18:27:05+0800', 'targeting': '{"age_max":66,"age_min":43,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6002868254622","name":"Abdomen"},{"id":"6002929062973","name":"Leg"},{"id":"6002948034955","name":"Thigh"},{"id":"6003195976898","name":"Gluteus maximus muscle"},{"id":"6003717138383","name":"Waist"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"publisher_platforms":["facebook"]}', 'updated_time': '2019-05-15T01:22:58+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_data": {
+          "blame_field": "targeting"
+        },
+        "error_subcode": 1487843,
+        "is_transient": false,
+        "error_user_title": "INVALID_AGE_MAX",
+        "error_user_msg": "The maximum age you have selected can't be used. Please choose a different maximum age and try again.",
+        "fbtrace_id": "FQG1OwD71xR"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_314105632545330/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '314105632545330', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 13, 'bid_info': '{"ACTIONS":11}', 'bid_strategy': 'LOWEST_COST_WITH_BID_CAP', 'billing_event': 'LINK_CLICKS', 'budget_remaining': '300', 'campaign_id': '23843546765400616', 'configured_status': 'ACTIVE', 'created_time': '2019-05-03T18:27:05+0800', 'daily_budget': '300', 'destination_type': 'UNDEFINED', 'effective_status': 'CAMPAIGN_PAUSED', 'end_time': '2019-07-30T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_budget': '0', 'lifetime_imps': 0, 'name': "BT_產品相關 Copy - ['43-66', '20-65']", 'optimization_goal': 'LINK_CLICKS', 'pacing_type': '["standard"]', 'recurring_budget_semantics': 'true', 'start_time': '2019-05-03T18:27:05+0800', 'targeting': '{"age_max":66,"age_min":43,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6003169632036","name":"Drinking"},{"id":"6003299204611","name":"Beverages"},{"id":"6003444791871","name":"Yeast"},{"id":"6003479407269","name":"Enzyme"},{"id":"6007983400081","name":"Fermentation"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"publisher_platforms":["facebook"]}', 'updated_time': '2019-05-15T01:22:55+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_data": {
+          "blame_field": "targeting"
+        },
+        "error_subcode": 1487843,
+        "is_transient": false,
+        "error_user_title": "INVALID_AGE_MAX",
+        "error_user_msg": "The maximum age you have selected can't be used. Please choose a different maximum age and try again.",
+        "fbtrace_id": "Bv1iE7xYGwy"
+      }
+    }
+
+2019-05-15 01:31:55.360998
+[campaign_id] 23843306827810240 [achieving rate] -0.21899606299212598 3560 -16256.0
+['23843327808450240', '23843327808010240', '23843327807510240', '23843327806200240', '23843327802910240', '23843325260980240', '23843325260690240', '23843319985020240', '23843316113920240']
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_388689501726787/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '388689501726787', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 30, 'bid_info': '{"ACTIONS":27}', 'billing_event': 'THRUPLAY', 'budget_remaining': '0', 'campaign_id': '23843306827810240', 'configured_status': 'ACTIVE', 'created_time': '2019-05-14T15:19:56+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-15T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT_購物 Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39']", 'optimization_goal': 'THRUPLAY', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-14T15:19:56+0800', 'targeting': '{"age_max":39,"age_min":13,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6003167425934","name":"Shopping and fashion"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram"]}', 'updated_time': '2019-05-14T15:22:14+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_subcode": 1487793,
+        "is_transient": false,
+        "error_user_title": "Campaign Schedule Is Too Short",
+        "error_user_msg": "Ad sets using a daily budget or a daily max spend limit must be scheduled to run for at least 24 hours. Please extend the schedule for this ad set.",
+        "fbtrace_id": "BDx0WTuA0ig"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_388689501726787/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '388689501726787', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 30, 'bid_info': '{"ACTIONS":20}', 'billing_event': 'THRUPLAY', 'budget_remaining': '0', 'campaign_id': '23843306827810240', 'configured_status': 'ACTIVE', 'created_time': '2019-05-14T15:19:41+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-15T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT_購物 Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39']", 'optimization_goal': 'THRUPLAY', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-14T15:19:41+0800', 'targeting': '{"age_max":39,"age_min":13,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6003167425934","name":"Shopping and fashion"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram"]}', 'updated_time': '2019-05-15T01:20:36+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_subcode": 1487793,
+        "is_transient": false,
+        "error_user_title": "Campaign Schedule Is Too Short",
+        "error_user_msg": "Ad sets using a daily budget or a daily max spend limit must be scheduled to run for at least 24 hours. Please extend the schedule for this ad set.",
+        "fbtrace_id": "F6KTFD8V4d2"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_388689501726787/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '388689501726787', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 30, 'bid_info': '{"ACTIONS":20}', 'billing_event': 'THRUPLAY', 'budget_remaining': '0', 'campaign_id': '23843306827810240', 'configured_status': 'ACTIVE', 'created_time': '2019-05-14T15:19:24+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-15T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT_購物 Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39']", 'optimization_goal': 'THRUPLAY', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-14T15:19:24+0800', 'targeting': '{"age_max":39,"age_min":13,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6003167425934","name":"Shopping and fashion"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram"]}', 'updated_time': '2019-05-15T01:20:34+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_subcode": 1487793,
+        "is_transient": false,
+        "error_user_title": "Campaign Schedule Is Too Short",
+        "error_user_msg": "Ad sets using a daily budget or a daily max spend limit must be scheduled to run for at least 24 hours. Please extend the schedule for this ad set.",
+        "fbtrace_id": "DO2GRzRkyO3"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_388689501726787/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '388689501726787', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 30, 'bid_info': '{"ACTIONS":20}', 'billing_event': 'THRUPLAY', 'budget_remaining': '0', 'campaign_id': '23843306827810240', 'configured_status': 'ACTIVE', 'created_time': '2019-05-14T15:19:08+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-15T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT_購物 Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39']", 'optimization_goal': 'THRUPLAY', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-14T15:19:09+0800', 'targeting': '{"age_max":39,"age_min":13,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6003167425934","name":"Shopping and fashion"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram"]}', 'updated_time': '2019-05-15T01:20:34+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_subcode": 1487793,
+        "is_transient": false,
+        "error_user_title": "Campaign Schedule Is Too Short",
+        "error_user_msg": "Ad sets using a daily budget or a daily max spend limit must be scheduled to run for at least 24 hours. Please extend the schedule for this ad set.",
+        "fbtrace_id": "B+Jykaj9nm0"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_388689501726787/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '388689501726787', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 30, 'bid_info': '{"ACTIONS":20}', 'billing_event': 'THRUPLAY', 'budget_remaining': '0', 'campaign_id': '23843306827810240', 'configured_status': 'ACTIVE', 'created_time': '2019-05-14T15:18:53+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-15T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT_購物 Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39']", 'optimization_goal': 'THRUPLAY', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-14T15:18:53+0800', 'targeting': '{"age_max":39,"age_min":13,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6003167425934","name":"Shopping and fashion"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram"]}', 'updated_time': '2019-05-15T01:20:33+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_subcode": 1487793,
+        "is_transient": false,
+        "error_user_title": "Campaign Schedule Is Too Short",
+        "error_user_msg": "Ad sets using a daily budget or a daily max spend limit must be scheduled to run for at least 24 hours. Please extend the schedule for this ad set.",
+        "fbtrace_id": "HG/Mlmp+yyT"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_388689501726787/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '388689501726787', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 30, 'bid_info': '{"ACTIONS":20}', 'billing_event': 'THRUPLAY', 'budget_remaining': '0', 'campaign_id': '23843306827810240', 'configured_status': 'ACTIVE', 'created_time': '2019-05-13T10:20:17+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-15T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT_購物 Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39']", 'optimization_goal': 'THRUPLAY', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-13T10:20:17+0800', 'targeting': '{"age_max":39,"age_min":13,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6003167425934","name":"Shopping and fashion"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram"]}', 'updated_time': '2019-05-15T01:20:32+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_subcode": 1487793,
+        "is_transient": false,
+        "error_user_title": "Campaign Schedule Is Too Short",
+        "error_user_msg": "Ad sets using a daily budget or a daily max spend limit must be scheduled to run for at least 24 hours. Please extend the schedule for this ad set.",
+        "fbtrace_id": "GEvskCF6hh6"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_388689501726787/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '388689501726787', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 30, 'bid_info': '{"ACTIONS":20}', 'billing_event': 'THRUPLAY', 'budget_remaining': '0', 'campaign_id': '23843306827810240', 'configured_status': 'ACTIVE', 'created_time': '2019-05-13T10:20:02+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-15T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT_購物 Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39']", 'optimization_goal': 'THRUPLAY', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-13T10:20:02+0800', 'targeting': '{"age_max":39,"age_min":13,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6003167425934","name":"Shopping and fashion"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram"]}', 'updated_time': '2019-05-15T01:20:31+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_subcode": 1487793,
+        "is_transient": false,
+        "error_user_title": "Campaign Schedule Is Too Short",
+        "error_user_msg": "Ad sets using a daily budget or a daily max spend limit must be scheduled to run for at least 24 hours. Please extend the schedule for this ad set.",
+        "fbtrace_id": "ApKLcNU2vtZ"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_388689501726787/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '388689501726787', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 30, 'bid_info': '{"ACTIONS":20}', 'billing_event': 'THRUPLAY', 'budget_remaining': '0', 'campaign_id': '23843306827810240', 'configured_status': 'ACTIVE', 'created_time': '2019-05-10T00:30:19+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-15T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT_購物 Copy - ['13-39'] Copy - ['13-39'] Copy - ['13-39']", 'optimization_goal': 'THRUPLAY', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-10T00:30:19+0800', 'targeting': '{"age_max":39,"age_min":13,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6003167425934","name":"Shopping and fashion"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram"]}', 'updated_time': '2019-05-15T01:20:29+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_subcode": 1487793,
+        "is_transient": false,
+        "error_user_title": "Campaign Schedule Is Too Short",
+        "error_user_msg": "Ad sets using a daily budget or a daily max spend limit must be scheduled to run for at least 24 hours. Please extend the schedule for this ad set.",
+        "fbtrace_id": "CTGC9YW91gC"
+      }
+    }
+
+[facebook_externals.main.copy_adset.make_adset]:  
+
+  Message: Call was not successful
+  Method:  POST
+  Path:    https://graph.facebook.com/v3.2/act_388689501726787/adsets
+  Params:  {'status': 'ACTIVE', 'account_id': '388689501726787', 'attribution_spec': '[{"event_type":"CLICK_THROUGH","window_days":1}]', 'bid_amount': 30, 'bid_info': '{"ACTIONS":20}', 'billing_event': 'THRUPLAY', 'budget_remaining': '0', 'campaign_id': '23843306827810240', 'configured_status': 'ACTIVE', 'created_time': '2019-05-08T00:31:01+0800', 'destination_type': 'UNDEFINED', 'effective_status': 'ACTIVE', 'end_time': '2019-05-15T23:59:00+0800', 'is_dynamic_creative': 'false', 'lifetime_imps': 0, 'name': "BT_購物 Copy - ['13-39'] Copy - ['13-39']", 'optimization_goal': 'THRUPLAY', 'recurring_budget_semantics': 'false', 'start_time': '2019-05-08T00:31:01+0800', 'targeting': '{"age_max":39,"age_min":13,"device_platforms":["mobile","desktop"],"facebook_positions":["feed"],"flexible_spec":[{"interests":[{"id":"6003167425934","name":"Shopping and fashion"}]}],"genders":[2],"geo_locations":{"countries":["TW"],"location_types":["home","recent"]},"instagram_positions":["stream","story"],"publisher_platforms":["facebook","instagram"]}', 'updated_time': '2019-05-15T01:20:28+0800'}
+
+  Status:  400
+  Response:
+    {
+      "error": {
+        "message": "Invalid parameter",
+        "type": "OAuthException",
+        "code": 100,
+        "error_subcode": 1487793,
+        "is_transient": false,
+        "error_user_title": "Campaign Schedule Is Too Short",
+        "error_user_msg": "Ad sets using a daily budget or a daily max spend limit must be scheduled to run for at least 24 hours. Please extend the schedule for this ad set.",
+        "fbtrace_id": "H92SqSAuZgU"
+      }
+    }
+
+[campaign_id] 23843420208720408 [achieving rate] 0.0 0 1.93939
+['23843451305960408', '23843451303590408', '23843451298850408', '23843451296450408', '23843451294620408', '23843451292870408', '23843451291180408', '23843451289170408', '23843451287090408', '23843451285660408', '23843451283830408', '23843451282350408', '23843451280350408', '23843451278220408', '23843451276680408', '23843446362490408', '23843446361610408', '23843446360580408', '23843446359730408', '23843446358640408', '23843446357340408', '23843446356390408', '23843446355340408']
+[campaign_id] 23843467729120098 [achieving rate] -7.083336875001771 5 -0.705882
+['23843492621930098', '23843492617570098', '23843492613970098', '23843488687130098', '23843488686050098']
+[campaign_id] 23843451709300010 [achieving rate] 0.0 0 1.71429
+['23843477419160010', '23843477409120010', '23843477392600010', '23843469364520010']

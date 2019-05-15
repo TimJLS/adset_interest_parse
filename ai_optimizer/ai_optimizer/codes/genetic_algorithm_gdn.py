@@ -420,6 +420,7 @@ if __name__ == "__main__":
     for campaign_id in campaign_id_list:
 #         ga_optimal_weight(campaign_id)
         print('campaign_id:', campaign_id )
+        print('current time: ', starttime )
         global df
         df = ObjectiveFunc().campaign_status(campaign_id)
         bound = np.tile([[0], [1]], vardim)
