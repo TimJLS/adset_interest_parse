@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[3]:
+# In[1]:
 
 
 # In[4]:
@@ -133,7 +133,6 @@ def update_status(adset_id, status=AdSet.Status.active):
     adset = AdSet(adset_id)
     adset[AdSet.Field.status] = status
     adset.remote_update()
-    return
 
 
 def get_sorted_adset(campaign):
@@ -144,7 +143,7 @@ def get_sorted_adset(campaign):
     if len(df) > 0:
         df = df[df.request_time.dt.date == DATE].sort_values(
             by=['score'], ascending=False)
-        adset_list = df['adset_id'].tolist()
+        adset_list = df['adset_id'].unique().tolist()
     else:  
         df_camp = mysql_adactivity_save.get_campaign_target()
         charge_type = df_camp['charge_type'].iloc[0]
@@ -164,10 +163,10 @@ def split_adset_list(adset_list):
 def is_contain_copy_string(adset_name):
     return ('Copy' in adset_name)
 
+def is_contain_rt_string(adset_name):
+    return ('RT_' in adset_name)
+
 def check_init_bid(init_bid):
-    if IS_DEBUG:
-        return 
-    
     if init_bid > 100:
         bid = math.ceil(init_bid*1.1)
         return bid
@@ -177,9 +176,13 @@ def check_init_bid(init_bid):
 
 
 def copy_adset(adset_id, actions, adset_params=None):
+    if IS_DEBUG:
+        return
+
     new_adset_params = adset_params
     origin_adset_name = adset_params[AdSet.Field.name]
     new_adset_params[AdSet.Field.id] = None
+
     for i, action in enumerate(actions.keys()):
         if action == 'bid':
             new_adset_params[ACTION_DICT[action]] = math.ceil( revert_bid_amount(actions[action]) )  # for bid
@@ -239,7 +242,8 @@ def handle_campaign_copy(campaign):
     print('[campaign_id]', campaign, '[achieving rate]', achieving_rate, target, daily_charge)
 
     adset_list = get_sorted_adset(campaign)
-
+    print('adset_list',len(adset_list))
+    
     adset_for_copy_list, adset_for_off_list = split_adset_list(adset_list)
     # get ready to duplicate
     actions = {'bid': None, 'age': list(), 'interest': None}
@@ -265,20 +269,28 @@ def handle_campaign_copy(campaign):
     elif charge_type == 'LINK_CLICKS':
         is_performance_campaign = False
         is_split_age = True
-
+    
     for adset_id in adset_for_off_list:
-        update_status(adset_id, status=AdSet.Status.paused)
         
+        origin_adset_params = retrieve_origin_adset_params(adset_id)
+        
+        origin_name = origin_adset_params[AdSet.Field.name]
+        if not is_contain_rt_string(origin_name):
+            update_status(adset_id, status=AdSet.Status.paused)
+    
     print('[handle_campaign_copy] adset_for_copy_list',adset_for_copy_list)
     
     #get adset bid for this campaign
     fb_adapter.retrieve_campaign_attribute()
-
+    
     for adset_id in adset_for_copy_list:
         # bid adjust
+        print('adset_id:', adset_id)
         bid = fb_adapter.init_bid_dict[int(adset_id)]
+        print('Nate bid1', bid)
         if is_adjust_bid:
             bid = check_init_bid(bid)
+        print('Nate bid2', bid)
         actions.update({'bid': bid})
         origin_adset_params = retrieve_origin_adset_params(adset_id)
         origin_adset_params[AdSet.Field.id] = None
@@ -291,6 +303,7 @@ def handle_campaign_copy(campaign):
         # min max age
         adset_max = origin_adset_params[AdSet.Field.targeting]["age_max"]
         adset_min = origin_adset_params[AdSet.Field.targeting]["age_min"]
+
         try:
             actions['age'][0] = str(adset_min) + '-' + str(adset_max)
             actions.update({'interest': origin_interest['interests'][0]})
@@ -338,13 +351,13 @@ if __name__ == '__main__':
        
     for campaign_id in df_is_running.campaign_id.unique():
         handle_campaign_copy(campaign_id)
-    #handle_campaign_copy(23843310773940232)
+#     handle_campaign_copy(23843321565300240)
 
 
 # In[ ]:
 
 
-
+get_ipython().system('jupyter nbconvert --to script facebook_externals.ipynb')
 
 
 # In[ ]:
