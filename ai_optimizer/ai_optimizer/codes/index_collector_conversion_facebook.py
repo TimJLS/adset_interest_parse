@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[12]:
+# In[13]:
 
 
 
 
 
-# In[ ]:
+# In[1]:
 
 
 from pathlib import Path
@@ -494,33 +494,19 @@ def check_conv_metrics(campaign_id, campaign_conv_metrics):
         mydb.close()
         return False
     else:
-        try:
-            sql = "UPDATE campaign_conversion_metrics SET spend=%s, impressions=%s, add_to_cart=%s, cost_per_add_to_cart=%s, initiate_checkout=%s, cost_per_initiate_checkout=%s, purchase=%s, cost_per_purchase=%s, view_content=%s, cost_per_view_content=%s, landing_page_view=%s, cost_per_landing_page_view=%s, link_click=%s, cost_per_link_click=%s WHERE campaign_id=%s"
-            val = (
-                campaign_conv_metrics['spend'],
-                campaign_conv_metrics['impressions'],
-                campaign_conv_metrics['add_to_cart'],
-                campaign_conv_metrics['cost_per_add_to_cart'],
-                campaign_conv_metrics['initiate_checkout'],
-                campaign_conv_metrics['cost_per_initiate_checkout'],
-                campaign_conv_metrics['purchase'],
-                campaign_conv_metrics['cost_per_purchase'],
-                campaign_conv_metrics['view_content'],
-                campaign_conv_metrics['cost_per_view_content'],
-                campaign_conv_metrics['landing_page_view'],
-                campaign_conv_metrics['cost_per_landing_page_view'],
-                campaign_conv_metrics['link_click'],
-                campaign_conv_metrics['cost_per_link_click'],
-                campaign_conv_metrics['campaign_id']
-            )
-            mycursor = mydb.cursor()
-            mycursor.execute(sql, val)
-            mydb.commit()
-            mycursor.close()
-            mydb.close()
-            return True
-        except:
-            pass
+        df_camp.drop(['campaign_id'], axis=1)
+        mycursor = mydb.cursor()
+        for column in df_camp.columns:
+            try:
+                sql = ("UPDATE campaign_conversion_metrics SET {} = '{}' WHERE campaign_id={}".format(column, df_camp[column].iloc[0], campaign_id))
+                mycursor.execute(sql)
+                mydb.commit()
+            except Exception as e:
+                print('[gdn_db.update_table]: ', e)
+                pass
+        mycursor.close()
+        mydb.close()
+        return True
         
 def check_optimal_weight(campaign_id, df):
     mydb = connectDB(DATABASE)
@@ -532,28 +518,21 @@ def check_optimal_weight(campaign_id, df):
         with engine.connect() as conn, conn.begin():
             df.to_sql("conversion_optimal_weight", conn, if_exists='append',index=False)
             engine.dispose()
-        mydb.close()
-        return 
     else:
+        df.drop(['campaign_id'], axis=1)
         mycursor = mydb.cursor()
-        sql = "UPDATE conversion_optimal_weight SET score=%s, w1=%s, w2=%s, w3=%s, w4=%s, w5=%s, w6=%s, w_spend=%s, w_bid=%s WHERE campaign_id=%s"
-        val = (
-            df['score'].iloc[0].astype(dtype=object),
-            df['w1'].iloc[0].astype(dtype=object),
-            df['w2'].iloc[0].astype(dtype=object),
-            df['w3'].iloc[0].astype(dtype=object),
-            df['w4'].iloc[0].astype(dtype=object),
-            df['w5'].iloc[0].astype(dtype=object),
-            df['w6'].iloc[0].astype(dtype=object),
-            df['w_spend'].iloc[0].astype(dtype=object),
-            df['w_bid'].iloc[0].astype(dtype=object),
-            df['campaign_id'].iloc[0].astype(dtype=object)
-        )
-        mycursor.execute(sql, val)
-        mydb.commit()
+        for column in df.columns:
+            try:
+                sql = ("UPDATE conversion_optimal_weight SET {} = '{}' WHERE campaign_id={}".format(column, df[column].iloc[0], campaign_id))
+                mycursor.execute(sql)
+                mydb.commit()
+            except Exception as e:
+                print('[gdn_db.update_table]: ', e)
+                pass
         mycursor.close()
-        mydb.close()
-        return
+    mydb.close()
+    return 
+
 
 # In[13]:
 
@@ -599,28 +578,10 @@ def main(campaign_id=None, destination=None, charge_type=None):
     gc.collect()
 
 
-# In[2]:
+# In[ ]:
 
 
 if __name__ == "__main__":
     FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
     main()
-
-
-# In[4]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
 
