@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[159]:
+# In[12]:
 
 
 # %load genetic_algorithm_conversion_facebook.py
@@ -16,9 +16,11 @@ import random
 import copy
 import matplotlib.pyplot as plt
 import pandas as pd
+import datetime
 import index_collector_conversion_facebook
 sizepop, vardim, MAXGEN, params = 2000, 8, 15, [0.9, 0.1, 0.5]
 DATABASE = "dev_facebook_test"
+OBJECTIVE_LIST = [ 'CONVERSIONS', 'ADD_TO_CART', ]
 COST_PER_ACTION = {
     'CONVERSIONS':'cost_per_purchase',
     'ADD_TO_CART':'cost_per_add_to_cart',
@@ -304,19 +306,40 @@ def ga_optimal_weight(campaign_id, df_weight):
         index_collector_conversion_facebook.insertion("adset_score", df_final)
 
 
-# In[ ]:
+# In[13]:
 
 
-if __name__ == "__main__":
-    import datetime
+def main(campaign_id=None):
     starttime = datetime.datetime.now()
-    campaign_list = index_collector_conversion_facebook.get_campaign_target()['campaign_id'].unique()
-    for camp_id in campaign_list:
-        global df
-        df = ObjectiveFunc().campaign_status(camp_id)
-        if df['charge_type'].iloc[0] == 'CONVERSIONS' or df['charge_type'].iloc[0] == 'ADD_TO_CART':
-            
-            print('campaign_id:', camp_id )
+    global df
+    if not campaign_id:
+        campaign_list = index_collector_conversion_facebook.get_campaign_target()['campaign_id'].unique()
+        for campaign_id in campaign_list:
+            df = ObjectiveFunc().campaign_status(campaign_id)
+            if df['charge_type'].iloc[0] in OBJECTIVE_LIST:
+
+                print('campaign_id:', campaign_id )
+                bound = np.tile([[0], [10]], vardim)
+                ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
+                optimal = ga.solve()
+                score = ObjectiveFunc.fitness_function(optimal, df)
+                weight_columns=['w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w_spend', 'w_bid']
+                df_weight = pd.DataFrame(data=[optimal], columns=weight_columns, index=[0])
+
+                df_final = pd.DataFrame({'campaign_id':campaign_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
+                df_final = pd.concat( [df_weight, df_final], axis=1, sort=True, ignore_index=False)
+                index_collector_conversion_facebook.check_optimal_weight(campaign_id, df_final)
+                ga_optimal_weight(campaign_id, df_weight)
+                print('optimal_weight:', optimal)
+                print(datetime.datetime.now()-starttime)    
+        print(datetime.datetime.now()-starttime)
+    else:
+        print('campaign_id:', campaign_id )
+        print('current time: ', starttime )
+        df = ObjectiveFunc().campaign_status(campaign_id)
+        if df['charge_type'].iloc[0] in OBJECTIVE_LIST:
+
+            print('campaign_id:', campaign_id )
             bound = np.tile([[0], [10]], vardim)
             ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
             optimal = ga.solve()
@@ -324,16 +347,33 @@ if __name__ == "__main__":
             weight_columns=['w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w_spend', 'w_bid']
             df_weight = pd.DataFrame(data=[optimal], columns=weight_columns, index=[0])
 
-            df_final = pd.DataFrame({'campaign_id':camp_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
+            df_final = pd.DataFrame({'campaign_id':campaign_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
             df_final = pd.concat( [df_weight, df_final], axis=1, sort=True, ignore_index=False)
-            index_collector_conversion_facebook.check_optimal_weight(camp_id, df_final)
-            ga_optimal_weight(camp_id, df_weight)
+            index_collector_conversion_facebook.check_optimal_weight(campaign_id, df_final)
+            ga_optimal_weight(campaign_id, df_weight)
             print('optimal_weight:', optimal)
             print(datetime.datetime.now()-starttime)    
     print(datetime.datetime.now()-starttime)
+    return
 
 
-# In[89]:
+# In[14]:
+
+
+if __name__ == "__main__":
+    main()
+    import gc
+    gc.collect()
+#     main(23843467729120098)
+
+
+# In[9]:
+
+
+
+
+
+# In[ ]:
 
 
 
