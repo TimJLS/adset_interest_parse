@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[8]:
+# In[1]:
 
 
 # In[4]:
@@ -84,6 +84,7 @@ FIELDS = [
     AdSet.Field.time_based_ad_rotation_id_blocks,
     AdSet.Field.time_based_ad_rotation_intervals,
     AdSet.Field.updated_time,
+    AdSet.Field.daily_min_spend_target,
     #     AdSet.Field.use_new_app_click
 ]
 
@@ -134,7 +135,14 @@ def update_status(adset_id, status=AdSet.Status.active):
     adset[AdSet.Field.status] = status
     adset.remote_update()
 
+def update_daily_min_spend_target(adset_id):
+    if IS_DEBUG:
+        return 
+    adset = AdSet(adset_id)
+    adset[AdSet.Field.status] = status
+    adset.remote_update()
 
+    
 def get_sorted_adset(campaign):
     mydb = mysql_adactivity_save.connectDB(DATABASE)
 
@@ -206,17 +214,15 @@ def copy_adset(adset_id, actions, adset_params=None):
     new_adset_id = -1
     try:
         new_adset_id = make_adset(new_adset_params)
-        print('make_adset success, adset_id', adset_id)
-    except:
-        new_adset_id = make_adset(new_adset_params)
-        print('this adset is not existed anymore, adset_id', adset_id)
-
-    time.sleep(10)
-    ad_id_list = get_ad_id_list(adset_id)
-    print('Nate new_adset_id', new_adset_id)
-    for ad_id in ad_id_list:
-        result_message = assign_copied_ad_to_new_adset(new_adset_id=new_adset_id, ad_id=ad_id)
-        print('Nate result_message', result_message)
+        print('[copy_adset] make_adset success, adset_id', adset_id, ' new_adset_id', new_adset_id)
+        time.sleep(10)
+        ad_id_list = get_ad_id_list(adset_id)
+        for ad_id in ad_id_list:
+            result_message = assign_copied_ad_to_new_adset(new_adset_id=new_adset_id, ad_id=ad_id)
+            print('[copy_adset] result_message', result_message)
+            
+    except Exception as error:
+        print('[copy_adset] this adset is not existed anymore, error:', error)
 
 
 def make_adset(adset_params):
@@ -226,11 +232,11 @@ def make_adset(adset_params):
     new_adset.remote_create(params={'status': 'ACTIVE', })
     return new_adset[AdSet.Field.id]
 
-def modify_opt_result_db(campaign_id):
+def modify_opt_result_db(campaign_id, is_optimized):
     #get date
     opt_date = datetime.datetime.now()
     #insert to table date and Ture for is_opt
-    sql = "update campaign_target set optimized_date = '{}' where campaign_id = {}".format(opt_date, campaign_id)
+    sql = "update campaign_target set is_optimized = '{}', optimized_date = '{}' where campaign_id = {}".format(is_optimized, opt_date, campaign_id)
     mydb = mysql_adactivity_save.connectDB(DATABASE)
     mycursor = mydb.cursor()
     mycursor.execute(sql)
@@ -245,6 +251,7 @@ def handle_campaign_copy(campaign_id):
     # charge_type attribute of first row
     charge_type = df['charge_type'].iloc[0]
     daily_charge = df['daily_charge'].iloc[0]
+    campaign_daily_budget = df['daily_budget'].iloc[0]
     day_dict = Campaigns(campaign_id, charge_type).generate_campaign_info(
         date_preset=DatePreset.yesterday)
     lifetime_dict = Campaigns(campaign_id, charge_type).generate_campaign_info(
@@ -275,7 +282,7 @@ def handle_campaign_copy(campaign_id):
     elif achieving_rate < ACTION_BOUNDARY:
         is_adjust_bid = True
     else: # good enough, not to do anything
-        modify_opt_result_db(campaign_id)
+        modify_opt_result_db(campaign_id , False)
         return
     
     # update bid for original existed adset
@@ -318,8 +325,18 @@ def handle_campaign_copy(campaign_id):
 
         actions.update({'bid': bid})
         origin_adset_params = retrieve_origin_adset_params(adset_id)
+#         print('adset_id,  [origin_adset_params]',adset_id, origin_adset_params)
         origin_adset_params[AdSet.Field.id] = None
         origin_name = origin_adset_params[AdSet.Field.name]
+        
+        # optimize by daily_min_spend_target
+        if 'daily_min_spend_target' in origin_adset_params:
+            new_daily_min_spend_target = int( int(origin_adset_params[AdSet.Field.daily_min_spend_target]) * 1.1)
+            actions.update({'daily_min_spend_target':  new_daily_min_spend_target })
+        else:
+            new_daily_min_spend_target = int(  campaign_daily_budget / len(adset_for_copy_list))
+            actions.update({'daily_min_spend_target':  new_daily_min_spend_target })
+        
         # interest decision
 #         try:
 #             origin_interest = origin_adset_params[AdSet.Field.targeting]["flexible_spec"][0]
@@ -361,7 +378,7 @@ def handle_campaign_copy(campaign_id):
                 actions_list.append(actions_copy)
                 copy_adset(adset_id, actions_copy, origin_adset_params)
                 
-    modify_opt_result_db(campaign_id)
+    modify_opt_result_db(campaign_id, True)
 
 
 # In[2]:
@@ -372,19 +389,12 @@ if __name__ == '__main__':
     current_time = datetime.datetime.now()
     print('[facebook_externals] current_time:', current_time)
     FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-    df_is_running = mysql_adactivity_save.get_campaigns_not_optimized()
-#     print('[facebook_externals] len:', len(df_is_running))
-#     print('[facebook_externals] df_is_running', df_is_running)
-       
-    for campaign_id in df_is_running.campaign_id.unique():
+    df_not_opted = mysql_adactivity_save.get_campaigns_not_optimized()
+    print('df_not_opted len:', len(df_not_opted))
+    
+    for campaign_id in df_not_opted.campaign_id.unique():
         handle_campaign_copy(campaign_id)
 #     handle_campaign_copy(23843419701490612)
-
-
-# In[7]:
-
-
-
 
 
 # In[ ]:
