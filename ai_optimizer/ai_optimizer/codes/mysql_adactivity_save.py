@@ -15,10 +15,10 @@ import MySQLdb
 # import fb_graph
 # In[ ]:
 DATABASE="dev_facebook_test"
-
+HOST = "aws-prod-ai-private.adgeek.cc"
 def connectDB(db_name):
     mydb = mysql.connector.connect(
-        host="aws-dev-ai-private.adgeek.cc",
+        host=HOST,
         user="app",
         passwd="adgeek1234",
         database=db_name
@@ -152,10 +152,10 @@ def check_optimal_weight(campaign_id, df):
     mydb = connectDB(DATABASE)
     df_check = pd.read_sql( "SELECT * FROM optimal_weight WHERE campaign_id={}".format(campaign_id), con=mydb )
     if df_check.empty:
-        engine = create_engine( 'mysql://app:adgeek1234@aws-dev-ai-private.adgeek.cc/dev_facebook_test' )
+        engine = create_engine( 'mysql://app:adgeek1234@{}/{}'.format( HOST, DATABASE ) )
         with engine.connect() as conn, conn.begin():
             df.to_sql( "optimal_weight", conn, if_exists='append',index=False )
-        engine.dispose()
+            engine.dispose()
         return
     else:
         mycursor = mydb.cursor()
@@ -184,6 +184,16 @@ def get_campaign_target(campaign_id=None):
         
     df_is_running = df[ df['stop_time'] >= request_time]    
     return df_is_running
+
+def get_campaigns_not_optimized():
+    mydb = connectDB(DATABASE)
+    request_time = datetime.datetime.now().date()
+
+    df_not_optimized = pd.read_sql( 
+        "SELECT * FROM campaign_target where stop_time>='{0}' and  (optimized_date <> '{0}' or optimized_date is null )  ".format(request_time),
+        con=mydb )
+        
+    return df_not_optimized
 
 
 def get_campaign(campaign_id=None):
@@ -220,7 +230,7 @@ def update_campaign_target(df):
     return
 
 def intoDB(table, df):
-    engine = create_engine( 'mysql://app:adgeek1234@aws-dev-ai-private.adgeek.cc/{}'.format(DATABASE) )
+    engine = create_engine( 'mysql://app:adgeek1234@{}/{}'.format(HOST, DATABASE) )
 #     print(df.columns)
     with engine.connect() as conn, conn.begin():
         df.to_sql(table, conn, if_exists='append',index=False)
@@ -321,7 +331,7 @@ def check_initial_bid(adset_id, df):
     df_check = pd.read_sql( "SELECT * FROM adset_initial_bid WHERE adset_id={}".format(adset_id), con=mydb )
 #     print(type(campaign_id.astype(dtype=object)))
     if df_check.empty:
-        engine = create_engine( 'mysql://app:adgeek1234@aws-dev-ai-private.adgeek.cc/dev_facebook_test' )
+        engine = create_engine( 'mysql://app:adgeek1234@{}/{}'.format( HOST, DATABASE ) )
         with engine.connect() as conn, conn.begin():
             df.to_sql( "adset_initial_bid", conn, if_exists='append',index=False )
         engine.dispose()

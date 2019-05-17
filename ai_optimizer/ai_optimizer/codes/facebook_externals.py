@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[8]:
 
 
 # In[4]:
@@ -176,8 +176,8 @@ def check_init_bid(init_bid):
 
 
 def copy_adset(adset_id, actions, adset_params=None):
-    if IS_DEBUG:
-        return
+    #Nate if IS_DEBUG:
+    #Nate    return
 
     new_adset_params = adset_params
     origin_adset_name = adset_params[AdSet.Field.name]
@@ -193,7 +193,7 @@ def copy_adset(adset_id, actions, adset_params=None):
                 age_list[:1][0])
             new_adset_params[AdSet.Field.targeting]["age_max"] = int(
                 age_list[1:][0])
-            new_adset_params[AdSet.Field.name] = origin_adset_name +                 ' Copy - {}'.format(actions[action])
+            new_adset_params[AdSet.Field.name] = origin_adset_name +' Copy - {}'.format(actions[action])
 
 #         elif action == 'interest':
 # #             if actions[action] is None:
@@ -201,13 +201,22 @@ def copy_adset(adset_id, actions, adset_params=None):
 # #             else:
 #             new_adset_params[AdSet.Field.targeting]["flexible_spec"] = {
 #                     "interests": [actions[action]]}
+    #print('Nate adset_id', adset_id)
+    #print('Nate new_adset_params', new_adset_params)
+    new_adset_id = -1
+    try:
+        new_adset_id = make_adset(new_adset_params)
+        print('make_adset success, adset_id', adset_id)
+    except:
+        new_adset_id = make_adset(new_adset_params)
+        print('this adset is not existed anymore, adset_id', adset_id)
 
-    new_adset_id = make_adset(new_adset_params)
-    new_adset_params[AdSet.Field.name] = origin_adset_name
     time.sleep(10)
     ad_id_list = get_ad_id_list(adset_id)
+    print('Nate new_adset_id', new_adset_id)
     for ad_id in ad_id_list:
-        assign_copied_ad_to_new_adset(new_adset_id=new_adset_id, ad_id=ad_id)
+        result_message = assign_copied_ad_to_new_adset(new_adset_id=new_adset_id, ad_id=ad_id)
+        print('Nate result_message', result_message)
 
 
 def make_adset(adset_params):
@@ -217,17 +226,28 @@ def make_adset(adset_params):
     new_adset.remote_create(params={'status': 'ACTIVE', })
     return new_adset[AdSet.Field.id]
 
+def modify_opt_result_db(campaign_id):
+    #get date
+    opt_date = datetime.datetime.now()
+    #insert to table date and Ture for is_opt
+    sql = "update campaign_target set optimized_date = '{}' where campaign_id = {}".format(opt_date, campaign_id)
+    mydb = mysql_adactivity_save.connectDB(DATABASE)
+    mycursor = mydb.cursor()
+    mycursor.execute(sql)
+    mydb.commit()
+    mydb.close()
 
-def handle_campaign_copy(campaign):
-    print('[handle_campaign_copy] campaign ',campaign)
-    df = mysql_adactivity_save.get_campaign_target(campaign)
+def handle_campaign_copy(campaign_id):
+    
+    print('[handle_campaign_copy] campaign ',campaign_id)
+    df = mysql_adactivity_save.get_campaign_target(campaign_id)
     
     # charge_type attribute of first row
     charge_type = df['charge_type'].iloc[0]
     daily_charge = df['daily_charge'].iloc[0]
-    day_dict = Campaigns(campaign, charge_type).generate_campaign_info(
+    day_dict = Campaigns(campaign_id, charge_type).generate_campaign_info(
         date_preset=DatePreset.yesterday)
-    lifetime_dict = Campaigns(campaign, charge_type).generate_campaign_info(
+    lifetime_dict = Campaigns(campaign_id, charge_type).generate_campaign_info(
         date_preset=DatePreset.lifetime)
 #     print('[handle_campaign_copy] day_dict ',day_dict)
 #     print('[handle_campaign_copy] lifetime_dict ',lifetime_dict)
@@ -236,12 +256,12 @@ def handle_campaign_copy(campaign):
     if 'target' in day_dict:
         target = int(day_dict['target'])
     
-    fb_adapter = FacebookCampaignAdapter(campaign)
+    fb_adapter = FacebookCampaignAdapter(campaign_id)
     campaign_days_left = fb_adapter.campaign_days_left
     achieving_rate = target / daily_charge
-    print('[campaign_id]', campaign, '[achieving rate]', achieving_rate, target, daily_charge)
+    print('[campaign_id]', campaign_id, '[achieving rate]', achieving_rate, target, daily_charge)
 
-    adset_list = get_sorted_adset(campaign)
+    adset_list = get_sorted_adset(campaign_id)
     print('adset_list',len(adset_list))
     
     adset_for_copy_list, adset_for_off_list = split_adset_list(adset_list)
@@ -255,11 +275,12 @@ def handle_campaign_copy(campaign):
     elif achieving_rate < ACTION_BOUNDARY:
         is_adjust_bid = True
     else: # good enough, not to do anything
+        modify_opt_result_db(campaign_id)
         return
     
     # update bid for original existed adset
     if is_adjust_bid and not IS_DEBUG:
-        mysql_adactivity_save.adjust_init_bid(campaign)
+        mysql_adactivity_save.adjust_init_bid(campaign_id)
         
     is_performance_campaign = False
     is_split_age = False
@@ -285,12 +306,16 @@ def handle_campaign_copy(campaign):
     
     for adset_id in adset_for_copy_list:
         # bid adjust
-        print('adset_id:', adset_id)
-        bid = fb_adapter.init_bid_dict[int(adset_id)]
-        print('Nate bid1', bid)
+
+        bid = fb_adapter.init_bid_dict.get(int(adset_id))
+        #error handle: the adset did not have score
+        if bid is None:
+            print('[handle_campaign_copy] adset bid is None')
+            break
+
         if is_adjust_bid:
             bid = check_init_bid(bid)
-        print('Nate bid2', bid)
+
         actions.update({'bid': bid})
         origin_adset_params = retrieve_origin_adset_params(adset_id)
         origin_adset_params[AdSet.Field.id] = None
@@ -335,6 +360,8 @@ def handle_campaign_copy(campaign):
                 actions_copy = deepcopy(actions)
                 actions_list.append(actions_copy)
                 copy_adset(adset_id, actions_copy, origin_adset_params)
+                
+    modify_opt_result_db(campaign_id)
 
 
 # In[2]:
@@ -345,19 +372,19 @@ if __name__ == '__main__':
     current_time = datetime.datetime.now()
     print('[facebook_externals] current_time:', current_time)
     FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-    df_is_running = mysql_adactivity_save.get_campaign_target()
+    df_is_running = mysql_adactivity_save.get_campaigns_not_optimized()
 #     print('[facebook_externals] len:', len(df_is_running))
 #     print('[facebook_externals] df_is_running', df_is_running)
        
     for campaign_id in df_is_running.campaign_id.unique():
         handle_campaign_copy(campaign_id)
-#     handle_campaign_copy(23843321565300240)
+#     handle_campaign_copy(23843419701490612)
 
 
-# In[ ]:
+# In[7]:
 
 
-get_ipython().system('jupyter nbconvert --to script facebook_externals.ipynb')
+
 
 
 # In[ ]:
