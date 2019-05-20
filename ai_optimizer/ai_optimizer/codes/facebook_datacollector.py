@@ -1,10 +1,33 @@
+#!/usr/bin/env python
+# coding: utf-8
 
-import facebook_business.adobjects.adset as adset
-import facebook_business.adobjects.campaign as campaign
+# In[2]:
+
+
+
+
+
+# In[ ]:
+
+
+# %load facebook_datacollector.py
+#!/usr/bin/env python
+
+# In[2]:
+
+
+
+
+
+# In[1]:
+
+
 from pathlib import Path
 from facebook_business.api import FacebookAdsApi
 from facebook_business.adobjects.adaccount import AdAccount
+import facebook_business.adobjects.adset as adset
 from facebook_business.adobjects.ad import Ad
+import facebook_business.adobjects.campaign as campaign
 from facebook_business.adobjects.adcreative import AdCreative
 from facebook_business.adobjects.adactivity import AdActivity
 from facebook_business.adobjects.insightsresult import InsightsResult
@@ -25,6 +48,7 @@ import math
 CAMPAIGN_OBJECTIVE_FIELD = {
     'LINK_CLICKS': 'link_click',
     'POST_ENGAGEMENT': 'post_engagement', 
+    'LANDING_PAGE_VIEW': 'landing_page_view',
     'VIDEO_VIEWS': 'video_view', 
     'CONVERSIONS':'offsite_conversion.fb_pixel_purchase',
     'ADD_TO_CART':'offsite_conversion.fb_pixel_add_to_cart',
@@ -39,7 +63,6 @@ CAMPAIGN_OBJECTIVE_FIELD = {
     'PRODUCT_CATALOG_SALES': 'product_catalog_sales',
     'REACH': 'reach',
     'ALL_CLICKS': 'clicks',
-    'IMPRESSIONS': 'impressions',
 }
 CAMPAIGN_FIELD = {
     'spend_cap': campaign.Campaign.Field.spend_cap,
@@ -466,14 +489,14 @@ def main():
     FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
     df_camp = mysql_adactivity_save.get_campaign() # if extend period, use this
 #     campaignid_list = mysql_adactivity_save.get_campaign_target_left_dict().keys()
-    print(df_camp['campaign_id'].unique())
-    for campaign_id in df_camp['campaign_id'].unique():
-        df = df_camp[df_camp.campaign_id == campaign_id].iloc[0]
+    print(df_camp)
+    for campaign_id in df_camp.campaign_id.unique():
+        df = mysql_adactivity_save.get_campaign_target(campaign_id)
         if len(df) == 0:
             pass
         else:
             print(campaign_id, df['charge_type'])
-            data_collect( int(campaign_id), df['destination'], df['charge_type'] )
+            data_collect( int(campaign_id), df['destination'].iloc[0], df['charge_type'].iloc[0] )
     print(datetime.datetime.now()-start_time)
 
 
@@ -482,7 +505,7 @@ def main():
 
 if __name__ == "__main__":
     main()
-#     data_collect( int(23843358370700576), 562500, 'VIDEO_VIEWS' )
+#     data_collect( int(23843335814370399), 44167, 'VIDEO_VIEWS' )
     import gc
     gc.collect()
 

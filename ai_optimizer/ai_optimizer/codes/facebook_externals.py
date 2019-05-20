@@ -42,6 +42,9 @@ ACTION_BOUNDARY = 0.8
 ACTION_DICT = {'bid': AdSet.Field.bid_amount,
                'age': AdSet.Field.targeting, 'interest': AdSet.Field.targeting}
 
+BRANDING_CAMPAIGN_LIST = ['LINK_CLICKS', 'ALL_CLICKS','VIDEO_VIEWS', 'REACH', 'POST_ENGAGEMENT']
+PERFORMANCE_CAMPAIGN_LIST = ['CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART', 'LANDING_PAGE_VIEW']
+
 FIELDS = [
     AdSet.Field.id,
     AdSet.Field.account_id,
@@ -291,10 +294,10 @@ def handle_campaign_copy(campaign_id):
         
     is_performance_campaign = False
     is_split_age = False
-    if charge_type == 'CONVERSIONS' or charge_type == 'ADD_TO_CART':
+    if charge_type in PERFORMANCE_CAMPAIGN_LIST:
         is_performance_campaign = True
         is_split_age = False
-    elif charge_type == 'LINK_CLICKS':
+    elif charge_type in BRANDING_CAMPAIGN_LIST:
         is_performance_campaign = False
         is_split_age = True
     
@@ -395,6 +398,12 @@ if __name__ == '__main__':
     for campaign_id in df_not_opted.campaign_id.unique():
         handle_campaign_copy(campaign_id)
 #     handle_campaign_copy(23843419701490612)
+
+
+# In[3]:
+
+
+get_ipython().system('jupyter nbconvert --to script facebook_externals.ipynb')
 
 
 # In[ ]:

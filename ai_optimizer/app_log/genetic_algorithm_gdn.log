@@ -2267,3 +2267,1607 @@ Optimal solution is:
 [0.99643808 0.47013392 0.99155852]
    weight_kpi  weight_spend  weight_bid  campaign_id     score
 0    0.996438      0.470134    0.991559   1777436620  3.447422
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+campaign_id: 1777436620
+current time:  2019-05-17 00:05:03.284442
+Generation 0: optimal function value is: -0.708414; average function value is -0.424741
+Generation 1: optimal function value is: 3.429523; average function value is 2.041218
+Generation 2: optimal function value is: 3.429523; average function value is 2.171066
+Generation 3: optimal function value is: 3.429523; average function value is 2.268684
+Generation 4: optimal function value is: 3.429523; average function value is 2.301006
+Generation 5: optimal function value is: 3.429523; average function value is 2.359659
+Generation 6: optimal function value is: 3.463531; average function value is 2.403686
+Generation 7: optimal function value is: 3.463531; average function value is 2.448164
+Generation 8: optimal function value is: 3.463531; average function value is 2.477431
+Generation 9: optimal function value is: 3.463531; average function value is 2.488673
+Generation 10: optimal function value is: 3.463531; average function value is 2.520129
+Generation 11: optimal function value is: 3.463531; average function value is 2.523757
+Generation 12: optimal function value is: 3.463531; average function value is 2.545521
+Generation 13: optimal function value is: 3.463531; average function value is 2.569941
+Generation 14: optimal function value is: 3.463531; average function value is 2.561361
+Generation 15: optimal function value is: 3.463531; average function value is 2.549642
+Generation 16: optimal function value is: 3.463531; average function value is 2.571744
+Generation 17: optimal function value is: 3.463531; average function value is 2.576834
+Generation 18: optimal function value is: 3.463531; average function value is 2.575214
+Generation 19: optimal function value is: 3.463531; average function value is 2.591718
+Generation 20: optimal function value is: 3.463531; average function value is 2.603904
+Generation 21: optimal function value is: 3.463531; average function value is 2.569296
+Generation 22: optimal function value is: 3.463531; average function value is 2.570557
+Generation 23: optimal function value is: 3.463531; average function value is 2.590182
+Generation 24: optimal function value is: 3.463531; average function value is 2.612330
+Generation 25: optimal function value is: 3.463531; average function value is 2.617063
+Generation 26: optimal function value is: 3.463531; average function value is 2.633097
+Generation 27: optimal function value is: 3.463531; average function value is 2.628059
+Generation 28: optimal function value is: 3.463531; average function value is 2.640667
+Generation 29: optimal function value is: 3.463531; average function value is 2.651101
+Optimal function value is: 3.463531; 
+Optimal solution is:
+[0.99930644 0.6262118  0.99653259]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.999306      0.626212    0.996533   1777436620  3.463531
+optimal_weight: [0.99930644 0.6262118  0.99653259]
+0:08:09.595057
+campaign_id: 1809236789
+current time:  2019-05-17 00:05:03.284442
+Generation 0: optimal function value is: -0.679844; average function value is -0.365826
+Generation 1: optimal function value is: 3.123475; average function value is 1.839994
+Generation 2: optimal function value is: 3.123475; average function value is 1.973079
+Generation 3: optimal function value is: 3.125951; average function value is 2.059305
+Generation 4: optimal function value is: 3.125951; average function value is 2.095929
+Generation 5: optimal function value is: 3.125951; average function value is 2.160072
+Generation 6: optimal function value is: 3.125951; average function value is 2.186340
+Generation 7: optimal function value is: 3.125951; average function value is 2.223907
+Generation 8: optimal function value is: 3.125951; average function value is 2.241902
+Generation 9: optimal function value is: 3.126808; average function value is 2.271482
+Generation 10: optimal function value is: 3.126808; average function value is 2.290142
+Generation 11: optimal function value is: 3.126808; average function value is 2.303213
+Generation 12: optimal function value is: 3.126808; average function value is 2.310437
+Generation 13: optimal function value is: 3.126808; average function value is 2.316478
+Generation 14: optimal function value is: 3.126808; average function value is 2.348539
+Generation 15: optimal function value is: 3.126808; average function value is 2.367467
+Generation 16: optimal function value is: 3.126808; average function value is 2.364497
+Generation 17: optimal function value is: 3.126808; average function value is 2.379019
+Generation 18: optimal function value is: 3.126808; average function value is 2.386541
+Generation 19: optimal function value is: 3.126808; average function value is 2.381395
+Generation 20: optimal function value is: 3.126808; average function value is 2.390698
+Generation 21: optimal function value is: 3.126808; average function value is 2.405648
+Generation 22: optimal function value is: 3.126808; average function value is 2.411469
+Generation 23: optimal function value is: 3.126808; average function value is 2.418197
+Generation 24: optimal function value is: 3.126808; average function value is 2.427320
+Generation 25: optimal function value is: 3.126808; average function value is 2.408264
+Generation 26: optimal function value is: 3.126808; average function value is 2.401493
+Generation 27: optimal function value is: 3.126808; average function value is 2.406665
+Generation 28: optimal function value is: 3.126808; average function value is 2.414211
+Generation 29: optimal function value is: 3.126808; average function value is 2.419928
+Optimal function value is: 3.126808; 
+Optimal solution is:
+[0.99732405 0.53441962 0.99495274]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.997324       0.53442    0.994953   1809236789  3.126808
+optimal_weight: [0.99732405 0.53441962 0.99495274]
+0:12:48.942169
+campaign_id: 1837973427
+current time:  2019-05-17 00:05:03.284442
+Generation 0: optimal function value is: -0.294567; average function value is 0.380907
+Generation 1: optimal function value is: 1.417569; average function value is 0.859629
+Generation 2: optimal function value is: 1.423363; average function value is 0.941622
+Generation 3: optimal function value is: 1.425017; average function value is 0.981764
+Generation 4: optimal function value is: 1.427723; average function value is 1.011765
+Generation 5: optimal function value is: 1.427723; average function value is 1.046106
+Generation 6: optimal function value is: 1.427723; average function value is 1.065076
+Generation 7: optimal function value is: 1.427723; average function value is 1.080720
+Generation 8: optimal function value is: 1.427723; average function value is 1.103335
+Generation 9: optimal function value is: 1.427723; average function value is 1.109193
+Generation 10: optimal function value is: 1.427723; average function value is 1.119722
+Generation 11: optimal function value is: 1.427723; average function value is 1.125445
+Generation 12: optimal function value is: 1.427723; average function value is 1.128776
+Generation 13: optimal function value is: 1.431379; average function value is 1.134543
+Generation 14: optimal function value is: 1.431379; average function value is 1.137911
+Generation 15: optimal function value is: 1.431379; average function value is 1.139455
+Generation 16: optimal function value is: 1.431379; average function value is 1.145114
+Generation 17: optimal function value is: 1.431379; average function value is 1.148829
+Generation 18: optimal function value is: 1.431379; average function value is 1.151151
+Generation 19: optimal function value is: 1.431379; average function value is 1.156669
+Generation 20: optimal function value is: 1.431379; average function value is 1.161029
+Generation 21: optimal function value is: 1.431379; average function value is 1.164985
+Generation 22: optimal function value is: 1.431379; average function value is 1.164853
+Generation 23: optimal function value is: 1.431379; average function value is 1.169137
+Generation 24: optimal function value is: 1.431379; average function value is 1.167859
+Generation 25: optimal function value is: 1.431379; average function value is 1.175898
+Generation 26: optimal function value is: 1.431379; average function value is 1.176703
+Generation 27: optimal function value is: 1.431379; average function value is 1.174379
+Generation 28: optimal function value is: 1.431379; average function value is 1.171450
+Generation 29: optimal function value is: 1.431379; average function value is 1.183575
+Optimal function value is: 1.431379; 
+Optimal solution is:
+[0.99986357 0.64712286 0.98017104]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.999864      0.647123    0.980171   1837973427  1.431379
+optimal_weight: [0.99986357 0.64712286 0.98017104]
+0:16:38.185863
+campaign_id: 1837975386
+current time:  2019-05-17 00:05:03.284442
+Generation 0: optimal function value is: -0.003319; average function value is 1.013040
+Generation 1: optimal function value is: 1.004154; average function value is 0.667686
+Generation 2: optimal function value is: 1.004154; average function value is 0.741647
+Generation 3: optimal function value is: 1.004429; average function value is 0.792678
+Generation 4: optimal function value is: 1.004629; average function value is 0.821634
+Generation 5: optimal function value is: 1.005306; average function value is 0.844851
+Generation 6: optimal function value is: 1.005306; average function value is 0.847302
+Generation 7: optimal function value is: 1.005306; average function value is 0.874388
+Generation 8: optimal function value is: 1.005306; average function value is 0.884262
+Generation 9: optimal function value is: 1.005306; average function value is 0.888359
+Generation 10: optimal function value is: 1.005568; average function value is 0.890105
+Generation 11: optimal function value is: 1.005568; average function value is 0.887967
+Generation 12: optimal function value is: 1.005568; average function value is 0.892448
+Generation 13: optimal function value is: 1.005568; average function value is 0.896363
+Generation 14: optimal function value is: 1.005568; average function value is 0.902368
+Generation 15: optimal function value is: 1.005568; average function value is 0.902630
+Generation 16: optimal function value is: 1.005568; average function value is 0.911237
+Generation 17: optimal function value is: 1.006211; average function value is 0.909475
+Generation 18: optimal function value is: 1.006211; average function value is 0.911750
+Generation 19: optimal function value is: 1.006211; average function value is 0.914697
+Generation 20: optimal function value is: 1.006211; average function value is 0.918819
+Generation 21: optimal function value is: 1.006211; average function value is 0.921608
+Generation 22: optimal function value is: 1.006211; average function value is 0.925439
+Generation 23: optimal function value is: 1.006211; average function value is 0.924508
+Generation 24: optimal function value is: 1.006211; average function value is 0.928218
+Generation 25: optimal function value is: 1.006211; average function value is 0.936731
+Generation 26: optimal function value is: 1.006211; average function value is 0.937298
+Generation 27: optimal function value is: 1.006211; average function value is 0.939048
+Generation 28: optimal function value is: 1.006211; average function value is 0.945123
+Generation 29: optimal function value is: 1.006211; average function value is 0.950265
+Optimal function value is: 1.006211; 
+Optimal solution is:
+[0.99998564 0.45780834 0.95922662]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.999986      0.457808    0.959227   1837975386  1.006211
+optimal_weight: [0.99998564 0.45780834 0.95922662]
+0:21:18.796627
+campaign_id: 1837420283
+current time:  2019-05-17 00:05:03.284442
+Generation 0: optimal function value is: -0.705902; average function value is -0.435403
+Generation 1: optimal function value is: 3.443889; average function value is 2.012521
+Generation 2: optimal function value is: 3.472510; average function value is 2.139558
+Generation 3: optimal function value is: 3.472510; average function value is 2.222946
+Generation 4: optimal function value is: 3.472510; average function value is 2.312258
+Generation 5: optimal function value is: 3.472510; average function value is 2.357949
+Generation 6: optimal function value is: 3.472510; average function value is 2.374864
+Generation 7: optimal function value is: 3.472510; average function value is 2.411501
+Generation 8: optimal function value is: 3.472510; average function value is 2.439561
+Generation 9: optimal function value is: 3.472510; average function value is 2.455529
+Generation 10: optimal function value is: 3.472510; average function value is 2.485074
+Generation 11: optimal function value is: 3.472510; average function value is 2.495155
+Generation 12: optimal function value is: 3.472510; average function value is 2.494897
+Generation 13: optimal function value is: 3.472510; average function value is 2.503741
+Generation 14: optimal function value is: 3.472510; average function value is 2.507260
+Generation 15: optimal function value is: 3.472510; average function value is 2.532918
+Generation 16: optimal function value is: 3.472510; average function value is 2.548574
+Generation 17: optimal function value is: 3.472510; average function value is 2.548972
+Generation 18: optimal function value is: 3.472510; average function value is 2.555884
+Generation 19: optimal function value is: 3.472510; average function value is 2.553359
+Generation 20: optimal function value is: 3.472510; average function value is 2.559185
+Generation 21: optimal function value is: 3.472510; average function value is 2.568357
+Generation 22: optimal function value is: 3.472510; average function value is 2.566264
+Generation 23: optimal function value is: 3.472510; average function value is 2.566090
+Generation 24: optimal function value is: 3.472510; average function value is 2.563704
+Generation 25: optimal function value is: 3.472510; average function value is 2.549679
+Generation 26: optimal function value is: 3.472510; average function value is 2.559315
+Generation 27: optimal function value is: 3.472510; average function value is 2.560677
+Generation 28: optimal function value is: 3.472510; average function value is 2.565341
+Generation 29: optimal function value is: 3.472510; average function value is 2.574717
+Optimal function value is: 3.472510; 
+Optimal solution is:
+[0.98341846 0.95559448 0.99528176]
+   weight_kpi  weight_spend  weight_bid  campaign_id    score
+0    0.983418      0.955594    0.995282   1837420283  3.47251
+optimal_weight: [0.98341846 0.95559448 0.99528176]
+0:25:34.762190
+campaign_id: 1837064056
+current time:  2019-05-17 00:05:03.284442
+Generation 0: optimal function value is: -0.560300; average function value is -0.125948
+Generation 1: optimal function value is: 2.274276; average function value is 1.331075
+Generation 2: optimal function value is: 2.274276; average function value is 1.431034
+Generation 3: optimal function value is: 2.274276; average function value is 1.502233
+Generation 4: optimal function value is: 2.274276; average function value is 1.553117
+Generation 5: optimal function value is: 2.274276; average function value is 1.596438
+Generation 6: optimal function value is: 2.274276; average function value is 1.612652
+Generation 7: optimal function value is: 2.274276; average function value is 1.628963
+Generation 8: optimal function value is: 2.274276; average function value is 1.646165
+Generation 9: optimal function value is: 2.274276; average function value is 1.646290
+Generation 10: optimal function value is: 2.274276; average function value is 1.666189
+Generation 11: optimal function value is: 2.274276; average function value is 1.667137
+Generation 12: optimal function value is: 2.274276; average function value is 1.692792
+Generation 13: optimal function value is: 2.274276; average function value is 1.702941
+Generation 14: optimal function value is: 2.274276; average function value is 1.702399
+Generation 15: optimal function value is: 2.274276; average function value is 1.701071
+Generation 16: optimal function value is: 2.274276; average function value is 1.697581
+Generation 17: optimal function value is: 2.274276; average function value is 1.700384
+Generation 18: optimal function value is: 2.274276; average function value is 1.713001
+Generation 19: optimal function value is: 2.274276; average function value is 1.712432
+Generation 20: optimal function value is: 2.274276; average function value is 1.722471
+Generation 21: optimal function value is: 2.274276; average function value is 1.733533
+Generation 22: optimal function value is: 2.274276; average function value is 1.731378
+Generation 23: optimal function value is: 2.274276; average function value is 1.740121
+Generation 24: optimal function value is: 2.274276; average function value is 1.746442
+Generation 25: optimal function value is: 2.274276; average function value is 1.749115
+Generation 26: optimal function value is: 2.274276; average function value is 1.752989
+Generation 27: optimal function value is: 2.274276; average function value is 1.758486
+Generation 28: optimal function value is: 2.274276; average function value is 1.757953
+Generation 29: optimal function value is: 2.274276; average function value is 1.761453
+Optimal function value is: 2.274276; 
+Optimal solution is:
+[0.99832032 0.50460633 0.99446384]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0     0.99832      0.504606    0.994464   1837064056  2.274276
+optimal_weight: [0.99832032 0.50460633 0.99446384]
+0:29:35.437080
+campaign_id: 1837064050
+current time:  2019-05-17 00:05:03.284442
+Generation 0: optimal function value is: -0.545302; average function value is -0.112437
+Generation 1: optimal function value is: 2.254114; average function value is 1.285732
+Generation 2: optimal function value is: 2.254114; average function value is 1.376344
+Generation 3: optimal function value is: 2.254114; average function value is 1.479897
+Generation 4: optimal function value is: 2.254114; average function value is 1.515755
+Generation 5: optimal function value is: 2.254114; average function value is 1.552407
+Generation 6: optimal function value is: 2.260343; average function value is 1.581623
+Generation 7: optimal function value is: 2.260343; average function value is 1.619493
+Generation 8: optimal function value is: 2.260343; average function value is 1.634589
+Generation 9: optimal function value is: 2.260343; average function value is 1.648552
+Generation 10: optimal function value is: 2.260343; average function value is 1.665171
+Generation 11: optimal function value is: 2.260343; average function value is 1.682414
+Generation 12: optimal function value is: 2.260343; average function value is 1.681426
+Generation 13: optimal function value is: 2.260343; average function value is 1.685133
+Generation 14: optimal function value is: 2.260343; average function value is 1.686543
+Generation 15: optimal function value is: 2.260343; average function value is 1.694577
+Generation 16: optimal function value is: 2.260343; average function value is 1.720658
+Generation 17: optimal function value is: 2.260343; average function value is 1.733443
+Generation 18: optimal function value is: 2.260343; average function value is 1.744391
+Generation 19: optimal function value is: 2.260343; average function value is 1.747128
+Generation 20: optimal function value is: 2.260343; average function value is 1.756391
+Generation 21: optimal function value is: 2.260343; average function value is 1.763333
+Generation 22: optimal function value is: 2.260343; average function value is 1.761973
+Generation 23: optimal function value is: 2.260343; average function value is 1.754612
+Generation 24: optimal function value is: 2.260343; average function value is 1.763085
+Generation 25: optimal function value is: 2.260343; average function value is 1.760500
+Generation 26: optimal function value is: 2.260343; average function value is 1.764905
+Generation 27: optimal function value is: 2.260343; average function value is 1.772918
+Generation 28: optimal function value is: 2.260343; average function value is 1.775675
+Generation 29: optimal function value is: 2.260343; average function value is 1.780970
+Optimal function value is: 2.260343; 
+Optimal solution is:
+[0.99778538 0.48208898 0.99600537]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.997785      0.482089    0.996005   1837064050  2.260343
+optimal_weight: [0.99778538 0.48208898 0.99600537]
+0:33:44.510483
+campaign_id: 1837064053
+current time:  2019-05-17 00:05:03.284442
+Generation 0: optimal function value is: -0.528892; average function value is -0.071893
+Generation 1: optimal function value is: 2.138732; average function value is 1.233672
+Generation 2: optimal function value is: 2.138732; average function value is 1.312825
+Generation 3: optimal function value is: 2.148068; average function value is 1.387846
+Generation 4: optimal function value is: 2.150310; average function value is 1.425810
+Generation 5: optimal function value is: 2.150310; average function value is 1.453386
+Generation 6: optimal function value is: 2.150310; average function value is 1.492435
+Generation 7: optimal function value is: 2.150310; average function value is 1.515169
+Generation 8: optimal function value is: 2.150310; average function value is 1.538774
+Generation 9: optimal function value is: 2.150310; average function value is 1.561632
+Generation 10: optimal function value is: 2.150310; average function value is 1.584976
+Generation 11: optimal function value is: 2.150310; average function value is 1.589093
+Generation 12: optimal function value is: 2.150310; average function value is 1.591333
+Generation 13: optimal function value is: 2.150310; average function value is 1.594583
+Generation 14: optimal function value is: 2.150310; average function value is 1.595481
+Generation 15: optimal function value is: 2.150310; average function value is 1.604040
+Generation 16: optimal function value is: 2.150310; average function value is 1.612723
+Generation 17: optimal function value is: 2.150310; average function value is 1.628248
+Generation 18: optimal function value is: 2.150310; average function value is 1.640181
+Generation 19: optimal function value is: 2.150310; average function value is 1.639304
+Generation 20: optimal function value is: 2.150310; average function value is 1.644552
+Generation 21: optimal function value is: 2.150310; average function value is 1.653619
+Generation 22: optimal function value is: 2.150310; average function value is 1.650887
+Generation 23: optimal function value is: 2.150310; average function value is 1.653072
+Generation 24: optimal function value is: 2.150310; average function value is 1.660024
+Generation 25: optimal function value is: 2.150310; average function value is 1.660941
+Generation 26: optimal function value is: 2.150310; average function value is 1.657010
+Generation 27: optimal function value is: 2.150310; average function value is 1.664903
+Generation 28: optimal function value is: 2.150310; average function value is 1.679550
+Generation 29: optimal function value is: 2.150310; average function value is 1.689134
+Optimal function value is: 2.150310; 
+Optimal solution is:
+[0.98608509 0.45841932 0.99556625]
+   weight_kpi  weight_spend  weight_bid  campaign_id    score
+0    0.986085      0.458419    0.995566   1837064053  2.15031
+optimal_weight: [0.98608509 0.45841932 0.99556625]
+0:37:51.504069
+campaign_id: 1837064059
+current time:  2019-05-17 00:05:03.284442
+Generation 0: optimal function value is: -0.523901; average function value is -0.069902
+Generation 1: optimal function value is: 2.100405; average function value is 1.216365
+Generation 2: optimal function value is: 2.100405; average function value is 1.326163
+Generation 3: optimal function value is: 2.100405; average function value is 1.390144
+Generation 4: optimal function value is: 2.100405; average function value is 1.425050
+Generation 5: optimal function value is: 2.100405; average function value is 1.475887
+Generation 6: optimal function value is: 2.115477; average function value is 1.508261
+Generation 7: optimal function value is: 2.115477; average function value is 1.521980
+Generation 8: optimal function value is: 2.115477; average function value is 1.544529
+Generation 9: optimal function value is: 2.115477; average function value is 1.568993
+Generation 10: optimal function value is: 2.115477; average function value is 1.579778
+Generation 11: optimal function value is: 2.115477; average function value is 1.577470
+Generation 12: optimal function value is: 2.115477; average function value is 1.592901
+Generation 13: optimal function value is: 2.115477; average function value is 1.601316
+Generation 14: optimal function value is: 2.115477; average function value is 1.620056
+Generation 15: optimal function value is: 2.115477; average function value is 1.607071
+Generation 16: optimal function value is: 2.115477; average function value is 1.623672
+Generation 17: optimal function value is: 2.115477; average function value is 1.632413
+Generation 18: optimal function value is: 2.115477; average function value is 1.626856
+Generation 19: optimal function value is: 2.115477; average function value is 1.633662
+Generation 20: optimal function value is: 2.115477; average function value is 1.652299
+Generation 21: optimal function value is: 2.115477; average function value is 1.670914
+Generation 22: optimal function value is: 2.115477; average function value is 1.668930
+Generation 23: optimal function value is: 2.115477; average function value is 1.661976
+Generation 24: optimal function value is: 2.115477; average function value is 1.662620
+Generation 25: optimal function value is: 2.115477; average function value is 1.661881
+Generation 26: optimal function value is: 2.115477; average function value is 1.668318
+Generation 27: optimal function value is: 2.115477; average function value is 1.664939
+Generation 28: optimal function value is: 2.115477; average function value is 1.668750
+Generation 29: optimal function value is: 2.115477; average function value is 1.677741
+Optimal function value is: 2.115477; 
+Optimal solution is:
+[0.97891087 0.94923813 0.9942532 ]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.978911      0.949238    0.994253   1837064059  2.115477
+optimal_weight: [0.97891087 0.94923813 0.9942532 ]
+0:41:42.692941
+campaign_id: 1865315025
+current time:  2019-05-17 00:05:03.284442
+Generation 0: optimal function value is: -0.639351; average function value is -0.289970
+Generation 1: optimal function value is: 2.789885; average function value is 1.832321
+Generation 2: optimal function value is: 2.789885; average function value is 1.966158
+Generation 3: optimal function value is: 2.789885; average function value is 2.028135
+Generation 4: optimal function value is: 2.789885; average function value is 2.068854
+Generation 5: optimal function value is: 2.789885; average function value is 2.114657
+Generation 6: optimal function value is: 2.789885; average function value is 2.127435
+Generation 7: optimal function value is: 2.789885; average function value is 2.160405
+Generation 8: optimal function value is: 2.789885; average function value is 2.166000
+Generation 9: optimal function value is: 2.789885; average function value is 2.168439
+Generation 10: optimal function value is: 2.789885; average function value is 2.197820
+Generation 11: optimal function value is: 2.789885; average function value is 2.189988
+Generation 12: optimal function value is: 2.789885; average function value is 2.185521
+Generation 13: optimal function value is: 2.789885; average function value is 2.181226
+Generation 14: optimal function value is: 2.789885; average function value is 2.173192
+Generation 15: optimal function value is: 2.789885; average function value is 2.190588
+Generation 16: optimal function value is: 2.789885; average function value is 2.190723
+Generation 17: optimal function value is: 2.789885; average function value is 2.179737
+Generation 18: optimal function value is: 2.789885; average function value is 2.187530
+Generation 19: optimal function value is: 2.789885; average function value is 2.192491
+Generation 20: optimal function value is: 2.789885; average function value is 2.197879
+Generation 21: optimal function value is: 2.789885; average function value is 2.205118
+Generation 22: optimal function value is: 2.789885; average function value is 2.194840
+Generation 23: optimal function value is: 2.789885; average function value is 2.199776
+Generation 24: optimal function value is: 2.789885; average function value is 2.192765
+Generation 25: optimal function value is: 2.789885; average function value is 2.188460
+Generation 26: optimal function value is: 2.789885; average function value is 2.186770
+Generation 27: optimal function value is: 2.789885; average function value is 2.180774
+Generation 28: optimal function value is: 2.789885; average function value is 2.183247
+Generation 29: optimal function value is: 2.789885; average function value is 2.188300
+Optimal function value is: 2.789885; 
+Optimal solution is:
+[0.53447922 0.91956137 0.99974331]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.534479      0.919561    0.999743   1865315025  2.789885
+optimal_weight: [0.53447922 0.91956137 0.99974331]
+0:45:57.127658
+0:45:57.127673
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+campaign_id: 1777436620
+current time:  2019-05-18 00:05:02.895606
+Generation 0: optimal function value is: -0.710026; average function value is -0.425021
+Generation 1: optimal function value is: 3.448582; average function value is 2.073280
+Generation 2: optimal function value is: 3.448582; average function value is 2.224004
+Generation 3: optimal function value is: 3.451508; average function value is 2.324657
+Generation 4: optimal function value is: 3.451508; average function value is 2.371354
+Generation 5: optimal function value is: 3.451508; average function value is 2.416642
+Generation 6: optimal function value is: 3.451508; average function value is 2.455091
+Generation 7: optimal function value is: 3.451508; average function value is 2.501260
+Generation 8: optimal function value is: 3.451508; average function value is 2.532808
+Generation 9: optimal function value is: 3.451508; average function value is 2.534152
+Generation 10: optimal function value is: 3.451508; average function value is 2.560145
+Generation 11: optimal function value is: 3.451508; average function value is 2.564624
+Generation 12: optimal function value is: 3.451508; average function value is 2.603105
+Generation 13: optimal function value is: 3.451508; average function value is 2.602822
+Generation 14: optimal function value is: 3.451508; average function value is 2.622148
+Generation 15: optimal function value is: 3.451508; average function value is 2.633527
+Generation 16: optimal function value is: 3.451508; average function value is 2.646182
+Generation 17: optimal function value is: 3.451508; average function value is 2.672184
+Generation 18: optimal function value is: 3.451508; average function value is 2.691145
+Generation 19: optimal function value is: 3.451508; average function value is 2.675032
+Generation 20: optimal function value is: 3.451508; average function value is 2.675812
+Generation 21: optimal function value is: 3.451508; average function value is 2.681568
+Generation 22: optimal function value is: 3.451508; average function value is 2.687196
+Generation 23: optimal function value is: 3.451508; average function value is 2.677920
+Generation 24: optimal function value is: 3.451508; average function value is 2.679957
+Generation 25: optimal function value is: 3.451508; average function value is 2.674841
+Generation 26: optimal function value is: 3.451508; average function value is 2.677536
+Generation 27: optimal function value is: 3.451508; average function value is 2.686731
+Generation 28: optimal function value is: 3.451508; average function value is 2.691413
+Generation 29: optimal function value is: 3.451508; average function value is 2.703004
+Optimal function value is: 3.451508; 
+Optimal solution is:
+[0.98325755 0.35262108 0.99884446]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.983258      0.352621    0.998844   1777436620  3.451508
+optimal_weight: [0.98325755 0.35262108 0.99884446]
+0:08:13.951278
+campaign_id: 1809236789
+current time:  2019-05-18 00:05:02.895606
+Generation 0: optimal function value is: -0.677972; average function value is -0.366028
+Generation 1: optimal function value is: 3.115773; average function value is 1.838695
+Generation 2: optimal function value is: 3.115773; average function value is 1.970694
+Generation 3: optimal function value is: 3.115773; average function value is 2.026219
+Generation 4: optimal function value is: 3.115773; average function value is 2.073429
+Generation 5: optimal function value is: 3.115773; average function value is 2.109512
+Generation 6: optimal function value is: 3.115773; average function value is 2.131171
+Generation 7: optimal function value is: 3.115773; average function value is 2.152113
+Generation 8: optimal function value is: 3.115773; average function value is 2.215654
+Generation 9: optimal function value is: 3.115773; average function value is 2.252714
+Generation 10: optimal function value is: 3.115773; average function value is 2.271912
+Generation 11: optimal function value is: 3.119147; average function value is 2.293866
+Generation 12: optimal function value is: 3.119147; average function value is 2.294543
+Generation 13: optimal function value is: 3.119147; average function value is 2.299427
+Generation 14: optimal function value is: 3.119147; average function value is 2.308832
+Generation 15: optimal function value is: 3.119147; average function value is 2.335964
+Generation 16: optimal function value is: 3.119147; average function value is 2.335836
+Generation 17: optimal function value is: 3.119147; average function value is 2.368905
+Generation 18: optimal function value is: 3.119147; average function value is 2.373731
+Generation 19: optimal function value is: 3.119147; average function value is 2.381485
+Generation 20: optimal function value is: 3.119147; average function value is 2.386961
+Generation 21: optimal function value is: 3.119147; average function value is 2.382782
+Generation 22: optimal function value is: 3.119147; average function value is 2.381420
+Generation 23: optimal function value is: 3.119147; average function value is 2.398939
+Generation 24: optimal function value is: 3.119147; average function value is 2.399828
+Generation 25: optimal function value is: 3.119147; average function value is 2.388075
+Generation 26: optimal function value is: 3.119147; average function value is 2.392787
+Generation 27: optimal function value is: 3.119147; average function value is 2.396660
+Generation 28: optimal function value is: 3.119147; average function value is 2.398324
+Generation 29: optimal function value is: 3.119147; average function value is 2.404745
+Optimal function value is: 3.119147; 
+Optimal solution is:
+[0.99096346 0.39140451 0.99525003]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.990963      0.391405     0.99525   1809236789  3.119147
+optimal_weight: [0.99096346 0.39140451 0.99525003]
+0:12:52.916256
+campaign_id: 1837973427
+current time:  2019-05-18 00:05:02.895606
+Generation 0: optimal function value is: -0.282675; average function value is 0.416263
+Generation 1: optimal function value is: 1.424797; average function value is 0.831325
+Generation 2: optimal function value is: 1.424797; average function value is 0.898480
+Generation 3: optimal function value is: 1.432004; average function value is 0.954912
+Generation 4: optimal function value is: 1.432004; average function value is 1.005033
+Generation 5: optimal function value is: 1.432004; average function value is 1.033886
+Generation 6: optimal function value is: 1.432004; average function value is 1.060070
+Generation 7: optimal function value is: 1.432004; average function value is 1.075356
+Generation 8: optimal function value is: 1.432004; average function value is 1.105325
+Generation 9: optimal function value is: 1.432004; average function value is 1.113482
+Generation 10: optimal function value is: 1.432004; average function value is 1.117379
+Generation 11: optimal function value is: 1.432004; average function value is 1.126631
+Generation 12: optimal function value is: 1.432004; average function value is 1.136587
+Generation 13: optimal function value is: 1.432004; average function value is 1.132117
+Generation 14: optimal function value is: 1.432004; average function value is 1.142405
+Generation 15: optimal function value is: 1.432004; average function value is 1.151884
+Generation 16: optimal function value is: 1.432004; average function value is 1.149783
+Generation 17: optimal function value is: 1.432004; average function value is 1.158280
+Generation 18: optimal function value is: 1.432004; average function value is 1.164640
+Generation 19: optimal function value is: 1.432004; average function value is 1.167319
+Generation 20: optimal function value is: 1.432004; average function value is 1.171704
+Generation 21: optimal function value is: 1.432004; average function value is 1.173903
+Generation 22: optimal function value is: 1.432004; average function value is 1.176126
+Generation 23: optimal function value is: 1.432004; average function value is 1.174621
+Generation 24: optimal function value is: 1.432004; average function value is 1.173281
+Generation 25: optimal function value is: 1.432004; average function value is 1.176877
+Generation 26: optimal function value is: 1.432004; average function value is 1.175043
+Generation 27: optimal function value is: 1.432004; average function value is 1.178137
+Generation 28: optimal function value is: 1.432004; average function value is 1.181630
+Generation 29: optimal function value is: 1.432004; average function value is 1.187104
+Optimal function value is: 1.432004; 
+Optimal solution is:
+[0.99810739 0.31947209 0.98818121]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.998107      0.319472    0.988181   1837973427  1.432004
+optimal_weight: [0.99810739 0.31947209 0.98818121]
+0:16:40.013491
+campaign_id: 1837975386
+current time:  2019-05-18 00:05:02.895606
+Generation 0: optimal function value is: -0.005683; average function value is 1.017447
+Generation 1: optimal function value is: 1.005715; average function value is 0.661067
+Generation 2: optimal function value is: 1.005715; average function value is 0.733775
+Generation 3: optimal function value is: 1.005715; average function value is 0.783481
+Generation 4: optimal function value is: 1.005715; average function value is 0.814074
+Generation 5: optimal function value is: 1.005715; average function value is 0.836986
+Generation 6: optimal function value is: 1.005715; average function value is 0.854548
+Generation 7: optimal function value is: 1.005715; average function value is 0.869270
+Generation 8: optimal function value is: 1.005715; average function value is 0.883787
+Generation 9: optimal function value is: 1.005715; average function value is 0.887042
+Generation 10: optimal function value is: 1.005715; average function value is 0.894636
+Generation 11: optimal function value is: 1.005715; average function value is 0.896498
+Generation 12: optimal function value is: 1.005715; average function value is 0.899583
+Generation 13: optimal function value is: 1.005715; average function value is 0.900789
+Generation 14: optimal function value is: 1.005715; average function value is 0.907843
+Generation 15: optimal function value is: 1.005715; average function value is 0.904038
+Generation 16: optimal function value is: 1.005715; average function value is 0.908320
+Generation 17: optimal function value is: 1.005715; average function value is 0.913606
+Generation 18: optimal function value is: 1.005819; average function value is 0.917072
+Generation 19: optimal function value is: 1.005819; average function value is 0.917453
+Generation 20: optimal function value is: 1.005819; average function value is 0.921756
+Generation 21: optimal function value is: 1.005819; average function value is 0.922193
+Generation 22: optimal function value is: 1.005819; average function value is 0.923770
+Generation 23: optimal function value is: 1.005819; average function value is 0.926031
+Generation 24: optimal function value is: 1.005819; average function value is 0.930736
+Generation 25: optimal function value is: 1.005819; average function value is 0.930179
+Generation 26: optimal function value is: 1.005819; average function value is 0.931988
+Generation 27: optimal function value is: 1.005819; average function value is 0.937178
+Generation 28: optimal function value is: 1.005819; average function value is 0.934280
+Generation 29: optimal function value is: 1.005819; average function value is 0.939062
+Optimal function value is: 1.005819; 
+Optimal solution is:
+[0.99982925 0.4997652  0.92851933]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.999829      0.499765    0.928519   1837975386  1.005819
+optimal_weight: [0.99982925 0.4997652  0.92851933]
+0:21:22.049410
+campaign_id: 1837420283
+current time:  2019-05-18 00:05:02.895606
+Generation 0: optimal function value is: -0.706940; average function value is -0.441923
+Generation 1: optimal function value is: 3.412268; average function value is 2.016646
+Generation 2: optimal function value is: 3.412268; average function value is 2.150405
+Generation 3: optimal function value is: 3.412268; average function value is 2.229030
+Generation 4: optimal function value is: 3.424875; average function value is 2.275246
+Generation 5: optimal function value is: 3.424875; average function value is 2.300373
+Generation 6: optimal function value is: 3.472335; average function value is 2.381193
+Generation 7: optimal function value is: 3.495411; average function value is 2.415284
+Generation 8: optimal function value is: 3.495411; average function value is 2.436986
+Generation 9: optimal function value is: 3.495411; average function value is 2.444305
+Generation 10: optimal function value is: 3.495411; average function value is 2.477860
+Generation 11: optimal function value is: 3.495411; average function value is 2.504991
+Generation 12: optimal function value is: 3.495411; average function value is 2.506030
+Generation 13: optimal function value is: 3.495411; average function value is 2.501231
+Generation 14: optimal function value is: 3.495411; average function value is 2.498917
+Generation 15: optimal function value is: 3.495411; average function value is 2.505205
+Generation 16: optimal function value is: 3.495411; average function value is 2.517359
+Generation 17: optimal function value is: 3.495411; average function value is 2.503895
+Generation 18: optimal function value is: 3.495411; average function value is 2.498694
+Generation 19: optimal function value is: 3.495411; average function value is 2.499617
+Generation 20: optimal function value is: 3.495411; average function value is 2.509522
+Generation 21: optimal function value is: 3.495411; average function value is 2.509525
+Generation 22: optimal function value is: 3.495411; average function value is 2.512487
+Generation 23: optimal function value is: 3.495411; average function value is 2.517937
+Generation 24: optimal function value is: 3.495411; average function value is 2.534248
+Generation 25: optimal function value is: 3.495411; average function value is 2.522612
+Generation 26: optimal function value is: 3.495411; average function value is 2.533207
+Generation 27: optimal function value is: 3.495411; average function value is 2.541915
+Generation 28: optimal function value is: 3.495411; average function value is 2.538474
+Generation 29: optimal function value is: 3.495411; average function value is 2.555808
+Optimal function value is: 3.495411; 
+Optimal solution is:
+[0.93434257 0.98351627 0.98476536]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.934343      0.983516    0.984765   1837420283  3.495411
+optimal_weight: [0.93434257 0.98351627 0.98476536]
+0:25:37.779495
+campaign_id: 1837064056
+current time:  2019-05-18 00:05:02.895606
+Generation 0: optimal function value is: -0.557778; average function value is -0.122476
+Generation 1: optimal function value is: 2.261308; average function value is 1.322114
+Generation 2: optimal function value is: 2.261308; average function value is 1.400873
+Generation 3: optimal function value is: 2.261308; average function value is 1.471422
+Generation 4: optimal function value is: 2.261308; average function value is 1.523015
+Generation 5: optimal function value is: 2.261308; average function value is 1.568097
+Generation 6: optimal function value is: 2.261308; average function value is 1.603151
+Generation 7: optimal function value is: 2.263710; average function value is 1.636224
+Generation 8: optimal function value is: 2.263710; average function value is 1.652493
+Generation 9: optimal function value is: 2.263710; average function value is 1.668475
+Generation 10: optimal function value is: 2.263710; average function value is 1.683155
+Generation 11: optimal function value is: 2.263710; average function value is 1.701406
+Generation 12: optimal function value is: 2.263710; average function value is 1.707533
+Generation 13: optimal function value is: 2.263710; average function value is 1.717731
+Generation 14: optimal function value is: 2.263710; average function value is 1.717913
+Generation 15: optimal function value is: 2.263710; average function value is 1.732549
+Generation 16: optimal function value is: 2.263710; average function value is 1.727397
+Generation 17: optimal function value is: 2.263710; average function value is 1.733121
+Generation 18: optimal function value is: 2.263710; average function value is 1.746562
+Generation 19: optimal function value is: 2.265028; average function value is 1.748800
+Generation 20: optimal function value is: 2.265028; average function value is 1.765852
+Generation 21: optimal function value is: 2.265028; average function value is 1.763987
+Generation 22: optimal function value is: 2.265028; average function value is 1.764963
+Generation 23: optimal function value is: 2.265028; average function value is 1.770402
+Generation 24: optimal function value is: 2.265028; average function value is 1.769209
+Generation 25: optimal function value is: 2.265028; average function value is 1.769260
+Generation 26: optimal function value is: 2.265028; average function value is 1.773196
+Generation 27: optimal function value is: 2.265028; average function value is 1.782117
+Generation 28: optimal function value is: 2.265028; average function value is 1.780674
+Generation 29: optimal function value is: 2.265028; average function value is 1.781964
+Optimal function value is: 2.265028; 
+Optimal solution is:
+[0.99300203 0.61754388 0.98859599]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.993002      0.617544    0.988596   1837064056  2.265028
+optimal_weight: [0.99300203 0.61754388 0.98859599]
+0:29:39.377645
+campaign_id: 1837064050
+current time:  2019-05-18 00:05:02.895606
+Generation 0: optimal function value is: -0.549089; average function value is -0.124576
+Generation 1: optimal function value is: 2.239877; average function value is 1.328740
+Generation 2: optimal function value is: 2.239877; average function value is 1.423398
+Generation 3: optimal function value is: 2.239877; average function value is 1.486084
+Generation 4: optimal function value is: 2.267956; average function value is 1.558078
+Generation 5: optimal function value is: 2.267956; average function value is 1.600094
+Generation 6: optimal function value is: 2.267956; average function value is 1.619196
+Generation 7: optimal function value is: 2.267956; average function value is 1.634142
+Generation 8: optimal function value is: 2.267956; average function value is 1.642318
+Generation 9: optimal function value is: 2.267956; average function value is 1.673088
+Generation 10: optimal function value is: 2.267956; average function value is 1.688620
+Generation 11: optimal function value is: 2.267956; average function value is 1.710308
+Generation 12: optimal function value is: 2.267956; average function value is 1.726813
+Generation 13: optimal function value is: 2.267956; average function value is 1.735630
+Generation 14: optimal function value is: 2.267956; average function value is 1.734561
+Generation 15: optimal function value is: 2.267956; average function value is 1.742895
+Generation 16: optimal function value is: 2.267956; average function value is 1.751246
+Generation 17: optimal function value is: 2.267956; average function value is 1.751916
+Generation 18: optimal function value is: 2.267956; average function value is 1.752509
+Generation 19: optimal function value is: 2.267956; average function value is 1.753945
+Generation 20: optimal function value is: 2.267956; average function value is 1.766671
+Generation 21: optimal function value is: 2.267956; average function value is 1.766044
+Generation 22: optimal function value is: 2.267956; average function value is 1.766658
+Generation 23: optimal function value is: 2.267956; average function value is 1.769027
+Generation 24: optimal function value is: 2.267956; average function value is 1.764165
+Generation 25: optimal function value is: 2.267956; average function value is 1.765339
+Generation 26: optimal function value is: 2.267956; average function value is 1.772130
+Generation 27: optimal function value is: 2.267956; average function value is 1.772365
+Generation 28: optimal function value is: 2.267956; average function value is 1.775841
+Generation 29: optimal function value is: 2.267956; average function value is 1.780314
+Optimal function value is: 2.267956; 
+Optimal solution is:
+[0.99978712 0.77278762 0.99386218]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.999787      0.772788    0.993862   1837064050  2.267956
+optimal_weight: [0.99978712 0.77278762 0.99386218]
+0:33:47.926656
+campaign_id: 1837064053
+current time:  2019-05-18 00:05:02.895606
+Generation 0: optimal function value is: -0.538496; average function value is -0.074021
+Generation 1: optimal function value is: 2.166830; average function value is 1.247450
+Generation 2: optimal function value is: 2.166830; average function value is 1.349852
+Generation 3: optimal function value is: 2.166830; average function value is 1.400333
+Generation 4: optimal function value is: 2.166830; average function value is 1.445110
+Generation 5: optimal function value is: 2.166830; average function value is 1.485663
+Generation 6: optimal function value is: 2.166830; average function value is 1.508132
+Generation 7: optimal function value is: 2.166830; average function value is 1.550356
+Generation 8: optimal function value is: 2.166830; average function value is 1.568353
+Generation 9: optimal function value is: 2.166830; average function value is 1.576920
+Generation 10: optimal function value is: 2.166830; average function value is 1.595555
+Generation 11: optimal function value is: 2.166830; average function value is 1.613916
+Generation 12: optimal function value is: 2.166830; average function value is 1.633404
+Generation 13: optimal function value is: 2.169838; average function value is 1.644763
+Generation 14: optimal function value is: 2.169838; average function value is 1.657126
+Generation 15: optimal function value is: 2.169838; average function value is 1.669725
+Generation 16: optimal function value is: 2.169838; average function value is 1.682843
+Generation 17: optimal function value is: 2.169838; average function value is 1.680444
+Generation 18: optimal function value is: 2.169838; average function value is 1.681095
+Generation 19: optimal function value is: 2.169838; average function value is 1.692159
+Generation 20: optimal function value is: 2.169838; average function value is 1.690530
+Generation 21: optimal function value is: 2.169838; average function value is 1.688163
+Generation 22: optimal function value is: 2.169838; average function value is 1.684010
+Generation 23: optimal function value is: 2.169838; average function value is 1.676668
+Generation 24: optimal function value is: 2.169838; average function value is 1.674537
+Generation 25: optimal function value is: 2.169838; average function value is 1.681285
+Generation 26: optimal function value is: 2.169838; average function value is 1.678797
+Generation 27: optimal function value is: 2.169838; average function value is 1.681736
+Generation 28: optimal function value is: 2.169838; average function value is 1.682024
+Generation 29: optimal function value is: 2.169838; average function value is 1.697864
+Optimal function value is: 2.169838; 
+Optimal solution is:
+[0.99973539 0.65878313 0.99552129]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.999735      0.658783    0.995521   1837064053  2.169838
+optimal_weight: [0.99973539 0.65878313 0.99552129]
+0:37:53.311585
+campaign_id: 1837064059
+current time:  2019-05-18 00:05:02.895606
+Generation 0: optimal function value is: -0.525273; average function value is -0.048464
+Generation 1: optimal function value is: 2.106472; average function value is 1.195005
+Generation 2: optimal function value is: 2.106472; average function value is 1.336233
+Generation 3: optimal function value is: 2.108939; average function value is 1.419161
+Generation 4: optimal function value is: 2.123566; average function value is 1.462188
+Generation 5: optimal function value is: 2.123566; average function value is 1.498871
+Generation 6: optimal function value is: 2.123566; average function value is 1.515604
+Generation 7: optimal function value is: 2.123566; average function value is 1.531546
+Generation 8: optimal function value is: 2.123566; average function value is 1.544758
+Generation 9: optimal function value is: 2.123566; average function value is 1.567802
+Generation 10: optimal function value is: 2.123566; average function value is 1.582452
+Generation 11: optimal function value is: 2.123566; average function value is 1.599791
+Generation 12: optimal function value is: 2.123566; average function value is 1.596970
+Generation 13: optimal function value is: 2.123566; average function value is 1.592394
+Generation 14: optimal function value is: 2.123566; average function value is 1.601559
+Generation 15: optimal function value is: 2.123566; average function value is 1.627188
+Generation 16: optimal function value is: 2.123566; average function value is 1.635663
+Generation 17: optimal function value is: 2.123566; average function value is 1.637158
+Generation 18: optimal function value is: 2.123566; average function value is 1.634091
+Generation 19: optimal function value is: 2.123566; average function value is 1.634996
+Generation 20: optimal function value is: 2.123566; average function value is 1.641991
+Generation 21: optimal function value is: 2.123566; average function value is 1.644970
+Generation 22: optimal function value is: 2.123566; average function value is 1.649499
+Generation 23: optimal function value is: 2.123566; average function value is 1.647853
+Generation 24: optimal function value is: 2.123566; average function value is 1.646332
+Generation 25: optimal function value is: 2.123566; average function value is 1.650687
+Generation 26: optimal function value is: 2.123566; average function value is 1.653875
+Generation 27: optimal function value is: 2.123566; average function value is 1.659399
+Generation 28: optimal function value is: 2.123566; average function value is 1.655073
+Generation 29: optimal function value is: 2.123566; average function value is 1.658361
+Optimal function value is: 2.123566; 
+Optimal solution is:
+[0.99535919 0.70223192 0.99646413]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.995359      0.702232    0.996464   1837064059  2.123566
+optimal_weight: [0.99535919 0.70223192 0.99646413]
+0:41:44.640385
+campaign_id: 1865315025
+current time:  2019-05-18 00:05:02.895606
+Generation 0: optimal function value is: -0.639314; average function value is -0.277626
+Generation 1: optimal function value is: 2.776973; average function value is 1.773904
+Generation 2: optimal function value is: 2.778782; average function value is 1.917188
+Generation 3: optimal function value is: 2.778782; average function value is 1.978545
+Generation 4: optimal function value is: 2.778782; average function value is 2.003409
+Generation 5: optimal function value is: 2.778782; average function value is 2.040228
+Generation 6: optimal function value is: 2.778782; average function value is 2.066842
+Generation 7: optimal function value is: 2.778782; average function value is 2.097115
+Generation 8: optimal function value is: 2.778782; average function value is 2.094207
+Generation 9: optimal function value is: 2.778782; average function value is 2.121302
+Generation 10: optimal function value is: 2.778782; average function value is 2.138968
+Generation 11: optimal function value is: 2.778782; average function value is 2.163045
+Generation 12: optimal function value is: 2.778782; average function value is 2.156429
+Generation 13: optimal function value is: 2.778782; average function value is 2.161380
+Generation 14: optimal function value is: 2.778782; average function value is 2.163324
+Generation 15: optimal function value is: 2.778782; average function value is 2.171175
+Generation 16: optimal function value is: 2.778782; average function value is 2.184766
+Generation 17: optimal function value is: 2.778782; average function value is 2.181386
+Generation 18: optimal function value is: 2.778782; average function value is 2.193057
+Generation 19: optimal function value is: 2.778782; average function value is 2.184698
+Generation 20: optimal function value is: 2.778782; average function value is 2.188877
+Generation 21: optimal function value is: 2.778782; average function value is 2.185355
+Generation 22: optimal function value is: 2.778782; average function value is 2.175053
+Generation 23: optimal function value is: 2.778782; average function value is 2.176778
+Generation 24: optimal function value is: 2.778782; average function value is 2.187621
+Generation 25: optimal function value is: 2.778782; average function value is 2.185067
+Generation 26: optimal function value is: 2.778782; average function value is 2.183612
+Generation 27: optimal function value is: 2.778782; average function value is 2.185476
+Generation 28: optimal function value is: 2.778782; average function value is 2.186616
+Generation 29: optimal function value is: 2.778782; average function value is 2.184442
+Optimal function value is: 2.778782; 
+Optimal solution is:
+[0.70153244 0.7896433  0.9996201 ]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.701532      0.789643     0.99962   1865315025  2.778782
+optimal_weight: [0.70153244 0.7896433  0.9996201 ]
+0:46:01.785217
+0:46:01.785233
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+campaign_id: 1777436620
+current time:  2019-05-19 00:05:03.242560
+Generation 0: optimal function value is: -0.707306; average function value is -0.426177
+Generation 1: optimal function value is: 3.416534; average function value is 2.090342
+Generation 2: optimal function value is: 3.416534; average function value is 2.233427
+Generation 3: optimal function value is: 3.416534; average function value is 2.324400
+Generation 4: optimal function value is: 3.422878; average function value is 2.399387
+Generation 5: optimal function value is: 3.422878; average function value is 2.406085
+Generation 6: optimal function value is: 3.422878; average function value is 2.435227
+Generation 7: optimal function value is: 3.422878; average function value is 2.467843
+Generation 8: optimal function value is: 3.422878; average function value is 2.488997
+Generation 9: optimal function value is: 3.422878; average function value is 2.499882
+Generation 10: optimal function value is: 3.461187; average function value is 2.547834
+Generation 11: optimal function value is: 3.461187; average function value is 2.580842
+Generation 12: optimal function value is: 3.461187; average function value is 2.579078
+Generation 13: optimal function value is: 3.461187; average function value is 2.594130
+Generation 14: optimal function value is: 3.461187; average function value is 2.595301
+Generation 15: optimal function value is: 3.461187; average function value is 2.603979
+Generation 16: optimal function value is: 3.461187; average function value is 2.621050
+Generation 17: optimal function value is: 3.461187; average function value is 2.624658
+Generation 18: optimal function value is: 3.461187; average function value is 2.635206
+Generation 19: optimal function value is: 3.461187; average function value is 2.649608
+Generation 20: optimal function value is: 3.461187; average function value is 2.658381
+Generation 21: optimal function value is: 3.461187; average function value is 2.642832
+Generation 22: optimal function value is: 3.461187; average function value is 2.633240
+Generation 23: optimal function value is: 3.461187; average function value is 2.638984
+Generation 24: optimal function value is: 3.461187; average function value is 2.642041
+Generation 25: optimal function value is: 3.461187; average function value is 2.646262
+Generation 26: optimal function value is: 3.461187; average function value is 2.664296
+Generation 27: optimal function value is: 3.461187; average function value is 2.678476
+Generation 28: optimal function value is: 3.461187; average function value is 2.694769
+Generation 29: optimal function value is: 3.461187; average function value is 2.709607
+Optimal function value is: 3.461187; 
+Optimal solution is:
+[0.99199748 0.61468063 0.99857217]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.991997      0.614681    0.998572   1777436620  3.461187
+optimal_weight: [0.99199748 0.61468063 0.99857217]
+0:07:37.964991
+campaign_id: 1809236789
+current time:  2019-05-19 00:05:03.242560
+Generation 0: optimal function value is: -0.678956; average function value is -0.364854
+Generation 1: optimal function value is: 3.114843; average function value is 1.873731
+Generation 2: optimal function value is: 3.114843; average function value is 2.025705
+Generation 3: optimal function value is: 3.114843; average function value is 2.109760
+Generation 4: optimal function value is: 3.114843; average function value is 2.184590
+Generation 5: optimal function value is: 3.120958; average function value is 2.229678
+Generation 6: optimal function value is: 3.120958; average function value is 2.259734
+Generation 7: optimal function value is: 3.120958; average function value is 2.268118
+Generation 8: optimal function value is: 3.120958; average function value is 2.288743
+Generation 9: optimal function value is: 3.120958; average function value is 2.280355
+Generation 10: optimal function value is: 3.120958; average function value is 2.298475
+Generation 11: optimal function value is: 3.120958; average function value is 2.317689
+Generation 12: optimal function value is: 3.120958; average function value is 2.335088
+Generation 13: optimal function value is: 3.120958; average function value is 2.344869
+Generation 14: optimal function value is: 3.120958; average function value is 2.351269
+Generation 15: optimal function value is: 3.120958; average function value is 2.341955
+Generation 16: optimal function value is: 3.120958; average function value is 2.335891
+Generation 17: optimal function value is: 3.120958; average function value is 2.365144
+Generation 18: optimal function value is: 3.120958; average function value is 2.357111
+Generation 19: optimal function value is: 3.120958; average function value is 2.370312
+Generation 20: optimal function value is: 3.120958; average function value is 2.376165
+Generation 21: optimal function value is: 3.120958; average function value is 2.376971
+Generation 22: optimal function value is: 3.120958; average function value is 2.380641
+Generation 23: optimal function value is: 3.120958; average function value is 2.387130
+Generation 24: optimal function value is: 3.120958; average function value is 2.400977
+Generation 25: optimal function value is: 3.120958; average function value is 2.397213
+Generation 26: optimal function value is: 3.120958; average function value is 2.389788
+Generation 27: optimal function value is: 3.120958; average function value is 2.404144
+Generation 28: optimal function value is: 3.120958; average function value is 2.407419
+Generation 29: optimal function value is: 3.120958; average function value is 2.414962
+Optimal function value is: 3.120958; 
+Optimal solution is:
+[0.99770772 0.53482336 0.99202754]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.997708      0.534823    0.992028   1809236789  3.120958
+optimal_weight: [0.99770772 0.53482336 0.99202754]
+0:12:21.946857
+campaign_id: 1837973427
+current time:  2019-05-19 00:05:03.242560
+Generation 0: optimal function value is: -0.290912; average function value is 0.394860
+Generation 1: optimal function value is: 1.414658; average function value is 0.837920
+Generation 2: optimal function value is: 1.431784; average function value is 0.926905
+Generation 3: optimal function value is: 1.431784; average function value is 0.981655
+Generation 4: optimal function value is: 1.431784; average function value is 1.016765
+Generation 5: optimal function value is: 1.431784; average function value is 1.050111
+Generation 6: optimal function value is: 1.431784; average function value is 1.058084
+Generation 7: optimal function value is: 1.431784; average function value is 1.079538
+Generation 8: optimal function value is: 1.431784; average function value is 1.108980
+Generation 9: optimal function value is: 1.431784; average function value is 1.108309
+Generation 10: optimal function value is: 1.431784; average function value is 1.116185
+Generation 11: optimal function value is: 1.431784; average function value is 1.130901
+Generation 12: optimal function value is: 1.431784; average function value is 1.128926
+Generation 13: optimal function value is: 1.431784; average function value is 1.132236
+Generation 14: optimal function value is: 1.431784; average function value is 1.138371
+Generation 15: optimal function value is: 1.431784; average function value is 1.144957
+Generation 16: optimal function value is: 1.431784; average function value is 1.150946
+Generation 17: optimal function value is: 1.431784; average function value is 1.155089
+Generation 18: optimal function value is: 1.431784; average function value is 1.153043
+Generation 19: optimal function value is: 1.431784; average function value is 1.157355
+Generation 20: optimal function value is: 1.431784; average function value is 1.153465
+Generation 21: optimal function value is: 1.431784; average function value is 1.157387
+Generation 22: optimal function value is: 1.431784; average function value is 1.159999
+Generation 23: optimal function value is: 1.431784; average function value is 1.169496
+Generation 24: optimal function value is: 1.431784; average function value is 1.166934
+Generation 25: optimal function value is: 1.431784; average function value is 1.168531
+Generation 26: optimal function value is: 1.431784; average function value is 1.176289
+Generation 27: optimal function value is: 1.431784; average function value is 1.180244
+Generation 28: optimal function value is: 1.431784; average function value is 1.185287
+Generation 29: optimal function value is: 1.431784; average function value is 1.185616
+Optimal function value is: 1.431784; 
+Optimal solution is:
+[0.9918808  0.60474508 0.99957447]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.991881      0.604745    0.999574   1837973427  1.431784
+optimal_weight: [0.9918808  0.60474508 0.99957447]
+0:16:10.524825
+campaign_id: 1837975386
+current time:  2019-05-19 00:05:03.242560
+Generation 0: optimal function value is: -0.004898; average function value is 0.987129
+Generation 1: optimal function value is: 1.004922; average function value is 0.638806
+Generation 2: optimal function value is: 1.004922; average function value is 0.718554
+Generation 3: optimal function value is: 1.004922; average function value is 0.770872
+Generation 4: optimal function value is: 1.005492; average function value is 0.806715
+Generation 5: optimal function value is: 1.005915; average function value is 0.834562
+Generation 6: optimal function value is: 1.005915; average function value is 0.852169
+Generation 7: optimal function value is: 1.005915; average function value is 0.860314
+Generation 8: optimal function value is: 1.005915; average function value is 0.861781
+Generation 9: optimal function value is: 1.005915; average function value is 0.870719
+Generation 10: optimal function value is: 1.005915; average function value is 0.879645
+Generation 11: optimal function value is: 1.005915; average function value is 0.891788
+Generation 12: optimal function value is: 1.005915; average function value is 0.887510
+Generation 13: optimal function value is: 1.005923; average function value is 0.895186
+Generation 14: optimal function value is: 1.005923; average function value is 0.900846
+Generation 15: optimal function value is: 1.005923; average function value is 0.902649
+Generation 16: optimal function value is: 1.005923; average function value is 0.909984
+Generation 17: optimal function value is: 1.005923; average function value is 0.907130
+Generation 18: optimal function value is: 1.005923; average function value is 0.912958
+Generation 19: optimal function value is: 1.005923; average function value is 0.920127
+Generation 20: optimal function value is: 1.005923; average function value is 0.916947
+Generation 21: optimal function value is: 1.005923; average function value is 0.923324
+Generation 22: optimal function value is: 1.005923; average function value is 0.919839
+Generation 23: optimal function value is: 1.005923; average function value is 0.921056
+Generation 24: optimal function value is: 1.005923; average function value is 0.929462
+Generation 25: optimal function value is: 1.005923; average function value is 0.931742
+Generation 26: optimal function value is: 1.005923; average function value is 0.933593
+Generation 27: optimal function value is: 1.005923; average function value is 0.929549
+Generation 28: optimal function value is: 1.005923; average function value is 0.933643
+Generation 29: optimal function value is: 1.005923; average function value is 0.940904
+Optimal function value is: 1.005923; 
+Optimal solution is:
+[0.99968031 0.7382908  0.96150785]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0     0.99968      0.738291    0.961508   1837975386  1.005923
+optimal_weight: [0.99968031 0.7382908  0.96150785]
+0:20:57.058756
+campaign_id: 1837420283
+current time:  2019-05-19 00:05:03.242560
+Generation 0: optimal function value is: -0.713600; average function value is -0.440861
+Generation 1: optimal function value is: 3.491615; average function value is 2.038527
+Generation 2: optimal function value is: 3.491615; average function value is 2.142171
+Generation 3: optimal function value is: 3.491615; average function value is 2.230605
+Generation 4: optimal function value is: 3.491615; average function value is 2.279417
+Generation 5: optimal function value is: 3.491615; average function value is 2.354859
+Generation 6: optimal function value is: 3.527085; average function value is 2.392614
+Generation 7: optimal function value is: 3.527085; average function value is 2.428646
+Generation 8: optimal function value is: 3.527085; average function value is 2.451505
+Generation 9: optimal function value is: 3.527085; average function value is 2.489496
+Generation 10: optimal function value is: 3.527085; average function value is 2.488261
+Generation 11: optimal function value is: 3.527085; average function value is 2.499021
+Generation 12: optimal function value is: 3.527085; average function value is 2.514927
+Generation 13: optimal function value is: 3.527085; average function value is 2.526906
+Generation 14: optimal function value is: 3.527085; average function value is 2.521325
+Generation 15: optimal function value is: 3.527085; average function value is 2.530314
+Generation 16: optimal function value is: 3.527085; average function value is 2.533060
+Generation 17: optimal function value is: 3.527085; average function value is 2.538933
+Generation 18: optimal function value is: 3.527085; average function value is 2.555479
+Generation 19: optimal function value is: 3.527085; average function value is 2.568746
+Generation 20: optimal function value is: 3.527085; average function value is 2.568267
+Generation 21: optimal function value is: 3.527085; average function value is 2.570846
+Generation 22: optimal function value is: 3.527085; average function value is 2.563693
+Generation 23: optimal function value is: 3.527085; average function value is 2.569284
+Generation 24: optimal function value is: 3.527085; average function value is 2.574352
+Generation 25: optimal function value is: 3.527085; average function value is 2.581589
+Generation 26: optimal function value is: 3.527085; average function value is 2.583361
+Generation 27: optimal function value is: 3.527085; average function value is 2.581257
+Generation 28: optimal function value is: 3.527085; average function value is 2.589139
+Generation 29: optimal function value is: 3.527085; average function value is 2.594120
+Optimal function value is: 3.527085; 
+Optimal solution is:
+[0.96446869 0.99032156 0.99020994]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.964469      0.990322     0.99021   1837420283  3.527085
+optimal_weight: [0.96446869 0.99032156 0.99020994]
+0:25:20.039382
+campaign_id: 1837064056
+current time:  2019-05-19 00:05:03.242560
+Generation 0: optimal function value is: -0.557845; average function value is -0.129068
+Generation 1: optimal function value is: 2.261650; average function value is 1.336081
+Generation 2: optimal function value is: 2.261650; average function value is 1.428554
+Generation 3: optimal function value is: 2.261650; average function value is 1.502127
+Generation 4: optimal function value is: 2.274553; average function value is 1.552781
+Generation 5: optimal function value is: 2.274553; average function value is 1.585412
+Generation 6: optimal function value is: 2.274553; average function value is 1.621703
+Generation 7: optimal function value is: 2.274553; average function value is 1.634188
+Generation 8: optimal function value is: 2.274553; average function value is 1.648321
+Generation 9: optimal function value is: 2.274553; average function value is 1.664531
+Generation 10: optimal function value is: 2.274553; average function value is 1.670435
+Generation 11: optimal function value is: 2.287604; average function value is 1.680526
+Generation 12: optimal function value is: 2.287842; average function value is 1.694537
+Generation 13: optimal function value is: 2.287842; average function value is 1.702084
+Generation 14: optimal function value is: 2.287842; average function value is 1.724664
+Generation 15: optimal function value is: 2.287842; average function value is 1.735746
+Generation 16: optimal function value is: 2.287842; average function value is 1.749217
+Generation 17: optimal function value is: 2.287842; average function value is 1.752568
+Generation 18: optimal function value is: 2.287842; average function value is 1.753718
+Generation 19: optimal function value is: 2.287842; average function value is 1.749936
+Generation 20: optimal function value is: 2.287842; average function value is 1.746758
+Generation 21: optimal function value is: 2.287842; average function value is 1.748874
+Generation 22: optimal function value is: 2.287842; average function value is 1.744929
+Generation 23: optimal function value is: 2.287842; average function value is 1.755182
+Generation 24: optimal function value is: 2.287842; average function value is 1.763206
+Generation 25: optimal function value is: 2.287842; average function value is 1.765136
+Generation 26: optimal function value is: 2.287842; average function value is 1.773109
+Generation 27: optimal function value is: 2.287842; average function value is 1.778706
+Generation 28: optimal function value is: 2.287842; average function value is 1.783395
+Generation 29: optimal function value is: 2.287842; average function value is 1.789695
+Optimal function value is: 2.287842; 
+Optimal solution is:
+[0.99968986 0.78998581 0.99709611]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0     0.99969      0.789986    0.997096   1837064056  2.287842
+optimal_weight: [0.99968986 0.78998581 0.99709611]
+0:29:23.012693
+campaign_id: 1837064050
+current time:  2019-05-19 00:05:03.242560
+Generation 0: optimal function value is: -0.557074; average function value is -0.119476
+Generation 1: optimal function value is: 2.257715; average function value is 1.313933
+Generation 2: optimal function value is: 2.257715; average function value is 1.414728
+Generation 3: optimal function value is: 2.257715; average function value is 1.471537
+Generation 4: optimal function value is: 2.257715; average function value is 1.514927
+Generation 5: optimal function value is: 2.264576; average function value is 1.561266
+Generation 6: optimal function value is: 2.266627; average function value is 1.597541
+Generation 7: optimal function value is: 2.266627; average function value is 1.623092
+Generation 8: optimal function value is: 2.266627; average function value is 1.643200
+Generation 9: optimal function value is: 2.266627; average function value is 1.659022
+Generation 10: optimal function value is: 2.266627; average function value is 1.670020
+Generation 11: optimal function value is: 2.266627; average function value is 1.685028
+Generation 12: optimal function value is: 2.266627; average function value is 1.696802
+Generation 13: optimal function value is: 2.266627; average function value is 1.711454
+Generation 14: optimal function value is: 2.266627; average function value is 1.714940
+Generation 15: optimal function value is: 2.266627; average function value is 1.713199
+Generation 16: optimal function value is: 2.266627; average function value is 1.732297
+Generation 17: optimal function value is: 2.266627; average function value is 1.729549
+Generation 18: optimal function value is: 2.266627; average function value is 1.738852
+Generation 19: optimal function value is: 2.266627; average function value is 1.737281
+Generation 20: optimal function value is: 2.266627; average function value is 1.737094
+Generation 21: optimal function value is: 2.266627; average function value is 1.750224
+Generation 22: optimal function value is: 2.266627; average function value is 1.748206
+Generation 23: optimal function value is: 2.266627; average function value is 1.759972
+Generation 24: optimal function value is: 2.266627; average function value is 1.764608
+Generation 25: optimal function value is: 2.266627; average function value is 1.765006
+Generation 26: optimal function value is: 2.266627; average function value is 1.769526
+Generation 27: optimal function value is: 2.266627; average function value is 1.775062
+Generation 28: optimal function value is: 2.266627; average function value is 1.783366
+Generation 29: optimal function value is: 2.266627; average function value is 1.786958
+Optimal function value is: 2.266627; 
+Optimal solution is:
+[0.99847188 0.64762148 0.99670041]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.998472      0.647621      0.9967   1837064050  2.266627
+optimal_weight: [0.99847188 0.64762148 0.99670041]
+0:33:31.412777
+campaign_id: 1837064053
+current time:  2019-05-19 00:05:03.242560
+Generation 0: optimal function value is: -0.530829; average function value is -0.080677
+Generation 1: optimal function value is: 2.138837; average function value is 1.265744
+Generation 2: optimal function value is: 2.159615; average function value is 1.370008
+Generation 3: optimal function value is: 2.160795; average function value is 1.438207
+Generation 4: optimal function value is: 2.160795; average function value is 1.469913
+Generation 5: optimal function value is: 2.160795; average function value is 1.519114
+Generation 6: optimal function value is: 2.163551; average function value is 1.544815
+Generation 7: optimal function value is: 2.163551; average function value is 1.551806
+Generation 8: optimal function value is: 2.163551; average function value is 1.558095
+Generation 9: optimal function value is: 2.163551; average function value is 1.555457
+Generation 10: optimal function value is: 2.163551; average function value is 1.584224
+Generation 11: optimal function value is: 2.163551; average function value is 1.593640
+Generation 12: optimal function value is: 2.163551; average function value is 1.616723
+Generation 13: optimal function value is: 2.163551; average function value is 1.626205
+Generation 14: optimal function value is: 2.163551; average function value is 1.628424
+Generation 15: optimal function value is: 2.163551; average function value is 1.644043
+Generation 16: optimal function value is: 2.163551; average function value is 1.661383
+Generation 17: optimal function value is: 2.163551; average function value is 1.665340
+Generation 18: optimal function value is: 2.166777; average function value is 1.667573
+Generation 19: optimal function value is: 2.166777; average function value is 1.669183
+Generation 20: optimal function value is: 2.166777; average function value is 1.669975
+Generation 21: optimal function value is: 2.166777; average function value is 1.680247
+Generation 22: optimal function value is: 2.166777; average function value is 1.689992
+Generation 23: optimal function value is: 2.166777; average function value is 1.698874
+Generation 24: optimal function value is: 2.166777; average function value is 1.697057
+Generation 25: optimal function value is: 2.166777; average function value is 1.701315
+Generation 26: optimal function value is: 2.166777; average function value is 1.705148
+Generation 27: optimal function value is: 2.166777; average function value is 1.712562
+Generation 28: optimal function value is: 2.166777; average function value is 1.728853
+Generation 29: optimal function value is: 2.166777; average function value is 1.729391
+Optimal function value is: 2.166777; 
+Optimal solution is:
+[0.99949249 0.55162034 0.99582703]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.999492       0.55162    0.995827   1837064053  2.166777
+optimal_weight: [0.99949249 0.55162034 0.99582703]
+0:37:40.237985
+campaign_id: 1837064059
+current time:  2019-05-19 00:05:03.242560
+Generation 0: optimal function value is: -0.519547; average function value is -0.075176
+Generation 1: optimal function value is: 2.093704; average function value is 1.237940
+Generation 2: optimal function value is: 2.093704; average function value is 1.332545
+Generation 3: optimal function value is: 2.093704; average function value is 1.396121
+Generation 4: optimal function value is: 2.093704; average function value is 1.436801
+Generation 5: optimal function value is: 2.093704; average function value is 1.486231
+Generation 6: optimal function value is: 2.105084; average function value is 1.520769
+Generation 7: optimal function value is: 2.105084; average function value is 1.539206
+Generation 8: optimal function value is: 2.105084; average function value is 1.556994
+Generation 9: optimal function value is: 2.105084; average function value is 1.566926
+Generation 10: optimal function value is: 2.105084; average function value is 1.576068
+Generation 11: optimal function value is: 2.105084; average function value is 1.592925
+Generation 12: optimal function value is: 2.105084; average function value is 1.602494
+Generation 13: optimal function value is: 2.107224; average function value is 1.606641
+Generation 14: optimal function value is: 2.117973; average function value is 1.609791
+Generation 15: optimal function value is: 2.117973; average function value is 1.617263
+Generation 16: optimal function value is: 2.117973; average function value is 1.630535
+Generation 17: optimal function value is: 2.117973; average function value is 1.646034
+Generation 18: optimal function value is: 2.117973; average function value is 1.660338
+Generation 19: optimal function value is: 2.117973; average function value is 1.662519
+Generation 20: optimal function value is: 2.117973; average function value is 1.653450
+Generation 21: optimal function value is: 2.117973; average function value is 1.647499
+Generation 22: optimal function value is: 2.117973; average function value is 1.658889
+Generation 23: optimal function value is: 2.117973; average function value is 1.663589
+Generation 24: optimal function value is: 2.117973; average function value is 1.663497
+Generation 25: optimal function value is: 2.117973; average function value is 1.660466
+Generation 26: optimal function value is: 2.117973; average function value is 1.656267
+Generation 27: optimal function value is: 2.117973; average function value is 1.659701
+Generation 28: optimal function value is: 2.117973; average function value is 1.666868
+Generation 29: optimal function value is: 2.117973; average function value is 1.670709
+Optimal function value is: 2.117973; 
+Optimal solution is:
+[0.99718942 0.70470314 0.98962729]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.997189      0.704703    0.989627   1837064059  2.117973
+optimal_weight: [0.99718942 0.70470314 0.98962729]
+0:41:33.089968
+campaign_id: 1865315025
+current time:  2019-05-19 00:05:03.242560
+Generation 0: optimal function value is: -0.641770; average function value is -0.283963
+Generation 1: optimal function value is: 2.791503; average function value is 1.827270
+Generation 2: optimal function value is: 2.791503; average function value is 1.950047
+Generation 3: optimal function value is: 2.791503; average function value is 2.010940
+Generation 4: optimal function value is: 2.791503; average function value is 2.071224
+Generation 5: optimal function value is: 2.791503; average function value is 2.102800
+Generation 6: optimal function value is: 2.791503; average function value is 2.134885
+Generation 7: optimal function value is: 2.791503; average function value is 2.151962
+Generation 8: optimal function value is: 2.791503; average function value is 2.158723
+Generation 9: optimal function value is: 2.791503; average function value is 2.162550
+Generation 10: optimal function value is: 2.791503; average function value is 2.173286
+Generation 11: optimal function value is: 2.791503; average function value is 2.163886
+Generation 12: optimal function value is: 2.791503; average function value is 2.161728
+Generation 13: optimal function value is: 2.791503; average function value is 2.164342
+Generation 14: optimal function value is: 2.791503; average function value is 2.174324
+Generation 15: optimal function value is: 2.791503; average function value is 2.181795
+Generation 16: optimal function value is: 2.791503; average function value is 2.189416
+Generation 17: optimal function value is: 2.791503; average function value is 2.198666
+Generation 18: optimal function value is: 2.791503; average function value is 2.205537
+Generation 19: optimal function value is: 2.791503; average function value is 2.205517
+Generation 20: optimal function value is: 2.791503; average function value is 2.214945
+Generation 21: optimal function value is: 2.791503; average function value is 2.224087
+Generation 22: optimal function value is: 2.791503; average function value is 2.212093
+Generation 23: optimal function value is: 2.791503; average function value is 2.223950
+Generation 24: optimal function value is: 2.791503; average function value is 2.231885
+Generation 25: optimal function value is: 2.791503; average function value is 2.220841
+Generation 26: optimal function value is: 2.791503; average function value is 2.223555
+Generation 27: optimal function value is: 2.791503; average function value is 2.216913
+Generation 28: optimal function value is: 2.791503; average function value is 2.218431
+Generation 29: optimal function value is: 2.791503; average function value is 2.222724
+Optimal function value is: 2.791503; 
+Optimal solution is:
+[0.21949368 0.99125178 0.99815049]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.219494      0.991252     0.99815   1865315025  2.791503
+optimal_weight: [0.21949368 0.99125178 0.99815049]
+0:45:54.112806
+0:45:54.112822
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+[gdn_datacollector.Campaign.get_performance_insights] 0
+campaign_id: 1777436620
+current time:  2019-05-20 00:05:03.431856
+Generation 0: optimal function value is: -0.708958; average function value is -0.430751
+Generation 1: optimal function value is: 3.435930; average function value is 2.081708
+Generation 2: optimal function value is: 3.435930; average function value is 2.210165
+Generation 3: optimal function value is: 3.435930; average function value is 2.301957
+Generation 4: optimal function value is: 3.435930; average function value is 2.353363
+Generation 5: optimal function value is: 3.435930; average function value is 2.374915
+Generation 6: optimal function value is: 3.435930; average function value is 2.426961
+Generation 7: optimal function value is: 3.435930; average function value is 2.457540
+Generation 8: optimal function value is: 3.441362; average function value is 2.495230
+Generation 9: optimal function value is: 3.441362; average function value is 2.516448
+Generation 10: optimal function value is: 3.463561; average function value is 2.534857
+Generation 11: optimal function value is: 3.463561; average function value is 2.537269
+Generation 12: optimal function value is: 3.463561; average function value is 2.571179
+Generation 13: optimal function value is: 3.463561; average function value is 2.579894
+Generation 14: optimal function value is: 3.463561; average function value is 2.597832
+Generation 15: optimal function value is: 3.463561; average function value is 2.609520
+Generation 16: optimal function value is: 3.463561; average function value is 2.619303
+Generation 17: optimal function value is: 3.463561; average function value is 2.631087
+Generation 18: optimal function value is: 3.463561; average function value is 2.639564
+Generation 19: optimal function value is: 3.463561; average function value is 2.650774
+Generation 20: optimal function value is: 3.463561; average function value is 2.663317
+Generation 21: optimal function value is: 3.463561; average function value is 2.663437
+Generation 22: optimal function value is: 3.463561; average function value is 2.671316
+Generation 23: optimal function value is: 3.463561; average function value is 2.683029
+Generation 24: optimal function value is: 3.463561; average function value is 2.665111
+Generation 25: optimal function value is: 3.463561; average function value is 2.657257
+Generation 26: optimal function value is: 3.463561; average function value is 2.666099
+Generation 27: optimal function value is: 3.463561; average function value is 2.667476
+Generation 28: optimal function value is: 3.463561; average function value is 2.682248
+Generation 29: optimal function value is: 3.463561; average function value is 2.685744
+Optimal function value is: 3.463561; 
+Optimal solution is:
+[0.9940795  0.72584412 0.99841366]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.994079      0.725844    0.998414   1777436620  3.463561
+optimal_weight: [0.9940795  0.72584412 0.99841366]
+0:07:25.946393
+campaign_id: 1809236789
+current time:  2019-05-20 00:05:03.431856
+Generation 0: optimal function value is: -0.677177; average function value is -0.365235
+Generation 1: optimal function value is: 3.097677; average function value is 1.850059
+Generation 2: optimal function value is: 3.097677; average function value is 1.986264
+Generation 3: optimal function value is: 3.102636; average function value is 2.069830
+Generation 4: optimal function value is: 3.113427; average function value is 2.131234
+Generation 5: optimal function value is: 3.113427; average function value is 2.175400
+Generation 6: optimal function value is: 3.113427; average function value is 2.214285
+Generation 7: optimal function value is: 3.113427; average function value is 2.252460
+Generation 8: optimal function value is: 3.113427; average function value is 2.279499
+Generation 9: optimal function value is: 3.113427; average function value is 2.292279
+Generation 10: optimal function value is: 3.113427; average function value is 2.307517
+Generation 11: optimal function value is: 3.125148; average function value is 2.325745
+Generation 12: optimal function value is: 3.125148; average function value is 2.322059
+Generation 13: optimal function value is: 3.125148; average function value is 2.330566
+Generation 14: optimal function value is: 3.125148; average function value is 2.359941
+Generation 15: optimal function value is: 3.125148; average function value is 2.375004
+Generation 16: optimal function value is: 3.125148; average function value is 2.390672
+Generation 17: optimal function value is: 3.125148; average function value is 2.397109
+Generation 18: optimal function value is: 3.125148; average function value is 2.408615
+Generation 19: optimal function value is: 3.125148; average function value is 2.418453
+Generation 20: optimal function value is: 3.125148; average function value is 2.415408
+Generation 21: optimal function value is: 3.125148; average function value is 2.406918
+Generation 22: optimal function value is: 3.125148; average function value is 2.422180
+Generation 23: optimal function value is: 3.125148; average function value is 2.417220
+Generation 24: optimal function value is: 3.125148; average function value is 2.410112
+Generation 25: optimal function value is: 3.125148; average function value is 2.409558
+Generation 26: optimal function value is: 3.125148; average function value is 2.413700
+Generation 27: optimal function value is: 3.125148; average function value is 2.425320
+Generation 28: optimal function value is: 3.125148; average function value is 2.434557
+Generation 29: optimal function value is: 3.125148; average function value is 2.438627
+Optimal function value is: 3.125148; 
+Optimal solution is:
+[0.9987857  0.21505316 0.99551432]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.998786      0.215053    0.995514   1809236789  3.125148
+optimal_weight: [0.9987857  0.21505316 0.99551432]
+0:12:09.253104
+campaign_id: 1837973427
+current time:  2019-05-20 00:05:03.431856
+Generation 0: optimal function value is: -0.294820; average function value is 0.396136
+Generation 1: optimal function value is: 1.424778; average function value is 0.829691
+Generation 2: optimal function value is: 1.424778; average function value is 0.942014
+Generation 3: optimal function value is: 1.424778; average function value is 0.994722
+Generation 4: optimal function value is: 1.431718; average function value is 1.039836
+Generation 5: optimal function value is: 1.431718; average function value is 1.073464
+Generation 6: optimal function value is: 1.431718; average function value is 1.087933
+Generation 7: optimal function value is: 1.431718; average function value is 1.115185
+Generation 8: optimal function value is: 1.431718; average function value is 1.124098
+Generation 9: optimal function value is: 1.431718; average function value is 1.134004
+Generation 10: optimal function value is: 1.431718; average function value is 1.133504
+Generation 11: optimal function value is: 1.433960; average function value is 1.133889
+Generation 12: optimal function value is: 1.433960; average function value is 1.133914
+Generation 13: optimal function value is: 1.433960; average function value is 1.142306
+Generation 14: optimal function value is: 1.433960; average function value is 1.141668
+Generation 15: optimal function value is: 1.433960; average function value is 1.153111
+Generation 16: optimal function value is: 1.433960; average function value is 1.151065
+Generation 17: optimal function value is: 1.433960; average function value is 1.160085
+Generation 18: optimal function value is: 1.433960; average function value is 1.162473
+Generation 19: optimal function value is: 1.433960; average function value is 1.170510
+Generation 20: optimal function value is: 1.433960; average function value is 1.178686
+Generation 21: optimal function value is: 1.433960; average function value is 1.179914
+Generation 22: optimal function value is: 1.433960; average function value is 1.181453
+Generation 23: optimal function value is: 1.433960; average function value is 1.184639
+Generation 24: optimal function value is: 1.433960; average function value is 1.187246
+Generation 25: optimal function value is: 1.433960; average function value is 1.186285
+Generation 26: optimal function value is: 1.433960; average function value is 1.196414
+Generation 27: optimal function value is: 1.433960; average function value is 1.196533
+Generation 28: optimal function value is: 1.433960; average function value is 1.206861
+Generation 29: optimal function value is: 1.433960; average function value is 1.208942
+Optimal function value is: 1.433960; 
+Optimal solution is:
+[0.9991143  0.62082764 0.98795633]
+   weight_kpi  weight_spend  weight_bid  campaign_id    score
+0    0.999114      0.620828    0.987956   1837973427  1.43396
+optimal_weight: [0.9991143  0.62082764 0.98795633]
+0:15:58.787837
+campaign_id: 1837975386
+current time:  2019-05-20 00:05:03.431856
+Generation 0: optimal function value is: -0.005443; average function value is 0.947768
+Generation 1: optimal function value is: 1.005473; average function value is 0.659266
+Generation 2: optimal function value is: 1.005473; average function value is 0.741994
+Generation 3: optimal function value is: 1.005473; average function value is 0.786793
+Generation 4: optimal function value is: 1.006037; average function value is 0.802427
+Generation 5: optimal function value is: 1.006037; average function value is 0.833950
+Generation 6: optimal function value is: 1.006107; average function value is 0.848556
+Generation 7: optimal function value is: 1.006107; average function value is 0.861772
+Generation 8: optimal function value is: 1.006107; average function value is 0.882706
+Generation 9: optimal function value is: 1.006107; average function value is 0.881820
+Generation 10: optimal function value is: 1.006216; average function value is 0.889058
+Generation 11: optimal function value is: 1.006216; average function value is 0.909233
+Generation 12: optimal function value is: 1.006216; average function value is 0.905167
+Generation 13: optimal function value is: 1.006216; average function value is 0.905331
+Generation 14: optimal function value is: 1.006216; average function value is 0.904233
+Generation 15: optimal function value is: 1.006216; average function value is 0.907986
+Generation 16: optimal function value is: 1.006216; average function value is 0.920884
+Generation 17: optimal function value is: 1.006216; average function value is 0.911885
+Generation 18: optimal function value is: 1.006216; average function value is 0.920177
+Generation 19: optimal function value is: 1.006216; average function value is 0.922303
+Generation 20: optimal function value is: 1.006216; average function value is 0.920476
+Generation 21: optimal function value is: 1.006216; average function value is 0.931518
+Generation 22: optimal function value is: 1.006216; average function value is 0.928071
+Generation 23: optimal function value is: 1.006216; average function value is 0.926067
+Generation 24: optimal function value is: 1.006216; average function value is 0.926907
+Generation 25: optimal function value is: 1.006216; average function value is 0.924344
+Generation 26: optimal function value is: 1.006216; average function value is 0.930654
+Generation 27: optimal function value is: 1.006216; average function value is 0.927966
+Generation 28: optimal function value is: 1.006216; average function value is 0.937581
+Generation 29: optimal function value is: 1.006216; average function value is 0.948424
+Optimal function value is: 1.006216; 
+Optimal solution is:
+[0.99985923 0.37040713 0.97644261]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.999859      0.370407    0.976443   1837975386  1.006216
+optimal_weight: [0.99985923 0.37040713 0.97644261]
+0:20:44.942543
+campaign_id: 1837420283
+current time:  2019-05-20 00:05:03.431856
+Generation 0: optimal function value is: -0.709363; average function value is -0.447701
+Generation 1: optimal function value is: 3.476948; average function value is 2.045175
+Generation 2: optimal function value is: 3.476948; average function value is 2.170343
+Generation 3: optimal function value is: 3.476948; average function value is 2.248904
+Generation 4: optimal function value is: 3.476948; average function value is 2.308399
+Generation 5: optimal function value is: 3.476948; average function value is 2.365383
+Generation 6: optimal function value is: 3.476948; average function value is 2.384544
+Generation 7: optimal function value is: 3.476948; average function value is 2.404180
+Generation 8: optimal function value is: 3.476948; average function value is 2.444507
+Generation 9: optimal function value is: 3.508412; average function value is 2.471089
+Generation 10: optimal function value is: 3.508412; average function value is 2.496953
+Generation 11: optimal function value is: 3.508412; average function value is 2.487221
+Generation 12: optimal function value is: 3.508412; average function value is 2.494710
+Generation 13: optimal function value is: 3.508412; average function value is 2.488432
+Generation 14: optimal function value is: 3.508412; average function value is 2.496185
+Generation 15: optimal function value is: 3.508412; average function value is 2.509933
+Generation 16: optimal function value is: 3.508412; average function value is 2.516572
+Generation 17: optimal function value is: 3.508412; average function value is 2.529948
+Generation 18: optimal function value is: 3.508412; average function value is 2.543368
+Generation 19: optimal function value is: 3.508412; average function value is 2.539505
+Generation 20: optimal function value is: 3.508412; average function value is 2.535945
+Generation 21: optimal function value is: 3.508412; average function value is 2.524688
+Generation 22: optimal function value is: 3.508412; average function value is 2.521126
+Generation 23: optimal function value is: 3.508412; average function value is 2.533262
+Generation 24: optimal function value is: 3.508412; average function value is 2.534370
+Generation 25: optimal function value is: 3.508412; average function value is 2.542511
+Generation 26: optimal function value is: 3.508412; average function value is 2.540217
+Generation 27: optimal function value is: 3.508412; average function value is 2.554842
+Generation 28: optimal function value is: 3.508412; average function value is 2.560655
+Generation 29: optimal function value is: 3.508412; average function value is 2.572409
+Optimal function value is: 3.508412; 
+Optimal solution is:
+[0.99524946 0.97497129 0.98981432]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.995249      0.974971    0.989814   1837420283  3.508412
+optimal_weight: [0.99524946 0.97497129 0.98981432]
+0:25:06.690562
+campaign_id: 1837064056
+current time:  2019-05-20 00:05:03.431856
+Generation 0: optimal function value is: -0.552582; average function value is -0.128615
+Generation 1: optimal function value is: 2.235047; average function value is 1.323849
+Generation 2: optimal function value is: 2.237325; average function value is 1.431823
+Generation 3: optimal function value is: 2.237325; average function value is 1.501182
+Generation 4: optimal function value is: 2.242878; average function value is 1.542762
+Generation 5: optimal function value is: 2.250768; average function value is 1.595295
+Generation 6: optimal function value is: 2.257910; average function value is 1.619826
+Generation 7: optimal function value is: 2.257910; average function value is 1.637402
+Generation 8: optimal function value is: 2.270291; average function value is 1.650946
+Generation 9: optimal function value is: 2.270291; average function value is 1.654860
+Generation 10: optimal function value is: 2.270291; average function value is 1.685501
+Generation 11: optimal function value is: 2.270291; average function value is 1.697382
+Generation 12: optimal function value is: 2.270291; average function value is 1.707929
+Generation 13: optimal function value is: 2.270291; average function value is 1.732257
+Generation 14: optimal function value is: 2.270291; average function value is 1.727018
+Generation 15: optimal function value is: 2.270291; average function value is 1.737163
+Generation 16: optimal function value is: 2.270291; average function value is 1.746834
+Generation 17: optimal function value is: 2.270291; average function value is 1.756346
+Generation 18: optimal function value is: 2.270291; average function value is 1.772466
+Generation 19: optimal function value is: 2.270291; average function value is 1.791496
+Generation 20: optimal function value is: 2.270291; average function value is 1.787615
+Generation 21: optimal function value is: 2.270291; average function value is 1.778851
+Generation 22: optimal function value is: 2.270291; average function value is 1.779727
+Generation 23: optimal function value is: 2.270291; average function value is 1.779356
+Generation 24: optimal function value is: 2.270291; average function value is 1.778753
+Generation 25: optimal function value is: 2.270291; average function value is 1.767112
+Generation 26: optimal function value is: 2.270291; average function value is 1.780117
+Generation 27: optimal function value is: 2.270291; average function value is 1.787689
+Generation 28: optimal function value is: 2.270291; average function value is 1.779166
+Generation 29: optimal function value is: 2.270291; average function value is 1.787176
+Optimal function value is: 2.270291; 
+Optimal solution is:
+[0.99128444 0.57051923 0.99525623]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.991284      0.570519    0.995256   1837064056  2.270291
+optimal_weight: [0.99128444 0.57051923 0.99525623]
+0:29:09.824189
+campaign_id: 1837064050
+current time:  2019-05-20 00:05:03.431856
+Generation 0: optimal function value is: -0.549505; average function value is -0.118963
+Generation 1: optimal function value is: 2.219780; average function value is 1.312468
+Generation 2: optimal function value is: 2.241789; average function value is 1.402291
+Generation 3: optimal function value is: 2.241789; average function value is 1.480659
+Generation 4: optimal function value is: 2.241789; average function value is 1.529077
+Generation 5: optimal function value is: 2.241789; average function value is 1.564108
+Generation 6: optimal function value is: 2.252893; average function value is 1.608446
+Generation 7: optimal function value is: 2.252893; average function value is 1.639578
+Generation 8: optimal function value is: 2.259132; average function value is 1.655743
+Generation 9: optimal function value is: 2.259132; average function value is 1.673147
+Generation 10: optimal function value is: 2.259132; average function value is 1.689132
+Generation 11: optimal function value is: 2.259132; average function value is 1.700435
+Generation 12: optimal function value is: 2.259132; average function value is 1.705726
+Generation 13: optimal function value is: 2.259132; average function value is 1.707599
+Generation 14: optimal function value is: 2.259132; average function value is 1.724576
+Generation 15: optimal function value is: 2.259132; average function value is 1.733233
+Generation 16: optimal function value is: 2.259132; average function value is 1.727638
+Generation 17: optimal function value is: 2.259132; average function value is 1.718681
+Generation 18: optimal function value is: 2.259132; average function value is 1.735745
+Generation 19: optimal function value is: 2.259132; average function value is 1.746492
+Generation 20: optimal function value is: 2.259132; average function value is 1.746810
+Generation 21: optimal function value is: 2.259132; average function value is 1.753359
+Generation 22: optimal function value is: 2.259132; average function value is 1.757645
+Generation 23: optimal function value is: 2.259132; average function value is 1.758800
+Generation 24: optimal function value is: 2.259132; average function value is 1.769551
+Generation 25: optimal function value is: 2.259132; average function value is 1.775186
+Generation 26: optimal function value is: 2.259132; average function value is 1.775549
+Generation 27: optimal function value is: 2.259132; average function value is 1.784955
+Generation 28: optimal function value is: 2.259132; average function value is 1.786875
+Generation 29: optimal function value is: 2.259132; average function value is 1.791372
+Optimal function value is: 2.259132; 
+Optimal solution is:
+[0.99343949 0.48259769 0.99849407]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.993439      0.482598    0.998494   1837064050  2.259132
+optimal_weight: [0.99343949 0.48259769 0.99849407]
+0:33:20.557837
+campaign_id: 1837064053
+current time:  2019-05-20 00:05:03.431856
+Generation 0: optimal function value is: -0.535658; average function value is -0.098484
+Generation 1: optimal function value is: 2.153587; average function value is 1.269644
+Generation 2: optimal function value is: 2.163117; average function value is 1.348864
+Generation 3: optimal function value is: 2.167775; average function value is 1.402291
+Generation 4: optimal function value is: 2.167775; average function value is 1.447331
+Generation 5: optimal function value is: 2.167775; average function value is 1.477794
+Generation 6: optimal function value is: 2.167775; average function value is 1.524649
+Generation 7: optimal function value is: 2.167775; average function value is 1.571728
+Generation 8: optimal function value is: 2.167775; average function value is 1.588530
+Generation 9: optimal function value is: 2.167775; average function value is 1.604362
+Generation 10: optimal function value is: 2.167775; average function value is 1.615101
+Generation 11: optimal function value is: 2.167775; average function value is 1.634976
+Generation 12: optimal function value is: 2.167775; average function value is 1.638484
+Generation 13: optimal function value is: 2.167775; average function value is 1.643958
+Generation 14: optimal function value is: 2.167775; average function value is 1.656606
+Generation 15: optimal function value is: 2.167775; average function value is 1.664882
+Generation 16: optimal function value is: 2.167775; average function value is 1.678368
+Generation 17: optimal function value is: 2.167775; average function value is 1.680421
+Generation 18: optimal function value is: 2.167775; average function value is 1.677119
+Generation 19: optimal function value is: 2.167775; average function value is 1.684049
+Generation 20: optimal function value is: 2.167775; average function value is 1.679718
+Generation 21: optimal function value is: 2.167775; average function value is 1.673142
+Generation 22: optimal function value is: 2.167775; average function value is 1.685884
+Generation 23: optimal function value is: 2.167775; average function value is 1.682762
+Generation 24: optimal function value is: 2.167775; average function value is 1.690393
+Generation 25: optimal function value is: 2.167775; average function value is 1.691699
+Generation 26: optimal function value is: 2.167775; average function value is 1.698322
+Generation 27: optimal function value is: 2.167775; average function value is 1.696190
+Generation 28: optimal function value is: 2.167775; average function value is 1.701228
+Generation 29: optimal function value is: 2.167775; average function value is 1.700970
+Optimal function value is: 2.167775; 
+Optimal solution is:
+[0.99865167 0.77001859 0.99182556]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.998652      0.770019    0.991826   1837064053  2.167775
+optimal_weight: [0.99865167 0.77001859 0.99182556]
+0:37:29.337729
+campaign_id: 1837064059
+current time:  2019-05-20 00:05:03.431856
+Generation 0: optimal function value is: -0.525254; average function value is -0.069550
+Generation 1: optimal function value is: 2.106391; average function value is 1.212481
+Generation 2: optimal function value is: 2.115857; average function value is 1.295243
+Generation 3: optimal function value is: 2.115857; average function value is 1.383755
+Generation 4: optimal function value is: 2.115857; average function value is 1.435833
+Generation 5: optimal function value is: 2.115857; average function value is 1.462061
+Generation 6: optimal function value is: 2.115857; average function value is 1.493765
+Generation 7: optimal function value is: 2.115857; average function value is 1.522330
+Generation 8: optimal function value is: 2.115857; average function value is 1.533992
+Generation 9: optimal function value is: 2.115857; average function value is 1.547197
+Generation 10: optimal function value is: 2.115857; average function value is 1.552314
+Generation 11: optimal function value is: 2.115857; average function value is 1.576048
+Generation 12: optimal function value is: 2.117357; average function value is 1.596255
+Generation 13: optimal function value is: 2.117357; average function value is 1.575753
+Generation 14: optimal function value is: 2.117357; average function value is 1.592230
+Generation 15: optimal function value is: 2.117357; average function value is 1.595542
+Generation 16: optimal function value is: 2.117357; average function value is 1.610896
+Generation 17: optimal function value is: 2.117357; average function value is 1.613876
+Generation 18: optimal function value is: 2.117357; average function value is 1.633829
+Generation 19: optimal function value is: 2.117357; average function value is 1.636446
+Generation 20: optimal function value is: 2.117357; average function value is 1.640186
+Generation 21: optimal function value is: 2.117357; average function value is 1.642214
+Generation 22: optimal function value is: 2.117357; average function value is 1.647918
+Generation 23: optimal function value is: 2.117357; average function value is 1.657755
+Generation 24: optimal function value is: 2.117357; average function value is 1.651115
+Generation 25: optimal function value is: 2.117357; average function value is 1.658428
+Generation 26: optimal function value is: 2.117357; average function value is 1.657604
+Generation 27: optimal function value is: 2.117357; average function value is 1.661945
+Generation 28: optimal function value is: 2.117357; average function value is 1.669915
+Generation 29: optimal function value is: 2.117357; average function value is 1.676743
+Optimal function value is: 2.117357; 
+Optimal solution is:
+[0.9942707  0.65070471 0.99385876]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.994271      0.650705    0.993859   1837064059  2.117357
+optimal_weight: [0.9942707  0.65070471 0.99385876]
+0:41:22.952080
+campaign_id: 1865315025
+current time:  2019-05-20 00:05:03.431856
+Generation 0: optimal function value is: -0.640997; average function value is -0.287558
+Generation 1: optimal function value is: 2.789711; average function value is 1.794912
+Generation 2: optimal function value is: 2.789711; average function value is 1.926155
+Generation 3: optimal function value is: 2.789711; average function value is 2.013515
+Generation 4: optimal function value is: 2.789711; average function value is 2.057341
+Generation 5: optimal function value is: 2.789711; average function value is 2.073017
+Generation 6: optimal function value is: 2.789711; average function value is 2.091804
+Generation 7: optimal function value is: 2.789711; average function value is 2.111857
+Generation 8: optimal function value is: 2.789711; average function value is 2.126499
+Generation 9: optimal function value is: 2.789711; average function value is 2.138661
+Generation 10: optimal function value is: 2.789711; average function value is 2.134986
+Generation 11: optimal function value is: 2.789711; average function value is 2.148848
+Generation 12: optimal function value is: 2.789711; average function value is 2.157952
+Generation 13: optimal function value is: 2.789711; average function value is 2.177208
+Generation 14: optimal function value is: 2.789711; average function value is 2.186819
+Generation 15: optimal function value is: 2.789711; average function value is 2.187535
+Generation 16: optimal function value is: 2.789711; average function value is 2.182415
+Generation 17: optimal function value is: 2.789711; average function value is 2.180096
+Generation 18: optimal function value is: 2.789711; average function value is 2.199373
+Generation 19: optimal function value is: 2.789711; average function value is 2.199607
+Generation 20: optimal function value is: 2.789711; average function value is 2.188542
+Generation 21: optimal function value is: 2.789711; average function value is 2.160642
+Generation 22: optimal function value is: 2.789711; average function value is 2.177103
+Generation 23: optimal function value is: 2.789711; average function value is 2.182903
+Generation 24: optimal function value is: 2.789711; average function value is 2.181666
+Generation 25: optimal function value is: 2.789711; average function value is 2.180833
+Generation 26: optimal function value is: 2.789711; average function value is 2.176884
+Generation 27: optimal function value is: 2.789711; average function value is 2.182060
+Generation 28: optimal function value is: 2.789711; average function value is 2.176600
+Generation 29: optimal function value is: 2.789711; average function value is 2.171962
+Optimal function value is: 2.789711; 
+Optimal solution is:
+[0.14742334 0.92447519 0.99952924]
+   weight_kpi  weight_spend  weight_bid  campaign_id     score
+0    0.147423      0.924475    0.999529   1865315025  2.789711
+optimal_weight: [0.14742334 0.92447519 0.99952924]
+0:45:48.888250
+0:45:48.888266

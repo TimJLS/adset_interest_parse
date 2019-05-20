@@ -283,6 +283,7 @@ class Campaigns(object):
         self.campaign_features[ Field.period ] = ( self.campaign_features[Field.stop_time] - self.campaign_features[Field.start_time] ).days
         self.campaign_features[ Field.start_time ] = self.campaign_features[Field.start_time].strftime( '%Y-%m-%d %H:%M:%S' )
         self.campaign_features[ Field.stop_time ] = self.campaign_features[Field.stop_time].strftime( '%Y-%m-%d %H:%M:%S' )
+        print( self.campaign_features )
         try:
             self.campaign_features[ Field.daily_budget ] = int( self.campaign_features[Field.spend_cap] )/self.campaign_features[Field.period]
         except Exception as e:
@@ -428,7 +429,7 @@ import MySQLdb
 # import fb_graph
 # In[ ]:
 DATABASE="dev_facebook_test"
-HOST = "aws-dev-ai-private.adgeek.cc"
+HOST = "aws-prod-ai-private.adgeek.cc"
 USER = "app"
 PASSWORD = "adgeek1234"
 
@@ -473,7 +474,7 @@ def update_campaign_target(df_camp):
             mycursor.execute(sql)
             mydb.commit()
         except Exception as e:
-            print('[gdn_db.update_table]: ', e)
+            print('[index_collector_conversion_facebook.update_table]: ', e)
             pass
     mycursor.close()
     mydb.close()
@@ -551,6 +552,17 @@ def get_campaign_target():
             df_camp = pd.concat([df_camp, df_temp])
     mydb.close()
     return df_camp
+
+def get_campaign_is_running():
+    mydb = connectDB(DATABASE)
+    request_time = datetime.datetime.now()
+    df = pd.read_sql( "SELECT * FROM campaign_target" , con=mydb )
+    campaignid_list = df['campaign_id'].unique()
+    df_camp = pd.DataFrame(columns=df.columns)
+    df_is_running = df.drop( df[ df['stop_time'] <= request_time ].index )
+    print(df_is_running)
+    mydb.close()
+    return df_is_running
 '''
 for testing
         df_temp = df[df.campaign_id==campaign_id]
@@ -567,7 +579,7 @@ def main(campaign_id=None, destination=None, charge_type=None):
     if campaign_id:
         data_collect( campaign_id, destination, charge_type )#存資料
     else:
-        df_camp = get_campaign_target()
+        df_camp = get_campaign_is_running()
         for campaign_id in df_camp.campaign_id.unique():
             destination = df_camp[df_camp.campaign_id==campaign_id].destination.iloc[0]
             charge_type = df_camp[df_camp.campaign_id==campaign_id].charge_type.iloc[0]

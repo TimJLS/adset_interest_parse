@@ -22,7 +22,7 @@ from facebook_business.adobjects.insightsresult import InsightsResult
 from facebook_business.adobjects.adsinsights import AdsInsights
 my_app_id = '958842090856883'
 my_app_secret = 'a952f55afca38572cea2994d440d674b'
-my_access_token = 'EAANoD9I4obMBAPcoZA5V7OZBQaPa3Tk7NMAT0ZBZCepdD8zZBcwMZBMHAM1zPeQiRY4Yw07rscee4LMRn9lMsJGuNZAYBA4nCYdZA6tsyL0KGTfQKIAFls3T5jul9Am6t95nbvcGXFmcFDYEyZAX2FpAuVesVGyiHuLFRKxlXfh5t6AZDZD'
+my_access_token = 'EAANoD9I4obMBALrHTgMWgRujnWcZA3ZB823phs6ynDDtQxnzIZASyRQZCHfr5soXBZA7NM9Dc4j9O8FtnlIzxiPCsYt4tmPQ6ZAT3yJLPuYQqjnWZBWX5dsOVzNhEqsHYj1jVJ3RAVVueW7RSxRDbNXKvK3W23dcAjNMjxIjQGIOgZDZD'
 
 FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
 
@@ -54,6 +54,7 @@ CAMPAIGN_OBJECTIVE_FIELD = {
 }
 CAMPAIGN_FIELD = {
     'spend_cap': campaign.Campaign.Field.spend_cap,
+    'lifetime_budget': campaign.Campaign.Field.lifetime_budget,
     'objective': campaign.Campaign.Field.objective,
     'start_time': campaign.Campaign.Field.start_time,
     'stop_time': campaign.Campaign.Field.stop_time,
@@ -100,6 +101,7 @@ class Field:
     stop_time = 'stop_time'
     period = 'period'
     daily_budget = 'daily_budget'
+    lifetime_budget = 'lifetime_budget'
     account_id = 'account_id'
     actions = 'actions'
     adset_id = 'adset_id'
@@ -243,7 +245,7 @@ class Campaigns(object):
             if current_campaign.get(Field.impressions):
                 spend = current_campaign.get( Field.spend )
                 impressions = current_campaign.get( Field.impressions )
-                self.campaign_insights.update( { Field.spend: int(spend) } )
+                self.campaign_insights.update( { Field.spend: float(spend) } )
                 self.campaign_insights.update( { Field.impressions: int(impressions) } )
                 try:
                     for act in current_campaign.get( Field.actions ):
@@ -285,10 +287,10 @@ class Campaigns(object):
         self.campaign_features[ Field.stop_time ] = self.campaign_features[Field.stop_time].strftime( '%Y-%m-%d %H:%M:%S' )
         try:
             self.campaign_features[ Field.daily_budget ] = int( self.campaign_features[Field.spend_cap] )/self.campaign_features[Field.period]
-        except:
-            self.campaign_features[ Field.daily_budget ] = 50000/self.campaign_features[Field.period]
-        
-        
+        except Exception as e:
+            print('[index_collector_conversion_facebook.Campaigns.retrieve_all]:', e)
+            self.campaign_features[Field.lifetime_budget] = float(self.campaign_features[Field.lifetime_budget]) / 100
+            self.campaign_features[ Field.daily_budget ] = float( self.campaign_features[Field.lifetime_budget] )/self.campaign_features[Field.period]
         self.campaign_info = { **self.campaign_insights, **self.campaign_features }
         return self.campaign_info
 
@@ -327,7 +329,7 @@ class AdSets(object):
             if current_adset.get(Field.impressions):
                 spend = current_adset.get( Field.spend )
                 impressions = current_adset.get( Field.impressions )
-                self.adset_insights.update( { Field.spend: int(spend) } )
+                self.adset_insights.update( { Field.spend: float(spend) } )
                 self.adset_insights.update( { Field.impressions: int(impressions) } )
             try:
                 for act in current_adset.get( Field.actions ):
@@ -434,7 +436,7 @@ import MySQLdb
 # import fb_graph
 # In[ ]:
 DATABASE="dev_facebook_test"
-HOST = "aws-dev-ai-private.adgeek.cc"
+HOST = "aws-prod-ai-private.adgeek.cc"
 USER = "app"
 PASSWORD = "adgeek1234"
 

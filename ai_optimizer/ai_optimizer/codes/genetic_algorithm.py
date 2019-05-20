@@ -254,7 +254,7 @@ class ObjectiveFunc(object):
         df_camp['campaign_bid'] = df_camp['spend_cap']/df_camp['destination']
         insights = facebook_datacollector.Campaigns(campaign_id, charge_type).get_campaign_insights()
         if bool(insights):
-            spend = int( insights.get("spend") )
+            spend = float( insights.get("spend") )
             campaign_cpc = float( insights.get("cost_per_target") )
             campaign_charge = int( insights.get("target") )
             impressions = int( insights.get("impressions") )
@@ -340,7 +340,7 @@ def main(campaign_id=None):
                 score_columns=['weight_kpi', 'weight_spend', 'weight_bid']
                 df_score = pd.DataFrame(data=[optimal], columns=['weight_kpi', 'weight_spend', 'weight_bid'], index=[0])
 
-                df_final = pd.DataFrame({'campaign_id':camp_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
+                df_final = pd.DataFrame({'campaign_id':campaign_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
                 df_final = pd.concat( [df_score, df_final], axis=1, sort=True, ignore_index=False)
 
                 print(df_final)
