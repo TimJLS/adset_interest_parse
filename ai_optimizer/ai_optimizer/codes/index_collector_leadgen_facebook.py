@@ -93,6 +93,9 @@ LEAD_METRICS = {
 
 
 class Field:
+    ai_spend_cap = 'ai_spend_cap'
+    ai_start_date = 'ai_start_date'
+    ai_stop_date = 'ai_stop_date'
     target_type = 'target_type'
     target = 'target'
     cost_per_target = 'cost_per_target'
@@ -221,7 +224,11 @@ class Campaigns(object):
         self.campaign_insights = dict()
         self.campaign_features = dict()
         self.campaign_info = dict()
-        
+        brief_dict = get_campaign_ai_brief( self.campaign_id )
+        self.ai_spend_cap = brief_dict[Field.ai_spend_cap]
+        self.ai_start_date = brief_dict[Field.ai_start_date]
+        self.ai_stop_date = brief_dict[Field.ai_stop_date]
+
     # Getters
     
     def get_campaign_features( self ):
@@ -232,10 +239,17 @@ class Campaigns(object):
         return self.campaign_features
         
     def get_campaign_insights( self, date_preset=None ):
+        if date_preset is None or date_preset == DatePreset.lifetime:
+            params = {
+                'time_range[since]': self.ai_start_date,
+                'time_range[until]]': self.ai_stop_date,
+            }
+        else:
+            params = {
+                'date_preset': date_preset,
+            }
         campaigns = campaign.Campaign( self.campaign_id )
-        params = {
-            'date_preset': date_preset,
-        }
+
         insights = campaigns.get_insights(
             params=params,
             fields=list( GENERAL_FIELD.values() )+list( TARGET_FIELD.values() )
@@ -282,15 +296,11 @@ class Campaigns(object):
         except:
             self.campaign_features[ Field.stop_time ] = datetime.datetime.now() + datetime.timedelta(1)
         ###
-        self.campaign_features[ Field.period ] = ( self.campaign_features[Field.stop_time] - self.campaign_features[Field.start_time] ).days
+        self.campaign_features[ Field.period ] = ( self.ai_stop_date - self.ai_start_date ).days + 1
         self.campaign_features[ Field.start_time ] = self.campaign_features[Field.start_time].strftime( '%Y-%m-%d %H:%M:%S' )
         self.campaign_features[ Field.stop_time ] = self.campaign_features[Field.stop_time].strftime( '%Y-%m-%d %H:%M:%S' )
-        try:
-            self.campaign_features[ Field.daily_budget ] = int( self.campaign_features[Field.spend_cap] )/self.campaign_features[Field.period]
-        except Exception as e:
-            print('[index_collector_conversion_facebook.Campaigns.retrieve_all]:', e)
-            self.campaign_features[Field.lifetime_budget] = float(self.campaign_features[Field.lifetime_budget]) / 100
-            self.campaign_features[ Field.daily_budget ] = float( self.campaign_features[Field.lifetime_budget] )/self.campaign_features[Field.period]
+        self.campaign_features[ Field.daily_budget ] = int( self.ai_spend_cap )/self.campaign_features[Field.period]
+
         self.campaign_info = { **self.campaign_insights, **self.campaign_features }
         return self.campaign_info
 
@@ -466,26 +476,23 @@ def insertion(table, df):
 def update_campaign_target(df_camp):
     mydb = connectDB(DATABASE)
     mycursor = mydb.cursor()
-    sql = ("UPDATE campaign_target SET charge_type = %s, cost_per_target = %s, daily_budget = %s, daily_charge = %s, destination = %s, impressions = %s, period = %s, spend = %s, spend_cap = %s, start_time = %s , stop_time=%s, target=%s, target_left=%s, target_type=%s WHERE campaign_id = %s")
-    val = ( 
-        df_camp['charge_type'].iloc[0],
-        df_camp['cost_per_target'].iloc[0].astype(dtype=object),
-        df_camp['daily_budget'].iloc[0].astype(dtype=object),
-        df_camp['daily_charge'].iloc[0].astype(dtype=object),
-        df_camp['destination'].iloc[0].astype(dtype=object),
-        df_camp['impressions'].iloc[0].astype(dtype=object),
-        df_camp['period'].iloc[0].astype(dtype=object),
-        df_camp['spend'].iloc[0].astype(dtype=object),
-        df_camp['spend_cap'].iloc[0].astype(dtype=object),
-        df_camp['start_time'].iloc[0],
-        df_camp['stop_time'].iloc[0],
-        df_camp['target'].iloc[0].astype(dtype=object),
-        df_camp['target_left'].iloc[0].astype(dtype=object),
-        df_camp['target_type'].iloc[0],
-        df_camp['campaign_id'].iloc[0].astype(dtype=object)
-    )
-    mycursor.execute(sql, val)
-    mydb.commit()
+    campaign_id = df_camp['campaign_id'].iloc[0]
+    df_camp.drop(['campaign_id'], axis=1)
+    try:
+        spend_cap = df_camp['spend_cap'].iloc[0]
+    except Exception as e:
+        print('[index_collector_leadgen_facebook.update_campaign_target]: ', e)
+        lifetime_budget = df_camp['lifetime_budget'].iloc[0]
+        df_camp['spend_cap'] = df_camp['lifetime_budget']
+        df_camp = df_camp.drop(['lifetime_budget'], axis=1)
+    for column in df_camp.columns:
+        try:
+            sql = ("UPDATE campaign_target SET {} = '{}' WHERE campaign_id={}".format(column, df_camp[column].iloc[0], campaign_id))
+            mycursor.execute(sql)
+            mydb.commit()
+        except Exception as e:
+            print('[index_collector_leadgen_facebook.update_table]: ', e)
+            pass
     mycursor.close()
     mydb.close()
     return
@@ -570,11 +577,34 @@ def get_campaign_target():
 #         df_camp = pd.concat([df_camp, df_temp])
     mydb.close()
     return df_camp
-'''
-for testing
-        df_temp = df[df.campaign_id==campaign_id]
-        df_camp = pd.concat([df_camp, df_temp])
-# '''
+
+def get_leadgen_campaign_is_running():
+    mydb = connectDB(DATABASE)
+    request_time = datetime.datetime.now()
+    df = pd.read_sql( "SELECT * FROM campaign_target" , con=mydb )
+    campaignid_list = df['campaign_id'].unique()
+    df_camp = pd.DataFrame(columns=df.columns)
+    df_is_running = df.drop( df[ df['stop_time'] <= request_time ].index )
+    df_leadgen_is_running = df_is_running.drop( df_is_running[ df_is_running['charge_type'] != 'LEAD_GENERATION' ].index )
+    print(df_leadgen_is_running)
+    mydb.close()
+    return df_leadgen_is_running
+
+def  get_campaign_ai_brief( campaign_id ):
+    mydb = connectDB(DATABASE)
+    mycursor = mydb.cursor()
+    sql =  "SELECT ai_spend_cap, ai_start_date, ai_stop_date FROM campaign_target WHERE campaign_id={}".format(campaign_id)
+
+    mycursor.execute(sql)
+    field_name = [field[0] for field in mycursor.description]
+    values = mycursor.fetchone()
+    row = dict(zip(field_name, values))
+    spend_cap = row['ai_spend_cap']
+    start_date = row['ai_start_date']
+    stop_date = row['ai_stop_date']
+    mycursor.close()
+    mydb.close()
+    return row
 
 
 
@@ -584,7 +614,7 @@ for testing
 def main():
     start_time = datetime.datetime.now()
     
-    df_camp = get_campaign_target()
+    df_camp = get_leadgen_campaign_is_running()
     for campaign_id in df_camp.campaign_id.unique():
         destination = df_camp[df_camp.campaign_id==campaign_id].destination.iloc[0]
         charge_type = df_camp[df_camp.campaign_id==campaign_id].charge_type.iloc[0]

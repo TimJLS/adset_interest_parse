@@ -97,6 +97,9 @@ CONVERSION_METRICS = {
 
 
 class Field:
+    ai_spend_cap = 'ai_spend_cap'
+    ai_start_date = 'ai_start_date'
+    ai_stop_date = 'ai_stop_date'
     target_type = 'target_type'
     target = 'target'
     cost_per_target = 'cost_per_target'
@@ -223,7 +226,11 @@ class Campaigns(object):
         self.campaign_insights = dict()
         self.campaign_features = dict()
         self.info = dict()
-        
+        brief_dict = get_campaign_ai_brief( self.campaign_id )
+        self.ai_spend_cap = brief_dict[Field.ai_spend_cap]
+        self.ai_start_date = brief_dict[Field.ai_start_date]
+        self.ai_stop_date = brief_dict[Field.ai_stop_date]
+
     # Getters
     
     def get_campaign_features( self ):
@@ -235,9 +242,16 @@ class Campaigns(object):
         
     def get_campaign_insights( self, date_preset=None ):
         campaigns = campaign.Campaign( self.campaign_id )
-        params = {
-            'date_preset': date_preset,
-        }
+        params = {}
+        if date_preset is None or date_preset == DatePreset.lifetime:
+            params = {
+                'time_range[since]': self.ai_start_date,
+                'time_range[until]]': self.ai_stop_date,
+            }
+        else:
+            params = {
+                'date_preset': date_preset,
+            }
         insights = campaigns.get_insights(
             params=params,
             fields=list( GENERAL_INSIGHTS.values() )+list( TARGET_INSIGHTS.values() )
@@ -280,18 +294,12 @@ class Campaigns(object):
         self.campaign_features[ Field.target_type ] = self.campaign_features.pop('objective')
         self.campaign_features[ Field.start_time ] = datetime.datetime.strptime( self.campaign_features[Field.start_time],'%Y-%m-%dT%H:%M:%S+%f' )
         self.campaign_features[ Field.stop_time ] = datetime.datetime.strptime( self.campaign_features[Field.stop_time],'%Y-%m-%dT%H:%M:%S+%f' )
-        self.campaign_features[ Field.period ] = ( self.campaign_features[Field.stop_time] - self.campaign_features[Field.start_time] ).days
+        elf.campaign_features[ Field.period ] = ( self.ai_stop_date - self.ai_start_date ).days + 1
         self.campaign_features[ Field.start_time ] = self.campaign_features[Field.start_time].strftime( '%Y-%m-%d %H:%M:%S' )
         self.campaign_features[ Field.stop_time ] = self.campaign_features[Field.stop_time].strftime( '%Y-%m-%d %H:%M:%S' )
+        
+        self.campaign_features[ Field.daily_budget ] = int( self.ai_spend_cap )/self.campaign_features[Field.period]        
         print( self.campaign_features )
-        try:
-            self.campaign_features[ Field.daily_budget ] = int( self.campaign_features[Field.spend_cap] )/self.campaign_features[Field.period]
-        except Exception as e:
-            print('[index_collector_conversion_facebook.Campaigns.retrieve_all]:', e)
-            self.campaign_features[Field.lifetime_budget] = float(self.campaign_features[Field.lifetime_budget]) / 100
-            self.campaign_features[ Field.daily_budget ] = float( self.campaign_features[Field.lifetime_budget] )/self.campaign_features[Field.period]
-        
-        
         self.info = { **self.campaign_insights, **self.campaign_features }
         return self.info
 
@@ -536,7 +544,21 @@ def check_optimal_weight(campaign_id, df):
 
 
 # In[13]:
+def  get_campaign_ai_brief( campaign_id ):
+    mydb = connectDB(DATABASE)
+    mycursor = mydb.cursor()
+    sql =  "SELECT ai_spend_cap, ai_start_date, ai_stop_date FROM campaign_target WHERE campaign_id={}".format(campaign_id)
 
+    mycursor.execute(sql)
+    field_name = [field[0] for field in mycursor.description]
+    values = mycursor.fetchone()
+    row = dict(zip(field_name, values))
+    spend_cap = row['ai_spend_cap']
+    start_date = row['ai_start_date']
+    stop_date = row['ai_stop_date']
+    mycursor.close()
+    mydb.close()
+    return row
 
 def get_campaign_target():
     mydb = connectDB(DATABASE)
@@ -563,6 +585,18 @@ def get_campaign_is_running():
     print(df_is_running)
     mydb.close()
     return df_is_running
+
+def get_conversion_campaign_is_running():
+    mydb = connectDB(DATABASE)
+    request_time = datetime.datetime.now()
+    df = pd.read_sql( "SELECT * FROM campaign_target" , con=mydb )
+    campaignid_list = df['campaign_id'].unique()
+    df_camp = pd.DataFrame(columns=df.columns)
+    df_is_running = df.drop( df[ df['stop_time'] <= request_time ].index )
+    df_conversion_is_running = df_is_running.drop( df_is_running[ df_is_running['charge_type'] != 'CONVERSIONS' ].index )
+    print(df_conversion_is_running)
+    mydb.close()
+    return df_conversion_is_running
 '''
 for testing
         df_temp = df[df.campaign_id==campaign_id]
@@ -579,7 +613,7 @@ def main(campaign_id=None, destination=None, charge_type=None):
     if campaign_id:
         data_collect( campaign_id, destination, charge_type )#存資料
     else:
-        df_camp = get_campaign_is_running()
+        df_camp = get_conversion_campaign_is_running()
         for campaign_id in df_camp.campaign_id.unique():
             destination = df_camp[df_camp.campaign_id==campaign_id].destination.iloc[0]
             charge_type = df_camp[df_camp.campaign_id==campaign_id].charge_type.iloc[0]

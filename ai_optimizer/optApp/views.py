@@ -68,16 +68,12 @@ def opt_api(request):
         if campaign_id and destination and destination_type and ai_start_date and ai_stop_date and  ai_spend_cap:
             if media == 'Facebook' or not media:
                 FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-                print('tim::::::::::::', request.POST)
                 queue = mysql_adactivity_save.check_campaignid_target( campaign_id,
                                                                       destination,
                                                                       destination_type,
                                                                       ai_start_date,
                                                                       ai_stop_date,
                                                                       ai_spend_cap )
-                return JsonResponse( {}, safe=False )
-                
-                
                 if mysql_adactivity_save.check_default_price(campaign_id):
                     facebook_datacollector.make_default( int(campaign_id), destination_type )
                 if queue:

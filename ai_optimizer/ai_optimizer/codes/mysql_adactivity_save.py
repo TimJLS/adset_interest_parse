@@ -96,21 +96,21 @@ def get_result( campaign_id ):
 
 #campaign_target
 
-def check_campaignid_target(campaign_id, destination, charge_type):
+def check_campaignid_target(campaign_id, destination, charge_type, ai_start_date, ai_stop_date, ai_spend_cap):
     mydb = connectDB(DATABASE)
     df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id=%s" % (campaign_id), con=mydb )   
     if df.empty:
         mycursor = mydb.cursor()
-        sql = "INSERT INTO campaign_target ( campaign_id, destination, charge_type ) VALUES ( %s, %s, %s )"
-        val = ( campaign_id, destination, charge_type )
+        sql = "INSERT INTO campaign_target ( campaign_id, destination, charge_type, ai_start_date, ai_stop_date, ai_spend_cap ) VALUES ( %s, %s, %s, %s, %s, %s )"
+        val = ( campaign_id, destination, charge_type, ai_start_date, ai_stop_date, ai_spend_cap )
         mycursor.execute(sql, val)
         mydb.commit()
         mycursor.close()
         mydb.close()
         return False
     else:
-        sql = "UPDATE campaign_target SET destination=%s, charge_type=%s WHERE campaign_id=%s"
-        val = ( destination, charge_type, campaign_id )
+        sql = "UPDATE campaign_target SET destination=%s, charge_type=%s, ai_start_date=%s, ai_stop_date=%s, ai_spend_cap=%s WHERE campaign_id=%s"
+        val = ( destination, charge_type, ai_start_date, ai_stop_date, ai_spend_cap, campaign_id )
         mycursor = mydb.cursor()
         mycursor.execute(sql, val)
         mydb.commit()
@@ -326,6 +326,8 @@ def adjust_init_bid(campaign_id):
     mydb.close()    
     return
 
+
+
 def check_initial_bid(adset_id, df):
     mydb = connectDB(DATABASE)
     df_check = pd.read_sql( "SELECT * FROM adset_initial_bid WHERE adset_id={}".format(adset_id), con=mydb )
@@ -345,11 +347,27 @@ def update_init_bid_by_campaign(campaign_id):
         update_init_bid( int(adset_id), init_bid )
     return
 
+def  get_campaign_ai_brief( campaign_id ):
+    mydb = connectDB(DATABASE)
+    mycursor = mydb.cursor()
+    sql =  "SELECT ai_spend_cap, ai_start_date, ai_stop_date FROM campaign_target WHERE campaign_id={}".format(campaign_id)
+
+    mycursor.execute(sql)
+    field_name = [field[0] for field in mycursor.description]
+    values = mycursor.fetchone()
+    row = dict(zip(field_name, values))
+    spend_cap = row['ai_spend_cap']
+    start_date = row['ai_start_date']
+    stop_date = row['ai_stop_date']
+    mycursor.close()
+    mydb.close()
+    return row
+
 if __name__=="__main__":
 #     get_campaign_target()
-    from facebook_datacollector import Campaigns
-    campaign_id = input("input campaign_id u want to change:")
-    update_init_bid_by_campaign(campaign_id)
-#     update_init_bid(23843440572460316, 5)
+#     from facebook_datacollector import Campaigns
+#     campaign_id = input("input campaign_id u want to change:")
+#     update_init_bid_by_campaign(campaign_id)
+    get_campaign_ai_brief(23843269222010540)
     
     
