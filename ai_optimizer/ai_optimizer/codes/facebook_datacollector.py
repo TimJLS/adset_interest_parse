@@ -96,6 +96,9 @@ TARGET_FIELD = {
     'cost_per_actions': AdsInsights.Field.cost_per_action_type,
 }
 class Field:
+    ai_spend_cap = 'ai_spend_cap'
+    ai_start_date = 'ai_start_date'
+    ai_stop_date = 'ai_stop_date'
     target_type = 'target_type'
     target = 'target'
     cost_per_target = 'cost_per_target'
@@ -237,7 +240,10 @@ class Campaigns(object):
         self.charge_type = charge_type
         self.campaign_insights = dict()
         self.campaign_features = dict()
-        
+        brief_dict = mysql_adactivity_save.get_campaign_ai_brief( self.campaign_id )
+        self.ai_spend_cap = brief_dict[Field.ai_spend_cap]
+        self.ai_start_date = brief_dict[Field.ai_start_date]
+        self.ai_stop_date = brief_dict[Field.ai_stop_date]
     # Getters
     
     def get_campaign_features( self ):
@@ -248,10 +254,20 @@ class Campaigns(object):
         return self.campaign_features
     
     def get_campaign_insights( self, date_preset=None ):
-        camp = campaign.Campaign( self.campaign_id )
         params = {
-            'date_preset': date_preset,
+        
         }
+        if date_preset is None or date_preset == DatePreset.lifetime:
+            params = {
+                'time_range[since]': self.ai_start_date,
+                'time_range[until]]': self.ai_stop_date,
+            }
+        else:
+            params = {
+                'date_preset': date_preset,
+            }
+        camp = campaign.Campaign( self.campaign_id )
+        
         insights = camp.get_insights(
             params=params,
             fields=list( GENERAL_FIELD.values() )+list( TARGET_FIELD.values() )
@@ -295,6 +311,8 @@ class Campaigns(object):
         account = camp.get_ad_sets(fields=[campaign.Campaign.Field.account_id])
         current_account = account[0]
         return current_account.get( Field.account_id )
+    
+        
     # Operator
     
     def generate_campaign_info( self, date_preset=DatePreset.lifetime ):
@@ -309,10 +327,10 @@ class Campaigns(object):
         except:
             self.campaign_features[ Field.stop_time ] = datetime.datetime.now() + datetime.timedelta(7)
             self.campaign_features[Field.spend_cap] = 10000
-        self.campaign_features[ Field.period ] = ( self.campaign_features[Field.stop_time] - self.campaign_features[Field.start_time] ).days + 1
+        self.campaign_features[ Field.period ] = ( self.ai_stop_date - self.ai_start_date ).days + 1
         self.campaign_features[ Field.start_time ] = self.campaign_features[Field.start_time].strftime( '%Y-%m-%d %H:%M:%S' )
         self.campaign_features[ Field.stop_time ] = self.campaign_features[Field.stop_time].strftime( '%Y-%m-%d %H:%M:%S' )
-        self.campaign_features[ Field.daily_budget ] = int( self.campaign_features[Field.spend_cap] )/self.campaign_features[Field.period]
+        self.campaign_features[ Field.daily_budget ] = int( self.ai_spend_cap )/self.campaign_features[Field.period]
         self.campaign_info = { **self.campaign_insights, **self.campaign_features }
         return self.campaign_info
     
@@ -412,8 +430,8 @@ def data_collect( campaign_id, total_clicks, charge_type ):
     life_time_campaign_insights = camp.generate_campaign_info( date_preset=DatePreset.lifetime )
     stop_time = datetime.datetime.strptime( life_time_campaign_insights[Field.stop_time],'%Y-%m-%d %H:%M:%S' )
     period_left = (stop_time-datetime.datetime.now()).days + 1
-    if period_left <= 0:
-        return
+#     if period_left <= 0:
+#         return
     charge = life_time_campaign_insights[ Field.target ]
     target_left = {'target_left': int(total_clicks) - int(charge)}
     daily_charge = {'daily_charge': int(target_left['target_left']) / period_left}
@@ -504,8 +522,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
-#     data_collect( int(23843335814370399), 44167, 'VIDEO_VIEWS' )
+#     main()
+    data_collect( int(23843269222010540), 735, 'CONVERSIONS' )
     import gc
     gc.collect()
 

@@ -34,9 +34,12 @@ class Field(object):
     ad_id = 'ad_id'
     account_id = 'account_id'
     campaign_id = 'campaign_id'
-    target = 'total_clicks'
+    destination = 'total_clicks'
     destination_type = 'destination_type'
     media = 'media'
+    ai_start_date = 'ai_start_date'
+    ai_stop_date = 'ai_stop_date'
+    ai_spend_cap = 'ai_spend_cap'
 
 
 
@@ -46,19 +49,35 @@ my_access_token = 'EAANoD9I4obMBALrHTgMWgRujnWcZA3ZB823phs6ynDDtQxnzIZASyRQZCHfr
 
 @csrf_exempt
 def opt_api(request):
+    
     if request.method == "POST":
+    
         start_time = datetime.datetime.now()
         account_id = request.POST.get(Field.account_id)
         campaign_id = request.POST.get(Field.campaign_id)
-        destination = request.POST.get(Field.target)
+        destination = request.POST.get(Field.destination)
         destination_type = request.POST.get(Field.destination_type)
         media = request.POST.get(Field.media)
-        print(campaign_id and destination and destination_type, datetime.datetime.now())
+        
+        ai_start_date = request.POST.get(Field.ai_start_date)
+        ai_stop_date = request.POST.get(Field.ai_stop_date)
+        ai_spend_cap = request.POST.get(Field.ai_spend_cap)
+        print('request post is:',  request.POST)
+        
 #         if campaign_id and destination and destination_type and media: # new release version
-        if campaign_id and destination and destination_type: #temporary working version
+        if campaign_id and destination and destination_type and ai_start_date and ai_stop_date and  ai_spend_cap:
             if media == 'Facebook' or not media:
                 FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-                queue = mysql_adactivity_save.check_campaignid_target( campaign_id, destination, destination_type )
+                print('tim::::::::::::', request.POST)
+                queue = mysql_adactivity_save.check_campaignid_target( campaign_id,
+                                                                      destination,
+                                                                      destination_type,
+                                                                      ai_start_date,
+                                                                      ai_stop_date,
+                                                                      ai_spend_cap )
+                return JsonResponse( {}, safe=False )
+                
+                
                 if mysql_adactivity_save.check_default_price(campaign_id):
                     facebook_datacollector.make_default( int(campaign_id), destination_type )
                 if queue:
@@ -98,7 +117,7 @@ def opt_api(request):
 #                     mydict = mysql_adactivity_save.get_default( campaign_id ) #new version
                     mydict = mysql_adactivity_save.get_release_default( campaign_id )#release version
                 return JsonResponse( json.loads(mydict), safe=False )
-        elif campaign_id:
+        elif campaign_id: # eric issue , brief system not OK
             print(campaign_id)
             try:
 #                         mydict = mysql_adactivity_save.get_result( campaign_id ) #new version
