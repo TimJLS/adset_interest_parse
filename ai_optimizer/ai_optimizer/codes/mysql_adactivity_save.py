@@ -11,6 +11,7 @@ from sqlalchemy import create_engine
 import pymysql
 pymysql.install_as_MySQLdb()
 import MySQLdb
+import sys
 
 # import fb_graph
 # In[ ]:
@@ -339,9 +340,8 @@ def check_initial_bid(adset_id, df):
         engine.dispose()
     return
     
-def update_init_bid_by_campaign(campaign_id):
+def update_init_bid_by_campaign(campaign_id, init_bid):
     df_camp = get_campaign_target(campaign_id)
-    init_bid = input("type init_bid u want to change:")
     adset_list = Campaigns(campaign_id, df_camp['charge_type'].iloc[0]).get_adsets()
     for adset_id in adset_list:
         update_init_bid( int(adset_id), init_bid )
@@ -364,10 +364,26 @@ def  get_campaign_ai_brief( campaign_id ):
     return row
 
 if __name__=="__main__":
-#     get_campaign_target()
-#     from facebook_datacollector import Campaigns
-#     campaign_id = input("input campaign_id u want to change:")
-#     update_init_bid_by_campaign(campaign_id)
-    get_campaign_ai_brief(23843269222010540)
+
+    print(sys.argv)
+    from facebook_datacollector import Campaigns
+    if len(sys.argv) < 2:
+        print('Error, the format should be: ', 'python3 mysql_adactivity_save.py get_ai_brief [campaign_id] ')
+        print('Error, the format should be: ', 'python3 mysql_adactivity_save.py update_init_bid [campaign_id] [bid_value] ')
+    
+    current_operation = sys.argv[1]
+    print('current_operation:' ,current_operation)
+    if current_operation == 'get_ai_brief':
+        campaign_id = sys.argv[2]
+        result = get_campaign_ai_brief(campaign_id)
+        print(result)
+    elif current_operation == 'update_init_bid':
+        campaign_id = sys.argv[2]
+        init_bid = sys.argv[3]
+        update_init_bid_by_campaign(campaign_id, init_bid)
+    else:
+        print('error')
+
+
     
     
