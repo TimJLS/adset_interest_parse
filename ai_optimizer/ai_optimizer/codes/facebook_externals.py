@@ -4,7 +4,9 @@
 # In[1]:
 
 
-# In[4]:
+
+
+# In[2]:
 
 
 import json
@@ -44,6 +46,9 @@ ACTION_DICT = {'bid': AdSet.Field.bid_amount,
 
 BRANDING_CAMPAIGN_LIST = ['LINK_CLICKS', 'ALL_CLICKS','VIDEO_VIEWS', 'REACH', 'POST_ENGAGEMENT']
 PERFORMANCE_CAMPAIGN_LIST = ['CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART', 'LANDING_PAGE_VIEW']
+
+ADSET_COPY_COUNT = 3
+ADSET_MIN_COUNT = 5
 
 FIELDS = [
     AdSet.Field.id,
@@ -168,7 +173,7 @@ def split_adset_list(adset_list):
     import math
     adset_list.sort(reverse=True)
     half = math.ceil(len(adset_list) / 2)
-    return adset_list[:half], adset_list[half:]
+    return adset_list[:ADSET_COPY_COUNT], adset_list[half:]
 
 
 def is_contain_copy_string(adset_name):
@@ -187,9 +192,7 @@ def check_init_bid(init_bid):
 
 
 def copy_adset(adset_id, actions, adset_params=None):
-    #Nate if IS_DEBUG:
-    #Nate    return
-
+    
     new_adset_params = adset_params
     origin_adset_name = adset_params[AdSet.Field.name]
     new_adset_params[AdSet.Field.id] = None
@@ -212,8 +215,7 @@ def copy_adset(adset_id, actions, adset_params=None):
 # #             else:
 #             new_adset_params[AdSet.Field.targeting]["flexible_spec"] = {
 #                     "interests": [actions[action]]}
-    #print('Nate adset_id', adset_id)
-    #print('Nate new_adset_params', new_adset_params)
+
     new_adset_id = -1
     try:
         new_adset_id = make_adset(new_adset_params)
@@ -270,11 +272,25 @@ def handle_campaign_copy(campaign_id):
     campaign_days_left = fb_adapter.campaign_days_left
     achieving_rate = target / daily_charge
     print('[campaign_id]', campaign_id, '[achieving rate]', achieving_rate, target, daily_charge)
-
+    
     adset_list = get_sorted_adset(campaign_id)
-    print('adset_list',len(adset_list))
     
     adset_for_copy_list, adset_for_off_list = split_adset_list(adset_list)
+
+    # current going adset is less than ADSET_MIN_COUNT, not to close any adset
+    if len(adset_list) <= ADSET_MIN_COUNT:
+        adset_for_off_list = []
+    
+    for adset_id in adset_for_off_list:
+        origin_adset_params = retrieve_origin_adset_params(adset_id)
+        origin_name = origin_adset_params[AdSet.Field.name]
+        if not is_contain_rt_string(origin_name):
+            update_status(adset_id, status=AdSet.Status.paused)
+    
+    print('adset_list',len(adset_list))
+    print('adset_for_copy_list',len(adset_for_copy_list))
+    print('adset_for_off_list',len(adset_for_off_list))
+    
     # get ready to duplicate
     actions = {'bid': None, 'age': list(), 'interest': None}
     actions_list = list()
@@ -301,15 +317,11 @@ def handle_campaign_copy(campaign_id):
         is_performance_campaign = False
         is_split_age = True
     
-    for adset_id in adset_for_off_list:
-        
-        origin_adset_params = retrieve_origin_adset_params(adset_id)
-        
-        origin_name = origin_adset_params[AdSet.Field.name]
-        if not is_contain_rt_string(origin_name):
-            update_status(adset_id, status=AdSet.Status.paused)
-    
-    print('[handle_campaign_copy] adset_for_copy_list',adset_for_copy_list)
+    print('is_performance_campaign', is_performance_campaign)
+    # not to copy any adset if it is performance campaign
+    if is_performance_campaign:
+        print('return , not to copy any adset if it is performance campaign')
+        return
     
     #get adset bid for this campaign
     fb_adapter.retrieve_campaign_attribute()
@@ -358,12 +370,12 @@ def handle_campaign_copy(campaign_id):
             actions.update({'interest': None})
             
         # whether to split age or copy adset names with 'copy'
-        if is_performance_campaign or is_contain_copy_string(origin_name):
+        if is_contain_copy_string(origin_name):
             # for CPA case or CPC with COPY string
             actions['age'] = list()
             actions['age'].append(str(adset_min) + '-' + str(adset_max))
             actions_copy = deepcopy(actions)
-            copy_adset(adset_id, actions_copy, origin_adset_params)
+#             copy_adset(adset_id, actions_copy, origin_adset_params)
         else:
             # for CPC case without COPY string
             if is_split_age:
@@ -384,7 +396,7 @@ def handle_campaign_copy(campaign_id):
     modify_opt_result_db(campaign_id, True)
 
 
-# In[2]:
+# In[3]:
 
 
 if __name__ == '__main__':
@@ -397,10 +409,10 @@ if __name__ == '__main__':
     
     for campaign_id in df_not_opted.campaign_id.unique():
         handle_campaign_copy(campaign_id)
-#     handle_campaign_copy(23843419701490612)
+#     handle_campaign_copy(23843467729120098)
 
 
-# In[3]:
+# In[4]:
 
 
 get_ipython().system('jupyter nbconvert --to script facebook_externals.ipynb')
