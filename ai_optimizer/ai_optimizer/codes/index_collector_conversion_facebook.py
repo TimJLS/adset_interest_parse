@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[13]:
+# In[2]:
 
 
 
 
 
-# In[1]:
+# In[ ]:
 
 
 from pathlib import Path
@@ -223,7 +223,7 @@ class Campaigns(object):
     def __init__( self, campaign_id, charge_type ):
         self.campaign_id = campaign_id
         self.charge_type = charge_type
-        self.campaign_insights = dict()
+        self.campaign_insights = {Field.impressions: 0, Field.spend: 0}
         self.campaign_features = dict()
         self.info = dict()
         brief_dict = get_campaign_ai_brief( self.campaign_id )
@@ -258,7 +258,7 @@ class Campaigns(object):
         )
         if len(insights) > 0:
             current_campaign = insights[0]
-            if current_campaign.get(Field.impressions):
+            if current_campaign.get(Field.impressions) and current_campaign.get(Field.spend):
                 spend = current_campaign.get(Field.spend)
                 impressions = current_campaign.get(Field.impressions)
                 self.campaign_insights.update( { Field.spend: int(float(spend)) } )
@@ -294,7 +294,7 @@ class Campaigns(object):
         self.campaign_features[ Field.target_type ] = self.campaign_features.pop('objective')
         self.campaign_features[ Field.start_time ] = datetime.datetime.strptime( self.campaign_features[Field.start_time],'%Y-%m-%dT%H:%M:%S+%f' )
         self.campaign_features[ Field.stop_time ] = datetime.datetime.strptime( self.campaign_features[Field.stop_time],'%Y-%m-%dT%H:%M:%S+%f' )
-        elf.campaign_features[ Field.period ] = ( self.ai_stop_date - self.ai_start_date ).days + 1
+        self.campaign_features[ Field.period ] = ( self.ai_stop_date - self.ai_start_date ).days + 1
         self.campaign_features[ Field.start_time ] = self.campaign_features[Field.start_time].strftime( '%Y-%m-%d %H:%M:%S' )
         self.campaign_features[ Field.stop_time ] = self.campaign_features[Field.stop_time].strftime( '%Y-%m-%d %H:%M:%S' )
         
@@ -469,13 +469,13 @@ def update_campaign_target(df_camp):
     mycursor = mydb.cursor()
     campaign_id = df_camp['campaign_id'].iloc[0]
     df_camp.drop(['campaign_id'], axis=1)
-    try:
-        spend_cap = df_camp['spend_cap'].iloc[0]
-    except Exception as e:
-        print('[index_collector_conversion_facebook.update_campaign_target]: ', e)
-        lifetime_budget = df_camp['lifetime_budget'].iloc[0]
-        df_camp['spend_cap'] = df_camp['lifetime_budget']
-        df_camp = df_camp.drop(['lifetime_budget'], axis=1)
+#     try:
+#     spend_cap = df_camp['spend_cap'].iloc[0]
+#     except Exception as e:
+#         print('[index_collector_conversion_facebook.update_campaign_target]: ', e)
+#         lifetime_budget = df_camp['lifetime_budget'].iloc[0]
+#         df_camp['spend_cap'] = df_camp['lifetime_budget']
+#         df_camp = df_camp.drop(['lifetime_budget'], axis=1)
     for column in df_camp.columns:
         try:
             sql = ("UPDATE campaign_target SET {} = '{}' WHERE campaign_id={}".format(column, df_camp[column].iloc[0], campaign_id))

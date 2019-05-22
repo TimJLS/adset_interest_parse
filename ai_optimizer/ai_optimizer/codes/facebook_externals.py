@@ -415,7 +415,6 @@ if __name__ == '__main__':
 # In[4]:
 
 
-get_ipython().system('jupyter nbconvert --to script facebook_externals.ipynb')
 
 
 # In[ ]:

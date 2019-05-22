@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[ ]:
+
+
+# %load facebook_adapter.py
 import datetime
 import pandas as pd
 import mysql_adactivity_save
@@ -38,7 +45,10 @@ class FacebookCampaignAdapter(object):
         self.last_bid_dict = dict()
         
         self.df_camp = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id={}".format( campaign_id ), con=self.mydb )
-        self.campaign_days_left = ( self.df_camp[ AI_STOP_DATE ].iloc[0] - self.request_date ).days + 1
+        try:
+            self.campaign_days_left = ( self.df_camp[ AI_STOP_DATE ].iloc[0] - self.request_date ).days + 1
+        except Exception as e:
+            self.campaign_days_left = 1
         self.campaign_days = ( self.df_camp[ AI_STOP_DATE ].iloc[0] - self.df_camp[ AI_START_DATE ].iloc[0] ).days
         self.campaign_performance = self.df_camp[ TARGET ].sum()
         self.campaign_target = self.df_camp[ TARGET_LEFT ].iloc[0].astype(dtype=object)
@@ -167,11 +177,11 @@ class FacebookAdSetAdapter(FacebookCampaignAdapter):
 
 def main():
     start_time = datetime.datetime.now()
-    campaignid_target_dict = mysql_adactivity_save.get_campaign_target_dict()
-    for campaign_id in campaignid_target_dict:
+    campaign_id_list = mysql_adactivity_save.get_campaign_target()['campaign_id'].unique()
+    for campaign_id in campaign_id_list:
         print(campaign_id)
-        campaign_id = campaign_id.astype(dtype=object)
-        result={ 'media': 'Facebook', 'campaign_id': campaign_id, 'contents':[] }
+#         campaign_id = campaign_id.astype(dtype=object)
+        result={ 'media': 'Facebook', 'campaign_id': campaign_id.astype(dtype=object), 'contents':[] }
         release_version_result = {  }
 #         try:
         fb = FacebookCampaignAdapter( campaign_id )
@@ -196,10 +206,13 @@ def main():
                 release_version_result.update( { ad: bid } )
 # #                 print({ ad: bid })
             del s
+#         print(type(result['campaign_id']), type(result['contents'][0]['adset_id']), type(result['contents'][0]['pred_cpc']))
+#         print(release_version_result)
+#         return
         mydict_json = json.dumps(result)
         release_json = json.dumps(release_version_result)
-        mysql_adactivity_save.insert_result( campaign_id, mydict_json, datetime.datetime.now() )
-        mysql_adactivity_save.insert_release_result( campaign_id, release_json, datetime.datetime.now() )
+        mysql_adactivity_save.insert_result( campaign_id.astype(dtype=object), mydict_json, datetime.datetime.now() )
+        mysql_adactivity_save.insert_release_result( campaign_id.astype(dtype=object), release_json, datetime.datetime.now() )
         del fb
 #         except:
 #             print('pass')
@@ -227,3 +240,10 @@ if __name__=='__main__':
     import gc
     gc.collect()
     
+
+
+# In[ ]:
+
+
+
+

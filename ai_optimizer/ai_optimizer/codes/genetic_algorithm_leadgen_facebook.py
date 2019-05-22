@@ -339,39 +339,6 @@ if __name__ == "__main__":
     print(datetime.datetime.now()-starttime)
 
 
-# In[37]:
-
-
-# import datetime
-# print('campaign_id:', 23843003561380761)
-# global df
-# df = ObjectiveFunc().campaign_status(23843003561380761)
-# bound = np.tile([[0], [1]], vardim)
-# ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
-# optimal = ga.solve()
-# score = ObjectiveFunc.fitness_function(optimal, df)
-# # print(score)
-# weight_columns = ['w1', 'w2', 'w3', 'w4',
-#                   'w5', 'w_spend', 'w_bid']
-# df_weight = pd.DataFrame(
-#     data=[optimal], columns=weight_columns, index=[0])
-
-# df_final = pd.DataFrame({'campaign_id': 23843003561380761, 'score': score}, columns=[
-#                         'campaign_id', 'score'], index=[0])
-# df_final = pd.concat([df_weight, df_final], axis=1,
-#                      sort=True, ignore_index=False)
-# facebook_leadgen_index_collector.check_optimal_weight(23843003561380761, df_final)
-# ga_optimal_weight(23843003561380761, df_weight)
-# print('optimal_weight:', optimal)
-
-
-# In[43]:
-
-
-#get_ipython().system('jupyter nbconvert --to script genetic_algorithm_leadgen_facebook.ipynb')
-
-
-# In[ ]:
 
 
 

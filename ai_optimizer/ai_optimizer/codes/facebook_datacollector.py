@@ -1,25 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[4]:
 
 
 
 
 
 # In[ ]:
-
-
-# %load facebook_datacollector.py
-#!/usr/bin/env python
-
-# In[2]:
-
-
-
-
-
-# In[1]:
 
 
 from pathlib import Path
@@ -518,18 +506,17 @@ def main():
     print(datetime.datetime.now()-start_time)
 
 
-# In[ ]:
+# In[5]:
 
 
 if __name__ == "__main__":
-#     main()
-    data_collect( int(23843269222010540), 735, 'CONVERSIONS' )
+    main()
+#     data_collect( int(23843599908700495), 50, 'LANDING_PAGE_VIEW' )
+#     data_collect( int(23843599908700495), 282, 'LANDING_PAGE_VIEW' )
+#     data_collect( int(23843319164090240), 9000, 'LINK_CLICKS' )
+#     data_collect( int(23843321565300240), 1562, 'LINK_CLICKS' )
+#     data_collect( int(23843321565280240), 1406, 'LINK_CLICKS' )
+#     data_collect( int(23843321565240240), 1406, 'LINK_CLICKS' )
     import gc
     gc.collect()
-
-
-# In[ ]:
-
-
-
 

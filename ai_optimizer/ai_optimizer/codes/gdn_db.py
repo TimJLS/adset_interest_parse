@@ -7,7 +7,7 @@
 
 
 
-# In[9]:
+# In[4]:
 
 
 import mysql.connector
@@ -23,7 +23,7 @@ DATABASE="dev_gdn"
 
 def connectDB(db_name):
     mydb = mysql.connector.connect(
-        host="aws-dev-ai-private.adgeek.cc",
+        host="aws-prod-ai-private.adgeek.cc",
         user="app",
         passwd="adgeek1234",
         database=db_name
@@ -31,13 +31,13 @@ def connectDB(db_name):
     return mydb
 
 def into_table(df, table=None):
-    engine = create_engine( 'mysql://app:adgeek1234@aws-dev-ai-private.adgeek.cc/{}'.format(DATABASE) )
+    engine = create_engine( 'mysql://app:adgeek1234@aws-prod-ai-private.adgeek.cc/{}'.format(DATABASE) )
     with engine.connect() as conn, conn.begin():
         df.to_sql(table, conn, if_exists='append',index=False)
         engine.dispose()
 
 def get_table(campaign_id=None, table=None):
-    engine = create_engine( 'mysql://app:adgeek1234@aws-dev-ai-private.adgeek.cc/{}'.format(DATABASE) )
+    engine = create_engine( 'mysql://app:adgeek1234@aws-prod-ai-private.adgeek.cc/{}'.format(DATABASE) )
     with engine.connect() as conn, conn.begin():
         if campaign_id:
             df = pd.read_sql("SELECT * FROM {} WHERE campaign_id='{}'".format(table, campaign_id), con=conn)
@@ -78,7 +78,30 @@ def get_campaign(campaign_id=None):
             df_camp= pd.concat( [ df_camp, df[df.campaign_id==campaign_id] ], axis=0 )
         mydb.close()
         return df_camp
-    
+
+def get_campaign_target(campaign_id=None):
+    mydb = connectDB(DATABASE)
+    request_time = datetime.datetime.now()
+    if campaign_id:
+        df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
+    else:
+        df = pd.read_sql( "SELECT * FROM campaign_target" , con=mydb )
+        
+    df_is_running = df[ df['stop_time'] >= request_time]    
+    return df_is_running
+
+def get_campaigns_not_optimized():
+    mydb = connectDB(DATABASE)
+    request_time = datetime.datetime.now().date()
+
+    df_not_optimized = pd.read_sql( 
+        "SELECT * FROM campaign_target where stop_time>='{0}' and  (optimized_date <> '{0}' or optimized_date is null )  ".format(request_time),
+        con=mydb )
+        
+    return df_not_optimized
+
+
+
 def check_campaignid_target(account_id, campaign_id, destination, destination_type):
     mydb = connectDB(DATABASE)
     df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
@@ -105,7 +128,7 @@ def check_initial_bid(adgroup_id, df):
     df_check = pd.read_sql( "SELECT * FROM adgroup_initial_bid WHERE adgroup_id={}".format(adgroup_id), con=mydb )
 #     print(type(campaign_id.astype(dtype=object)))
     if df_check.empty:
-        engine = create_engine( 'mysql://app:adgeek1234@aws-dev-ai-private.adgeek.cc/{}'.format(DATABASE) )
+        engine = create_engine( 'mysql://app:adgeek1234@aws-prod-ai-private.adgeek.cc/{}'.format(DATABASE) )
         with engine.connect() as conn, conn.begin():
             df.to_sql( "adgroup_initial_bid", conn, if_exists='append',index=False )
         engine.dispose()
@@ -140,7 +163,7 @@ def check_optimal_weight(campaign_id, df):
     mydb = connectDB(DATABASE)
     df_check = pd.read_sql( "SELECT * FROM optimal_weight WHERE campaign_id={}".format(campaign_id), con=mydb )
     if df_check.empty:
-        engine = create_engine( 'mysql://app:adgeek1234@aws-dev-ai-private.adgeek.cc/{}'.format(DATABASE) )
+        engine = create_engine( 'mysql://app:adgeek1234@aws-prod-ai-private.adgeek.cc/{}'.format(DATABASE) )
         with engine.connect() as conn, conn.begin():
             df.to_sql( "optimal_weight", conn, if_exists='append',index=False )
         engine.dispose()
@@ -164,7 +187,7 @@ def adjust_init_bid(campaign_id):
     mydb = connectDB(DATABASE)
     mycursor = mydb.cursor()
     ### select
-    sql = "SELECT bid_amount FROM adset_initial_bid WHERE campaign_id={}".format(campaign_id)
+    sql = "SELECT bid_amount FROM adgroup_initial_bid WHERE campaign_id={}".format(campaign_id)
     mycursor.execute(sql)
     init_bid = mycursor.fetchall()
     init_bid = int(init_bid[0][0])
@@ -173,7 +196,7 @@ def adjust_init_bid(campaign_id):
     else:
         init_bid += 1
     ### update
-    sql = "UPDATE adset_initial_bid SET bid_amount={} WHERE campaign_id={}".format(init_bid, campaign_id)
+    sql = "UPDATE adgroup_initial_bid SET bid_amount={} WHERE campaign_id={}".format(init_bid, campaign_id)
     mycursor.execute(sql)
     mydb.commit()
     mycursor.close()

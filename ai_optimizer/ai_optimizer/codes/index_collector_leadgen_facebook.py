@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[3]:
 
 
-#!/usr/bin/env python
-# coding: utf-8
 
-# In[1]:
+
+
+# In[ ]:
 
 
 from pathlib import Path
@@ -632,12 +632,6 @@ if __name__=='__main__':
     FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
     main()
 #     data_collect(23843003561380761, 70, "LEAD_GENERATION")
-
-
-# In[5]:
-
-
-#get_ipython().system('jupyter nbconvert --to script facebook_leadgen_index_collector.ipynb')
 
 
 # In[ ]:
