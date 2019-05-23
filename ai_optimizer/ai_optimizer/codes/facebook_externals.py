@@ -4,11 +4,6 @@
 # In[1]:
 
 
-
-
-# In[2]:
-
-
 import json
 import requests
 import time
@@ -44,11 +39,11 @@ ACTION_BOUNDARY = 0.8
 ACTION_DICT = {'bid': AdSet.Field.bid_amount,
                'age': AdSet.Field.targeting, 'interest': AdSet.Field.targeting}
 
-BRANDING_CAMPAIGN_LIST = ['LINK_CLICKS', 'ALL_CLICKS','VIDEO_VIEWS', 'REACH', 'POST_ENGAGEMENT']
+BRANDING_CAMPAIGN_LIST = ['LINK_CLICKS', 'ALL_CLICKS','VIDEO_VIEWS', 'REACH', 'POST_ENGAGEMENT', 'PAGE_LIKES']
 PERFORMANCE_CAMPAIGN_LIST = ['CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART', 'LANDING_PAGE_VIEW']
 
 ADSET_COPY_COUNT = 3
-ADSET_MIN_COUNT = 5
+ADSET_MIN_COUNT = 3
 
 FIELDS = [
     AdSet.Field.id,
@@ -156,15 +151,19 @@ def get_sorted_adset(campaign):
 
     df = pd.read_sql( "select * from adset_score where campaign_id=%s" % (campaign), con=mydb)
     adset_list = []
-    if len(df) > 0:
-        df = df[df.request_time.dt.date == DATE].sort_values(
-            by=['score'], ascending=False)
-        adset_list = df['adset_id'].unique().tolist()
-    else:  
-        df_camp = mysql_adactivity_save.get_campaign_target()
-        charge_type = df_camp['charge_type'].iloc[0]
-        adset_list = Campaigns(campaign, charge_type).get_adsets()
 
+    if len(df) > 0:
+        df_today = df[df.request_time.dt.date == DATE].sort_values( by=['score'], ascending=False)
+        print('[get_sorted_adset] df_today' , df_today )
+        
+        if len(df_today) > 0:
+            adset_list = df_today['adset_id'].unique().tolist()
+        else:
+            print('[get_sorted_adset] Error, no adset score today')    
+    else:  
+        print('[get_sorted_adset] Error, no adset score')
+
+    print('[get_sorted_adset]  adset_list:', adset_list)
     mydb.close()
     return adset_list
 
@@ -257,13 +256,32 @@ def handle_campaign_copy(campaign_id):
     charge_type = df['charge_type'].iloc[0]
     daily_charge = df['daily_charge'].iloc[0]
     campaign_daily_budget = df['daily_budget'].iloc[0]
-    day_dict = Campaigns(campaign_id, charge_type).generate_campaign_info(
-        date_preset=DatePreset.yesterday)
-    lifetime_dict = Campaigns(campaign_id, charge_type).generate_campaign_info(
-        date_preset=DatePreset.lifetime)
+    campaign_instance = Campaigns(campaign_id, charge_type)
+    
+    day_dict = campaign_instance.generate_campaign_info(date_preset=DatePreset.yesterday)
+    lifetime_dict = campaign_instance.generate_campaign_info(date_preset=DatePreset.lifetime)
 #     print('[handle_campaign_copy] day_dict ',day_dict)
 #     print('[handle_campaign_copy] lifetime_dict ',lifetime_dict)
 
+    is_performance_campaign = False
+    is_split_age = False
+    if charge_type in PERFORMANCE_CAMPAIGN_LIST:
+        is_performance_campaign = True
+        is_split_age = False
+    elif charge_type in BRANDING_CAMPAIGN_LIST:
+        is_performance_campaign = False
+        is_split_age = True
+    print('is_performance_campaign', is_performance_campaign)
+    
+    # current going adset is less than ADSET_MIN_COUNT, not to close any adset
+    adsets_active_list = campaign_instance.get_adsets_active()
+    print('[handle_campaign_copy] adsets_active_list:', adsets_active_list)
+    if len(adsets_active_list) <= ADSET_MIN_COUNT:
+        if is_performance_campaign:
+            print('[handle_campaign_copy] is_performance_campaign',is_performance_campaign)
+            print('[handle_campaign_copy] not to copy and close any adset, return')
+            return
+        
     target = 0 # get by insight
     if 'target' in day_dict:
         target = int(day_dict['target'])
@@ -274,22 +292,25 @@ def handle_campaign_copy(campaign_id):
     print('[campaign_id]', campaign_id, '[achieving rate]', achieving_rate, target, daily_charge)
     
     adset_list = get_sorted_adset(campaign_id)
-    
-    adset_for_copy_list, adset_for_off_list = split_adset_list(adset_list)
-
+    adset_action_list = []
+    for adset in adset_list:
+        if str(adset) in adsets_active_list:
+            adset_action_list.append(adset)
+    adset_for_copy_list, adset_for_off_list = split_adset_list(adset_action_list)
     # current going adset is less than ADSET_MIN_COUNT, not to close any adset
-    if len(adset_list) <= ADSET_MIN_COUNT:
+    if len(adsets_active_list) <= ADSET_MIN_COUNT:
         adset_for_off_list = []
     
+    print('[handle_campaign_copy] adset_list',len(adset_list))
+    print('[handle_campaign_copy] adset_action_list',len(adset_action_list))
+    print('[handle_campaign_copy] adset_for_copy_list',len(adset_for_copy_list))
+    print('[handle_campaign_copy] adset_for_off_list',len(adset_for_off_list))
+
     for adset_id in adset_for_off_list:
         origin_adset_params = retrieve_origin_adset_params(adset_id)
         origin_name = origin_adset_params[AdSet.Field.name]
         if not is_contain_rt_string(origin_name):
             update_status(adset_id, status=AdSet.Status.paused)
-    
-    print('adset_list',len(adset_list))
-    print('adset_for_copy_list',len(adset_for_copy_list))
-    print('adset_for_off_list',len(adset_for_off_list))
     
     # get ready to duplicate
     actions = {'bid': None, 'age': list(), 'interest': None}
@@ -308,16 +329,6 @@ def handle_campaign_copy(campaign_id):
     if is_adjust_bid and not IS_DEBUG:
         mysql_adactivity_save.adjust_init_bid(campaign_id)
         
-    is_performance_campaign = False
-    is_split_age = False
-    if charge_type in PERFORMANCE_CAMPAIGN_LIST:
-        is_performance_campaign = True
-        is_split_age = False
-    elif charge_type in BRANDING_CAMPAIGN_LIST:
-        is_performance_campaign = False
-        is_split_age = True
-    
-    print('is_performance_campaign', is_performance_campaign)
     # not to copy any adset if it is performance campaign
     if is_performance_campaign:
         print('return , not to copy any adset if it is performance campaign')
@@ -396,7 +407,7 @@ def handle_campaign_copy(campaign_id):
     modify_opt_result_db(campaign_id, True)
 
 
-# In[3]:
+# In[2]:
 
 
 if __name__ == '__main__':
@@ -409,12 +420,7 @@ if __name__ == '__main__':
     
     for campaign_id in df_not_opted.campaign_id.unique():
         handle_campaign_copy(campaign_id)
-#     handle_campaign_copy(23843467729120098)
-
-
-# In[4]:
-
-
+#     handle_campaign_copy(23843421529610559)
 
 
 # In[ ]:

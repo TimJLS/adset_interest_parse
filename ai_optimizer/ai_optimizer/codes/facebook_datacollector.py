@@ -1,12 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[4]:
-
-
-
-
-
 # In[ ]:
 
 
@@ -289,10 +283,23 @@ class Campaigns(object):
     def get_adsets( self ):
         adset_list=list()
         camp = campaign.Campaign( self.campaign_id )
-        adsets = camp.get_ad_sets( fields = [adset.AdSet.Field.id ])
+        adsets = camp.get_ad_sets( fields = [adset.AdSet.Field.id ,  adset.AdSet.Field.status])
+        print('get_adsets adsets:', adsets )
         for adset_id in adsets:
             adset_list.append( adset_id.get("id") )
         return adset_list
+    
+    def get_adsets_active(self):
+        adset_active_list = list()
+        camp = campaign.Campaign( self.campaign_id )
+        adsets = camp.get_ad_sets( fields = [adset.AdSet.Field.id ,  adset.AdSet.Field.status])
+#         print('[get_adsets_active] adsets:', adsets )
+        for adset_id in adsets:
+            if  adset_id.get("status") == 'ACTIVE' :
+                adset_active_list.append( adset_id.get("id") )
+        print('[get_adsets_active] adset_active_list:', adset_active_list )
+        return adset_active_list
+    
 
     def get_account_id( self ):
         camp = campaign.Campaign( self.campaign_id )
@@ -431,7 +438,7 @@ def data_collect( campaign_id, total_clicks, charge_type ):
         **daily_charge,
     }
     print(campaign_dict)
-    adset_list = camp.get_adsets()
+    adset_list = camp.get_adsets_active()
     for adset_id in adset_list:
         adset = AdSets(adset_id, charge_type)
         adset_dict = adset.generate_adset_info(date_preset=DatePreset.today)
@@ -511,12 +518,7 @@ def main():
 
 if __name__ == "__main__":
     main()
-#     data_collect( int(23843599908700495), 50, 'LANDING_PAGE_VIEW' )
-#     data_collect( int(23843599908700495), 282, 'LANDING_PAGE_VIEW' )
-#     data_collect( int(23843319164090240), 9000, 'LINK_CLICKS' )
-#     data_collect( int(23843321565300240), 1562, 'LINK_CLICKS' )
-#     data_collect( int(23843321565280240), 1406, 'LINK_CLICKS' )
-#     data_collect( int(23843321565240240), 1406, 'LINK_CLICKS' )
+    data_collect( int(23843599908700495), 50, 'LANDING_PAGE_VIEW' )
     import gc
     gc.collect()
 
