@@ -22,7 +22,7 @@ import mysql_adactivity_save
 from facebook_datacollector import Campaigns
 from facebook_datacollector import DatePreset
 from facebook_adapter import FacebookCampaignAdapter
-IS_DEBUG = False #debug mode will not modify anything
+IS_DEBUG = True #debug mode will not modify anything
 
 
 my_app_id = '958842090856883'
@@ -273,6 +273,28 @@ def handle_campaign_copy(campaign_id):
         is_split_age = True
     print('is_performance_campaign', is_performance_campaign)
     
+    #compute achieving_rate
+    target = 0 # get by insight
+    if 'target' in day_dict:
+        target = int(day_dict['target'])
+    
+    fb_adapter = FacebookCampaignAdapter(campaign_id)
+    campaign_days_left = fb_adapter.campaign_days_left
+    achieving_rate = target / daily_charge
+    print('[achieving rate]', achieving_rate, ' target', target, ' daily_charge', daily_charge)
+    
+    is_adjust_bid = False
+    if achieving_rate > ACTION_BOUNDARY and achieving_rate < 1:
+        is_adjust_bid = False
+    elif achieving_rate < ACTION_BOUNDARY:
+        is_adjust_bid = True
+    else: # good enough, not to do anything
+        print('[handle_campaign_copy] good enough, not to do anything')
+        modify_opt_result_db(campaign_id , False)
+        return
+    print('[handle_campaign_copy] is_adjust_bid',is_adjust_bid)
+    print('[handle_campaign_copy] is_performance_campaign',is_performance_campaign)
+
     # current going adset is less than ADSET_MIN_COUNT, not to close any adset
     adsets_active_list = campaign_instance.get_adsets_active()
     print('[handle_campaign_copy] adsets_active_list:', adsets_active_list)
@@ -282,15 +304,6 @@ def handle_campaign_copy(campaign_id):
             print('[handle_campaign_copy] not to copy and close any adset, return')
             return
         
-    target = 0 # get by insight
-    if 'target' in day_dict:
-        target = int(day_dict['target'])
-    
-    fb_adapter = FacebookCampaignAdapter(campaign_id)
-    campaign_days_left = fb_adapter.campaign_days_left
-    achieving_rate = target / daily_charge
-    print('[campaign_id]', campaign_id, '[achieving rate]', achieving_rate, target, daily_charge)
-    
     adset_list = get_sorted_adset(campaign_id)
     adset_action_list = []
     for adset in adset_list:
@@ -315,15 +328,6 @@ def handle_campaign_copy(campaign_id):
     # get ready to duplicate
     actions = {'bid': None, 'age': list(), 'interest': None}
     actions_list = list()
-
-    is_adjust_bid = False
-    if achieving_rate > ACTION_BOUNDARY and achieving_rate < 1:
-        is_adjust_bid = False
-    elif achieving_rate < ACTION_BOUNDARY:
-        is_adjust_bid = True
-    else: # good enough, not to do anything
-        modify_opt_result_db(campaign_id , False)
-        return
     
     # update bid for original existed adset
     if is_adjust_bid and not IS_DEBUG:
@@ -418,9 +422,9 @@ if __name__ == '__main__':
     df_not_opted = mysql_adactivity_save.get_campaigns_not_optimized()
     print('df_not_opted len:', len(df_not_opted))
     
-    for campaign_id in df_not_opted.campaign_id.unique():
-        handle_campaign_copy(campaign_id)
-#     handle_campaign_copy(23843421529610559)
+#     for campaign_id in df_not_opted.campaign_id.unique():
+#         handle_campaign_copy(campaign_id)
+    handle_campaign_copy(23843319164090240)
 
 
 # In[ ]:
