@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[53]:
+# In[1]:
 
 
 # %load genetic_algorithm.py
@@ -17,8 +17,11 @@ import pandas as pd
 import mysql_adactivity_save
 
 # sizepop, vardim, MAXGEN, params = 2000, 3, 30, [0.9, 0.5, 0.5]
-sizepop, vardim, MAXGEN, params = 1000, 3, 10, [0.9, 0.5, 0.5]
-OBJECTIVE_LIST = ['LINK_CLICKS', 'POST_ENGAGEMENT', 'ALL_CLICKS', 'VIDEO_VIEWS', 'IMPRESSIONS']
+sizepop, vardim, MAXGEN, params = 1000, 3, 15, [0.9, 0.5, 0.5]
+BRANDING_CAMPAIGN_LIST = [
+    'LINK_CLICKS', 'ALL_CLICKS','VIDEO_VIEWS', 'REACH', 'POST_ENGAGEMENT', 'PAGE_LIKES', 'LANDING_PAGE_VIEW']
+PERFORMANCE_CAMPAIGN_LIST = [
+    'CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART']
 class GeneticAlgorithm(object):
     '''
     The class for genetic algorithm
@@ -225,7 +228,7 @@ class ObjectiveFunc(object):
 
     def adset_fitness(optimal_weight, df):
         df = df.fillna(0)
-        m_kpi = df['target'].iloc[0] / df['daily_charge'].iloc[0] * 10
+        m_kpi = df['target'] / df['daily_charge'] * 10
         if df['target'].iloc[0] == 0:
             m_kpi = -10
         m_spend = -( df['daily_budget'] - df['spend'] ) / df['daily_budget']
@@ -254,7 +257,7 @@ class ObjectiveFunc(object):
         df_camp['campaign_bid'] = df_camp['spend_cap']/df_camp['destination']
         insights = facebook_datacollector.Campaigns(campaign_id, charge_type).get_campaign_insights()
         if bool(insights):
-            spend = float( insights.get("spend") )
+            spend = int( insights.get("spend") )
             campaign_cpc = float( insights.get("cost_per_target") )
             campaign_charge = int( insights.get("target") )
             impressions = int( insights.get("impressions") )
@@ -309,7 +312,7 @@ def ga_optimal_weight(campaign_id):
     df_weight = pd.read_sql("SELECT * FROM optimal_weight WHERE campaign_id=%s " %(campaign_id), con=mydb)
     df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id=%s " %(campaign_id), con=mydb)
     charge_type = df_camp['charge_type'].iloc[0]
-    adset_list = facebook_datacollector.Campaigns(campaign_id, charge_type).get_adsets()
+    adset_list = facebook_datacollector.Campaigns(campaign_id, charge_type).get_adsets_active()
     if len(df_weight) > 0:
         for adset_id in adset_list:
             df = ObjectiveFunc.adset_status( adset_id )
@@ -326,35 +329,34 @@ def main(campaign_id=None):
     starttime = datetime.datetime.now()
     global df
     if not campaign_id:
-        camp_id_list = mysql_adactivity_save.get_campaign_target_left_dict()
-        for campaign_id in camp_id_list.keys():
-            df = ObjectiveFunc.campaign_status(campaign_id)
-            if df['charge_type'].iloc[0] in OBJECTIVE_LIST:
-                print('campaign_id:', campaign_id )
-                print('current time: ', starttime )
-                bound = np.tile([[0], [1]], vardim)
-                ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
-                optimal = ga.solve()
-                score = ObjectiveFunc.fitnessfunc(optimal, df)
+        camp_id_list = mysql_adactivity_save.get_running_branding_campaign()['campaign_id'].unique()
+        for camp_id in camp_id_list:
+            print('campaign_id:', camp_id )
+            print('current time: ', starttime )
+            df = ObjectiveFunc.campaign_status(camp_id)
+            bound = np.tile([[0], [1]], vardim)
+            ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
+            optimal = ga.solve()
+            score = ObjectiveFunc.fitnessfunc(optimal, df)
 
-                score_columns=['weight_kpi', 'weight_spend', 'weight_bid']
-                df_score = pd.DataFrame(data=[optimal], columns=['weight_kpi', 'weight_spend', 'weight_bid'], index=[0])
+            score_columns=['weight_kpi', 'weight_spend', 'weight_bid']
+            df_score = pd.DataFrame(data=[optimal], columns=['weight_kpi', 'weight_spend', 'weight_bid'], index=[0])
 
-                df_final = pd.DataFrame({'campaign_id':campaign_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
-                df_final = pd.concat( [df_score, df_final], axis=1, sort=True, ignore_index=False)
+            df_final = pd.DataFrame({'campaign_id':camp_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
+            df_final = pd.concat( [df_score, df_final], axis=1, sort=True, ignore_index=False)
 
-                print(df_final)
-                mysql_adactivity_save.check_optimal_weight(campaign_id, df_final)
-                ga_optimal_weight(campaign_id)
+            print(df_final)
+            mysql_adactivity_save.check_optimal_weight(camp_id, df_final)
+            ga_optimal_weight(camp_id)
 
-                print('optimal_weight:', optimal)
-                print(datetime.datetime.now()-starttime)    
+            print('optimal_weight:', optimal)
+            print(datetime.datetime.now()-starttime)    
         print(datetime.datetime.now()-starttime)
     else:
         print('campaign_id:', campaign_id )
         print('current time: ', starttime )
         df = ObjectiveFunc.campaign_status(campaign_id)
-        if df['charge_type'].iloc[0] in OBJECTIVE_LIST:
+        if df['target_type'].iloc[0] in BRANDING_CAMPAIGN_LIST:
             bound = np.tile([[0], [1]], vardim)
             ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
             optimal = ga.solve()
@@ -372,44 +374,9 @@ def main(campaign_id=None):
 
             print('optimal_weight:', optimal)
     return
-#     def account_status( campaign_id ):
-#         mydb = mysql_adactivity_save.connectDB( "dev_facebook_test" )
-#         df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id=%s" %(campaign_id), con=mydb)
-#         df_camp['charge_per_day'] = df_camp['target']/df_camp['period']
-# #         print(df_camp['spend_cap'],df_camp['target'])
-#         df_camp['campaign_bid'] = df_camp['spend_cap']/df_camp['destination']
-#         charge_type = df_camp['charge_type'].iloc[0]
-#         acc_id = facebook_datacollector.Campaigns(campaign_id, charge_type).get_account_id()
-#         insights = facebook_datacollector.Accounts( "act_"+ str(acc_id) ).get_account_insights()
-#         if bool(insights):
-#             spend = int( insights.get("spend") )
-#             account_cpc = float( insights.get("cpc") )
-#             account_charge = int( insights.get("clicks") )
-#             impressions = int( insights.get("impressions") )
-#         else:
-#             spend = 0
-#             account_cpc = 0
-#             account_charge = 0
-#             impressions = 0
-#         df=pd.DataFrame(
-#             {
-#                 'campaign_id':[campaign_id],
-#                 'campaign_cpc':[account_cpc],
-#                 'campaign_charge':[account_charge],
-#                 'impressions':[impressions],
-#                 'campaign_bid':[df_camp['campaign_bid'].iloc[0]],
-#                 'spend':[spend],
-#                 'daily_budget':[df_camp['daily_budget'].iloc[0]],
-#                 'charge_per_day':[df_camp['daily_charge'].iloc[0]],
-#                 'budget_per_day':[df_camp['daily_budget'].iloc[0]]
-#             }
-#         )
-#         df = df.convert_objects(convert_numeric=True)
-#         mydb.close()
-#         return df
 
 
-# In[48]:
+# In[2]:
 
 
 if __name__ == "__main__":
@@ -417,12 +384,6 @@ if __name__ == "__main__":
     import gc
     gc.collect()
 #     main(campaign_id=23843419701490612)
-
-
-# In[52]:
-
-
-
 
 
 # In[ ]:
