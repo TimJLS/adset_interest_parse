@@ -1,13 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
-
-
-
-
-
-# In[ ]:
+# In[1]:
 
 
 from pathlib import Path
@@ -48,7 +42,7 @@ CAMPAIGN_OBJECTIVE = {
     'LOCAL_AWARENESS': 'local_awareness',
     'MESSAGES': 'messages',
     'OFFER_CLAIMS': 'offer_claims',
-    'PAGE_LIKES': 'page_likes',
+    'PAGE_LIKES': 'likes',
     'PRODUCT_CATALOG_SALES': 'product_catalog_sales',
     'REACH': 'reach',
     'ALL_CLICKS': 'clicks',
@@ -60,7 +54,6 @@ CAMPAIGN_OBJECTIVE = {
 
 CAMPAIGN_FIELD = {
     'spend_cap': campaign.Campaign.Field.spend_cap,
-    'lifetime_budget': campaign.Campaign.Field.lifetime_budget,
     'objective': campaign.Campaign.Field.objective,
     'start_time': campaign.Campaign.Field.start_time,
     'stop_time': campaign.Campaign.Field.stop_time,
@@ -91,7 +84,8 @@ CONVERSION_METRICS = {
     'landing_page_view': 'landing_page_view',
     'link_click': 'link_click'
 }
-
+CONVERSION_CAMPAIGN_LIST = [
+    'CONVERSIONS', 'ADD_TO_CART']
 
 # In[5]:
 
@@ -246,7 +240,7 @@ class Campaigns(object):
         if date_preset is None or date_preset == DatePreset.lifetime:
             params = {
                 'time_range[since]': self.ai_start_date,
-                'time_range[until]]': self.ai_stop_date,
+                'time_range[until]': self.ai_stop_date,
             }
         else:
             params = {
@@ -285,6 +279,17 @@ class Campaigns(object):
         for adset_id in adsets:
             adset_list.append( adset_id.get("id") )
         return adset_list
+
+    def get_adsets_active(self):
+        adset_active_list = list()
+        camp = campaign.Campaign( self.campaign_id )
+        adsets = camp.get_ad_sets( fields = [adset.AdSet.Field.id ,  adset.AdSet.Field.status])
+#         print('[get_adsets_active] adsets:', adsets )
+        for adset_id in adsets:
+            if  adset_id.get("status") == 'ACTIVE' :
+                adset_active_list.append( adset_id.get("id") )
+        print('[get_adsets_active] adset_active_list:', adset_active_list )
+        return adset_active_list
     
     def retrieve_all(self, date_preset=None):
         self.get_campaign_features()
@@ -405,7 +410,7 @@ def data_collect( campaign_id, total_clicks, charge_type ):
         **camp.campaign_insights,
         Field.campaign_id:campaign_id
     }
-    adset_list = camp.get_adsets()
+    adset_list = camp.get_adsets_active()
     for adset_id in adset_list:
         adset = AdSets(adset_id, charge_type)
         adset_dict = adset.retrieve_all(date_preset=DatePreset.today)
@@ -544,7 +549,7 @@ def check_optimal_weight(campaign_id, df):
 
 
 # In[13]:
-def  get_campaign_ai_brief( campaign_id ):
+def get_campaign_ai_brief( campaign_id ):
     mydb = connectDB(DATABASE)
     mycursor = mydb.cursor()
     sql =  "SELECT ai_spend_cap, ai_start_date, ai_stop_date FROM campaign_target WHERE campaign_id={}".format(campaign_id)
@@ -597,6 +602,19 @@ def get_conversion_campaign_is_running():
     print(df_conversion_is_running)
     mydb.close()
     return df_conversion_is_running
+
+def get_running_conversion_campaign(campaign_id=None):
+    mydb = connectDB(DATABASE)
+    request_time = datetime.datetime.now()
+    if campaign_id is None:
+        df = pd.read_sql( "SELECT * FROM campaign_target", con=mydb )
+        df = df[ (df['target_type'].isin(CONVERSION_CAMPAIGN_LIST)) & (df.stop_time >= request_time) ]
+        mydb.close()
+        return df
+    else:
+        df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
+        mydb.close()
+        return df
 '''
 for testing
         df_temp = df[df.campaign_id==campaign_id]
@@ -613,7 +631,7 @@ def main(campaign_id=None, destination=None, charge_type=None):
     if campaign_id:
         data_collect( campaign_id, destination, charge_type )#存資料
     else:
-        df_camp = get_conversion_campaign_is_running()
+        df_camp = get_running_conversion_campaign()
         for campaign_id in df_camp.campaign_id.unique():
             destination = df_camp[df_camp.campaign_id==campaign_id].destination.iloc[0]
             charge_type = df_camp[df_camp.campaign_id==campaign_id].charge_type.iloc[0]
@@ -624,7 +642,7 @@ def main(campaign_id=None, destination=None, charge_type=None):
     gc.collect()
 
 
-# In[ ]:
+# In[2]:
 
 
 if __name__ == "__main__":

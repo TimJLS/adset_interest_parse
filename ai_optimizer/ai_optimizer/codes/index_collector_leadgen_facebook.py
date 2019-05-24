@@ -1,13 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[3]:
-
-
-
-
-
-# In[ ]:
+# In[1]:
 
 
 from pathlib import Path
@@ -47,14 +41,13 @@ CAMPAIGN_OBJECTIVE_FIELD = {
     'LOCAL_AWARENESS': 'local_awareness',
     'MESSAGES': 'messages',
     'OFFER_CLAIMS': 'offer_claims',
-    'PAGE_LIKES': 'page_likes',
+    'PAGE_LIKES': 'likes',
     'PRODUCT_CATALOG_SALES': 'product_catalog_sales',
     'REACH': 'reach',
     'ALL_CLICKS': 'clicks',
 }
 CAMPAIGN_FIELD = {
     'spend_cap': campaign.Campaign.Field.spend_cap,
-    'lifetime_budget': campaign.Campaign.Field.lifetime_budget,
     'objective': campaign.Campaign.Field.objective,
     'start_time': campaign.Campaign.Field.start_time,
     'stop_time': campaign.Campaign.Field.stop_time,
@@ -242,7 +235,7 @@ class Campaigns(object):
         if date_preset is None or date_preset == DatePreset.lifetime:
             params = {
                 'time_range[since]': self.ai_start_date,
-                'time_range[until]]': self.ai_stop_date,
+                'time_range[until]': self.ai_stop_date,
             }
         else:
             params = {
@@ -282,6 +275,17 @@ class Campaigns(object):
         for adset_id in adsets:
             adset_list.append( adset_id.get("id") )
         return adset_list
+
+    def get_adsets_active(self):
+        adset_active_list = list()
+        camp = campaign.Campaign( self.campaign_id )
+        adsets = camp.get_ad_sets( fields = [adset.AdSet.Field.id ,  adset.AdSet.Field.status])
+#         print('[get_adsets_active] adsets:', adsets )
+        for adset_id in adsets:
+            if  adset_id.get("status") == 'ACTIVE' :
+                adset_active_list.append( adset_id.get("id") )
+        print('[get_adsets_active] adset_active_list:', adset_active_list )
+        return adset_active_list
     
     def generate_campaign_info(self, date_preset=None):
         self.get_campaign_features()
@@ -409,7 +413,7 @@ def data_collect( campaign_id, total_clicks, charge_type ):
     campaign_metrics = {
         **camp.campaign_insights,
     }
-    adset_list = camp.get_adsets()
+    adset_list = camp.get_adsets_active()
     for adset_id in adset_list:
         adset = AdSets(adset_id, charge_type)
 #         adset_dict = adset.generate_adset_info(date_preset=DatePreset.today)
@@ -590,6 +594,20 @@ def get_leadgen_campaign_is_running():
     mydb.close()
     return df_leadgen_is_running
 
+def get_running_leadgen_campaign(campaign_id=None):
+    mydb = connectDB(DATABASE)
+    request_time = datetime.datetime.now()
+    if campaign_id is None:
+        df = pd.read_sql( "SELECT * FROM campaign_target", con=mydb )
+        df = df[ (df['target_type'].isin(['LEAD_GENERATION'])) & (df.stop_time >= request_time) ]
+        mydb.close()
+        return df
+    else:
+        df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
+        mydb.close()
+        return df
+
+
 def  get_campaign_ai_brief( campaign_id ):
     mydb = connectDB(DATABASE)
     mycursor = mydb.cursor()
@@ -614,7 +632,7 @@ def  get_campaign_ai_brief( campaign_id ):
 def main():
     start_time = datetime.datetime.now()
     
-    df_camp = get_leadgen_campaign_is_running()
+    df_camp = get_running_leadgen_campaign()
     for campaign_id in df_camp.campaign_id.unique():
         destination = df_camp[df_camp.campaign_id==campaign_id].destination.iloc[0]
         charge_type = df_camp[df_camp.campaign_id==campaign_id].charge_type.iloc[0]
