@@ -13,10 +13,13 @@ import gdn_db
 from googleads import adwords
 import pandas as pd
 import copy
+import math
+IS_DEBUG = True
 AUTH_FILE_PATH = '/home/tim_su/ai_optimizer/opt/ai_optimizer/googleads.yaml'
 adwords_client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
 DATABASE = "dev_gdn"
 DATE = datetime.datetime.now().date()
+DATETIME = datetime.datetime.now()
 AGE_RANGE_LIST = [503001,503002,503003,503004,503005,503006,503999,]
 
 
@@ -27,29 +30,31 @@ class Index:
     criteria_column = {
         'URL': 'url_display_name',
         'AUDIENCE': 'criterion_id',
-        'AGE_RANGE': 'criterion_id',
+#         'AGE_RANGE': 'criterion_id',
         'DISPLAY_KEYWORD': 'keyword_id',}
     criteria_type = {   
         'URL': 'Placement',
         'AUDIENCE': 'CriterionUserInterest',
-        'AGE_RANGE': 'AgeRange',
+#         'AGE_RANGE': 'AgeRange',
         'DISPLAY_KEYWORD': 'Keyword',}
     score = {  
         'URL': 'url',
         'CRITERIA': 'criteria',
         'AUDIENCE': 'audience',
-        'AGE_RANGE': 'age_range',
+#         'AGE_RANGE': 'age_range',
         'DISPLAY_KEYWORD': 'display_keyword',}
 
 
 # In[3]:
 
 
-class Retrive(object):
+class Retrieve(object):
     def __init__(self, customer_id):
         self.customer_id = customer_id
         self.adwords_client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
         self.adwords_client.SetClientCustomerId(self.customer_id)
+        self.mutant_ad_group_id_list = []
+        self.native_ad_group_id_list = []
         
     def params(self, ad_group_id=None, param_type=None):
         selector= [{
@@ -81,37 +86,67 @@ class Retrive(object):
                 ad_group_params = ad_group_service.get(selector)
                 return ad_group_params    
     
-    def criterion(self, ad_group_id=None):
-        _FIELDS = ['AdGroupId', 'CriteriaType', 'UserInterestId', 'UserInterestName', 'UserListId', 'LabelIds']
+    def criterion(self, ad_group_id=None, campaign_id=None):
+        if ad_group_id:
+            _FIELDS = ['AdGroupId', 'CriteriaType', 'UserInterestId', 'UserInterestName', 'UserListId', 'LabelIds']
+            selector= [{
+                'fields': _FIELDS,
+                'predicates': [{
+                    'field': 'AdGroupId',
+                    'operator': 'EQUALS',
+                    'values':[ad_group_id]
+                }]
+            }]
+            service = self.adwords_client.GetService('AdGroupCriterionService', version='v201809')
+        elif campaign_id:
+            _FIELDS = ['CampaignId', 'CriteriaType', 'UserInterestId', 'UserInterestName', 'UserListId']
+            selector= [{
+                'fields': _FIELDS,
+                'predicates': [{
+                    'field': 'CampaignId',
+                    'operator': 'EQUALS',
+                    'values':[campaign_id]
+                }]
+            }]
+            service = self.adwords_client.GetService('CampaignCriterionService', version='v201809')
+        entries = service.get(selector)['entries']
+        criterions = [ entries[i]['criterion'] for i, criterion in enumerate(entries) ]
+        return criterions
+    
+    def generate_ad_group_id_list_type(self, campaign_id):
+        _FIELDS = ['CampaignId', 'Name', 'AdGroupId']
+        native_ad_group_id_list = []
+        mutate_ad_group_id_list = []
         selector= [{
             'fields': _FIELDS,
             'predicates': [{
-                'field': 'AdGroupId',
+                'field': 'CampaignId',
                 'operator': 'EQUALS',
-                'values':[ad_group_id]
+                'values':[campaign_id]
+            },
+            {
+                'field': 'Status',
+                'operator': 'EQUALS',
+                'values':'ENABLED'
             }]
         }]
-        ad_group_service = self.adwords_client.GetService('AdGroupCriterionService', version='v201809')
+        ad_group_service = self.adwords_client.GetService('AdGroupService', version='v201809')
         ad_group_criterion = ad_group_service.get(selector)
-        return ad_group_criterion
-        
-        
+        for ad_group in ad_group_criterion['entries']:
+            if 'Mutant' in ad_group['name'].split():
+                mutate_ad_group_id_list.append( ad_group['id'] )
+                
+            else:
+                native_ad_group_id_list.append( ad_group['id'] )
+        self.mutant_ad_group_id_list = mutate_ad_group_id_list
+        self.native_ad_group_id_list = native_ad_group_id_list
+        return {
+            'mutant': mutate_ad_group_id_list,
+            'native': native_ad_group_id_list
+        }
 
 
 # In[4]:
-
-
-customer_id = 3637290511
-new_ad_group_id = 71109143922
-
-
-# In[5]:
-
-
-Retrive(customer_id).params(ad_group_id=new_ad_group_id, param_type='ad')
-
-
-# In[6]:
 
 
 class Make(object):
@@ -132,7 +167,7 @@ class Make(object):
             'operator': 'ADD',
             'operand': {
                 'campaignId': campaign_id,
-                'name':  'Mutant {} - {}'.format(name, datetime.datetime.today().date().strftime('%Y-%m-%d')),
+                'name':  'Mutant {}'.format(name),
                 'status': 'ENABLED',
                 'biddingStrategyConfiguration': {
                     'bids': [{
@@ -263,13 +298,27 @@ class Make(object):
     
 
 
-# In[ ]:
+# In[5]:
 
 
+# # init param retriever Retrieve
+# retriever = Retrieve(customer_id)
+# retriever.generate_ad_group_id_list_type(campaign_id)
+
+# if achieving_rate < 1 and achieving_rate >= 0:
+#     while len(retriever.mutant_ad_group_id_list) != 0:
+#         for mutant_ad_group_id in retriever.mutant_ad_group_id_list:
+#             Status(customer_id).update(ad_group_id=mutant_ad_group_id, status='PAUSED')
+#         break
+#     mutant_ad_group_id = make_empty_ad_group(adwords_client, campaign_id, retriever.native_ad_group_id_list)
+
+#     # Assign criterion to mutant ad group
+#     make_adgroup_with_criterion(adwords_client, campaign_id,
+#                                 native_ad_group_id_list=retriever.native_ad_group_id_list,
+#                                 mutant_ad_group_id_list=[mutant_ad_group_id])
 
 
-
-# In[7]:
+# In[45]:
 
 
 def get_sorted_adgroup(campaign_id):
@@ -286,15 +335,29 @@ def get_sorted_adgroup(campaign_id):
         customer_id = df_camp['customer_id'][df_camp.campaign_id == campaign_id].iloc[0]
         adgroup_list = Campaign( customer_id, campaign_id, destination_type).get_adgroup_id_list()
     mydb.close()
-    return adgroup_list
+    return adgroup_list.tolist()
 
 
 def split_adgroup_list(adgroup_list):
     import math
-    adgroup_list[::-1]
+    adgroup_list.sort(reverse=True)
     half = math.ceil(len(adgroup_list) / 2)
     return adgroup_list[:half], adgroup_list[half:]
 
+def modify_opt_result_db(campaign_id, is_optimized):
+    #get date
+    opt_date = datetime.datetime.now()
+    #insert to table date and Ture for is_opt
+    sql = "update campaign_target set is_optimized = '{}', optimized_date = '{}' where campaign_id = {}".format(is_optimized, opt_date, campaign_id)
+    mydb = gdn_db.connectDB(DATABASE)
+    mycursor = mydb.cursor()
+    try:
+        mycursor.execute(sql)
+    except Exception as e:
+        print('[gdn_externals] modify_opt_result_db: ', e)
+    finally:
+        mydb.commit()
+        mydb.close()
 
 def retrieve_ad_group_params(adwords_client, ad_group_id):
     _FIELDS = ['CampaignId', 'AdGroupId', 'Name', 'CpcBid', 'BiddingStrategyId',
@@ -326,7 +389,7 @@ def make_ad_group(adwords_client, ad_group_id):
         'operator': 'ADD',
         'operand': {
             'campaignId': campaign_id,
-            'name':  'Mutant {} - {}'.format(name, datetime.datetime.today().date().strftime('%Y-%m-%d')),
+            'name':  'Mutant {}-{}'.format(name, DATETIME),
             'status': 'ENABLED',
             'biddingStrategyConfiguration': {
                 'bids': [
@@ -342,11 +405,12 @@ def make_ad_group(adwords_client, ad_group_id):
     }]
     ad_group_service = adwords_client.GetService(
         'AdGroupService', version='v201809')
-    ad_groups = ad_group_service.mutate(operations)
-    return ad_groups
+    new_ad_group_params = ad_group_service.mutate(operations)
+#     new_ad_group_id = new_ad_group_params['value'][0]['id']
+    return new_ad_group_params
 
 
-def retrive_ad_params(adwords_client, ad_group_id):
+def retrieve_ad_params(adwords_client, ad_group_id):
     ad_params_list = []
     ad_criteria = dict()
     _FIELDS = ['AdGroupId', 'HeadlinePart1', 'HeadlinePart2',
@@ -389,7 +453,7 @@ def assign_ad_to_ad_group(adwords_client, ad_group_id, ad_params_list):
 
 def retrieve_ad_group_criterion(adwords_client, ad_group_id):
     _FIELDS = ['AdGroupId', 'CriteriaType', 'UserInterestId',
-               'UserInterestName', 'UserListId', 'LabelIds']
+               'UserInterestName', 'UserListId', 'LabelIds', 'BiddingStrategyType', 'BiddingStrategySource', 'BiddingStrategyId',]
     selector = [{
         'fields': _FIELDS,
         #             'dateRange': {'min': '20190301','max': '20190401'},
@@ -406,160 +470,187 @@ def retrieve_ad_group_criterion(adwords_client, ad_group_id):
     ad_group_criterion = ad_group_service.get(selector)
     return ad_group_criterion
 
+def make_criterion(new_ad_group_id, df,criteria):
+    sub_criterions = []
+    # make criterion stucture in order to upadate back to gdn platform
+    criterion = {
+        'adGroupId': new_ad_group_id,
+        'xsi_type': None,
+        'criterion': {
+            'xsi_type': None
+        }
+    }
+    if criteria == 'AGE_RANGE':
+        criterion['criterion']['xsi_type'] = Index.criteria_type[criteria]
+        for i, criterion_id in enumerate(AGE_RANGE_LIST):
+            criterion['criterion']['id'] = criterion_id
+            if criterion_id not in df[Index.criteria_column[criteria]].unique() and criterion_id != 503999:
+                criterion['xsi_type'] = 'NegativeAdGroupCriterion'
+            else:
+                criterion['xsi_type'] = 'BiddableAdGroupCriterion'
+            sub_criterions.append(copy.deepcopy(criterion))
+    else:
+        criterion['xsi_type'] = 'BiddableAdGroupCriterion'
+        criterion['criterion']['xsi_type'] = Index.criteria_type[criteria]
+        for i, criterion_id in enumerate(df[Index.criteria_column[criteria]]):
+            if Index.criteria_type[criteria] == 'Placement':
+                criterion['criterion']['id'] = criterion_id
+                criterion['criterion']['url'] = df['url_display_name'].iloc[i]
+            elif Index.criteria_type[criteria] == 'Keyword':
+                criterion['criterion']['matchType'] = 'BROAD'
+                criterion['criterion']['text'] = df['keyword'].iloc[i]
+            elif Index.criteria_type[criteria] == 'CriterionUserInterest':
+                criterion['criterion']['userInterestId'] = df['audience'].iloc[i]
+                criterion['criterion']['id'] = criterion_id
+            elif Index.criteria_type[criteria] == 'CriterionUserList':
+                criterion['criterion']['id'] = criterion_id
+                criterion['criterion']['userListId'] = df['audience'].iloc[i]
+            elif Index.criteria_type[criteria] == 'CriterionCustomAffinity':
+                criterion['criterion']['id'] = criterion_id
+                criterion['criterion']['customAffinityId'] = df['audience'].iloc[i]
+            sub_criterions.append(copy.deepcopy(criterion))
+    return sub_criterions
 
-def make_adgroup_criterion(new_adgroup_id=None, old_ad_group_criterion=None):
-    if new_adgroup_id is None and old_ad_group_criterion is None:
-        raise ValueError(
-            'new_adgroup_id and old_ad_group_criterion is Required.')
-    biddable_criterion = dict()
-    negative_criterion = dict()
-    biddable_criterion['adGroupId'] = new_adgroup_id
-    negative_criterion['adGroupId'] = new_adgroup_id
-
-    biddable_ad_group_criteria_list = list()
-    negative_ad_group_criteria_list = list()
-    for entry in old_ad_group_criterion['entries']:
-        criterion = dict()
-        if 'AgeRange' in entry['criterion']['Criterion.Type']:
-            criterion['id'] = entry['criterion']['id']
-            criterion['xsi_type'] = entry['criterion']['Criterion.Type']
-
-        elif 'Placement' in entry['criterion']['Criterion.Type']:
-            criterion['id'] = entry['criterion']['id']
-            criterion['url'] = entry['criterion']['url']
-            criterion['xsi_type'] = entry['criterion']['Criterion.Type']
-
-        elif 'Keyword' in entry['criterion']['Criterion.Type']:
-            criterion['id'] = entry['criterion']['id']
-            criterion['matchType'] = entry['criterion']['matchType']
-            criterion['text'] = entry['criterion']['text']
-            criterion['xsi_type'] = entry['criterion']['Criterion.Type']
-
-        elif 'CriterionUserInterest' in entry['criterion']['Criterion.Type']:
-            criterion['id'] = entry['criterion']['id']
-            criterion['userInterestId'] = entry['criterion']['userInterestId']
-            criterion['xsi_type'] = entry['criterion']['Criterion.Type']
-        else:
-            pass
-        if criterion:
-            if 'BiddableAdGroupCriterion' in entry['AdGroupCriterion.Type']:
-                biddable_criterion['xsi_type'] = entry['AdGroupCriterion.Type']
-                biddable_criterion['criterion'] = criterion
-                biddable_ad_group_criteria_list.append(
-                    copy.deepcopy(biddable_criterion))
-
-            elif 'NegativeAdGroupCriterion' in entry['AdGroupCriterion.Type']:
-                negative_criterion['xsi_type'] = entry['AdGroupCriterion.Type']
-                negative_criterion['criterion'] = criterion
-                negative_ad_group_criteria_list.append(
-                    copy.deepcopy(negative_criterion))
-    return biddable_ad_group_criteria_list, negative_ad_group_criteria_list
-
-
-def assign_criterion_to_ad_group(adwords_client, ad_group_id, ad_group_criterion):
-    '''
-    an example of addong 4 type of criterion to new adgroup,
-    if trying to exclude certain criterions, 
-    change 'xsi_type' from 'BiddableAdGroupCriterion' to 'NegativeAdGroupCriterion' in ad_group_criteria object
-    '''
-    # Initialize appropriate service.
-    ad_group_criterion_service = adwords_client.GetService(
-        'AdGroupCriterionService', version='v201809')
-    # Create the ad group criteria.
-    # Create operations.
-    print(ad_group_criterion)
-    operations = []
-    for criterion in ad_group_criterion:
-        operations.append({
-            'operator': 'ADD',
-            'operand': criterion
-        })
-    response = ad_group_criterion_service.mutate(operations)
-    return response
-
-
-def make_adgroup_criterion_by_score(campaign_id, new_ad_group_id):
-    criterions = []
+def make_adgroup_criterion_by_score(campaign_id, new_ad_group_id,):
+    biddable_criterions = []
+    negative_criterions = []
     for criteria in Index.score.keys():
+        # select score by campaign level
         df = gdn_db.get_table(campaign_id=campaign_id,
-                              table=Index.score[criteria]+"_score").head()
+                              table=Index.score[criteria]+"_score")
+        df['request_time'] = pd.to_datetime(df['request_time'])
+        df = df[ df.request_time.dt.date == (datetime.datetime.now().date()-datetime.timedelta(1)) ]
         if criteria == 'AUDIENCE' and not df.empty:
             df['audience'] = df.audience.str.split('::', expand=True)[1]
         if not df.empty:
-            #             print(criteria)
+            # 
             sub_criterions = []
-            df = df.sort_values(by=['score'], ascending=False).reset_index(
-                drop=True).drop_duplicates([Index.criteria_column[criteria]])
-            criterion = {
-                'adGroupId': new_ad_group_id,
-                'xsi_type': None,
-                'criterion': {
-                    'xsi_type': None
-                }
-            }
-            if criteria == 'AGE_RANGE':
-                criterion['criterion']['xsi_type'] = Index.criteria_type[criteria]
-                for i, criterion_id in enumerate(AGE_RANGE_LIST):
-                    criterion['criterion']['id'] = criterion_id
-                    if criterion_id not in df[Index.criteria_column[criteria]].unique() and criterion_id != 503999:
-                        criterion['xsi_type'] = 'NegativeAdGroupCriterion'
-                    else:
-                        criterion['xsi_type'] = 'BiddableAdGroupCriterion'
-                    sub_criterions.append(copy.deepcopy(criterion))
-            else:
-                criterion['xsi_type'] = 'BiddableAdGroupCriterion'
-                criterion['criterion']['xsi_type'] = Index.criteria_type[criteria]
-                for i, criterion_id in enumerate(df[Index.criteria_column[criteria]]):
-                    if Index.criteria_type[criteria] == 'Placement':
-                        criterion['criterion']['id'] = criterion_id
-                        criterion['criterion']['url'] = df['url_display_name'].iloc[i]
+            df = df.sort_values(by=['score'], ascending=False).drop_duplicates(
+                [ Index.criteria_column[criteria] ] ).reset_index(drop=True)
+            half = math.ceil( len(df)/2 )
+            biddable_df = df.iloc[:half]
+            negative_df = df.iloc[half:]
+            biddable_sub_criterion = make_criterion(new_ad_group_id, biddable_df,criteria)
+            negative_sub_criterion = make_criterion(new_ad_group_id, negative_df,criteria)
+    biddable_criterions += biddable_sub_criterion
+    negative_criterions += negative_sub_criterion
+    return biddable_criterions, negative_criterions
 
-                    elif Index.criteria_type[criteria] == 'Keyword':
-                        #                         criterion['criterion']['id'] = criterion_id
-                        criterion['criterion']['matchType'] = 'BROAD'
-                        criterion['criterion']['text'] = df['keyword'].iloc[i]
-
-                    elif Index.criteria_type[criteria] == 'CriterionUserInterest':
-                        criterion['criterion']['userInterestId'] = df['audience'].iloc[i]
-                        criterion['criterion']['id'] = criterion_id
-
-                    elif Index.criteria_type[criteria] == 'CriterionUserList':
-                        criterion['criterion']['id'] = criterion_id
-                        criterion['criterion']['userListId'] = df['audience'].iloc[i]
-
-                    elif Index.criteria_type[criteria] == 'CriterionCustomAffinity':
-                        criterion['criterion']['id'] = criterion_id
-                        criterion['criterion']['customAffinityId'] = df['audience'].iloc[i]
-
-                    sub_criterions.append(copy.deepcopy(criterion))
-            criterions = criterions+sub_criterions
-    return criterions
-
-
-def make_adgroup_with_criterion(adwords_client, campaign_id, old_ad_group_id):
-    # Params
-    ad_group_params = make_ad_group(adwords_client, old_ad_group_id)
+def make_empty_ad_group(adwords_client, campaign_id, ad_group_id_list):
+    ad_group_params = make_ad_group(adwords_client, ad_group_id_list[0])
     new_ad_group_id = ad_group_params['value'][0]['id']
+    return new_ad_group_id
 
+def make_adgroup_with_criterion(adwords_client, update, campaign_id, native_ad_group_id_list=None):
+    if native_ad_group_id_list:
     # Criterion by Score
-    retrieve_ad_group_criterion(adwords_client, old_ad_group_id)
-    new_ad_group_criterion = make_adgroup_criterion_by_score(
-        campaign_id, new_ad_group_id)
-    result = assign_criterion_to_ad_group(
-        adwords_client, new_ad_group_id, new_ad_group_criterion)
+        for native_id_idx, native_id in enumerate(native_ad_group_id_list):
+            print('[native_id] ', native_id)
+            biddable_criterions, negative_criterions = make_adgroup_criterion_by_score( campaign_id, native_id )
+            
+            for biddable in biddable_criterions:
+                native_id = biddable['adGroupId']
+                status = 'ENABLED'
+                interest_id = biddable['criterion']['userInterestId']
+                id = biddable['criterion']['id']
+                update.criterion( ad_group_id=native_id, id=id, interest_id=interest_id, status=status, )
+                
+            for negative in negative_criterions:
+                native_id = negative['adGroupId']
+                status = 'PAUSED'
+                interest_id = negative['criterion']['userInterestId']
+                id = negative['criterion']['id']
+                update.criterion( ad_group_id=native_id, id=id, interest_id=interest_id, status=status, )
+            # Assign Ad Params
+            try:
+                ad_params_list = retrieve_ad_params(adwords_client, native_id)
+                assign_ad_to_ad_group(adwords_client, native_id, ad_params_list)
+            except Exception as e:
+                print('[assign ad to ad_group]: ads already exist, ', e)
+                pass
+    return
 
-    # Criterion by former adgroup
-#     old_ad_group_criterion = retrieve_ad_group_criterion(adwords_client, old_ad_group_id)
-#     biddable_criterion, negative_criterion = make_adgroup_criterion(new_ad_group_id, old_ad_group_criterion)
-#     new_ad_group_criterion = biddable_criterion + negative_criterion
-    # Assign Ad Params
-    ad_params_list = retrive_ad_params(adwords_client, old_ad_group_id)
-    assign_ad_to_ad_group(adwords_client, new_ad_group_id, ad_params_list)
-    return new_ad_group_criterion
-#     return result
+
+# In[46]:
 
 
-# In[8]:
+class Status(object):
+    def __init__(self, customer_id):
+        self.customer_id = customer_id
+        self.adwords_client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
+        self.adwords_client.SetClientCustomerId(self.customer_id)
+    def update(self, campaign_id=None, ad_group_id=None, status='ENABLED'):
+        if campaign_id and status:
+            status_service = self.adwords_client.GetService('CampaignService', version='v201809')
+            update_id = campaign_id
+            
+        elif ad_group_id and status:
+            status_service = self.adwords_client.GetService('AdGroupService', version='v201809')
+            update_id = ad_group_id
+        operations = [{
+            'operator': 'SET',
+            'operand': {
+                'id': update_id,
+                'status': 'PAUSED'
+            }
+        }]
+        result = status_service.mutate(operations)
+        return result
+    
+class Update(object):
+    operand = {
+        'id': None,
+        'status': 'PAUSED'
+    }
+    operations = [{
+        'operator': 'SET',
+        'operand': operand
+    }]
+
+    def __init__(self, customer_id):
+        self.customer_id = customer_id
+        self.adwords_client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
+        self.adwords_client.SetClientCustomerId(self.customer_id)
+    def campaign(self, id=None, status='ENABLED'):
+        if id and status:
+            status_service = self.adwords_client.GetService('CampaignService', version='v201809')
+            self.operand['id'] = id
+            self.operand['status'] = status
+            self.operations[0]['operand'] = self.operand
+        result = status_service.mutate(operations)
+        return
+    
+    def ad_group(self, id=None, status='ENABLED'):
+        if id and status:
+            status_service = self.adwords_client.GetService('AdGroupService', version='v201809')
+            self.operand['id'] = id
+            self.operand['status'] = status
+            self.operations[0]['operand'] = self.operand
+        result = status_service.mutate(operations)
+        return
+    
+    def criterion( self, ad_group_id=None, id=None, interest_id=None, status='ENABLED', ):
+        ad_group_service = self.adwords_client.GetService(
+            'AdGroupCriterionService', version='v201809')
+        # Make operand
+        self.operand = dict()
+        self.operand['adGroupId'] = ad_group_id
+        self.operand['xsi_type'] = 'BiddableAdGroupCriterion'
+        self.operand['userStatus'] = status
+        self.operand['criterion'] = list()
+        # Make criterion
+        criterion = {'id':None, 'xsi_type':None, 'userInterestId':None}
+        criterion['id'] = id
+        criterion['xsi_type'] = 'CriterionUserInterest'
+        criterion['userInterestId'] = interest_id
+        # Put operations > operand > criterion together
+        self.operand['criterion'].append(criterion)
+        self.operations[0]['operand'] = self.operand
+        ad_group_service.mutate(self.operations)
+        return
+
+
+# In[47]:
 
 
 
@@ -567,72 +658,92 @@ def main(campaign_id=None):
     starttime = datetime.datetime.now()
     adwords_client= adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
     if not campaign_id:
-        df_camp = gdn_db.get_campaign()
+        df_camp = gdn_db.get_campaign_is_running()
         campaign_id_list = df_camp['campaign_id'].unique()
-
         for campaign_id in campaign_id_list:
             customer_id = df_camp['customer_id'][df_camp.campaign_id==campaign_id].iloc[0]
             destination_type = df_camp['destination_type'][df_camp.campaign_id==campaign_id].iloc[0]
             daily_target = df_camp['daily_target'][df_camp.campaign_id==campaign_id].iloc[0]
             adwords_client.SetClientCustomerId( customer_id )
-
+            # Decide optimization target by destination type
+            if destination_type == 'CONVERSIONS':
+                target = 'conversions'
+            elif destination_type == 'LINK_CLICKS':
+                target = 'clicks'
+            # Init datacollector Campaign
             camp = Campaign(customer_id, campaign_id, destination_type)
             day_dict = camp.get_campaign_insights(adwords_client,
                 date_preset=DatePreset.yesterday)
             lifetime_dict = camp.get_campaign_insights(adwords_client,
                 date_preset=DatePreset.lifetime)
-            if destination_type == 'CONVERSIONS':
-                day_dict['target'] = day_dict['conversions']
-                day_dict['cost_per_target'] = day_dict['cost_per_conversion']
-            elif destination_type == 'LINK_CLICKS':
-                day_dict['target'] = day_dict['clicks']
-                day_dict['cost_per_target'] = day_dict['cost_per_click']
-            target = int( day_dict['target'] )
+            target = int( day_dict[target] )
+            lifetime_target = int( lifetime_dict[target] )
             achieving_rate = target / daily_target
-            print('[campaign_id]', campaign_id, '[achieving rate]',
-                  achieving_rate, target, daily_target)
-            if achieving_rate < 1:
-                adgroup_list = get_sorted_adgroup(campaign_id)
-                adgroup_for_copy, adgroup_for_off = split_adgroup_list(adgroup_list)
-                for adgroup_id in adgroup_for_copy:
-                    make_adgroup_with_criterion(adwords_client, campaign_id, adgroup_id)
-                    gdn_db.adjust_init_bid(campaign_id)
+            print('[campaign_id]', campaign_id, )
+            print('[achieving rate]', achieving_rate, '[target]', target, '[daily_target]', daily_target)
+            
+            # Init param retriever Retrieve
+            retriever = Retrieve(customer_id)
+            retriever.generate_ad_group_id_list_type(campaign_id)
+            
+            if achieving_rate < 1 and achieving_rate >= 0:
+                if destination_type == 'CONVERSIONS':
+                    update = Update(customer_id)
+                    # Assign criterion to mutant ad group
+                    make_adgroup_with_criterion(adwords_client, update, campaign_id,
+                                                native_ad_group_id_list=retriever.native_ad_group_id_list,)
+                elif destination_type == 'LINK_CLICKS':
+                    mutant_ad_group_id = make_empty_ad_group(adwords_client, campaign_id, retriever.native_ad_group_id_list)
+                    make_adgroup_with_criterion(adwords_client, update, campaign_id,
+                                                native_ad_group_id_list=[mutant_ad_group_id],)
                     
-                for adgroup_id in adgroup_for_off:
-                    adgroup = AdGroup( customer_id, campaign_id, destination_type, adgroup_id )
-                    adgroup.update_status(client = adwords_client)
+                modify_opt_result_db(campaign_id , True)
+            else:
+                modify_opt_result_db(campaign_id , False)
     else:
-        df_camp = gdn_db.get_campaign(campaign_id)
-        customer_id = df_camp['customer_id'].iloc[0]
-        destination_type = df_camp['destination_type'].iloc[0]
-        daily_target = df_camp['daily_target'].iloc[0]
-        adwords_client.SetClientCustomerId(df_camp['customer_id'].iloc[0])
-        adgroup_list = get_sorted_adgroup(campaign_id)
-        adgroup_for_copy, adgroup_for_off = split_adgroup_list(adgroup_list)
-        camp = Campaign(customer_id, campaign_id, destination_type)
-        day_dict = camp.get_campaign_insights(adwords_client,
-            date_preset=DatePreset.yesterday)
-        lifetime_dict = camp.get_campaign_insights(adwords_client,
-            date_preset=DatePreset.lifetime)
-        if destination_type == 'CONVERSIONS':
-            day_dict['target'] = day_dict['conversions']
-            day_dict['cost_per_target'] = day_dict['cost_per_conversion']
-        elif destination_type == 'LINK_CLICKS':
-            day_dict['target'] = day_dict['clicks']
-            day_dict['cost_per_target'] = day_dict['cost_per_click']
-        target = int( day_dict['target'] )
-        achieving_rate = target / daily_target
-        print('[campaign_id]', campaign_id, '[achieving rate]',
-              achieving_rate, target, daily_target)
-        if achieving_rate < 1:
-            adgroup_list = get_sorted_adgroup(campaign_id)
-            adgroup_for_copy, adgroup_for_off = split_adgroup_list(adgroup_list)
-            for adgroup_id in adgroup_for_copy:
-        #         make_adgroup_with_criterion(adwords_client, adgroup_id)
-                new_ad_group_criterion = make_adgroup_with_criterion(adwords_client, campaign_id, adgroup_id)
-            for adgroup_id in adgroup_for_off:
-                adgroup = AdGroup( customer_id, campaign_id, destination_type, adgroup_id )
-                adgroup.update_status(client = adwords_client)
+        df_camp = gdn_db.get_campaign_is_running(campaign_id)
+        if not df_camp.empty:
+            customer_id = df_camp['customer_id'][df_camp.campaign_id==campaign_id].iloc[0]
+            destination_type = df_camp['destination_type'][df_camp.campaign_id==campaign_id].iloc[0]
+            daily_target = df_camp['daily_target'][df_camp.campaign_id==campaign_id].iloc[0]
+            adwords_client.SetClientCustomerId( customer_id )
+            # Decide optimization target by destination type
+            if destination_type == 'CONVERSIONS':
+                target = 'conversions'
+            elif destination_type == 'LINK_CLICKS':
+                target = 'clicks'
+            # Init datacollector Campaign
+            camp = Campaign(customer_id, campaign_id, destination_type)
+            day_dict = camp.get_campaign_insights(adwords_client,
+                date_preset=DatePreset.yesterday)
+            lifetime_dict = camp.get_campaign_insights(adwords_client,
+                date_preset=DatePreset.lifetime)
+            target = int( day_dict[target] )
+            
+            achieving_rate = target / daily_target
+            print('[campaign_id]', campaign_id, )
+            print('[achieving rate]', achieving_rate, '[target]', target, '[daily_target]', daily_target)
+            
+            # Init param retriever Retrieve
+            retriever = Retrieve(customer_id)
+            retriever.generate_ad_group_id_list_type(campaign_id)
+            
+            if achieving_rate < 1 and achieving_rate >= 0:
+                update = Update(customer_id)
+                if destination_type == 'CONVERSIONS':
+                    # Assign criterion to native ad group
+                    make_adgroup_with_criterion(adwords_client, update, campaign_id,
+                                                native_ad_group_id_list=retriever.native_ad_group_id_list,)
+                elif destination_type == 'LINK_CLICKS':
+                    # Make empty mutant ad group
+                    mutant_ad_group_id = make_empty_ad_group(adwords_client, campaign_id, retriever.native_ad_group_id_list)
+                    # Assign criterion to native ad group
+                    make_adgroup_with_criterion(adwords_client, update, campaign_id,
+                                                native_ad_group_id_list=[mutant_ad_group_id],)
+                    
+                modify_opt_result_db(campaign_id , True)
+            else:
+                modify_opt_result_db(campaign_id , False)
     return
 
 
@@ -643,15 +754,93 @@ if __name__=="__main__":
     start_time = datetime.datetime.now()
     print(start_time)
     main()
-#     main(campaign_id=1865315025)
     print(datetime.datetime.now() - start_time)
-#     make_adgroup_with_criterion(adgroup_id)
+#     main(1896291336)
 
 
-# In[11]:
+# In[150]:
 
 
+def retrieve_bid_modifier(client):
+    ad_group_bid_modifier_service = adwords_client.GetService(
+        'CampaignBidModifierService', version='v201809')
+    # Get all ad group bid modifiers for the campaign.
+    selector = {
+        'fields': ['CampaignId', 'AdGroupId', 'BidModifier', 'Id', 'Name'],
+        'predicates': [
+            {
+                'field': 'CamapaignId',
+                'operator': 'EQUALS',
+                'values': [1896291336]
+            }
+        ]
+    }
+    resp = ad_group_bid_modifier_service.get(selector)
+    return resp
 
+
+# In[151]:
+
+
+retrieve_bid_modefier(adwords_client)
+
+
+# In[148]:
+
+
+DEVICE_CRITERION = {
+    'Desktop': 30000,
+    'Mobile': 30001,
+    'Tablet': 30002,
+    'Tv': 30004,
+}
+def assign_bid_modifier(client, campaign_id, bid_modifier, device='Desktop'):
+    # Initialize appropriate service.
+    campaign_bid_modifier_service = adwords_client.GetService(
+        'CampaignBidModifierService', version='v201809')
+
+    operation = {
+        # Use 'ADD' to add a new modifier and 'SET' to update an existing one. A
+        # modifier can be removed with the 'REMOVE' operator.
+        'operator': 'ADD',
+        'operand': {
+#             'campaignId': campaign_id,
+            'adGroupId':69785365626,
+            'criterion': {
+#                 'xsi_type': 'AgeRange',
+                'id': 30001
+            },
+            'bidModifier': bid_modifier
+        }
+    }
+    response = campaign_bid_modifier_service.mutate([operation])
+    return response
+
+
+# In[149]:
+
+
+assign_bid_modifier(adwords_client, 1896291336, 1, device='Desktop')
+
+
+# In[68]:
+
+
+CUSTOMER_ID = 5922380045
+CAMPAIGN_ID = 1896291336
+adwords_client.SetClientCustomerId(CUSTOMER_ID)
+
+
+# In[69]:
+
+
+CreateBiddingStrategy(adwords_client)
+
+
+# In[48]:
+
+
+retrieve_ad_group_criterion(adwords_client=adwords_client, ad_group_id=70417436585)
 
 
 # In[ ]:

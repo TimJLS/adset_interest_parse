@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 
 from pathlib import Path
@@ -26,6 +26,7 @@ import pandas as pd
 import mysql_adactivity_save
 from bid_operator import *
 import math
+import random
 
 CAMPAIGN_OBJECTIVE_FIELD = {
     'LINK_CLICKS': 'link_click',
@@ -41,7 +42,7 @@ CAMPAIGN_OBJECTIVE_FIELD = {
     'LOCAL_AWARENESS': 'local_awareness',
     'MESSAGES': 'messages',
     'OFFER_CLAIMS': 'offer_claims',
-    'PAGE_LIKES': 'page_likes',
+    'PAGE_LIKES': 'like',
     'PRODUCT_CATALOG_SALES': 'product_catalog_sales',
     'REACH': 'reach',
     'ALL_CLICKS': 'clicks',
@@ -77,6 +78,10 @@ TARGET_FIELD = {
     'actions': AdsInsights.Field.actions,
     'cost_per_actions': AdsInsights.Field.cost_per_action_type,
 }
+BRANDING_CAMPAIGN_LIST = [
+    'LINK_CLICKS', 'ALL_CLICKS','VIDEO_VIEWS', 'REACH', 'POST_ENGAGEMENT', 'PAGE_LIKES', 'LANDING_PAGE_VIEW']
+PERFORMANCE_CAMPAIGN_LIST = [
+    'CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART']
 class Field:
     ai_spend_cap = 'ai_spend_cap'
     ai_start_date = 'ai_start_date'
@@ -242,7 +247,7 @@ class Campaigns(object):
         if date_preset is None or date_preset == DatePreset.lifetime:
             params = {
                 'time_range[since]': self.ai_start_date,
-                'time_range[until]]': self.ai_stop_date,
+                'time_range[until]': self.ai_stop_date,
             }
         else:
             params = {
@@ -500,25 +505,19 @@ def make_default( campaign_id, charge_type ):
 def main():
     start_time = datetime.datetime.now()
     FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-    df_camp = mysql_adactivity_save.get_campaign() # if extend period, use this
-#     campaignid_list = mysql_adactivity_save.get_campaign_target_left_dict().keys()
-    print(df_camp)
-    for campaign_id in df_camp.campaign_id.unique():
-        df = mysql_adactivity_save.get_campaign_target(campaign_id)
-        if len(df) == 0:
-            pass
-        else:
-            print(campaign_id, df['charge_type'])
-            data_collect( int(campaign_id), df['destination'].iloc[0], df['charge_type'].iloc[0] )
+    df = mysql_adactivity_save.get_campaign_target()
+    for campaign_id in df.campaign_id.unique():
+        print(campaign_id, df['charge_type'][df.campaign_id==campaign_id])
+        data_collect( int(campaign_id), df['destination'][df.campaign_id==campaign_id].iloc[0], df['charge_type'][df.campaign_id==campaign_id].iloc[0] )
     print(datetime.datetime.now()-start_time)
 
 
-# In[5]:
+# In[2]:
 
 
 if __name__ == "__main__":
     main()
-    data_collect( int(23843599908700495), 50, 'LANDING_PAGE_VIEW' )
+#     data_collect( int(23843599908700495), 50, 'LANDING_PAGE_VIEW' )
     import gc
     gc.collect()
 

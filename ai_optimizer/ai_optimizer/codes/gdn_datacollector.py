@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-#!/usr/bin/env python
-
-# In[1]:
+# In[13]:
 
 
 import uuid
@@ -36,7 +25,8 @@ CAMPAIGN_OBJECTIVE_FIELD = {
 CAMPAIGN_FIELDS = ['ExternalCustomerId','CampaignId','AdvertisingChannelType', 'CampaignStatus',
                    'BiddingStrategyType','Amount','StartDate','EndDate','Cost',
                    'AverageCost','Impressions', 'Clicks','Conversions',
-                   'AverageCpc','CostPerConversion', 'Ctr']
+                   'AverageCpc','CostPerConversion', 'Ctr',
+                  'InteractionTypes','CriteriaType']
 ADGROUP_FIELDS = ['ExternalCustomerId','CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus',
                   'CpmBid','CpvBid', 'CpcBid', 'TargetCpa', 'BiddingStrategyType','Cost',
                    'AverageCost','Impressions', 'Clicks','Conversions',
@@ -69,7 +59,8 @@ class ReportField:
     # CRITERIA,
     CRITERIA_LIST = [
         'ExternalCustomerId', 'CampaignId', 'AdGroupId', 'Criteria', 'Id', 'AdGroupStatus', 'CpmBid', 'CpcBid',
-        'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AverageCpc', 'CostPerConversion', 'Ctr']
+        'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AverageCpc', 'CostPerConversion', 'Ctr',
+    'CriteriaType', 'Criteria']
     # AUDIENCE, AGE_RANGE, DISPLAY_KEYWORD
     BIDDABLE_LIST = [
         'ExternalCustomerId', 'CampaignId', 'AdGroupId', 'Criteria', 'Id', 'AdGroupStatus', 'CpmBid', 'CpcBid',
@@ -99,7 +90,8 @@ class ReportColumn:
     URL_LIST      = [
         'customer_id', 'campaign_id', 'adgroup_id', 'status', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'url_display_name', 'ctr']
     CRITERIA_LIST = [
-        'customer_id', 'campaign_id', 'adgroup_id', 'keyword_placement', 'keyword_id', 'status', 'cpm_bid', 'cpc_bid', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'ctr']
+        'customer_id', 'campaign_id', 'adgroup_id', 'keyword_placement', 'keyword_id', 'status', 'cpm_bid', 'cpc_bid', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'ctr',
+    'AAA']
     AUDIENCE_LIST = [
         'customer_id', 'campaign_id', 'adgroup_id', 'audience', 'criterion_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'ctr']
     AGE_RANGE_LIST = [
@@ -206,6 +198,7 @@ class Campaign(object):
             )
             df = df.append(df_temp)
             df['Ctr'] = df.Ctr.str.split('%', expand = True)[0]
+            return df
         df[df.columns.difference(['CampaignStatus', 'AdvertisingChannelType', 'BiddingStrategyType', 'StartDate', 'EndDate'])] = df[df.columns.difference(
             ['CampaignStatus', 'AdvertisingChannelType', 'BiddingStrategyType', 'StartDate', 'EndDate'])].apply(pd.to_numeric, errors='coerce')
         df[df.columns.difference(['ExternalCustomerId', 'CampaignId', 'AdvertisingChannelType', 'CampaignStatus', 'BiddingStrategyType', 'StartDate', 'EndDate', 'Impressions', 'Clicks', 'Conversions', 'Ctr'])] = df[df.columns.difference(
@@ -248,7 +241,6 @@ class Campaign(object):
             }
             fields = ReportField.INDEX[performance_type]
             columns = ReportColumn.INDEX[performance_type]
-
         else:
             print('get_performance_insights: Missing arguments campaign_id or adgroup_id.')
             operand = None
@@ -275,6 +267,7 @@ class Campaign(object):
             except KeyError as e:
                 print('[gdn_datacollector.Campaign.get_performance_insights]', e)
                 pass
+            return df
             df[df.columns.difference( ReportField.NON_NUMERIC_LIST )] = df[df.columns.difference( ReportField.NON_NUMERIC_LIST )].apply(pd.to_numeric, errors='coerce')
             df[df.columns.intersection( ReportField.NUMERIC_LIST )] = df[df.columns.intersection( ReportField.NUMERIC_LIST )].div(1000000)
             df.columns = columns
@@ -454,29 +447,26 @@ def data_collect(customer_id, campaign_id, destination, destination_type):
 
 def main():
     start_time = datetime.datetime.now()
-    df_camp = gdn_db.get_campaign()
+    df_camp = gdn_db.get_campaign_is_running()
     print(df_camp['campaign_id'].unique())
     for campaign_id in df_camp['campaign_id'].unique():
-        df = df_camp[df_camp.campaign_id == campaign_id].iloc[0]
-        if len(df) == 0:
-            pass
-        else:
-            print(campaign_id, df['destination_type'])
-            data_collect( df['customer_id'], int(campaign_id), df['destination'], df['destination_type'] )
+        data_collect( df['customer_id'], int(campaign_id), df['destination'], df['destination_type'] )
     print(datetime.datetime.now()-start_time)
 
-# In[ ]:
+
+# In[14]:
+
+
+camp = Campaign(customer_id=5922380045, campaign_id=1896291336, destination_type='CONVERSIONS')
+camp.get_performance_insights(client,1896291336, performance_type='CRITERIA')
+
+
+# In[2]:
 
 
 if __name__=='__main__':
     main()
 #     df_campaign = data_collect(camp.customer_id, camp.campaign_id, 10000, camp.destination_type)
-
-
-# In[ ]:
-
-
-
 
 
 # In[ ]:

@@ -14,7 +14,13 @@ import pandas as pd
 import gdn_datacollector
 import gdn_db
 from googleads import adwords
-sizepop, vardim, MAXGEN, params = 2000, 3, 30, [0.9, 0.5, 0.5]
+
+
+# In[2]:
+
+
+
+sizepop, vardim, MAXGEN, params = 1000, 3, 15, [0.9, 0.5, 0.5]
 # sizepop, vardim, MAXGEN, params = 1000, 3, 10, [0.9, 0.5, 0.5]
 BIDDING_INDEX = {
     'cpc': 'cpc_bid',
@@ -49,6 +55,71 @@ SCORE_COLUMN_INDEX = {
     'AGE_RANGE': ['campaign_id', 'age_range', 'criterion_id', 'score'],
     'DISPLAY_KEYWORD': ['campaign_id', 'keyword', 'keyword_id', 'score'],
 }
+
+
+# In[3]:
+
+
+AUTH_FILE_PATH = '/home/tim_su/ai_optimizer/opt/ai_optimizer/googleads.yaml'
+adwords_client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
+
+def retrive_all_criteria_insights(campaign_id=None):
+    if campaign_id:
+        df = gdn_db.get_campaign(campaign_id)
+        customer_id = df['customer_id'].iloc[0]
+        destination_type = df['destination_type'].iloc[0]
+        adwords_client.SetClientCustomerId(customer_id)
+        camp = gdn_datacollector.Campaign(customer_id, campaign_id, destination_type)
+        for criteria in CRITERIA_LIST:
+            camp.get_performance_insights( performance_type=criteria, date_preset='YESTERDAY' )
+        return
+    df_camp = gdn_db.get_campaign()
+    campaign_id_list = df_camp['campaign_id'].unique()
+    # retrive all criteria insights
+    for campaign_id in campaign_id_list:
+        customer_id = df_camp['customer_id'][df_camp.campaign_id==campaign_id].iloc[0]
+        destination_type = df_camp['destination_type'][df_camp.campaign_id==campaign_id].iloc[0]
+        adwords_client.SetClientCustomerId(customer_id)
+        camp = gdn_datacollector.Campaign(customer_id, campaign_id, destination_type)
+        for criteria in CRITERIA_LIST:
+            camp.get_performance_insights( performance_type=criteria )
+
+
+# In[4]:
+
+
+def get_criteria_score( campaign_id=None, criteria=None):
+    mydb = gdn_db.connectDB("dev_gdn")
+    df = pd.DataFrame({'adgroup_id': [], 'target': [],
+                       'impressions': [], 'bid_amount': []})
+    df_camp = pd.read_sql(
+        "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb)    
+    table = DATABASE_INDEX[criteria]
+    df = pd.read_sql(
+        "SELECT * FROM {} WHERE campaign_id='{}'".format(table, campaign_id), con=mydb)
+    df_weight = pd.read_sql(
+        "SELECT * FROM optimal_weight WHERE campaign_id='{}' ".format(campaign_id), con=mydb)
+    if not df.empty:
+        if criteria != "URL" and criteria != "CRITERIA":
+            df['daily_budget'] = df_camp['daily_budget'].iloc[0]
+            df['bid_amount'] = df[ BIDDING_INDEX[ df['bidding_type'].iloc[0] ] ]
+            df['target'] = df[ TARGET_INDEX[ df['bidding_type'].iloc[0] ] ]
+            daily_destination = df_camp['destination'] / df_camp['period']
+            df['daily_destination'] = daily_destination.iloc[0]
+            for index, row in df.iterrows():
+                df = pd.DataFrame(data=[row], columns=df.columns, index=[0])
+                r = ObjectiveFunc.adgroup_fitness(df_weight, df)
+                df['score'] = r
+                df_final = df[ SCORE_COLUMN_INDEX[criteria] ]
+                gdn_db.into_table(df_final, table=SCORE_INDEX[criteria]+"_score")   
+    mydb.close()
+    return 
+
+
+# In[5]:
+
+
+
 class GeneticAlgorithm(object):
     '''
     The class for genetic algorithm
@@ -361,56 +432,7 @@ def ga_optimal_weight(campaign_id):
     return
 
 
-# In[2]:
-
-
-
-def retrive_all_criteria_insights():
-    df_camp = gdn_db.get_campaign()
-    campaign_id_list = df_camp['campaign_id'].unique()
-    # retrive all criteria insights
-    for campaign_id in campaign_id_list:
-        df = df_camp[df_camp.campaign_id==campaign_id]
-        customer_id = df['customer_id'].iloc[0]
-        destination_type = df['destination_type'].iloc[0]
-#         client.SetClientCustomerId(customer_id)
-        camp = gdn_datacollector.Campaign(customer_id, campaign_id, destination_type)
-        for criteria in CRITERIA_LIST:
-            camp.get_performance_insights( performance_type=criteria )
-
-
-# In[1]:
-
-
-def get_criteria_score( campaign_id=None, criteria=None):
-    mydb = gdn_db.connectDB("dev_gdn")
-    df = pd.DataFrame({'adgroup_id': [], 'target': [],
-                       'impressions': [], 'bid_amount': []})
-    df_camp = pd.read_sql(
-        "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb)    
-    table = DATABASE_INDEX[criteria]
-    df = pd.read_sql(
-        "SELECT * FROM {} WHERE campaign_id='{}'".format(table, campaign_id), con=mydb)
-    df_weight = pd.read_sql(
-        "SELECT * FROM optimal_weight WHERE campaign_id='{}' ".format(campaign_id), con=mydb)
-    if not df.empty:
-        if criteria != "URL" and criteria != "CRITERIA":
-            df['daily_budget'] = df_camp['daily_budget'].iloc[0]
-            df['bid_amount'] = df[ BIDDING_INDEX[ df['bidding_type'].iloc[0] ] ]
-            df['target'] = df[ TARGET_INDEX[ df['bidding_type'].iloc[0] ] ]
-            daily_destination = df_camp['destination'] / df_camp['period']
-            df['daily_destination'] = daily_destination.iloc[0]
-            for index, row in df.iterrows():
-                df = pd.DataFrame(data=[row], columns=df.columns, index=[0])
-                r = ObjectiveFunc.adgroup_fitness(df_weight, df)
-                df['score'] = r
-                df_final = df[ SCORE_COLUMN_INDEX[criteria] ]
-                gdn_db.into_table(df_final, table=SCORE_INDEX[criteria]+"_score")   
-    mydb.close()
-    return 
-
-
-# In[4]:
+# In[6]:
 
 
 if __name__ == "__main__":
@@ -420,7 +442,6 @@ if __name__ == "__main__":
     for campaign_id in campaign_id_list:
 #         ga_optimal_weight(campaign_id)
         print('campaign_id:', campaign_id )
-        print('current time: ', starttime )
         global df
         df = ObjectiveFunc().campaign_status(campaign_id)
         bound = np.tile([[0], [1]], vardim)
@@ -433,24 +454,18 @@ if __name__ == "__main__":
 
         df_final = pd.DataFrame({'campaign_id':campaign_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
         df_final = pd.concat( [df_score, df_final], axis=1, sort=True, ignore_index=False)
-
+        
         print(df_final)
         gdn_db.check_optimal_weight(campaign_id, df_final)
         for criteria in CRITERIA_LIST:
             get_criteria_score( campaign_id=campaign_id, criteria=criteria )
-    #         ga_optimal_weight(campaign_id)
-
+#         ga_optimal_weight(campaign_id)
+        
         print('optimal_weight:', optimal)
         print(datetime.datetime.now()-starttime)    
     print(datetime.datetime.now()-starttime)
     import gc
     gc.collect()    
-
-
-# In[5]:
-
-
-
 
 
 # In[ ]:

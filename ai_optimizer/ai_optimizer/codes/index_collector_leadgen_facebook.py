@@ -430,6 +430,7 @@ def data_collect( campaign_id, total_clicks, charge_type ):
         insertion("adset_leads_metrics", df_adset)
         del adset
     del camp
+#     print(df_camp)
     update_campaign_target(df_camp)
     check_campaign_metrics(campaign_id, campaign_metrics, table="campaign_leads_metrics")
     return
@@ -482,21 +483,17 @@ def update_campaign_target(df_camp):
     mycursor = mydb.cursor()
     campaign_id = df_camp['campaign_id'].iloc[0]
     df_camp.drop(['campaign_id'], axis=1)
-    try:
-        spend_cap = df_camp['spend_cap'].iloc[0]
-    except Exception as e:
-        print('[index_collector_leadgen_facebook.update_campaign_target]: ', e)
-        lifetime_budget = df_camp['lifetime_budget'].iloc[0]
-        df_camp['spend_cap'] = df_camp['lifetime_budget']
-        df_camp = df_camp.drop(['lifetime_budget'], axis=1)
     for column in df_camp.columns:
-        try:
-            sql = ("UPDATE campaign_target SET {} = '{}' WHERE campaign_id={}".format(column, df_camp[column].iloc[0], campaign_id))
-            mycursor.execute(sql)
-            mydb.commit()
-        except Exception as e:
-            print('[index_collector_leadgen_facebook.update_table]: ', e)
-            pass
+#         try:
+        print(column, df_camp[column].iloc[0])
+        sql = ("UPDATE campaign_target SET {} = '{}' WHERE campaign_id={}".format(column, df_camp[column].iloc[0], campaign_id))
+        
+        print('[sql] ', sql)
+        mycursor.execute(sql)
+        mydb.commit()
+#         except Exception as e:
+#             print('[index_collector_leadgen_facebook.update_table]: ', e)
+#             pass
     mycursor.close()
     mydb.close()
     return

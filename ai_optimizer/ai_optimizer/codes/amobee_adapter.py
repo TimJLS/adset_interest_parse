@@ -1,9 +1,19 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
 import requests
 import json
 import datetime
 import pandas as pd
 import amobee_db
-import bid_operator
+
+
+# In[2]:
+
+
 
 DATADASE = "Amobee"
 START_TIME = 'start_time'
@@ -22,6 +32,10 @@ IO_PROGRESS = 'io_progress'
 
 PACKAGE_ID = 'package_id'
 IOID = 'ioid'
+
+
+# In[3]:
+
 
 class AmobeeInsertionOrderAdapter(object):
     def __init__(self, ioid):
@@ -94,7 +108,30 @@ class AmobeeInsertionOrderAdapter(object):
         self.get_io_day_target()
         self.get_io_progress()
         return
-    
+
+
+# In[4]:
+
+
+amobee = AmobeeInsertionOrderAdapter(1605818538)
+
+
+# In[5]:
+
+
+amobee.retrieve_io_attribute()
+
+
+# In[ ]:
+
+
+vars(amobee).items()
+
+
+# In[6]:
+
+
+
 class AmobeePackageAdapter(AmobeeInsertionOrderAdapter):
     def __init__(self, package_id, amobee):
         self.mydb = amobee_db.connectDB( DATADASE )
@@ -158,7 +195,24 @@ class AmobeePackageAdapter(AmobeeInsertionOrderAdapter):
             PACKAGE_PROGRESS:self.package_progress,
             IO_PROGRESS:self.io_progress
         }
-    
+
+
+# In[7]:
+
+
+pkg = AmobeePackageAdapter(1605818545, amobee)
+
+
+# In[8]:
+
+
+pkg.retrieve_package_attribute()
+
+
+# In[9]:
+
+
+import bid_operator
 def main():
     start_time = datetime.datetime.now()
     
@@ -175,7 +229,8 @@ def main():
                 pkg = AmobeePackageAdapter( package, amobee )
                 status = pkg.retrieve_package_attribute()
                 media = result['media']
-                bid = bid_operator.adjust(media, **status)
+    #             bid = bid_operator.adjust(media, **status)
+                bid = bid_adjust(media, **status)
                 result['contents'].append(bid)
                 del pkg
             mydict_json = json.dumps(result)
@@ -184,8 +239,74 @@ def main():
         except:
             print('pass')
             pass
-    print(datetime.datetime.now()-start_time)
-    return
+
+
+# In[14]:
+
+
+main()
+
+
+# In[13]:
+
+
+import numpy as np
+CENTER = 1
+WIDTH = 10
+BID_RANGE = 0.8
+def normalized_sigmoid_fkt(center, width, progress):
+    s= 1/( 1 + np.exp( width * ( progress-center ) ) )
+    return s
+
+
+# In[11]:
+
+
+ADAPTER = {
+    "Amobee":{
+        "adset_id":"package_id",
+        "campaign_id":"ioid",
+        "adset_progress":"package_progress",
+        "campaign_progress":"io_progress"
+    },
+    "Facebook":{
+        "adset_id":"adset_id",
+        "campaign_id":"campaign_id",
+        "adset_progress":"adset_progress",
+        "campaign_progress":"campaign_progress"
+    }
+}
+
+
+# In[12]:
+
+
+BID='bid'
+def bid_adjust(media, **status):
+    ADSET_PROGRESS = ADAPTER[media].get("adset_progress")
+    CAMPAIGN_PROGRESS = ADAPTER[media].get("campaign_progress")
+    ADSET_ID = ADAPTER[media].get("adset_id")
     
-if __name__=='__main__':
-    main()
+    init_bid = status.get(INIT_BID)
+    last_bid = status.get(LAST_BID)
+    
+    adset_progress = status.get(ADSET_PROGRESS)
+    campaign_progress = status.get(CAMPAIGN_PROGRESS)
+    
+    if adset_progress > 1 and campaign_progress > 1:
+        bid = math.ceil(init_bid)
+    elif adset_progress > 1 and campaign_progress < 1:
+        bid = last_bid
+    else:
+        bid = BID_RANGE*init_bid*( normalized_sigmoid_fkt(CENTER, WIDTH, adset_progress) - 0.5 )
+#     print(ADAPTER[media].get("adset_id"), status.get(ADSET_ID) )
+    
+    
+    return { ADAPTER[media].get("adset_id"):status.get(ADSET_ID), BID:bid }
+
+
+# In[ ]:
+
+
+
+

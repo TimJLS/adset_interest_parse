@@ -10,6 +10,7 @@ import time
 import pytz
 import datetime
 import math
+import random
 import pandas as pd
 from copy import deepcopy
 from facebook_business.adobjects.adset import AdSet
@@ -22,7 +23,7 @@ import mysql_adactivity_save
 from facebook_datacollector import Campaigns
 from facebook_datacollector import DatePreset
 from facebook_adapter import FacebookCampaignAdapter
-IS_DEBUG = True #debug mode will not modify anything
+IS_DEBUG = False #debug mode will not modify anything
 
 
 my_app_id = '958842090856883'
@@ -39,8 +40,8 @@ ACTION_BOUNDARY = 0.8
 ACTION_DICT = {'bid': AdSet.Field.bid_amount,
                'age': AdSet.Field.targeting, 'interest': AdSet.Field.targeting}
 
-BRANDING_CAMPAIGN_LIST = ['LINK_CLICKS', 'ALL_CLICKS','VIDEO_VIEWS', 'REACH', 'POST_ENGAGEMENT', 'PAGE_LIKES']
-PERFORMANCE_CAMPAIGN_LIST = ['CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART', 'LANDING_PAGE_VIEW']
+BRANDING_CAMPAIGN_LIST = ['LINK_CLICKS', 'ALL_CLICKS','VIDEO_VIEWS', 'REACH', 'POST_ENGAGEMENT', 'PAGE_LIKES', 'LANDING_PAGE_VIEW']
+PERFORMANCE_CAMPAIGN_LIST = ['CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART']
 
 ADSET_COPY_COUNT = 3
 ADSET_MIN_COUNT = 3
@@ -94,6 +95,75 @@ FIELDS = [
 
 
 
+def copy_asset_new_target(new_adset_params, original_adset_id):
+    new_adset_id = -1
+    try:
+        new_adset_id = make_adset(new_adset_params)
+        print('[copy_adset] make_adset success, original_adset_id', original_adset_id, ' new_adset_id', new_adset_id)
+        time.sleep(10)
+        ad_id_list = get_ad_id_list(original_adset_id)
+        for ad_id in ad_id_list:
+            result_message = assign_copied_ad_to_new_adset(new_adset_id=new_adset_id, ad_id=ad_id)
+            print('[copy_adset] result_message', result_message)
+            
+    except Exception as error:
+        print('[copy_adset] this adset is not existed anymore, error:', error)
+
+def make_suggest_adset(original_adset_id): 
+    suggestion_id, suggestion_name = get_suggestion_target_by_asset(original_adset_id)
+    if suggestion_id is None:
+        print('[make_suggest_adset] error')
+        return 
+    
+    print('[make_suggest_adset] pick this suggestion:',suggestion_id, suggestion_name)
+    
+    new_adset_params = retrieve_origin_adset_params(original_adset_id)
+    print(new_adset_params)
+    new_adset_params[AdSet.Field.name] = suggestion_name + "_Target_AI"
+    new_adset_params[AdSet.Field.targeting]["flexible_spec"]
+
+    interest_pair = {
+            "interests":[{
+                "id": suggestion_id,
+                "name": suggestion_name,
+            }]
+        }
+    new_adset_params[AdSet.Field.targeting]["flexible_spec"] = interest_pair
+
+    print('[make_suggest_adset] new_adset_params',new_adset_params)
+    original_adset_id = new_adset_params[AdSet.Field.id]
+    new_adset_params[AdSet.Field.id] = None
+    copy_asset_new_target(new_adset_params, original_adset_id)
+
+
+
+def get_account_id_by_adset(adset_id):
+    this_adsets = AdSet( adset_id ).remote_read(fields=["account_id"])
+    account_id = this_adsets.get('account_id')
+    return account_id
+
+def get_suggestion_target_by_asset(adset_id):
+    account_id = get_account_id_by_adset(adset_id)
+    
+    mydb = mysql_adactivity_save.connectDB(DATABASE)
+    mycursor = mydb.cursor()
+    ### select
+    sql = "SELECT suggestion_id, suggestion_name   FROM account_target_suggestion WHERE account_id={}".format(account_id)
+    mycursor.execute(sql)
+    target_suggestions = mycursor.fetchall()
+#     for suggestions in target_suggestions:
+#         print(suggestions)
+
+    mydb.commit()
+    mydb.close()
+    print('')
+    if len(target_suggestions) > 0:
+        pick_index = random.randint(0, len(target_suggestions)-1)
+        print('[get_suggestion_target_by_asset] pick:',target_suggestions[pick_index])
+        return target_suggestions[pick_index]
+    else:
+        return None,None
+    
 
 def get_ad_id_list(adset_id):
     ad_id_list = list()
@@ -195,7 +265,15 @@ def copy_adset(adset_id, actions, adset_params=None):
     new_adset_params = adset_params
     origin_adset_name = adset_params[AdSet.Field.name]
     new_adset_params[AdSet.Field.id] = None
-
+    
+    # Generate new adset name
+    new_adset_name = ''
+    index = origin_adset_name.find("Copy")
+    if index > 0:
+        new_adset_name = origin_adset_name[:index]  + '_' + str(datetime.datetime.now().date()) 
+    else:
+        new_adset_name = origin_adset_name + '_' + str(datetime.datetime.now().date())
+    
     for i, action in enumerate(actions.keys()):
         if action == 'bid':
             new_adset_params[ACTION_DICT[action]] = math.ceil( revert_bid_amount(actions[action]) )  # for bid
@@ -206,7 +284,7 @@ def copy_adset(adset_id, actions, adset_params=None):
                 age_list[:1][0])
             new_adset_params[AdSet.Field.targeting]["age_max"] = int(
                 age_list[1:][0])
-            new_adset_params[AdSet.Field.name] = origin_adset_name +' Copy - {}'.format(actions[action])
+            new_adset_params[AdSet.Field.name] = new_adset_name
 
 #         elif action == 'interest':
 # #             if actions[action] is None:
@@ -262,7 +340,11 @@ def handle_campaign_copy(campaign_id):
     lifetime_dict = campaign_instance.generate_campaign_info(date_preset=DatePreset.lifetime)
 #     print('[handle_campaign_copy] day_dict ',day_dict)
 #     print('[handle_campaign_copy] lifetime_dict ',lifetime_dict)
-
+    lifetime_target = int( lifetime_dict['target'] )
+    if lifetime_target > df['destination'].iloc[0]:
+        modify_opt_result_db(campaign_id, False)
+        return    
+    
     is_performance_campaign = False
     is_split_age = False
     if charge_type in PERFORMANCE_CAMPAIGN_LIST:
@@ -287,7 +369,7 @@ def handle_campaign_copy(campaign_id):
     if achieving_rate > ACTION_BOUNDARY and achieving_rate < 1:
         is_adjust_bid = False
     elif achieving_rate < ACTION_BOUNDARY:
-        is_adjust_bid = True
+        is_adjust_bid = True        
     else: # good enough, not to do anything
         print('[handle_campaign_copy] good enough, not to do anything')
         modify_opt_result_db(campaign_id , False)
@@ -301,8 +383,12 @@ def handle_campaign_copy(campaign_id):
     if len(adsets_active_list) <= ADSET_MIN_COUNT:
         if is_performance_campaign:
             print('[handle_campaign_copy] is_performance_campaign',is_performance_campaign)
-            print('[handle_campaign_copy] not to copy and close any adset, return')
-            return
+            if len(adsets_active_list) > 0:
+                #create one suggestion asset for CPA campaigin
+                print('create one suggestion asset for CPA campaigin')        
+                adset_id = adsets_active_list[0]
+                make_suggest_adset(adset_id)
+                return
         
     adset_list = get_sorted_adset(campaign_id)
     adset_action_list = []
@@ -332,11 +418,6 @@ def handle_campaign_copy(campaign_id):
     # update bid for original existed adset
     if is_adjust_bid and not IS_DEBUG:
         mysql_adactivity_save.adjust_init_bid(campaign_id)
-        
-    # not to copy any adset if it is performance campaign
-    if is_performance_campaign:
-        print('return , not to copy any adset if it is performance campaign')
-        return
     
     #get adset bid for this campaign
     fb_adapter.retrieve_campaign_attribute()
@@ -422,9 +503,9 @@ if __name__ == '__main__':
     df_not_opted = mysql_adactivity_save.get_campaigns_not_optimized()
     print('df_not_opted len:', len(df_not_opted))
     
-#     for campaign_id in df_not_opted.campaign_id.unique():
-#         handle_campaign_copy(campaign_id)
-    handle_campaign_copy(23843319164090240)
+    for campaign_id in df_not_opted.campaign_id.unique():
+        handle_campaign_copy(campaign_id)
+#     handle_campaign_copy(23843467729120098)
 
 
 # In[ ]:

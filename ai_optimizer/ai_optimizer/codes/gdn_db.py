@@ -1,13 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
-
-
-
-
-# In[4]:
+# In[8]:
 
 
 import mysql.connector
@@ -68,17 +62,24 @@ def get_campaign(campaign_id=None):
     request_time = datetime.datetime.now()
     if campaign_id is None:
         df = pd.read_sql( "SELECT * FROM campaign_target", con=mydb )
-        mydb.close()
-        return df
+        df_is_running = df[df.stop_time >= request_time]
     else:
-        df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
-        df_camp = pd.DataFrame(columns=df.columns)
-        stop_time = df['stop_time'][df.campaign_id==campaign_id].iloc[0]
-        if stop_time.date() >= request_time.date():
-            df_camp= pd.concat( [ df_camp, df[df.campaign_id==campaign_id] ], axis=0 )
-        mydb.close()
-        return df_camp
+        df_is_running = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
+    mydb.close()
+    return df_is_running
 
+
+def get_campaign_is_running(campaign_id=None):
+    mydb = connectDB(DATABASE)
+    request_time = datetime.datetime.now()
+    if campaign_id is None:
+        df = pd.read_sql( "SELECT * FROM campaign_target" , con=mydb )
+        df_is_running = df.drop( df[ df['stop_time'] <= request_time ].index )
+    else:
+        df_is_running = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
+    mydb.close()
+    return df_is_running
+    
 def get_campaign_target(campaign_id=None):
     mydb = connectDB(DATABASE)
     request_time = datetime.datetime.now()

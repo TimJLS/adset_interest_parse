@@ -64,12 +64,6 @@ if __name__ == '__main__':
     main_retrieve()
 
 
-# In[8]:
-
-
-
-
-
 # In[ ]:
 
 

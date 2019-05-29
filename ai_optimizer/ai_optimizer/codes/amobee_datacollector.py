@@ -1,8 +1,70 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
 import requests
 import json
 import datetime
 import pandas as pd
-import amobee_db
+
+
+# In[2]:
+
+
+ioid = 1605762997
+ioid = 1605818538
+ioid = 1605762998
+
+
+# In[3]:
+
+
+packageID = 1605770217
+packageID = 1605770053
+packageID = 1605770237
+
+
+# In[4]:
+
+
+advertiserid = 1431829168
+
+
+# In[51]:
+
+
+def get_access_token():
+    url = "https://services.amobee.com/accounts/v1/api/token"
+    headers = {"Content-Type":"application/json"}
+    payload = {
+    "client_id":"ad2819a6-5f55-1038-834c-5bbb75af789b@658.api",
+    "client_secret":"Lmrp3yqrzToo3NM/",
+    "grant_type":"client_credentials"
+    }
+    data = json.dumps(payload)
+    r = requests.post(url, headers=headers, data=data)
+    global access_token
+    access_token = json.loads(r.text)['access_token']
+    return access_token
+
+
+# In[69]:
+
+
+get_access_token()
+
+
+# In[ ]:
+
+
+access_token
+
+
+# In[56]:
+
+
 class DatePreset:
     today = 'today'
     lifetime = 'lifetime'
@@ -49,6 +111,10 @@ class AdgeekField:
     target_left = 'target_left'
     destination = 'destination'
 
+
+# In[70]:
+
+
 class InsertionOrders(object):
     def __init__(self, ioid):
         self.ioid = ioid
@@ -60,7 +126,7 @@ class InsertionOrders(object):
         self.io_features = dict()
         
     def get_insertion_order_features(self):
-        url = "https://services.amobee.com/metadata/v2/api/insertionorders/{}".format(self.ioid)
+        url = "https://services.amobee.com/metadata/v2/api/insertionorders/{}".format(ioid)
         headers = {"Authorization":"Bearer {}".format(access_token)}
         r = requests.get(url, headers=headers)
         metadata = json.loads(r.text)
@@ -77,7 +143,7 @@ class InsertionOrders(object):
         self.io_features.update( {AdgeekField.stop_time: self.end_date} )
         self.io_features.update( {AdgeekField.target_type: target_type} )
         self.io_features.update( {AdgeekField.goal_cpc: goal_cpc} )
-        self.period = (self.io_features[AdgeekField.stop_time] - self.io_features[AdgeekField.start_time]).days
+        self.period = (self.io_features[AdgeekField.stop_time] - self.io_features[AdgeekField.start_time]).days + 1
         self.io_features.update( {AdgeekField.period: self.period } )
         
         return self.io_features
@@ -89,7 +155,7 @@ class InsertionOrders(object):
         elif date_preset==DatePreset.today:
             start_time = ( datetime.datetime.now() - datetime.timedelta(1) ).strftime( '%Y-%m-%d' )
             stop_time = ( datetime.datetime.now() - datetime.timedelta(1) ).strftime( '%Y-%m-%d' )
-        url = "https://services.amobee.com/reporting/v1/api/insertionorders/{}?reportType=summary&startDate={}&endDate={}".format(self.ioid, start_time, stop_time)
+        url = "https://services.amobee.com/reporting/v1/api/insertionorders/{}?reportType=summary&startDate={}&endDate={}".format(ioid, start_time, stop_time)
         headers = {"Authorization":"Bearer {}".format(access_token)}
         r = requests.get(url, headers=headers)
         insights = json.loads(r.text)[ AmobeeField.data ]
@@ -106,9 +172,9 @@ class InsertionOrders(object):
             self.package_list.append( package[ AmobeeField.packageId ] )
         return self.package_list
     
-    def initialize(self):
+    def initialize(self, date_preset=DatePreset.today):
         self.get_insertion_order_features()
-        self.get_insertion_order_insights( date_preset=DatePreset.lifetime )
+        self.get_insertion_order_insights( date_preset=date_preset )
         self.io_insights.update( {AdgeekField.ioid:self.ioid} )
         self.io_insights[AdgeekField.spend] = self.io_insights.pop( AmobeeField.advertiser_invoice)
         self.io_insights[AdgeekField.target] = self.io_insights.pop( AmobeeField.clicks )
@@ -117,7 +183,11 @@ class InsertionOrders(object):
         self.insertion_order.update( {AdgeekField.cost_per_target: self.io_insights[AdgeekField.spend] / self.io_insights[AdgeekField.target] } )
         self.insertion_order.update( {AdgeekField.daily_budget:self.io_features[AdgeekField.spend_cap] / self.io_features[AdgeekField.period] } )
         return self.insertion_order
-    
+
+
+# In[67]:
+
+
 class Package(object):
     def __init__(self, package_id):
         self.package_id = int(package_id)
@@ -144,12 +214,14 @@ class Package(object):
         return self.package_features
     
     def get_package_insights(self, date_preset=None):
+        start_time=0
         if date_preset is None or date_preset==DatePreset.today:
             start_time = ( datetime.datetime.now() - datetime.timedelta(1) ).strftime( '%Y-%m-%d' )
         stop_time = ( datetime.datetime.now() - datetime.timedelta(1) ).strftime( '%Y-%m-%d' )
         url = "https://services.amobee.com/reporting/v1/api/packages/{}?reportType=summary&startDate={}&endDate={}".format(self.package_id, start_time, stop_time)
         headers = {"Authorization":"Bearer {}".format(access_token)}
         r = requests.get(url, headers=headers)
+        print(r.text)
         insights = json.loads(r.text)[ AmobeeField.data ]
         for d in json.loads(r.text)[ AmobeeField.data ]:
             self.package_insights.update( { d['description'] : float(d['value']) } )
@@ -168,22 +240,51 @@ class Package(object):
             self.package_insights.update( {AdgeekField.cost_per_target: 0} )
         self.package = { **self.package_insights, **self.package_features }
         return self.package
+    
 
-def get_access_token():
-    url = "https://services.amobee.com/accounts/v1/api/token"
-    headers = {"Content-Type":"application/json"}
-    payload = {
-    "client_id":"ad2819a6-5f55-1038-834c-5bbb75af789b@658.api",
-    "client_secret":"Lmrp3yqrzToo3NM/",
-    "grant_type":"client_credentials"
-    }
-    data = json.dumps(payload)
-    r = requests.post(url, headers=headers, data=data)
-    global access_token
-    access_token = json.loads(r.text)['access_token']
-    return access_token
+
+# In[68]:
+
+
+pkg = Package(packageID)
+pkg.get_package_insights(date_preset=DatePreset.lifetime)
+pkg.get_package_features()
+pkg.initialize()
+
+
+# In[ ]:
+
+
+pkg.package_features, pkg.package_insights, pkg.package
+
+
+# In[71]:
+
+
+io = InsertionOrders(ioid)
+insertion_order_features = io.get_insertion_order_features()
+insertion_order_insights = io.get_insertion_order_insights(date_preset=DatePreset.lifetime)
+insertion_order = io.initialize()
+
+
+# In[72]:
+
+
+io.io_features, io.io_insights, io.insertion_order, io.period
+
+
+# In[10]:
+
+
+import amobee_db
+
+
+# In[17]:
+
+
 
 def data_collect( ioid, total_clicks ):
+    get_access_token()
     io = InsertionOrders( ioid=ioid )
     io.initialize()
     charge = io.insertion_order[ AdgeekField.target ]
@@ -204,46 +305,98 @@ def data_collect( ioid, total_clicks ):
         pkg.package.update( { AdgeekField.request_time: datetime.datetime.now() } )
         pkg.package.update( { AdgeekField.ioid: io.ioid } )
         df_pkg = pd.DataFrame(pkg.package, index=[0])
-        amobee_db.insertion( table="package_insights", df=df_pkg )
+#         amobee_db.insertion( table="package_insights", df=df_pkg )
         
     df_io = pd.DataFrame(io_dict, index=[0])
+#     print(df_io.info())
+#     df_io[df_io.columns] = df_io[df_io.columns].apply(pd.to_numeric, errors='ignore')
+#     amobee_db.insertion( table="io_target", df=df_io )
+#     print(df_io.info())
     amobee_db.update_io_target(df_io)
     return df_io
 
-def make_default( ioid, media, charge_type ):
-    get_access_token()
-    io = InsertionOrders( ioid=ioid )
-    package_list = io.get_package_list()
-    mydict=dict()
-    result={ 'media': media, 'ioid': ioid, 'contents':[] }
-    for package in package_list:
-        pkg = Package( package_id=package )
-        pkg_info = pkg.initialize()
-        if not bool(pkg_info):
-            pass
-        else:
-            result['contents'].append(
-                {
-                    'pred_cpc': str( pkg_info['bid_amount'] ),
-                    'pred_budget': str( pkg_info['daily_budget'] ),
-                    'adset_id': str( package ),
-                }
-            )
-    if result['contents']:
-        mydict_json = json.dumps(result)
-        amobee_db.insert_default( str( ioid ), mydict_json )
-    return
 
-def main():
-    start_time = datetime.datetime.now()
-    get_access_token()
-    df_io = amobee_db.get_io_target()
-    ioid_list = df_io['ioid'].unique()
+# In[ ]:
+
+
+
+
+
+# In[18]:
+
+
+get_ipython().run_cell_magic('time', '', 'df_io = data_collect(ioid, 100000)')
+
+
+# In[16]:
+
+
+ioid
+
+
+# In[ ]:
+
+
+df_io
+
+
+# In[ ]:
+
+
+import amobee_db
+
+
+# In[14]:
+
+
+def get_io_target():
+    request_time = datetime.datetime.now()
+    mydb = amobee_db.connectDB("Amobee")
+    mycursor = mydb.cursor()
+    df = pd.read_sql( "SELECT * FROM io_target" , con=mydb )
+    ioid_list = df['ioid'].unique()
+    df_io = pd.DataFrame(columns=df.columns)
     for ioid in ioid_list:
-        destination = df_io['destination'][df_io.ioid==ioid].iloc[0]
-        print(ioid, df_io['target_type'][df_io.ioid==ioid].iloc[0])
-        data_collect( ioid, destination )#存資料
-    print(datetime.datetime.now()-start_time)
-if __name__=="__main__":
-    
-    main()
+        start_time = df['start_time'][df.ioid==ioid].iloc[0]
+        stop_time = df['stop_time'][df.ioid==ioid].iloc[0]
+        if stop_time >= request_time and start_time <= request_time:
+            df_io = pd.concat([df_io, df[df.ioid==ioid]])
+    return df_io
+
+
+# In[19]:
+
+
+ioid
+
+
+# In[26]:
+
+
+ioid = 1605762998
+ioid = 1605818538
+
+
+# In[44]:
+
+
+get_ipython().run_cell_magic('time', '', 'mydb = amobee_db.connectDB(\'Amobee\')\nmycursor = mydb.cursor()\nmycursor.execute( "SELECT default_price FROM default_price WHERE ioid=%s ORDER BY request_time DESC LIMIT 1" % (ioid) )\ndefault = mycursor.fetchone()\n# default = str(default[0][0], encoding=\'utf-8\')')
+
+
+# In[50]:
+
+
+default[0]
+
+
+# In[22]:
+
+
+pkg_info
+
+
+# In[ ]:
+
+
+
+
