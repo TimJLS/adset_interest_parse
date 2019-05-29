@@ -59,8 +59,7 @@ class ReportField:
     # CRITERIA,
     CRITERIA_LIST = [
         'ExternalCustomerId', 'CampaignId', 'AdGroupId', 'Criteria', 'Id', 'AdGroupStatus', 'CpmBid', 'CpcBid',
-        'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AverageCpc', 'CostPerConversion', 'Ctr',
-    'CriteriaType', 'Criteria']
+        'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AverageCpc', 'CostPerConversion', 'Ctr',]
     # AUDIENCE, AGE_RANGE, DISPLAY_KEYWORD
     BIDDABLE_LIST = [
         'ExternalCustomerId', 'CampaignId', 'AdGroupId', 'Criteria', 'Id', 'AdGroupStatus', 'CpmBid', 'CpcBid',
@@ -90,8 +89,7 @@ class ReportColumn:
     URL_LIST      = [
         'customer_id', 'campaign_id', 'adgroup_id', 'status', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'url_display_name', 'ctr']
     CRITERIA_LIST = [
-        'customer_id', 'campaign_id', 'adgroup_id', 'keyword_placement', 'keyword_id', 'status', 'cpm_bid', 'cpc_bid', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'ctr',
-    'AAA']
+        'customer_id', 'campaign_id', 'adgroup_id', 'keyword_placement', 'keyword_id', 'status', 'cpm_bid', 'cpc_bid', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'ctr',]
     AUDIENCE_LIST = [
         'customer_id', 'campaign_id', 'adgroup_id', 'audience', 'criterion_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'ctr']
     AGE_RANGE_LIST = [
@@ -198,7 +196,6 @@ class Campaign(object):
             )
             df = df.append(df_temp)
             df['Ctr'] = df.Ctr.str.split('%', expand = True)[0]
-            return df
         df[df.columns.difference(['CampaignStatus', 'AdvertisingChannelType', 'BiddingStrategyType', 'StartDate', 'EndDate'])] = df[df.columns.difference(
             ['CampaignStatus', 'AdvertisingChannelType', 'BiddingStrategyType', 'StartDate', 'EndDate'])].apply(pd.to_numeric, errors='coerce')
         df[df.columns.difference(['ExternalCustomerId', 'CampaignId', 'AdvertisingChannelType', 'CampaignStatus', 'BiddingStrategyType', 'StartDate', 'EndDate', 'Impressions', 'Clicks', 'Conversions', 'Ctr'])] = df[df.columns.difference(
@@ -267,7 +264,6 @@ class Campaign(object):
             except KeyError as e:
                 print('[gdn_datacollector.Campaign.get_performance_insights]', e)
                 pass
-            return df
             df[df.columns.difference( ReportField.NON_NUMERIC_LIST )] = df[df.columns.difference( ReportField.NON_NUMERIC_LIST )].apply(pd.to_numeric, errors='coerce')
             df[df.columns.intersection( ReportField.NUMERIC_LIST )] = df[df.columns.intersection( ReportField.NUMERIC_LIST )].div(1000000)
             df.columns = columns
@@ -452,13 +448,6 @@ def main():
     for campaign_id in df_camp['campaign_id'].unique():
         data_collect( df['customer_id'], int(campaign_id), df['destination'], df['destination_type'] )
     print(datetime.datetime.now()-start_time)
-
-
-# In[14]:
-
-
-camp = Campaign(customer_id=5922380045, campaign_id=1896291336, destination_type='CONVERSIONS')
-camp.get_performance_insights(client,1896291336, performance_type='CRITERIA')
 
 
 # In[2]:

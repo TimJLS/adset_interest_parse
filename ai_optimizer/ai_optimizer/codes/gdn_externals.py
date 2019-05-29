@@ -298,7 +298,7 @@ class Make(object):
     
 
 
-# In[5]:
+# In[ ]:
 
 
 # # init param retriever Retrieve
@@ -318,7 +318,7 @@ class Make(object):
 #                                 mutant_ad_group_id_list=[mutant_ad_group_id])
 
 
-# In[45]:
+# In[5]:
 
 
 def get_sorted_adgroup(campaign_id):
@@ -571,7 +571,7 @@ def make_adgroup_with_criterion(adwords_client, update, campaign_id, native_ad_g
     return
 
 
-# In[46]:
+# In[6]:
 
 
 class Status(object):
@@ -650,7 +650,7 @@ class Update(object):
         return
 
 
-# In[47]:
+# In[7]:
 
 
 
@@ -676,6 +676,8 @@ def main(campaign_id=None):
                 date_preset=DatePreset.yesterday)
             lifetime_dict = camp.get_campaign_insights(adwords_client,
                 date_preset=DatePreset.lifetime)
+            # Adjust initial bids
+            handle_initial_bids(campaign_id, day_dict['spend'], day_dict['budget'])
             target = int( day_dict[target] )
             lifetime_target = int( lifetime_dict[target] )
             achieving_rate = target / daily_target
@@ -719,7 +721,8 @@ def main(campaign_id=None):
             lifetime_dict = camp.get_campaign_insights(adwords_client,
                 date_preset=DatePreset.lifetime)
             target = int( day_dict[target] )
-            
+            print(day_dict)
+            return
             achieving_rate = target / daily_target
             print('[campaign_id]', campaign_id, )
             print('[achieving rate]', achieving_rate, '[target]', target, '[daily_target]', daily_target)
@@ -747,18 +750,19 @@ def main(campaign_id=None):
     return
 
 
-# In[9]:
+# In[ ]:
 
 
 if __name__=="__main__":
     start_time = datetime.datetime.now()
     print(start_time)
-    main()
+    optimize_performance_campaign()
+    optimize_branding_campaign()
     print(datetime.datetime.now() - start_time)
 #     main(1896291336)
 
 
-# In[150]:
+# In[8]:
 
 
 def retrieve_bid_modifier(client):
@@ -779,13 +783,13 @@ def retrieve_bid_modifier(client):
     return resp
 
 
-# In[151]:
+# In[ ]:
 
 
 retrieve_bid_modefier(adwords_client)
 
 
-# In[148]:
+# In[9]:
 
 
 DEVICE_CRITERION = {
@@ -794,36 +798,34 @@ DEVICE_CRITERION = {
     'Tablet': 30002,
     'Tv': 30004,
 }
-def assign_bid_modifier(client, campaign_id, bid_modifier, device='Desktop'):
+def assign_bid_modifier(client, ad_group_id, bid_modifier, device='Desktop'):
     # Initialize appropriate service.
-    campaign_bid_modifier_service = adwords_client.GetService(
-        'CampaignBidModifierService', version='v201809')
-
+    ad_group_bid_modifier_service = adwords_client.GetService(
+        'AdGroupBidModifierService', version='v201809')
     operation = {
         # Use 'ADD' to add a new modifier and 'SET' to update an existing one. A
         # modifier can be removed with the 'REMOVE' operator.
         'operator': 'ADD',
         'operand': {
-#             'campaignId': campaign_id,
-            'adGroupId':69785365626,
+            'adGroupId': ad_group_id,
             'criterion': {
-#                 'xsi_type': 'AgeRange',
+                'xsi_type': 'Platform',
                 'id': 30001
             },
             'bidModifier': bid_modifier
         }
     }
-    response = campaign_bid_modifier_service.mutate([operation])
+    response = ad_group_bid_modifier_service.mutate([operation])
     return response
 
 
-# In[149]:
+# In[ ]:
 
 
-assign_bid_modifier(adwords_client, 1896291336, 1, device='Desktop')
+assign_bid_modifier(adwords_client, 69785365626, 1.0, device='Desktop')
 
 
-# In[68]:
+# In[10]:
 
 
 CUSTOMER_ID = 5922380045
@@ -831,20 +833,94 @@ CAMPAIGN_ID = 1896291336
 adwords_client.SetClientCustomerId(CUSTOMER_ID)
 
 
-# In[69]:
+# In[11]:
 
 
-CreateBiddingStrategy(adwords_client)
+def handle_initial_bids(campaign_id, spend, budget):
+    if spend >= 1.5 * budget :
+        print('[handle_initial_bids] stay_init_bid, campaign_id: ', campaign_id)
+    elif spend < budget:
+        print('[handle_initial_bids] adjust_init_bid, campaign_id: ', campaign_id)
+        gdn_db.adjust_init_bid(campaign_id)
+    return
 
 
-# In[48]:
+# In[21]:
 
 
-retrieve_ad_group_criterion(adwords_client=adwords_client, ad_group_id=70417436585)
+def optimize_performance_campaign():
+    df_performance_campaign = gdn_db.get_performance_campaign_is_running()
+    campaign_id_list = df_performance_campaign['campaign_id'].tolist()
+    for campaign_id in campaign_id_list:
+        customer_id = df_performance_campaign['customer_id'][df_performance_campaign.campaign_id==campaign_id].iloc[0]
+        destination_type = df_performance_campaign['destination_type'][df_performance_campaign.campaign_id==campaign_id].iloc[0]
+        daily_target = df_performance_campaign['daily_target'][df_performance_campaign.campaign_id==campaign_id].iloc[0]
+        adwords_client.SetClientCustomerId( customer_id )
+        target = 'conversions'
+        # Init datacollector Campaign
+        camp = Campaign(customer_id, campaign_id, destination_type)
+        day_dict = camp.get_campaign_insights(adwords_client,
+            date_preset=DatePreset.yesterday)
+        lifetime_dict = camp.get_campaign_insights(adwords_client,
+            date_preset=DatePreset.lifetime)
+        target = int( day_dict[target] )
+        achieving_rate = target / daily_target
+        print('[campaign_id]', campaign_id, )
+        print('[achieving rate]', achieving_rate, '[target]', target, '[daily_target]', daily_target)
+        # Init param retriever Retrieve
+        retriever = Retrieve(customer_id)
+        retriever.generate_ad_group_id_list_type(campaign_id)
+        if achieving_rate < 1 and achieving_rate >= 0:
+            # Assign criterion to native ad group
+            make_adgroup_with_criterion(adwords_client, update, campaign_id,
+                                        native_ad_group_id_list=retriever.native_ad_group_id_list,)
+            modify_opt_result_db(campaign_id , True)
+        else:
+            modify_opt_result_db(campaign_id , False)
+    return
+
+
+# In[22]:
+
+
+optimize_performance_campaign()
 
 
 # In[ ]:
 
 
+def optimize_branding_campaign():
+    df_branding_campaign = get_branding_campaign_is_running()
+    campaign_id_list = df_branding_campaign['campaign_id'].tolist()
+    for campaign_id in campaign_id_list:
+        customer_id = df_branding_campaign['customer_id'][df_branding_campaign.campaign_id==campaign_id].iloc[0]
+        destination_type = df_branding_campaign['destination_type'][df_branding_campaign.campaign_id==campaign_id].iloc[0]
+        daily_target = df_branding_campaign['daily_target'][df_branding_campaign.campaign_id==campaign_id].iloc[0]
+        adwords_client.SetClientCustomerId( customer_id )
+        target = 'clicks'
+        # Init datacollector Campaign
+        camp = Campaign(customer_id, campaign_id, destination_type)
+        day_dict = camp.get_campaign_insights(adwords_client,
+            date_preset=DatePreset.yesterday)
+        lifetime_dict = camp.get_campaign_insights(adwords_client,
+            date_preset=DatePreset.lifetime)
+        target = int( day_dict[target] )
+        achieving_rate = target / daily_target
+        print('[campaign_id]', campaign_id, )
+        print('[achieving rate]', achieving_rate, '[target]', target, '[daily_target]', daily_target)
+        # Init param retriever Retrieve
+        retriever = Retrieve(customer_id)
+        retriever.generate_ad_group_id_list_type(campaign_id)
+        if achieving_rate < 1 and achieving_rate >= 0:
+            update = Update(customer_id)
+            # Make empty mutant ad group
+            mutant_ad_group_id = make_empty_ad_group(adwords_client, campaign_id, retriever.native_ad_group_id_list)
+            # Assign criterion to native ad group
+            make_adgroup_with_criterion(adwords_client, update, campaign_id,
+                                        native_ad_group_id_list=[mutant_ad_group_id],)
 
+            modify_opt_result_db(campaign_id , True)
+        else:
+            modify_opt_result_db(campaign_id , False)
+    return
 

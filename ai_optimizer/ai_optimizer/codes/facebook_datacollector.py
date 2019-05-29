@@ -483,7 +483,7 @@ def make_default( campaign_id, charge_type ):
         else:
             result["contents"].append(
                 {
-                    "pred_cpc": str( adset_dict['bid_amount'] ),
+                    "pred_cpc": str( adset_dict['bid_generate_campaign_infoamount'] ),
                     "pred_budget": str( adset_dict['daily_budget'] ),
                     "adset_id": str( adset_id ),
                 }

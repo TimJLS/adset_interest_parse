@@ -325,7 +325,7 @@ def update_init_bid(adset_id, init_bid):
     mydb.close()
     return
 
-def adjust_init_bid(campaign_id):
+def adjust_init_bid(campaign_id, up_ratio=1.1):
     mydb = connectDB(DATABASE)
     mycursor = mydb.cursor()
     ### select
@@ -334,7 +334,7 @@ def adjust_init_bid(campaign_id):
     init_bid = mycursor.fetchall()
     init_bid = int(init_bid[0][0])
     if init_bid > 100:
-        init_bid = init_bid*1.1
+        init_bid = init_bid * up_ratio
     else:
         init_bid += 1
     ### update

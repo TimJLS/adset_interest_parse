@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[8]:
+# In[15]:
 
 
 import mysql.connector
@@ -79,7 +79,31 @@ def get_campaign_is_running(campaign_id=None):
         df_is_running = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
     mydb.close()
     return df_is_running
-    
+
+def get_branding_campaign_is_running(campaign_id=None):
+    mydb = connectDB(DATABASE)
+    request_time = datetime.datetime.now()
+    if campaign_id is None:
+        df = pd.read_sql( "SELECT * FROM campaign_target" , con=mydb )
+        df_branding_campaign_is_running = df[ (df['stop_time']>=request_time)&(df['destination_type']=='LINK_CLICKS') ]
+    else:
+        df_branding_campaign_is_running = pd.read_sql( 
+            "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
+    mydb.close()
+    return df_branding_campaign_is_running
+
+def get_performance_campaign_is_running(campaign_id=None):
+    mydb = connectDB(DATABASE)
+    request_time = datetime.datetime.now()
+    if campaign_id is None:
+        df = pd.read_sql( "SELECT * FROM campaign_target" , con=mydb )
+        df_performance_campaign_is_running = df[ (df['stop_time']>=request_time)&(df['destination_type']=='CONVERSIONS') ]
+    else:
+        df_performance_campaign_is_running = pd.read_sql( 
+            "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
+    mydb.close()
+    return df_performance_campaign_is_running
+
 def get_campaign_target(campaign_id=None):
     mydb = connectDB(DATABASE)
     request_time = datetime.datetime.now()
