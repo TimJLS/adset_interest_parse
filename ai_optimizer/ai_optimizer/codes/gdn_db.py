@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[15]:
+# In[1]:
 
 
 import mysql.connector
@@ -127,21 +127,21 @@ def get_campaigns_not_optimized():
 
 
 
-def check_campaignid_target(account_id, campaign_id, destination, destination_type):
+def check_campaignid_target(account_id, campaign_id, destination, destination_type, ai_start_date, ai_stop_date, ai_spend_cap):
     mydb = connectDB(DATABASE)
     df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
     mycursor = mydb.cursor()
     if df.empty:
-        sql = "INSERT INTO campaign_target ( customer_id, campaign_id, destination, destination_type ) VALUES ( %s, %s, %s, %s )"
-        val = ( account_id, campaign_id, destination, destination_type )
+        sql = "INSERT INTO campaign_target ( customer_id, campaign_id, destination, destination_type, ai_start_date, ai_stop_date, ai_spend_cap ) VALUES ( %s, %s, %s, %s, %s, %s, %s )"
+        val = ( account_id, campaign_id, destination, destination_type, ai_start_date, ai_stop_date, ai_spend_cap )
         mycursor.execute(sql, val)
         mydb.commit()
         mycursor.close()
         mydb.close()
         return False
     else:
-        sql = "UPDATE campaign_target SET destination=%s, destination_type=%s WHERE campaign_id=%s"
-        val = ( destination, destination_type, campaign_id )
+        sql = "UPDATE campaign_target SET destination=%s, destination_type=%s, ai_start_date=%s, ai_stop_date=%s, ai_spend_cap=%s WHERE campaign_id=%s"
+        val = ( destination, destination_type, ai_start_date, ai_stop_date, ai_spend_cap, campaign_id )
         mycursor.execute(sql, val)
         mydb.commit()
         mycursor.close()
