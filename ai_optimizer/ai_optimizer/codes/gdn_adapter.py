@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[3]:
+# In[19]:
 
 
 import datetime
@@ -16,6 +16,8 @@ import math
 DATADASE = "dev_gdn"
 START_TIME = 'start_time'
 STOP_TIME = 'stop_time'
+AI_START_DATE = 'ai_start_date'
+AI_STOP_DATE = 'ai_stop_date'
 AD_ID = 'ad_id'
 ADGROUP_ID = 'adgroup_id'
 CAMPAIGN_ID = 'campaign_id'
@@ -31,9 +33,7 @@ ADGROUP_PROGRESS = 'adgroup_progress'
 CAMPAIGN_PROGRESS = 'campaign_progress'
 BIDDING_INDEX = {
     'cpc': 'cpc_bid',
-    'cpa': 'cpc_bid',
-    'LINK_CLICKS': 'cpc_bid',
-    'CONVERSIONS':'cpc_bid',
+    'Target CPA': 'cpa_bid',
 }
 DESTINATION_INDEX = {
     'cpc': 'clicks',
@@ -62,11 +62,11 @@ class CampaignAdapter(object):
     def _get_bid(self):
         df_init_bid = pd.read_sql( "SELECT * FROM adgroup_initial_bid WHERE campaign_id={} ;".format( self.campaign_id ), con=self.mydb )
         self.get_adgroup_list()
-        target_bidding_index = BIDDING_INDEX[self.df_camp['destination_type'].iloc[0]]
+        bid_amount_type = BIDDING_INDEX[ self.df_adgroup['bidding_type'].iloc[0] ]
         for adgroup in self.adgroup_list:
             init_bid = df_init_bid[BID_AMOUNT][df_init_bid.adgroup_id==adgroup].head(1).iloc[0].astype(dtype=object)
 #             init_bid = bid_operator.revert_bid_amount(init_bid)
-            last_bid = self.df_adgroup[ target_bidding_index ][self.df_adgroup.adgroup_id==adgroup].tail(1).iloc[0].astype(dtype=object)
+            last_bid = self.df_adgroup[ bid_amount_type ][self.df_adgroup.adgroup_id==adgroup].tail(1).iloc[0].astype(dtype=object)
 #             init_bid = bid_operator.revert_bid_amount(init_bid)
 #             last_bid = bid_operator.reverse_bid_amount(last_bid)
             self.init_bid_dict.update({ adgroup: init_bid })
@@ -76,7 +76,7 @@ class CampaignAdapter(object):
     def get_periods_left(self):
         self.periods_left = 0
         try:
-            self.periods_left = ( self.df_camp[ STOP_TIME ].iloc[0] - self.request_time.date() ).days + 1
+            self.periods_left = ( self.df_camp[ AI_STOP_DATE ].iloc[0] - self.request_time.date() ).days + 1
         except:
             self.periods_left = ( datetime.datetime.now().date() - self.request_time.date() ).days + 1
         finally:
@@ -84,9 +84,9 @@ class CampaignAdapter(object):
     
     def get_periods(self):
         try:
-            self.periods = ( self.df_camp[ STOP_TIME ].iloc[0] - self.df_camp[ START_TIME ].iloc[0] ).days
+            self.periods = ( self.df_camp[ AI_STOP_DATE ].iloc[0] - self.df_camp[ AI_START_DATE ].iloc[0] ).days
         except:
-            self.periods = ( datetime.datetime.now() - self.df_camp[ START_TIME ].iloc[0] ).days
+            self.periods = ( datetime.datetime.now() - self.df_camp[ AI_START_DATE ].iloc[0] ).days
         return self.periods
     
     def get_campaign_performance(self):
@@ -152,6 +152,7 @@ class AdGroupAdapter(CampaignAdapter):
         return
     
     def get_campaign_id(self):
+        print(self.df_adgroup[ CAMPAIGN_ID ].iloc[0].astype(dtype=object))
         self.campaign_id = self.df_adgroup[ CAMPAIGN_ID ].iloc[0].astype(dtype=object)
         return self.campaign_id
     
@@ -232,7 +233,6 @@ def main():
             status_dict = s.retrieve_adgroup_attribute()
             media = result['media']
             bid_dict = bid_operator.adjust(media, **status_dict)
-#             print(bid_dict)
             gdn_datacollector.update_adgroup_bid(account_id, adgroup, bid_dict['bid'])
             result['contents'].append(bid_dict)
             del s
@@ -272,4 +272,10 @@ if __name__=='__main__':
     main()
     import gc
     gc.collect()
+
+
+# In[ ]:
+
+
+get_ipython().system('jupyter nbci')
 

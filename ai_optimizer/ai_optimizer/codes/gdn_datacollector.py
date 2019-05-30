@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[13]:
+# In[18]:
 
 
 import uuid
@@ -25,12 +25,11 @@ CAMPAIGN_OBJECTIVE_FIELD = {
 CAMPAIGN_FIELDS = ['ExternalCustomerId','CampaignId','AdvertisingChannelType', 'CampaignStatus',
                    'BiddingStrategyType','Amount','StartDate','EndDate','Cost',
                    'AverageCost','Impressions', 'Clicks','Conversions',
-                   'AverageCpc','CostPerConversion', 'Ctr',
-                  'InteractionTypes','CriteriaType']
+                   'AverageCpc','CostPerConversion', 'Ctr']
 ADGROUP_FIELDS = ['ExternalCustomerId','CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus',
                   'CpmBid','CpvBid', 'CpcBid', 'TargetCpa', 'BiddingStrategyType','Cost',
                    'AverageCost','Impressions', 'Clicks','Conversions',
-                   'AverageCpc','CostPerConversion', 'Ctr']
+                   'AverageCpc','CostPerConversion', 'Ctr', 'Device']
 DB_CAMPAIGN_COLUMN_NAME_LIST = [
     'customer_id', 'campaign_id', 'channel_type', 'status', 'bidding_type', 'daily_budget', 'start_time', 'stop_time', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion'
 ]
@@ -39,18 +38,9 @@ DB_ADGROUP_COLUMN_NAME_LIST = [
 ]
 BIDDING_INDEX = {
     'cpc': 'cpc_bid',
-    'cpa': 'cpa_bid',
-    'LINK_CLICKS': 'cpc_bid',
-    'CONVERSIONS':'cpc_bid',
+    'Target CPA': 'cpa_bid',
 }
-DATABASE_INDEX = {
-    'ADGROUP': 'adgroup_insights',
-    'URL': 'url_insights',
-    'CRITERIA': 'criteria_insights',
-    'AUDIENCE': 'audience_insights',
-    'AGE_RANGE': 'age_range_insights',
-    'DISPLAY_KEYWORD': 'display_keyword_insights',
-}
+
 class ReportField:
     # URL
     URL_LIST = [
@@ -82,6 +72,7 @@ class ReportField:
         'AUDIENCE': BIDDABLE_LIST,
         'AGE_RANGE': BIDDABLE_LIST,
         'DISPLAY_KEYWORD': BIDDABLE_LIST,
+        'KEYWORDS': BIDDABLE_LIST,
     }
 class ReportColumn:
     ADGROUP_LIST  = [
@@ -104,6 +95,7 @@ class ReportColumn:
         'AUDIENCE': AUDIENCE_LIST,
         'AGE_RANGE': AGE_RANGE_LIST,
         'DISPLAY_KEYWORD': BIDDABLE_LIST,
+        'KEYWORDS': BIDDABLE_LIST,
     }
 
 # In[1]:
@@ -152,8 +144,8 @@ class Campaign(object):
                 },
                 {
                     'field': 'Status',
-                    'operator': 'NOT_EQUALS',
-                    'values': ['REMOVED']
+                    'operator': 'EQUALS',
+                    'values': ['ENABLED']
                 }
             ]
         }
@@ -268,7 +260,9 @@ class Campaign(object):
             df[df.columns.intersection( ReportField.NUMERIC_LIST )] = df[df.columns.intersection( ReportField.NUMERIC_LIST )].div(1000000)
             df.columns = columns
             df.sort_values(by=['impressions'], ascending=False).reset_index(drop=True)
-            gdn_db.into_table( df, DATABASE_INDEX[performance_type] )
+#             return df
+            
+            gdn_db.into_table( df, performance_type.lower()+'_insights' )
             return df
 
 # In[10]:
@@ -280,12 +274,24 @@ class AdGroup(Campaign):
         self.customer_id = customer_id
         self.campaign_id = campaign_id
         self.adgroup_id = adgroup_id
-        self.report_downloader = client.GetReportDownloader(version='v201809')
+        self.client = client
+        self.client.SetClientCustomerId(self.customer_id)
+        self.report_downloader = self.client.GetReportDownloader(version='v201809')
         
-    def get_adgroup_insights(self, client, date_preset=None):
-        
-        if not date_preset:
-            date_preset = 'ALL_TIME'
+    def get_adgroup_insights(self, client, date_preset='ALL_TIME', by_device=False, by_hour=False):
+        self.report_metrics = [
+            'ExternalCustomerId','CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus', 'CpmBid','CpvBid', 'CpcBid',
+            'TargetCpa', 'BiddingStrategyType','Cost', 'AverageCost','Impressions', 'Clicks','Conversions', 'AverageCpc',
+            'CostPerConversion', 'Ctr',]
+        self.db_column_name_list = [
+            'customer_id', 'campaign_id', 'channel_type', 'adgroup_id', 'status', 'cpm_bid', 'cpv_bid', 'cpc_bid', 'cpa_bid',
+            'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion','ctr' ]
+        if by_device:
+            self.report_metrics.append('Device')
+            self.db_column_name_list.append('device')
+        if by_hour:
+            self.report_metrics.append('HourOfDay')
+            self.db_column_name_list.append('hour_of_day')
         # Create report definition.
         if self.campaign_id is not None and self.adgroup_id is None:
             operand = {
@@ -310,7 +316,7 @@ class AdGroup(Campaign):
             'reportType': 'ADGROUP_PERFORMANCE_REPORT',
             'downloadFormat': 'CSV',
             'selector': {
-                'fields': ADGROUP_FIELDS,
+                'fields': self.report_metrics,
     #             'dateRange': {'min': '20190301','max': '20190401'},
                 'predicates': [
                     operand
@@ -325,17 +331,18 @@ class AdGroup(Campaign):
         df = pd.DataFrame()
         for lil_csv in csv_list:
             df_temp = pd.DataFrame(
-                data=np.array(lil_csv.split(',')).reshape(1,len(ADGROUP_FIELDS)),
-                columns=ADGROUP_FIELDS
+                data=np.array(lil_csv.split(',')).reshape(1,len(self.report_metrics)),
+                columns=self.report_metrics
             )
             df = df.append(df_temp)
             df['Ctr'] = df.Ctr.str.split('%', expand = True)[0]
-        df[df.columns.difference(['AdGroupType', 'AdGroupStatus', 'BiddingStrategyType'])] = df[df.columns.difference(
-            ['AdGroupType', 'AdGroupStatus', 'BiddingStrategyType'])].apply(pd.to_numeric, errors='coerce')
-        df[df.columns.difference( ['ExternalCustomerId', 'CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus', 'BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'] )] = df[df.columns.difference(
-            ['ExternalCustomerId', 'CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus', 'BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'])].div(1000000)
-        df.rename( columns=dict( zip(df.columns, DB_ADGROUP_COLUMN_NAME_LIST) ), inplace=True )
-        self.insights_dict = df.reset_index(drop=True).to_dict(orient='records')[0]
+        df[df.columns.difference(['AdGroupType', 'AdGroupStatus', 'BiddingStrategyType', 'Device'])] = df[df.columns.difference(
+            ['AdGroupType', 'AdGroupStatus', 'BiddingStrategyType', 'Device'])].apply(pd.to_numeric, errors='coerce')
+        df[df.columns.difference( ['HourOfDay','Device','ExternalCustomerId','CampaignId','AdGroupType','AdGroupId','AdGroupStatus','BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'] )] = df[df.columns.difference(
+            ['HourOfDay','Device','ExternalCustomerId','CampaignId','AdGroupType','AdGroupId','AdGroupStatus','BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'])].div(1000000)
+        df.rename( columns=dict( zip(df.columns, self.db_column_name_list) ), inplace=True )
+#         return df
+        self.insights_dict = df.reset_index(drop=True).to_dict(orient='records')
         return self.insights_dict
 
     def update_status(self, client=client, status='PAUSED'):
@@ -343,7 +350,6 @@ class AdGroup(Campaign):
         client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
         client.SetClientCustomerId(self.customer_id)
         ad_group_service = client.GetService('AdGroupService', version='v201809')
-
         # Construct operations and update an ad group.
         operations = [{
             'operator': 'SET',
@@ -352,15 +358,8 @@ class AdGroup(Campaign):
                 'status': status
             }
         }]
-
         adgroups = ad_group_service.mutate(operations)
         return adgroups
-# if __name__ == '__main__':
-#     # Initialize client object.
-#     client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
-# #     adgroup_insights = get_adgroup_insights(client)
-#     adgroup_insights = get_adgroup_insights(client, campaign_id=campaign_id)
-
 
 # In[6]:
 
@@ -421,18 +420,18 @@ def data_collect(customer_id, campaign_id, destination, destination_type):
         **addition_dict,
     }
     df_campaign = pd.DataFrame(campaign_dict, index=[0])
-#     gdn_db.into_table(df_campaign, table="campaign_target")
     gdn_db.update_table(df_campaign, table="campaign_target")
     adgroup_id_list = camp.get_adgroup_id_list()
     for adgroup_id in adgroup_id_list:
         adgroup = AdGroup(camp.customer_id,camp.campaign_id,camp.destination_type, adgroup_id)
         adgroup_today_insights = adgroup.get_adgroup_insights(client, date_preset=DatePreset.today)
-        df_adgroup = pd.DataFrame(adgroup_today_insights, index=[0])
+        df_adgroup = pd.DataFrame(adgroup_today_insights)
         gdn_db.into_table(df_adgroup, table="adgroup_insights")
-        
-        bidding_type = BIDDING_INDEX[ destination_type ]
-        df_adgroup['bid_amount'] = df_adgroup[bidding_type]
-        df_adgroup['bid_amount'] = math.ceil(reverse_bid_amount(df_adgroup[bidding_type]))
+        bidding_type = adgroup_today_insights[0]['bidding_type']
+        bid_amount = BIDDING_INDEX[ bidding_type ]
+        print(bid_amount)
+        df_adgroup['bid_amount'] = df_adgroup[bid_amount]
+        df_adgroup['bid_amount'] = math.ceil(reverse_bid_amount(df_adgroup[bid_amount]))
         gdn_db.check_initial_bid(adgroup_id, df_adgroup[[Field.campaign_id, Field.adgroup_id, Field.bid_amount]])
 
     return
@@ -446,11 +445,14 @@ def main():
     df_camp = gdn_db.get_campaign_is_running()
     print(df_camp['campaign_id'].unique())
     for campaign_id in df_camp['campaign_id'].unique():
-        data_collect( df['customer_id'], int(campaign_id), df['destination'], df['destination_type'] )
+        customer_id = df_camp['customer_id'][df_camp.campaign_id==campaign_id].iloc[0]
+        destination = df_camp['destination'][df_camp.campaign_id==campaign_id].iloc[0]
+        destination_type = df_camp['destination_type'][df_camp.campaign_id==campaign_id].iloc[0]
+        data_collect( customer_id, int(campaign_id), destination, destination_type )
     print(datetime.datetime.now()-start_time)
 
 
-# In[2]:
+# In[ ]:
 
 
 if __name__=='__main__':
