@@ -95,8 +95,6 @@ def save_suggestion_for_all_campaign():
         account_id = get_account_id_by_campaign(campaign_id)
         print('[save_suggestion_for_all_campaign] account_id:', account_id, 'campaign_id:', campaign_id)
         process_account_suggestion(account_id)
-
-
         
 def main():
     save_suggestion_for_all_campaign()

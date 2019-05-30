@@ -23,6 +23,7 @@ import mysql_adactivity_save
 from facebook_datacollector import Campaigns
 from facebook_datacollector import DatePreset
 from facebook_adapter import FacebookCampaignAdapter
+import facebook_campaign_suggestion as campaign_suggestion
 IS_DEBUG = False #debug mode will not modify anything
 
 
@@ -44,7 +45,7 @@ BRANDING_CAMPAIGN_LIST = ['LINK_CLICKS', 'ALL_CLICKS','VIDEO_VIEWS', 'VIDEO_VIEW
 PERFORMANCE_CAMPAIGN_LIST = ['CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART']
 
 ADSET_COPY_COUNT = 3
-ADSET_MIN_COUNT = 3
+ADSET_MIN_COUNT = 5
 
 FIELDS = [
     AdSet.Field.id,
@@ -107,7 +108,8 @@ def copy_adset_new_target(new_adset_params, original_adset_id):
     except Exception as error:
         print('[copy_adset_new_target] this adset is not existed anymore, error:', error)
 
-def make_suggest_adset(original_adset_id): 
+##not use now , just backup
+def make_suggest_adset_by_account_suggestion(original_adset_id): 
     suggestion_id, suggestion_name = get_suggestion_target_by_adset(original_adset_id)
     if suggestion_id is None:
         print('[make_suggest_adset] error')
@@ -126,6 +128,42 @@ def make_suggest_adset(original_adset_id):
             }]
         }
     new_adset_params[AdSet.Field.targeting]["flexible_spec"] = interest_pair
+
+    print('[make_suggest_adset] new_adset_params',new_adset_params)
+    original_adset_id = new_adset_params[AdSet.Field.id]
+    new_adset_params[AdSet.Field.id] = None
+    copy_adset_new_target(new_adset_params, original_adset_id)
+
+
+def make_suggest_adset(original_adset_id, campaign_id): 
+    
+    saved_suggest_id_name_dic = campaign_suggestion.get_suggestion_not_used(campaign_id)
+    print('[make_suggest_adset] saved_suggest_id_name_dic', saved_suggest_id_name_dic)
+    suggest_id_list = []
+    suggest_name_list = []
+    for saved_suggest_id in saved_suggest_id_name_dic:
+        suggest_id_list.append(saved_suggest_id)
+        
+    #ramdom choose the first 3 interest    
+    random.shuffle(suggest_id_list)
+    PICK_COUNT = 3
+    suggest_id_list = suggest_id_list[:PICK_COUNT]
+    for suggest_id in suggest_id_list:
+        suggest_name_list.append(saved_suggest_id_name_dic.get(suggest_id))
+    
+    print('[make_suggest_adset] ramdom choose:', suggest_id_list, suggest_name_list)
+    
+    new_adset_params = retrieve_origin_adset_params(original_adset_id)
+    print('[make_suggest_adset] new_adset_params', new_adset_params)
+    suggestion_full_name =  '__'.join(suggest_name_list)
+    new_adset_params[AdSet.Field.name] = "AI__" + suggestion_full_name
+
+    suggest_group_list = []
+    for i in range(len(suggest_id_list)):
+        this_dic = {"id": suggest_id_list[i], "name": suggest_name_list[i]}
+        suggest_group_list.append(this_dic)
+    
+    new_adset_params[AdSet.Field.targeting]["flexible_spec"][0]['interests'] = suggest_group_list
 
     print('[make_suggest_adset] new_adset_params',new_adset_params)
     original_adset_id = new_adset_params[AdSet.Field.id]
@@ -371,11 +409,12 @@ def optimize_performance_campaign(campaign_id):
     adsets_active_list = campaign_instance.get_adsets_active()
     print('[optimize_performance_campaign] adsets_active_list:', adsets_active_list)
     if len(adsets_active_list) <= ADSET_MIN_COUNT:
-        if len(adsets_active_list) > 0 and not IS_DEBUG:
+        if len(adsets_active_list) > 0 and not IS_DEBUG: 
+#         if len(adsets_active_list) > 0:
             #create one suggestion adset for CPA campaigin
             print('create one suggestion asset for CPA campaigin')        
             adset_id = adsets_active_list[0]
-            make_suggest_adset(adset_id)
+            make_suggest_adset(adset_id, campaign_id)
             return
 
     #performance not to copy adset, just close adset
@@ -558,7 +597,7 @@ if __name__ == '__main__':
     
     for campaign_id in df_not_opted.campaign_id.unique():
         optimize_campaign(campaign_id)
-#     optimize_campaign(23843358370700576)
+#     optimize_campaign(23843467729120098)
 
 
 # In[ ]:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[12]:
 
 
 from pathlib import Path
@@ -43,6 +43,7 @@ ADSET_INSIGHT_QUERY_FIELD = {
 
 class Adset_Log_Handler(object):
     database_connector = mysql_saver.connectDB(mysql_saver.DATABASE)
+    table_name = 'adset_status_log'
     
     def __init__(self, campaign_id, adset_id, optimization_goal, bid_amount, status):
         self.campaign_id = campaign_id
@@ -79,13 +80,26 @@ class Adset_Log_Handler(object):
         cols = ', '.join(self.__dict__.keys())
         vals = self.__dict__.values()
         placeholders = ', '.join(['%s'] * len(self.__dict__))
-        
-        table_name = 'adset_status_log'
-        stmt = "insert into `{table}` ({columns}) values ({values});".format(table = table_name, columns = cols , values = placeholders)
+    
+        stmt = "insert into `{table}` ({columns}) values ({values});".format(table = self.table_name, columns = cols , values = placeholders)
         
         mycursor = self.database_connector.cursor()
         mycursor.execute(stmt, list( vals) )
         self.database_connector.commit()
+    
+    def read_data(self):
+        sql = "SELECT  HOUR(TIMEDIFF( max(log_datetime), min(log_datetime))) as hour_diff, (max(spend)-min(spend)) as spend_diff  FROM {} WHERE adset_id={} and log_date='{}' and status='ACTIVE' ".format(self.table_name, self.adset_id, self.log_date)
+        
+        print(sql)
+        mycursor = self.database_connector.cursor()
+        mycursor.execute(sql)
+        hour_diff, spend_diff = mycursor.fetchone()
+        print('result',hour_diff, spend_diff )
+        
+        
+        
+        
+        
             
 def get_adset_handler_by_campaign(campaign_id):
     camp = facebook_business_campaign.Campaign( campaign_id)
@@ -110,6 +124,7 @@ def process_campaign(campaign_id):
     for adset_handler in adset_handler_list:
         adset_handler.set_insight()
         adset_handler.save_into_database()
+#         adset_handler.read_data()        
 
     
 def main():
@@ -120,15 +135,17 @@ def main():
         start_time = time.time()
         process_campaign(campaign_id)
         print('campaign_id:', campaign_id, ' spend seconds:', time.time() - start_time)
-#     process_campaign(23843467729120098)
-    Adset_Log_Handler.database_connector.close()
-    
 
     
 if __name__ == "__main__":
     start_time = time.time()
+    
     main()
+
+#     process_campaign(23843368265910246)
+
     print('total campaign spend seconds:', time.time() - start_time)
+    Adset_Log_Handler.database_connector.close()
 
 
 # In[ ]:
