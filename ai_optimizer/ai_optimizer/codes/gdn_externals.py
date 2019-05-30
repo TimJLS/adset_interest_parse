@@ -298,7 +298,7 @@ class Make(object):
     
 
 
-# In[ ]:
+# In[5]:
 
 
 # # init param retriever Retrieve
@@ -318,7 +318,7 @@ class Make(object):
 #                                 mutant_ad_group_id_list=[mutant_ad_group_id])
 
 
-# In[5]:
+# In[6]:
 
 
 def get_sorted_adgroup(campaign_id):
@@ -571,7 +571,7 @@ def make_adgroup_with_criterion(adwords_client, update, campaign_id, native_ad_g
     return
 
 
-# In[6]:
+# In[7]:
 
 
 class Status(object):
@@ -591,7 +591,7 @@ class Status(object):
             'operator': 'SET',
             'operand': {
                 'id': update_id,
-                'status': 'PAUSED'
+                'status': status
             }
         }]
         result = status_service.mutate(operations)
@@ -650,7 +650,7 @@ class Update(object):
         return
 
 
-# In[7]:
+# In[8]:
 
 
 
@@ -750,7 +750,7 @@ def main(campaign_id=None):
     return
 
 
-# In[ ]:
+# In[9]:
 
 
 if __name__=="__main__":
@@ -762,78 +762,7 @@ if __name__=="__main__":
 #     main(1896291336)
 
 
-# In[8]:
-
-
-def retrieve_bid_modifier(client):
-    ad_group_bid_modifier_service = adwords_client.GetService(
-        'CampaignBidModifierService', version='v201809')
-    # Get all ad group bid modifiers for the campaign.
-    selector = {
-        'fields': ['CampaignId', 'AdGroupId', 'BidModifier', 'Id', 'Name'],
-        'predicates': [
-            {
-                'field': 'CamapaignId',
-                'operator': 'EQUALS',
-                'values': [1896291336]
-            }
-        ]
-    }
-    resp = ad_group_bid_modifier_service.get(selector)
-    return resp
-
-
-# In[ ]:
-
-
-retrieve_bid_modefier(adwords_client)
-
-
-# In[9]:
-
-
-DEVICE_CRITERION = {
-    'Desktop': 30000,
-    'Mobile': 30001,
-    'Tablet': 30002,
-    'Tv': 30004,
-}
-def assign_bid_modifier(client, ad_group_id, bid_modifier, device='Desktop'):
-    # Initialize appropriate service.
-    ad_group_bid_modifier_service = adwords_client.GetService(
-        'AdGroupBidModifierService', version='v201809')
-    operation = {
-        # Use 'ADD' to add a new modifier and 'SET' to update an existing one. A
-        # modifier can be removed with the 'REMOVE' operator.
-        'operator': 'ADD',
-        'operand': {
-            'adGroupId': ad_group_id,
-            'criterion': {
-                'xsi_type': 'Platform',
-                'id': 30001
-            },
-            'bidModifier': bid_modifier
-        }
-    }
-    response = ad_group_bid_modifier_service.mutate([operation])
-    return response
-
-
-# In[ ]:
-
-
-assign_bid_modifier(adwords_client, 69785365626, 1.0, device='Desktop')
-
-
 # In[10]:
-
-
-CUSTOMER_ID = 5922380045
-CAMPAIGN_ID = 1896291336
-adwords_client.SetClientCustomerId(CUSTOMER_ID)
-
-
-# In[11]:
 
 
 def handle_initial_bids(campaign_id, spend, budget):
@@ -845,7 +774,7 @@ def handle_initial_bids(campaign_id, spend, budget):
     return
 
 
-# In[21]:
+# In[11]:
 
 
 def optimize_performance_campaign():
@@ -863,6 +792,8 @@ def optimize_performance_campaign():
             date_preset=DatePreset.yesterday)
         lifetime_dict = camp.get_campaign_insights(adwords_client,
             date_preset=DatePreset.lifetime)
+        # Adjust initial bids
+        handle_initial_bids(campaign_id, day_dict['spend'], day_dict['budget'])
         target = int( day_dict[target] )
         achieving_rate = target / daily_target
         print('[campaign_id]', campaign_id, )
@@ -880,13 +811,7 @@ def optimize_performance_campaign():
     return
 
 
-# In[22]:
-
-
-optimize_performance_campaign()
-
-
-# In[ ]:
+# In[12]:
 
 
 def optimize_branding_campaign():
@@ -904,6 +829,8 @@ def optimize_branding_campaign():
             date_preset=DatePreset.yesterday)
         lifetime_dict = camp.get_campaign_insights(adwords_client,
             date_preset=DatePreset.lifetime)
+        # Adjust initial bids
+        handle_initial_bids(campaign_id, day_dict['spend'], day_dict['budget'])
         target = int( day_dict[target] )
         achieving_rate = target / daily_target
         print('[campaign_id]', campaign_id, )
@@ -918,9 +845,96 @@ def optimize_branding_campaign():
             # Assign criterion to native ad group
             make_adgroup_with_criterion(adwords_client, update, campaign_id,
                                         native_ad_group_id_list=[mutant_ad_group_id],)
-
+            
             modify_opt_result_db(campaign_id , True)
         else:
             modify_opt_result_db(campaign_id , False)
     return
+
+
+# In[37]:
+
+
+CAMPAIGN_ID = 1073506211
+AD_GROUP_ID = 56251175647
+
+
+# In[15]:
+
+
+CUSTOMER_ID = 5922380045
+
+
+# In[16]:
+
+
+adwords_client.SetClientCustomerId(CUSTOMER_ID)
+
+
+# In[17]:
+
+
+retriever = Retrieve(customer_id=CUSTOMER_ID, )
+
+
+# In[18]:
+
+
+retriever.criterion(campaign_id=CAMPAIGN_ID)
+# retriever.params()
+
+
+# In[19]:
+
+
+camp = Campaign(customer_id=CUSTOMER_ID, campaign_id=CAMPAIGN_ID, destination_type='CONVERSIONS')
+
+
+# In[20]:
+
+
+camp.get_campaign_insights(adwords_client,)
+
+
+# In[25]:
+
+
+ad_group = AdGroup(customer_id=CUSTOMER_ID, campaign_id=CAMPAIGN_ID, adgroup_id=38925661383, destination_type='CONVERSIONS')
+
+
+# In[26]:
+
+
+ad_group.get_adgroup_insights(adwords_client)
+
+
+# In[27]:
+
+
+retriever = Retrieve(customer_id=CUSTOMER_ID)
+
+
+# In[46]:
+
+
+retriever.params(ad_group_id=56251175647, param_type='keyword')
+# retriever.criterion(campaign_id=CAMPAIGN_ID)
+
+
+# In[36]:
+
+
+update = Update(customer_id=CUSTOMER_ID)
+
+
+# In[ ]:
+
+
+update.criterion(ad_group_id=, id=)
+
+
+# In[ ]:
+
+
+
 
