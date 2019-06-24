@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[19]:
+# In[1]:
 
 
 import datetime
@@ -54,7 +54,7 @@ class CampaignAdapter(object):
         
     def _get_df(self):
         campaign_sql = "SELECT * FROM campaign_target WHERE campaign_id={}".format( self.campaign_id )
-        adgroup_sql = "select * from (select * from adgroup_insights WHERE campaign_id = {} order by request_time desc) as a group by adgroup_id".format( self.campaign_id )
+        adgroup_sql = "select * from adgroup_insights WHERE campaign_id = {} AND DATE(request_time) = '{}'".format( self.campaign_id, self.request_time.date() )
         self.df_camp = pd.read_sql( campaign_sql, con=self.mydb )
         self.df_adgroup = pd.read_sql( adgroup_sql, con=self.mydb )
         return
@@ -64,13 +64,14 @@ class CampaignAdapter(object):
         self.get_adgroup_list()
         bid_amount_type = BIDDING_INDEX[ self.df_adgroup['bidding_type'].iloc[0] ]
         for adgroup in self.adgroup_list:
-            init_bid = df_init_bid[BID_AMOUNT][df_init_bid.adgroup_id==adgroup].head(1).iloc[0].astype(dtype=object)
-#             init_bid = bid_operator.revert_bid_amount(init_bid)
-            last_bid = self.df_adgroup[ bid_amount_type ][self.df_adgroup.adgroup_id==adgroup].tail(1).iloc[0].astype(dtype=object)
-#             init_bid = bid_operator.revert_bid_amount(init_bid)
-#             last_bid = bid_operator.reverse_bid_amount(last_bid)
-            self.init_bid_dict.update({ adgroup: init_bid })
-            self.last_bid_dict.update({ adgroup: last_bid })
+            if len(self.df_adgroup[self.df_adgroup.adgroup_id==adgroup]) != 0:
+                init_bid = df_init_bid[BID_AMOUNT][df_init_bid.adgroup_id==adgroup].head(1).iloc[0].astype(dtype=object)
+    #             init_bid = bid_operator.revert_bid_amount(init_bid)
+                last_bid = self.df_adgroup[ bid_amount_type ][self.df_adgroup.adgroup_id==adgroup].tail(1).iloc[0].astype(dtype=object)
+    #             init_bid = bid_operator.revert_bid_amount(init_bid)
+    #             last_bid = bid_operator.reverse_bid_amount(last_bid)
+                self.init_bid_dict.update({ adgroup: init_bid })
+                self.last_bid_dict.update({ adgroup: last_bid })
         return
     
     def get_periods_left(self):
@@ -90,7 +91,7 @@ class CampaignAdapter(object):
         return self.periods
     
     def get_campaign_performance(self):
-        self.campaign_performance = self.df_camp[ TARGET ].sum()
+        self.campaign_performance = self.df_camp[ TARGET ].div(self.df_camp[ 'period' ] ).sum()
         return self.campaign_performance
     
     def get_campaign_target(self):
@@ -103,16 +104,15 @@ class CampaignAdapter(object):
 
     def get_campaign_progress(self):
         self.campaign_progress = self.campaign_performance / self.campaign_day_target
+        self.campaign_progress = 1 if self.campaign_day_target <= 0 else self.campaign_progress
         return self.campaign_progress
     
     def get_adgroup_list(self):
-        try:
-            self.df_adgroup
-        except:
-            self._get_df()
-        self.adgroup_list = self.df_adgroup[ ADGROUP_ID ][
-            ( self.df_adgroup.request_time.dt.date == self.request_time.date() )
-        ].unique().tolist()
+        adgroup_list_sql = "select DISTINCT adgroup_id from (select * from adgroup_insights WHERE campaign_id = {} and status='enabled' order by request_time) as a group by adgroup_id".format( self.campaign_id )
+        self.mycursor = self.mydb.cursor()
+        self.mycursor.execute( adgroup_list_sql )
+        default = self.mycursor.fetchall()
+        self.adgroup_list = [ i[0] for i in default ]
         return self.adgroup_list
     
     def retrieve_campaign_attribute(self):
@@ -165,7 +165,7 @@ class AdGroupAdapter(CampaignAdapter):
         try:
             target_performance_index = DESTINATION_INDEX[self.df_camp['destination_type'].iloc[0]]
             self.adgroup_performance = self.df_adgroup[self.df_adgroup.adgroup_id==self.adgroup_id][[ target_performance_index ]].tail(1).iloc[0,0]
-        except ValueError as e:
+        except Exception as e:
             print('[facebook_adapter.AdGroupAdapter.get_adgroup_performance()]', e)
             self.adgroup_performance = 0
         if math.isnan(self.adgroup_performance):
@@ -184,6 +184,7 @@ class AdGroupAdapter(CampaignAdapter):
     def get_adgroup_progress(self):
 #         print(self.adgroup_performance, self.adgroup_time_target)
         self.adgroup_progress = self.adgroup_performance / self.adgroup_time_target
+        self.adgroup_progress = 1 if self.adgroup_time_target <= 0 else self.adgroup_progress
         return self.adgroup_progress
     
     def retrieve_adgroup_attribute(self):
@@ -225,17 +226,21 @@ def main():
 #         try:
         camp = CampaignAdapter( campaign_id )
         camp.retrieve_campaign_attribute()
-        adgroup_list = camp.get_adgroup_list()
+        adgroup_list = camp.adgroup_list
         destination_type = camp.df_camp['destination_type'].iloc[0]
         account_id = camp.df_camp['customer_id'].iloc[0]
         for adgroup in adgroup_list:
-            s = AdGroupAdapter( adgroup, camp )
-            status_dict = s.retrieve_adgroup_attribute()
-            media = result['media']
-            bid_dict = bid_operator.adjust(media, **status_dict)
-            gdn_datacollector.update_adgroup_bid(account_id, adgroup, bid_dict['bid'])
-            result['contents'].append(bid_dict)
-            del s
+            try:
+                s = AdGroupAdapter( adgroup, camp )
+                status_dict = s.retrieve_adgroup_attribute()
+                print(status_dict)
+                media = result['media']
+                bid_dict = bid_operator.adjust(media, **status_dict)
+                gdn_datacollector.update_adgroup_bid(account_id, adgroup, bid_dict['bid'])
+                result['contents'].append(bid_dict)
+                del s
+            except Exception as e:
+                print('[facebook_adapter.AdGroupAdapter] update unavailable: ', e)
         
         mydict_json = json.dumps(result, cls=MyEncoder)
         release_json = json.dumps(release_version_result)
@@ -265,7 +270,13 @@ def main():
     
 
 
-# In[ ]:
+# In[2]:
+
+
+#adapter = CampaignAdapter(1985403837)
+
+
+# In[3]:
 
 
 if __name__=='__main__':
@@ -274,8 +285,14 @@ if __name__=='__main__':
     gc.collect()
 
 
+# In[4]:
+
+
+#!jupyter nbconvert --to script gdn_adapter.ipynb
+
+
 # In[ ]:
 
 
-get_ipython().system('jupyter nbci')
+
 
