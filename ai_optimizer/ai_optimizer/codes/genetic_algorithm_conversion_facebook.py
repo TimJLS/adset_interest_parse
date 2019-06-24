@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import datetime
 import index_collector_conversion_facebook
-sizepop, vardim, MAXGEN, params = 1000, 8, 15, [0.9, 0.1, 0.5]
+sizepop, vardim, MAXGEN, params = 500, 8, 15, [0.9, 0.1, 0.5]
 DATABASE = "dev_facebook_test"
 DATE = datetime.datetime.today().date() -datetime.timedelta(1)
 OBJECTIVE_LIST = [ 'CONVERSIONS', 'ADD_TO_CART', ]
@@ -77,8 +77,10 @@ class GeneticAlgorithm(object):
         bestIndex = np.argmax(self.fitness)
         self.best = copy.deepcopy(self.population[bestIndex])
         self.avefitness = np.mean(self.fitness)
-        self.trace[self.t, 0] = (1 - self.best.fitness) / self.best.fitness
-        self.trace[self.t, 1] = (1 - self.avefitness) / self.avefitness
+#         self.trace[self.t, 0] = (1 - self.best.fitness) / self.best.fitness
+#         self.trace[self.t, 1] = (1 - self.avefitness) / self.avefitness
+        self.trace[self.t, 0] = self.best.fitness
+        self.trace[self.t, 1] = self.avefitness
         print("Generation %d: optimal function value is: %f; average function value is %f" % (
             self.t, self.trace[self.t, 0], self.trace[self.t, 1]))
         while (self.t < self.MAXGEN - 1):
@@ -215,7 +217,7 @@ class GAIndividual(object):
         '''
         calculate the fitness of the chromsome
         '''
-        self.fitness = ObjectiveFunc.fitness_function( self.chrom, df )
+        self.fitness = ObjectiveFunc().fitness_function( self.chrom, df )
 
 class ObjectiveFunc(object):
     '''
@@ -223,19 +225,18 @@ class ObjectiveFunc(object):
     '''
     def __init__(self, campaign_id=None):
         self.mydb = index_collector_conversion_facebook.connectDB( DATABASE )
-        
-    def fitness_function(optimal_weight, df):
-        charge_type = df['charge_type'].iloc[0]
-        
-        m1 = df['purchase'] / df['initiate_checkout']
-        m2 = df['initiate_checkout'] / df['add_to_cart']
-        m3 = df['add_to_cart'] / df['view_content']
-        m4 = df['view_content'] / df['landing_page_view']
-        m5 = df['landing_page_view'] / df['link_click']
-        m6 = df['link_click'] / df['impressions']
-        m_spend = -( df['daily_budget'] - df['spend'] ) / df['daily_budget']
-        m_bid   = ( df['campaign_bid'] - df[ COST_PER_ACTION[charge_type] ] ) / df['campaign_bid']
+        self.charge_type = 'CONVERSIONS'
+    def fitness_function(self, optimal_weight, df):
+        df = df.fillna(0)
 
+        m1 = (df['purchase'] / df['add_to_cart']).iloc[0]
+        m2 = 0
+        m3 = (df['add_to_cart'] / df['view_content']).iloc[0]
+        m4 = (df['view_content'] / df['landing_page_view']).iloc[0]
+        m5 = (df['landing_page_view'] / df['link_click']).iloc[0]
+        m6 = (df['link_click'] / df['impressions']).iloc[0]
+        m_spend = -(( df['daily_budget'] - df['spend'] ) / df['daily_budget']).iloc[0]
+        m_bid   = (( df['campaign_bid'] - df[ COST_PER_ACTION[self.charge_type] ] ) / df['campaign_bid']).iloc[0]
         status  = np.array( [m1, m2, m3, m4, m5, m6, m_spend, m_bid] )
         status = np.nan_to_num(status)
         r = np.dot( optimal_weight, status )
@@ -243,30 +244,31 @@ class ObjectiveFunc(object):
 
     def adset_fitness(optimal_weight, df, charge_type):
         df = df.fillna(0)
-        m1 = df['purchase'] / df['initiate_checkout']
-        m2 = df['initiate_checkout'] / df['add_to_cart']
-        m3 = df['add_to_cart'] / df['view_content']
-        m4 = df['view_content'] / df['landing_page_view']
-        m5 = df['landing_page_view'] / df['link_click']
-        m6 = df['link_click'] / df['impressions']
-        m_spend = -( df['daily_budget'] - df['spend'] ) / df['daily_budget']
-        m_bid   = ( df['bid_amount'] - df[ COST_PER_ACTION[charge_type] ] ) / df['bid_amount']
+
+        m1 = (df['purchase'] / df['add_to_cart']).iloc[0]
+        m2 = 0
+        m3 = (df['add_to_cart'] / df['view_content']).iloc[0]
+        m4 = (df['view_content'] / df['landing_page_view']).iloc[0]
+        m5 = (df['landing_page_view'] / df['link_click']).iloc[0]
+        m6 = (df['link_click'] / df['impressions']).iloc[0]
+        m_spend = -(( df['daily_budget'] - df['spend'] ) / df['daily_budget']).iloc[0]
+        m_bid   = (( df['bid_amount'] - df[ COST_PER_ACTION[charge_type] ] ) / df['bid_amount']).iloc[0]
         
         status  = np.array( [m1, m2, m3, m4, m5, m6, m_spend, m_bid] )
-        for idx, j in enumerate(status[:,0]):
-            if np.isinf(j) or np.isneginf(j):
-                status[idx,0] = -100
+#         for idx, j in enumerate(status[:,0]):
+#             if np.isinf(j) or np.isneginf(j):
+#                 status[idx,0] = -100
         status = np.nan_to_num(status)
         r = np.dot( optimal_weight, status )
         r = np.nan_to_num(r)
-        if math.isinf(r[0,0]):
-            r[0,0] = -10
+#         if math.isinf(r[0,0]):
+#             r[0,0] = -10
         return r
     
     def campaign_status( self, campaign_id ):
         df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id={}" .format(campaign_id), con=self.mydb)
         df_metrics = pd.read_sql("SELECT * FROM campaign_conversion_metrics WHERE campaign_id={}" .format(campaign_id), con=self.mydb)
-        df_camp['campaign_bid'] = df_camp['spend_cap']/df_camp['target']
+        df_camp['campaign_bid'] = df_camp['ai_spend_cap']/df_camp['destination']
         self.charge_type = df_camp['charge_type'].iloc[0]
 
         spend = df_camp['spend'].iloc[0]
@@ -304,6 +306,10 @@ def ga_optimal_weight(campaign_id, df_weight):
     adset_list = index_collector_conversion_facebook.Campaigns(campaign_id, charge_type).get_adsets_active()
     for adset_id in adset_list:
         df = ObjectiveFunc().adset_status( adset_id )
+        df['daily_budget'] = df_camp['daily_budget']
+        df['add_to_cart'].iloc[0] = df['purchase'].iloc[0] if df['add_to_cart'].iloc[0] < df['purchase'].iloc[0] else df['add_to_cart'].iloc[0]
+        df['view_content'].iloc[0] = df['add_to_cart'].iloc[0] if df['view_content'].iloc[0] < df['add_to_cart'].iloc[0] else df['view_content'].iloc[0]
+        df['landing_page_view'].iloc[0] = df['view_content'].iloc[0] if df['landing_page_view'].iloc[0] < df['view_content'].iloc[0] else df['landing_page_view'].iloc[0]
         r = ObjectiveFunc.adset_fitness( df_weight, df, charge_type )
         print(adset_id, r)
         df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'score':r[0], 'request_time':request_time}, index=[0])
@@ -319,16 +325,21 @@ def main(campaign_id=None):
     global df
     if not campaign_id:
         campaign_list = index_collector_conversion_facebook.get_running_conversion_campaign()['campaign_id'].unique()
+        print('[on-going cnvrsn campaign_list]: ', campaign_list)
         for campaign_id in campaign_list:
             df = ObjectiveFunc().campaign_status(campaign_id)
             df = df.fillna(0)
+            df['add_to_cart'].iloc[0] = df['purchase'].iloc[0] if df['add_to_cart'].iloc[0] < df['purchase'].iloc[0] else df['add_to_cart'].iloc[0]
+            df['view_content'].iloc[0] = df['add_to_cart'].iloc[0] if df['view_content'].iloc[0] < df['add_to_cart'].iloc[0] else df['view_content'].iloc[0]
+            df['landing_page_view'].iloc[0] = df['view_content'].iloc[0] if df['landing_page_view'].iloc[0] < df['view_content'].iloc[0] else df['landing_page_view'].iloc[0]
             print('campaign_id:', campaign_id )
+            print('current time: ', starttime )
             bound = np.tile([[0], [10]], vardim)
             ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
             optimal = ga.solve()
-            score = ObjectiveFunc.fitness_function(optimal, df)
+            score = ObjectiveFunc().fitness_function(optimal, df)
             score = np.nan_to_num(score)
-            if math.isinf(score[0]):
+            if math.isinf(score):
                 print('[main] score is inf, stop assessment')
                 return
             weight_columns=['w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w_spend', 'w_bid']
@@ -342,18 +353,20 @@ def main(campaign_id=None):
             except:
                 pass
             print('optimal_weight:', optimal)
-            print(datetime.datetime.now()-starttime)    
+            print(datetime.datetime.now()-starttime)
         print(datetime.datetime.now()-starttime)
     else:
         print('campaign_id:', campaign_id )
         print('current time: ', starttime )
         df = ObjectiveFunc().campaign_status(campaign_id)
-        print('campaign_id:', campaign_id )
+        df['add_to_cart'].iloc[0] = df['purchase'].iloc[0] if df['add_to_cart'].iloc[0] < df['purchase'].iloc[0] else df['add_to_cart'].iloc[0]
+        df['view_content'].iloc[0] = df['add_to_cart'].iloc[0] if df['view_content'].iloc[0] < df['add_to_cart'].iloc[0] else df['view_content'].iloc[0]
+        df['landing_page_view'].iloc[0] = df['view_content'].iloc[0] if df['landing_page_view'].iloc[0] < df['view_content'].iloc[0] else df['landing_page_view'].iloc[0]
         bound = np.tile([[0], [10]], vardim)
         ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
         optimal = ga.solve()
-        score = ObjectiveFunc.fitness_function(optimal, df)
-        if math.isinf(score[0]):
+        score = ObjectiveFunc().fitness_function(optimal, df)
+        if math.isinf(score):
             print('[main] score is inf, stop assessment')
             return
         weight_columns=['w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w_spend', 'w_bid']
@@ -364,7 +377,7 @@ def main(campaign_id=None):
         index_collector_conversion_facebook.check_optimal_weight(campaign_id, df_final)
         ga_optimal_weight(campaign_id, df_weight)
         print('optimal_weight:', optimal)
-        print(datetime.datetime.now()-starttime)    
+        print('[time taken]: ', datetime.datetime.now()-starttime)    
     print(datetime.datetime.now()-starttime)
     return
 

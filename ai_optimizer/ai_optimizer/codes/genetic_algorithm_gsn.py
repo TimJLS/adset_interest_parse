@@ -11,16 +11,13 @@ import matplotlib.pyplot as plt
 import math
 import datetime
 import pandas as pd
-import gdn_datacollector
-import gdn_db
+import gsn_datacollector
+import gsn_db
 from googleads import adwords
-
 
 # In[2]:
 
-
-
-sizepop, vardim, MAXGEN, params = 1000, 6, 15, [0.9, 0.5, 0.5]
+sizepop, vardim, MAXGEN, params = 1000, 7, 15, [0.9, 0.5, 0.5]
 # sizepop, vardim, MAXGEN, params = 1000, 3, 10, [0.9, 0.5, 0.5]
 ASSESSMENT_PERIOD = 14
 BIDDING_INDEX = {
@@ -33,7 +30,7 @@ TARGET_INDEX = {
     'cpa': 'conversions',
     'Target CPA': 'cpa_bid',
 }
-CRITERIA_LIST = ['ADGROUP', 'URL', 'CRITERIA', 'AGE_RANGE', 'DISPLAY_KEYWORD', 'AUDIENCE']
+CRITERIA_LIST = ['KEYWORDS']
 
 SCORE_COLUMN_INDEX = {
     'ADGROUP': ['campaign_id', 'adgroup_id', 'score'],
@@ -46,7 +43,7 @@ SCORE_COLUMN_INDEX = {
 }
 
 
-# In[3]:
+# In[ ]:
 
 
 AUTH_FILE_PATH = '/home/tim_su/ai_optimizer/opt/ai_optimizer/googleads.yaml'
@@ -54,15 +51,15 @@ adwords_client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
 
 def retrive_all_criteria_insights(campaign_id=None):
     if campaign_id:
-        df = gdn_db.get_campaign(campaign_id)
+        df = gsn_db.get_campaign(campaign_id)
         customer_id = df['customer_id'].iloc[0]
         destination_type = df['destination_type'].iloc[0]
         adwords_client.SetClientCustomerId(customer_id)
-        camp = gdn_datacollector.Campaign(customer_id, campaign_id, destination_type)
+        camp = gsn_datacollector.Campaign(customer_id, campaign_id)
         for criteria in CRITERIA_LIST:
             camp.get_performance_insights( performance_type=criteria, date_preset='LAST_14_DAYS' )
         return
-    df_camp = gdn_db.get_campaign()
+    df_camp = gsn_db.get_campaign()
     campaign_id_list = df_camp['campaign_id'].unique()
     # retrive all criteria insights
     for campaign_id in campaign_id_list:
@@ -70,21 +67,21 @@ def retrive_all_criteria_insights(campaign_id=None):
         customer_id = df_camp['customer_id'][df_camp.campaign_id==campaign_id].iloc[0]
         destination_type = df_camp['destination_type'][df_camp.campaign_id==campaign_id].iloc[0]
         adwords_client.SetClientCustomerId(customer_id)
-        camp = gdn_datacollector.Campaign(customer_id, campaign_id, destination_type)
+        camp = gsn_datacollector.Campaign(customer_id, campaign_id)
         for criteria in CRITERIA_LIST:
             camp.get_performance_insights( performance_type=criteria, date_preset='LAST_14_DAYS' )
 
 
-# In[4]:
+# In[ ]:
 
 
 def get_criteria_score( campaign_id=None, criteria=None, insights_dict=None):
-    mydb = gdn_db.connectDB("dev_gdn")
+    mydb = gsn_db.connectDB("dev_gsn")
     df = pd.DataFrame({'adgroup_id': [], 'target': [], 'impressions': [], 'bid_amount': []})
     # Get criteria insights from db
     table = criteria.lower()+'_insights'
     df = pd.read_sql(
-        "SELECT * FROM {} WHERE campaign_id='{}' AND DATE(request_time)='{}'".format(table, campaign_id, datetime.datetime.now().date()), con=mydb)
+        "SELECT * FROM {} WHERE campaign_id='{}' AND DATE(request_time)='{}'".format(table, campaign_id, datetime.datetime.today().date()), con=mydb)
     # Get optimal_weight from db
     df_weight = pd.read_sql(
         "SELECT * FROM optimal_weight WHERE campaign_id='{}' ".format(campaign_id), con=mydb)
@@ -97,25 +94,27 @@ def get_criteria_score( campaign_id=None, criteria=None, insights_dict=None):
             daily_destination = (insights_dict['destination']/insights_dict['period'])
             df['daily_destination'] = daily_destination
             df['conv_rate'] = (insights_dict['all_conversions']+insights_dict['conversions'])/insights_dict['clicks']
+            df['first_page_cpc'] = (df['bid_amount']-df['first_page_cpc'])/df['bid_amount']
             if insights_dict['destination_type']=='LINK_CLICKS':
+                df['cost_per_target'] = insights_dict['cost_per_click']
                 df['all_conversions'] = 1 if insights_dict['all_conversions']>0 else 0
                 df['conversions'] = 1 if insights_dict['conversions']>0 else 0
             elif insights_dict['destination_type']=='CONVERSIONS':
                 df['cost_per_target'] = insights_dict['cost_per_conversion']
                 df['all_conversions'] = 1 if insights_dict['all_conversions']>0 else -100
                 df['conversions'] = 1 if insights_dict['conversions']>0 else -100
-
+                
             for index, row in df.iterrows():
                 df = pd.DataFrame(data=[row], columns=df.columns, index=[0])
                 r = ObjectiveFunc.adgroup_fitness(df_weight, df)
                 df['score'] = r
                 df_final = df[ SCORE_COLUMN_INDEX[criteria] ]
-                gdn_db.into_table(df_final, table=criteria.lower()+"_score") 
+                gsn_db.into_table(df_final, table=criteria.lower()+"_score")   
     mydb.close()
     return 
 
 
-# In[5]:
+# In[ ]:
 
 
 
@@ -319,8 +318,8 @@ class ObjectiveFunc(object):
     '''
 
     def __init__(self):
-        self.DATABASE = 'dev_gdn'
-        self.mydb = gdn_db.connectDB(self.DATABASE)
+        self.DATABASE = 'dev_gsn'
+        self.mydb = gsn_db.connectDB(self.DATABASE)
         self.AUTH_FILE_PATH = '/home/tim_su/ai_optimizer/opt/ai_optimizer/googleads.yaml'
         self.client = adwords.AdWordsClient.LoadFromStorage(
             self.AUTH_FILE_PATH)
@@ -336,38 +335,45 @@ class ObjectiveFunc(object):
         m_all_conv = df['campaign_all_conv']
         m_conv = df['campaign_conversion']
         m_conv_rate = df['campaign_conv_rate']
-        
+        m_ave_position = pd.Series([-1], index=[0]) if df['average_position'].iloc[0]>2 or df['average_position'].iloc[0]<=1 else 1/(df['average_position']-0.9) 
+
         m_bid = m_bid if df['campaign_cpc'].iloc[0]!=0 else pd.Series([-1], index=[0])
         
-        status = np.array([m_conv, m_all_conv, m_conv_rate, m_kpi, m_spend, m_bid])
+        status = np.array([m_ave_position, m_conv, m_all_conv, m_conv_rate, m_kpi, m_spend, m_bid])
         r = np.dot(optimal_weight, status)
         return r
 
     def adgroup_fitness(optimal_weight, df):
-        m_kpi = ( df['target'] / df['daily_destination'] ).apply(np.tanh) * 2
-        m_kpi = pd.Series([-10], index=[0]) if df['target'].iloc[0] == 0 else m_kpi
+        m_kpi = ( df['target'] / df['daily_destination'] ).apply(np.tanh) * 10
+        m_kpi = pd.Series([-100], index=[0]) if df['target'].iloc[0] == 0 else m_kpi
         
-        m_spend = ( (df['daily_budget'] - df['spend']) / df['daily_budget'] ).apply(np.tanh) * 10
+        m_spend = ( (df['daily_budget'] - df['spend']) / df['daily_budget'] ).apply(np.exp)
         m_bid = ((df['bid_amount'] - df['cost_per_target']) / df['bid_amount']).astype(float).apply(np.exp)
         
         m_all_conv = df['all_conversions']
         m_conv = df['conversions']
+        m_conv_rate = (df['all_conversions']+df['conversions'])/df['clicks']
+        m_ave_position = pd.Series([-1], index=[0]) if df['position'].iloc[0]>2 or df['position'].iloc[0]<=1 else 1/(df['position']-0.9)
+        m_first_page = pd.Series([1], index=[0]) if df['first_page_cpc'].iloc[0]>0 else pd.Series([0], index=[0])
         with np.errstate(divide='ignore', invalid='ignore'):
-            m_conv_rate = np.true_divide( df['all_conversions'], df['clicks'] )
-            m_conv_rate[m_conv_rate == np.inf] = -10
-            m_conv_rate[m_conv_rate == -np.inf] = -10
+            m_conv_rate = np.true_divide( (df['conversions']+df['all_conversions']), df['clicks'] )
+            m_conv_rate[m_conv_rate == np.inf] = 0
+            m_conv_rate[m_conv_rate == -np.inf] = 0
             m_conv_rate = np.nan_to_num(m_conv_rate)
-#         m_conv_rate = pd.Series([0], index=[0])
-        status = np.array([m_conv, m_all_conv, m_conv_rate, m_kpi, m_spend, m_bid])
+        
+        status = np.array([m_ave_position, m_conv, m_all_conv, m_conv_rate, m_kpi, m_spend, m_bid, m_first_page])
         optimal_weight = np.array([
+            optimal_weight['weight_ave_position'].iloc[0],
             optimal_weight['weight_conv'].iloc[0],
             optimal_weight['weight_all_conv'].iloc[0],
             optimal_weight['weight_conv_rate'].iloc[0],
             optimal_weight['weight_kpi'].iloc[0],
             optimal_weight['weight_spend'].iloc[0],
-            optimal_weight['weight_bid'].iloc[0]
+            optimal_weight['weight_bid'].iloc[0],
+            optimal_weight['weight_first_page'].iloc[0]
         ])
         r = np.dot(optimal_weight, status)
+#         print(optimal_weight)
         return r
 
     def campaign_status(self, campaign_id, insights_dict):
@@ -380,6 +386,8 @@ class ObjectiveFunc(object):
         daily_destination = (insights_dict['destination']/insights_dict['period'])
         campaign_bid = daily_budget/daily_destination
         campaign_conv_rate = (insights_dict['all_conversions']+insights_dict['conversions'])/insights_dict['clicks']
+        
+        average_position = insights_dict['average_position']
         
         if destination_type=='LINK_CLICKS':
             campaign_cpt = insights_dict['cost_per_click']
@@ -398,6 +406,7 @@ class ObjectiveFunc(object):
             'campaign_all_conv': [campaign_all_conv],
             'campaign_conversion': [campaign_conversion],
             'campaign_conv_rate': [campaign_conv_rate],
+            'average_position': [average_position],
             'impressions': [impressions],
             'campaign_bid': [campaign_bid],
             'spend': [spend],
@@ -414,42 +423,49 @@ class ObjectiveFunc(object):
         return
 
 
-# In[6]:
+# In[2]:
 
 
 if __name__ == "__main__":
     starttime = datetime.datetime.now()
     retrive_all_criteria_insights()
-    df_camp = gdn_db.get_campaign()
+    df_camp = gsn_db.get_campaign()
     campaign_id_list = df_camp['campaign_id'].tolist()
+    print('[campaign_id list]: ', campaign_id_list)
     for campaign_id in campaign_id_list:
         print('[current time]: ', datetime.datetime.now())
         print('[campaign_id]:', campaign_id )
         customer_id = df_camp['customer_id'][df_camp.campaign_id==campaign_id].iloc[0]
         destination_type = df_camp['destination_type'][df_camp.campaign_id==campaign_id].iloc[0]
-        camp = gdn_datacollector.Campaign(customer_id, campaign_id, destination_type)
-        date_preset = 'LAST_14_DAYS' if destination_type=='CONVERSIONS' else 'TODAY'
-        insights_dict = camp.get_campaign_insights(client=None, date_preset=date_preset)
+        camp = gsn_datacollector.Campaign(customer_id, campaign_id)
+        df_insights = camp.get_performance_insights(date_preset='LAST_14_DAYS', performance_type='CAMPAIGN')
+        insights_dict = df_insights.to_dict(orient='records')[0]
         insights_dict['period'] = df_camp['period'][df_camp.campaign_id==campaign_id].iloc[0]
         insights_dict['destination'] = df_camp['destination'][df_camp.campaign_id==campaign_id].iloc[0]
         insights_dict['destination_type'] = destination_type
         global df
         df = ObjectiveFunc().campaign_status( campaign_id, insights_dict )
+
         bound = np.tile([[0], [1]], vardim)
         ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
         optimal = ga.solve()
         score = ObjectiveFunc.fitnessfunc(optimal, df)
 
-        score_columns=['weight_conv','weight_all_conv','weight_conv_rate','weight_kpi', 'weight_spend', 'weight_bid']
-        df_score = pd.DataFrame(data=[optimal], columns=score_columns, index=[0])
+        weight_first_page = 0.9 if destination_type == 'CONVERSIONS' else 0
+        
+        score_columns=['weight_ave_position', 'weight_conv','weight_all_conv','weight_conv_rate','weight_kpi', 'weight_spend', 'weight_bid', 'weight_first_page']
 
-        df_final = pd.DataFrame({'campaign_id':campaign_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
+        df_score = pd.DataFrame(data=[np.append(optimal, [weight_first_page])], columns=score_columns, index=[0])
+
+        df_final = pd.DataFrame({'campaign_id':campaign_id, 'score':score}, index=[0])
+
         df_final = pd.concat( [df_score, df_final], axis=1, sort=True, ignore_index=False)
+        
         print(df_final)
-        gdn_db.check_optimal_weight(campaign_id, df_final)
+        gsn_db.check_optimal_weight(campaign_id, df_final)
         for criteria in CRITERIA_LIST:
             get_criteria_score( campaign_id=campaign_id, criteria=criteria, insights_dict=insights_dict )
-        
+            break
         print('optimal_weight:', optimal)
         print(datetime.datetime.now()-starttime)
     print(datetime.datetime.now()-starttime)
@@ -457,10 +473,22 @@ if __name__ == "__main__":
     gc.collect()
 
 
-# In[8]:
+# In[3]:
 
 
-#!jupyter nbconvert --to script genetic_algorithm_gdn.ipynb
+#!jupyter nbconvert --to script genetic_algorithm_gsn.ipynb
+
+
+# In[4]:
+
+
+np.append(optimal, [0.9])
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:

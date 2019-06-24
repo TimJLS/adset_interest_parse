@@ -252,12 +252,13 @@ class ObjectiveFunc(object):
     def campaign_status( campaign_id ):
         mydb = mysql_adactivity_save.connectDB( "dev_facebook_test" )
         df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id=%s" %(campaign_id), con=mydb)
+        print(df_camp)
         charge_type = df_camp['charge_type'].iloc[0]
         df_camp['charge_per_day'] = df_camp['target']/df_camp['period']
         df_camp['campaign_bid'] = df_camp['spend_cap']/df_camp['destination']
         insights = facebook_datacollector.Campaigns(campaign_id, charge_type).get_campaign_insights()
         if bool(insights):
-            spend = int( insights.get("spend") )
+            spend = float( insights.get("spend") )
             campaign_cpc = float( insights.get("cost_per_target") )
             campaign_charge = int( insights.get("target") )
             impressions = int( insights.get("impressions") )
@@ -288,14 +289,13 @@ class ObjectiveFunc(object):
 
         df=pd.DataFrame({'adset_id':[],'target':[], 'impressions':[], 'bid_amount':[]})
         
-#         df_ad = pd.read_sql("SELECT * FROM ad_insights WHERE ad_id=%s ORDER BY request_time DESC LIMIT 1" %(ad_id), con=mydb)
-#         df_ad = df_ad.apply(pd.to_numeric)
         df_adset = pd.read_sql("SELECT * FROM adset_insights WHERE adset_id=%s ORDER BY request_time DESC LIMIT 1" %(adset_id), con=mydb)
         df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id=%s" %(df_adset['campaign_id'].iloc[0]), con=mydb)
-#         df_camp['charge_per_day'] = df_camp['target']/df_camp['campaign_days']
-        df_temp = pd.merge( df_adset[['campaign_id', 'adset_id', 'target', 'cost_per_target', 'impressions']],
-                              df_adset[['adset_id','spend','bid_amount','daily_budget']],
+
+        df_temp = pd.merge( df_adset[['campaign_id', 'adset_id', 'target', 'cost_per_target', 'impressions',]],
+                              df_adset[['adset_id','spend','bid_amount']],
                               on=['adset_id'] )
+        df_temp['daily_budget'] = df_camp['daily_budget']
         df_camp['campaign_daily_budget'] = df_camp['daily_budget']
         df_status = pd.merge( df_temp,
                               df_camp[['campaign_id', 'daily_charge', 'campaign_daily_budget']],
@@ -319,7 +319,11 @@ def ga_optimal_weight(campaign_id):
             r = ObjectiveFunc.adset_fitness( df_weight, df )
             print('[score]', r)
             df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'score':r, 'request_time':request_time}, index=[0])
-            mysql_adactivity_save.intoDB("adset_score", df_final)
+            try:
+                mysql_adactivity_save.intoDB("adset_score", df_final)
+            except Exception as e:
+                print('score is inf: ', e)
+                pass
     else:
         pass
     mydb.close()
@@ -356,7 +360,8 @@ def main(campaign_id=None):
         print('campaign_id:', campaign_id )
         print('current time: ', starttime )
         df = ObjectiveFunc.campaign_status(campaign_id)
-        if df['target_type'].iloc[0] in BRANDING_CAMPAIGN_LIST:
+        print(df)
+        if df['charge_type'].iloc[0] in BRANDING_CAMPAIGN_LIST:
             bound = np.tile([[0], [1]], vardim)
             ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
             optimal = ga.solve()

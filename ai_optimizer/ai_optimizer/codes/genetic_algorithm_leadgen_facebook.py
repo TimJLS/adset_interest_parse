@@ -70,8 +70,10 @@ class GeneticAlgorithm(object):
         best_index = np.argmax(self.fitness)
         self.best = copy.deepcopy(self.population[best_index])
         self.avefitness = np.mean(self.fitness)
-        self.trace[self.t, 0] = (1 - self.best.fitness) / self.best.fitness
-        self.trace[self.t, 1] = (1 - self.avefitness) / self.avefitness
+#         self.trace[self.t, 0] = (1 - self.best.fitness) / self.best.fitness
+#         self.trace[self.t, 1] = (1 - self.avefitness) / self.avefitness
+        self.trace[self.t, 0] = self.best.fitness
+        self.trace[self.t, 1] = self.avefitness
         print("Generation %d: optimal function value is: %f; average function value is %f" % (
             self.t, self.trace[self.t, 0], self.trace[self.t, 1]))
         while (self.t < self.MAXGEN - 1):
@@ -210,7 +212,6 @@ class GAIndividual(object):
         calculate the fitness of the chromsome
         '''
         self.fitness = ObjectiveFunc.fitness_function(self.chrom, df)
-#         print(self.fitness)
 
 class ObjectiveFunc(object):
     '''
@@ -238,6 +239,7 @@ class ObjectiveFunc(object):
 
     def adset_fitness(optimal_weight, df):
         df = df.fillna(0)
+
         m1 = df['fb_pixel_lead'] / df['leadgen.other']
         m2 = df['leadgen.other'] / df['fb_pixel_view_content']
         m3 = df['fb_pixel_view_content'] / df['landing_page_view']
@@ -261,7 +263,7 @@ class ObjectiveFunc(object):
             "SELECT * FROM campaign_target WHERE campaign_id={}" .format(campaign_id), con=self.mydb)
         df_metrics = pd.read_sql(
             "SELECT * FROM campaign_leads_metrics WHERE campaign_id={}" .format(campaign_id), con=self.mydb)
-        df_camp['campaign_bid'] = df_camp['spend_cap']/df_camp['target']
+        df_camp['campaign_bid'] = df_camp['ai_spend_cap']/df_camp['destination']
         self.charge_type = df_camp['charge_type'].iloc[0]
         spend = df_camp['spend'].iloc[0]
         campaign_cost_per_target = df_camp['cost_per_target'].iloc[0]
@@ -302,6 +304,10 @@ def ga_optimal_weight(campaign_id, df_weight):
     adset_list = index_collector_leadgen_facebook.Campaigns(campaign_id, charge_type).get_adsets_active()
     for adset_id in adset_list:
         df = ObjectiveFunc().adset_status(adset_id)
+        df['daily_budget'] = df_camp['daily_budget']
+        df['leadgen.other'].iloc[0] = df['fb_pixel_lead'].iloc[0] if df['leadgen.other'].iloc[0] < df['fb_pixel_lead'].iloc[0] else df['leadgen.other'].iloc[0]
+        df['fb_pixel_view_content'].iloc[0] = df['leadgen.other'].iloc[0] if df['fb_pixel_view_content'].iloc[0] < df['leadgen.other'].iloc[0] else df['fb_pixel_view_content'].iloc[0]
+        df['landing_page_view'].iloc[0] = df['fb_pixel_view_content'].iloc[0] if df['landing_page_view'].iloc[0] < df['fb_pixel_view_content'].iloc[0] else df['landing_page_view'].iloc[0]
         r = ObjectiveFunc.adset_fitness(df_weight, df)
         print(r)
         df_final = pd.DataFrame({'campaign_id': campaign_id, 'adset_id': adset_id,
@@ -318,11 +324,17 @@ if __name__ == "__main__":
     import datetime
     starttime = datetime.datetime.now()
     campaign_list = index_collector_leadgen_facebook.get_running_leadgen_campaign()['campaign_id'].unique()
+    print('[on-going lead campaign_list]: ', campaign_list)
     for camp_id in campaign_list:
         print('campaign_id:', camp_id)
+        print('current time: ', starttime )
         global df
         df = ObjectiveFunc().campaign_status(camp_id)
         df = df.fillna(0)
+        df['leadgen.other'].iloc[0] = df['fb_pixel_lead'].iloc[0] if df['leadgen.other'].iloc[0] < df['fb_pixel_lead'].iloc[0] else df['leadgen.other'].iloc[0]
+        df['fb_pixel_view_content'].iloc[0] = df['leadgen.other'].iloc[0] if df['fb_pixel_view_content'].iloc[0] < df['leadgen.other'].iloc[0] else df['fb_pixel_view_content'].iloc[0]
+        df['landing_page_view'].iloc[0] = df['fb_pixel_view_content'].iloc[0] if df['landing_page_view'].iloc[0] < df['fb_pixel_view_content'].iloc[0] else df['landing_page_view'].iloc[0]
+        
         bound = np.tile([[0], [10]], vardim)
         ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
         optimal = ga.solve()
@@ -346,6 +358,12 @@ if __name__ == "__main__":
         print('optimal_weight:', optimal)
         print(datetime.datetime.now()-starttime)
     print(datetime.datetime.now()-starttime)
+
+
+# In[4]:
+
+
+#!jupyter nbconvert --to script genetic_algorithm_leadgen_facebook.ipynb
 
 
 # In[ ]:
