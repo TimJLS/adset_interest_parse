@@ -126,7 +126,7 @@ def check_campaignid_target(campaign_id, destination, charge_type, ai_start_date
 def get_campaign_target_dict():
     mydb = connectDB(DATABASE)
     request_time = datetime.datetime.now()
-    df = pd.read_sql( "SELECT * FROM campaign_target" , con=mydb )
+    df = pd.read_sql( "SELECT * FROM campaign_target WHERE ai_status='active'" , con=mydb )
     campaignid_dict=dict()
     campaignid_list = df['campaign_id'].unique()
     for campaign_id in campaignid_list:
@@ -140,7 +140,7 @@ def get_campaign_target_dict():
 def get_campaign_target_left_dict():
     mydb = connectDB(DATABASE)
     request_time = datetime.datetime.now()
-    df = pd.read_sql( "SELECT * FROM campaign_target" , con=mydb )
+    df = pd.read_sql( "SELECT * FROM campaign_target WHERE ai_status='active'" , con=mydb )
     mydb.close()
     campaignid_dict=dict()
     campaignid_list = df['campaign_id'].unique()
@@ -183,9 +183,9 @@ def get_campaign_target(campaign_id=None):
     mydb = connectDB(DATABASE)
     request_date = datetime.datetime.now().date()
     if campaign_id:
-        df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
+        df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}' AND ai_status='active'".format(campaign_id), con=mydb )
     else:
-        df = pd.read_sql( "SELECT * FROM campaign_target" , con=mydb )
+        df = pd.read_sql( "SELECT * FROM campaign_target WHERE ai_status='active'" , con=mydb )
         
     df_is_running = df.drop( df[ df['ai_stop_date'] < request_date].index )
     return df_is_running
@@ -195,7 +195,7 @@ def get_campaigns_not_optimized():
     request_time = datetime.datetime.now().date()
 
     df_not_optimized = pd.read_sql( 
-        "SELECT * FROM campaign_target where ai_stop_date>='{0}' and  (optimized_date <> '{0}' or optimized_date is null )  ".format(request_time),
+        "SELECT * FROM campaign_target where ai_stop_date>='{0}' and ( ai_status <> 'inactive' or ai_status is null ) and (optimized_date <> '{0}' or optimized_date is null )  ".format(request_time),
         con=mydb )
         
     return df_not_optimized
@@ -205,7 +205,7 @@ def get_campaign(campaign_id=None):
     mydb = connectDB(DATABASE)
     request_time = datetime.datetime.now()
     if campaign_id is None:
-        df = pd.read_sql( "SELECT * FROM campaign_target", con=mydb )
+        df = pd.read_sql( "SELECT * FROM campaign_target WHERE ai_status='active'", con=mydb )
         mydb.close()
         return df
     else:
@@ -221,12 +221,12 @@ def get_running_branding_campaign(campaign_id=None):
     mydb = connectDB(DATABASE)
     request_time = datetime.datetime.now()
     if campaign_id is None:
-        df = pd.read_sql( "SELECT * FROM campaign_target", con=mydb )
+        df = pd.read_sql( "SELECT * FROM campaign_target WHERE ai_status='active'", con=mydb )
         df = df[ (df['target_type'].isin(BRANDING_CAMPAIGN_LIST)) & (df.stop_time >= request_time) ]
         mydb.close()
         return df
     else:
-        df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
+        df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}' AND ai_status='active'".format(campaign_id), con=mydb )
         mydb.close()
         return df
 
@@ -360,6 +360,7 @@ def check_initial_bid(adset_id, df):
     
 def update_init_bid_by_campaign(campaign_id, init_bid):
     df_camp = get_campaign_target(campaign_id)
+    from facebook_datacollector import Campaigns
     adset_list = Campaigns(campaign_id, df_camp['charge_type'].iloc[0]).get_adsets()
     for adset_id in adset_list:
         update_init_bid( int(adset_id), init_bid )
