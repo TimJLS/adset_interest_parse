@@ -6,15 +6,16 @@
 
 import mysql_adactivity_save
 import pandas as pd
+import facebook_datacollector as datacollector
 DATABASE = "dev_facebook_test"
 
-BRANDING_LIST = ['LINK_CLICKS', 'ALL_CLICKS', 'VIDEO_VIEWS']
+BRANDING_LIST = ['LINK_CLICKS', 'ALL_CLICKS', 'VIDEO_VIEWS', 'REACH']
 
 TIME_WINDOW_CONST = 36
 PREDICT_STEP = 6
 
 
-# In[3]:
+# In[2]:
 
 
 def make_df_train(df_train):
@@ -24,7 +25,7 @@ def make_df_train(df_train):
     return df_train
 
 
-# In[85]:
+# In[3]:
 
 
 def make_predict():
@@ -32,13 +33,13 @@ def make_predict():
     df_camp = mysql_adactivity_save.get_campaign_target()
     df_branding = df_camp[df_camp['charge_type'].isin( BRANDING_LIST )]
     branding_campaign_id_list = df_branding.campaign_id.tolist()
-    
     mydb = mysql_adactivity_save.connectDB(DATABASE)
     mycursor = mydb.cursor()
+    print('[campaign_id_list]: ', branding_campaign_id_list)
     for campaign_id in branding_campaign_id_list:
+        print('[campaign id]: ', campaign_id)
         insights_sql = "select campaign_id, bid_amount from campaign_insights where campaign_id={} order by request_time desc limit 1".format(campaign_id)
         df_insights = pd.read_sql( insights_sql , con=mydb )
-
         sql = "select cost_per_target from campaign_insights where campaign_id={} order by request_time desc limit {}".format(campaign_id,TIME_WINDOW_CONST)
         df = pd.read_sql( sql , con=mydb )
         df_train_y = df.head(PREDICT_STEP)
@@ -52,12 +53,13 @@ def make_predict():
             df_insights['predict_bids'] = result
             mysql_adactivity_save.intoDB("campaign_predict_bids", df_insights)
     mydb.close()
+    mycursor.close()
 
 
-# In[74]:
+# In[4]:
 
 
-# %matplotlib inline
+get_ipython().run_line_magic('matplotlib', 'inline')
 def i_love_predict(df_train_x, df_train_y):
     import matplotlib.pyplot as plt
     import numpy as np
@@ -77,11 +79,18 @@ def i_love_predict(df_train_x, df_train_y):
     return str(df_y_pred.reshape(1,-1)[0].tolist())
 
 
-# In[86]:
+# In[5]:
 
 
+# %matplotlib inline
 if __name__ == '__main__':
     make_predict()
+
+
+# In[6]:
+
+
+#!jupyter nbconvert --to script i_love_predictive_bids.ipynb
 
 
 # In[ ]:
