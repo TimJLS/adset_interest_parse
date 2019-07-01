@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[15]:
 
 
 import json
@@ -17,6 +17,7 @@ from facebook_business.adobjects.adset import AdSet
 from facebook_business.adobjects.targeting import Targeting
 from facebook_business.adobjects.ad import Ad
 from facebook_business.api import FacebookAdsApi
+import facebook_business.adobjects.campaign as facebook_business_campaign
 
 from bid_operator import revert_bid_amount
 import mysql_adactivity_save
@@ -24,7 +25,9 @@ from facebook_datacollector import Campaigns
 from facebook_datacollector import DatePreset
 from facebook_adapter import FacebookCampaignAdapter
 import facebook_campaign_suggestion as campaign_suggestion
-IS_DEBUG = False #debug mode will not modify anything
+import facebook_currency_handler as fb_currency_handler
+import facebook_lookalike_audience as lookalike_audience
+IS_DEBUG = True #debug mode will not modify anything
 
 
 my_app_id = '958842090856883'
@@ -36,12 +39,12 @@ tim_access_token = 'EAANoD9I4obMBAPcoZA5V7OZBQaPa3Tk7NMAT0ZBZCepdD8zZBcwMZBMHAM1
 FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
 
 DATABASE = 'dev_facebook_test'
-DATE = datetime.datetime.now().date()
+DATE = datetime.datetime.now().date()#-datetime.timedelta(1)
 ACTION_BOUNDARY = 0.8
 ACTION_DICT = {'bid': AdSet.Field.bid_amount,
                'age': AdSet.Field.targeting, 'interest': AdSet.Field.targeting}
 
-BRANDING_CAMPAIGN_LIST = ['LINK_CLICKS', 'ALL_CLICKS','VIDEO_VIEWS', 'VIDEO_VIEW', 'REACH', 'POST_ENGAGEMENT', 'PAGE_LIKES', 'LANDING_PAGE_VIEW']
+BRANDING_CAMPAIGN_LIST = ['LINK_CLICKS', 'ALL_CLICKS','VIDEO_VIEWS', 'VIDEO_VIEW', 'REACH', 'POST_ENGAGEMENT', 'PAGE_LIKES', 'LANDING_PAGE_VIEW','IMPRESSIONS']
 PERFORMANCE_CAMPAIGN_LIST = ['CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART']
 
 ADSET_COPY_COUNT = 3
@@ -127,6 +130,9 @@ def make_suggest_adset_by_account_suggestion(original_adset_id):
                 "name": suggestion_name,
             }]
         }
+    if new_adset_params[AdSet.Field.targeting].get("flexible_spec") == None:
+        print('[make_suggest_adset_by_account_suggestion] no flexible_spec')
+        
     new_adset_params[AdSet.Field.targeting]["flexible_spec"] = interest_pair
 
     print('[make_suggest_adset] new_adset_params',new_adset_params)
@@ -139,6 +145,11 @@ def make_suggest_adset(original_adset_id, campaign_id):
     
     saved_suggest_id_name_dic = campaign_suggestion.get_suggestion_not_used(campaign_id)
     print('[make_suggest_adset] saved_suggest_id_name_dic', saved_suggest_id_name_dic)
+    
+    if not saved_suggest_id_name_dic:
+        print('[make_suggest_adset] saved_suggest_id_name_dic not exist')
+        return
+        
     suggest_id_list = []
     suggest_name_list = []
     for saved_suggest_id in saved_suggest_id_name_dic:
@@ -156,12 +167,16 @@ def make_suggest_adset(original_adset_id, campaign_id):
     new_adset_params = retrieve_origin_adset_params(original_adset_id)
     print('[make_suggest_adset] new_adset_params', new_adset_params)
     suggestion_full_name =  '__'.join(suggest_name_list)
-    new_adset_params[AdSet.Field.name] = "AI__" + suggestion_full_name
+    new_adset_params[AdSet.Field.name] = "AI__" + str(datetime.datetime.now().date()) + '_' + suggestion_full_name
 
     suggest_group_list = []
     for i in range(len(suggest_id_list)):
         this_dic = {"id": suggest_id_list[i], "name": suggest_name_list[i]}
         suggest_group_list.append(this_dic)
+    
+    if new_adset_params[AdSet.Field.targeting].get("flexible_spec") == None:
+        print('[make_suggest_adset] no flexible_spec')
+        return
     
     new_adset_params[AdSet.Field.targeting]["flexible_spec"][0]['interests'] = suggest_group_list
 
@@ -275,7 +290,6 @@ def get_sorted_adset(campaign):
 
 def split_adset_list(adset_list):
     import math
-    adset_list.sort(reverse=True)
     half = math.ceil(len(adset_list) / 2)
     return adset_list[:ADSET_COPY_COUNT], adset_list[half:]
 
@@ -286,14 +300,8 @@ def is_contain_copy_string(adset_name):
 def is_contain_rt_string(adset_name):
     return ('RT_' in adset_name)
 
-def check_init_bid(init_bid):
-    if init_bid > 100:
-        bid = math.ceil(init_bid*1.1)
-        return bid
-    else:
-        bid = init_bid + 1
-        return bid
-
+def is_contain_lookalike_string(adset_name):
+    return ('Look-a-like' in adset_name)
 
 def copy_adset(adset_id, actions, adset_params=None):
     
@@ -364,13 +372,14 @@ def optimize_performance_campaign(campaign_id):
     
     print('[optimize_performance_campaign] campaign ',campaign_id)
     df = mysql_adactivity_save.get_campaign_target(campaign_id)
-
+    
     charge_type = df['charge_type'].iloc[0]
     daily_charge = df['daily_charge'].iloc[0]
     campaign_daily_budget = df['daily_budget'].iloc[0]
     campaign_instance = Campaigns(campaign_id, charge_type)
-    
+
     day_dict = campaign_instance.generate_campaign_info(date_preset=DatePreset.yesterday)
+
     # this lifetime means ai_start_date and ai_stop_date; 
     lifetime_dict = campaign_instance.generate_campaign_info(date_preset=DatePreset.lifetime)
     lifetime_target = int( lifetime_dict['target'] )
@@ -389,32 +398,47 @@ def optimize_performance_campaign(campaign_id):
     fb_adapter = FacebookCampaignAdapter(campaign_id)
     campaign_days_left = fb_adapter.campaign_days_left
     achieving_rate = target / daily_charge
-    print('[achieving rate]', achieving_rate, ' target', target, ' daily_charge', daily_charge)
+    print('[optimize_performance_campaign] achieving rate', achieving_rate, ' target', target, ' daily_charge', daily_charge)
     
 
     if achieving_rate > ACTION_BOUNDARY and achieving_rate < 1:
-        print('[optimize_performance_campaign] achieving_rate', achieving_rate)
+        print('[optimize_performance_campaign] 0.8 < achieving_rate < 1')
     elif achieving_rate < ACTION_BOUNDARY:
         # update bid for original existed adset
-        print('[optimize_performance_campaign] achieving_rate', achieving_rate)
-        if not IS_DEBUG:
-            mysql_adactivity_save.adjust_init_bid(campaign_id)
+        print('[optimize_performance_campaign] campaign_daily_budget', campaign_daily_budget)
+        if not day_dict.get('spend'):
+            print('[optimize_performance_campaign] no spend value')            
+            return
+        yesterday_spend = float(day_dict.get('spend'))
+        if campaign_daily_budget and yesterday_spend and (yesterday_spend <= campaign_daily_budget * 0.8):
+            print('[optimize_performance_campaign] yesterday_spend not enough:', yesterday_spend)            
+            if not IS_DEBUG:
+                mysql_adactivity_save.adjust_init_bid(campaign_id)
+        else:
+            print('[optimize_performance_campaign] yesterday_spend is enough, no need to up bidding')
     else: # good enough, not to do anything
         print('[optimize_performance_campaign] good enough, not to do anything')
         modify_opt_result_db(campaign_id , False)
         return
 
+    #not to generate suggestion for CPA campaign if adset count > ADSET_MAX_COUNT_CPA
+    total_destination = df['destination'].iloc[0]
+    ai_period = df['period'].iloc[0]
+    ADSET_MAX_COUNT_CPA = math.ceil(total_destination / ai_period) + 1
 
-    # current going adset is less than ADSET_MIN_COUNT, not to close any adset
     adsets_active_list = campaign_instance.get_adsets_active()
     print('[optimize_performance_campaign] adsets_active_list:', adsets_active_list)
-    if len(adsets_active_list) <= ADSET_MIN_COUNT:
+    if len(adsets_active_list) <= ADSET_MAX_COUNT_CPA:
         if len(adsets_active_list) > 0 and not IS_DEBUG: 
 #         if len(adsets_active_list) > 0:
             #create one suggestion adset for CPA campaigin
             print('create one suggestion asset for CPA campaigin')        
             adset_id = adsets_active_list[0]
             make_suggest_adset(adset_id, campaign_id)
+            #create one lookalike adset for CPA campaigin
+            print('create one lookalike asset for CPA campaigin')  
+            make_lookalike_adset(campaign_id)
+            modify_opt_result_db(campaign_id, True)
             return
 
     #performance not to copy adset, just close adset
@@ -475,12 +499,20 @@ def optimize_branding_campaign(campaign_id):
     print('[achieving rate]', achieving_rate, ' target', target, ' daily_charge', daily_charge)
     
     if achieving_rate > ACTION_BOUNDARY and achieving_rate < 1:
-        print('[optimize_branding_campaign] achieving_rate', achieving_rate)
+        print('[optimize_branding_campaign] 0.8 < achieving_rate < 1')
     elif achieving_rate < ACTION_BOUNDARY:
         # update bid for original existed adset
-        print('[optimize_branding_campaign] achieving_rate', achieving_rate)
-        if not IS_DEBUG:
-            mysql_adactivity_save.adjust_init_bid(campaign_id)
+        print('[optimize_branding_campaign] campaign_daily_budget', campaign_daily_budget)
+        if not day_dict.get('spend'):
+            print('[optimize_performance_campaign] no spend value')            
+            return
+        yesterday_spend = float(day_dict.get('spend'))
+        if campaign_daily_budget and yesterday_spend and (yesterday_spend <= campaign_daily_budget * 0.8):
+            print('[optimize_branding_campaign] yesterday_spend not enough:', yesterday_spend)            
+            if not IS_DEBUG:
+                mysql_adactivity_save.adjust_init_bid(campaign_id)
+        else:
+            print('[optimize_branding_campaign] yesterday_spend is enough, no need to up bidding')
     else: # good enough, not to do anything
         print('[optimize_branding_campaign] good enough, not to do anything')
         modify_opt_result_db(campaign_id , False)
@@ -527,7 +559,7 @@ def optimize_branding_campaign(campaign_id):
             print('[optimize_branding_campaign] adset bid is None')
             break
 
-        bid = check_init_bid(bid)
+        bid = fb_currency_handler.get_proper_bid(campaign_id, bid)
 
         actions.update({'bid': bid})
         origin_adset_params = retrieve_origin_adset_params(adset_id)
@@ -572,10 +604,11 @@ def optimize_branding_campaign(campaign_id):
     
     
 def optimize_campaign(campaign_id):
+    print('[optimize_campaign] campaign_id', campaign_id)
     df = mysql_adactivity_save.get_campaign_target(campaign_id)
     charge_type = df['charge_type'].iloc[0]
     
-    print('[optimize_campaign] campaign_id', campaign_id, charge_type)
+    print('[optimize_campaign] charge_type', charge_type)
     if charge_type in PERFORMANCE_CAMPAIGN_LIST:
         optimize_performance_campaign(campaign_id)
     elif charge_type in BRANDING_CAMPAIGN_LIST:
@@ -587,6 +620,53 @@ def optimize_campaign(campaign_id):
 # In[2]:
 
 
+def get_campaign_name_status(campaign_id):
+    this_campaign = facebook_business_campaign.Campaign( campaign_id).remote_read(fields=["status", "name"])
+    return this_campaign.get('name'), this_campaign.get('status')
+
+
+# In[14]:
+
+
+def make_lookalike_adset(campaign_id):
+    df = mysql_adactivity_save.get_campaign_target(campaign_id)
+    charge_type = df['charge_type'].iloc[0]
+    campaign_instance = Campaigns(campaign_id, charge_type)
+    adsets_active_list = campaign_instance.get_adsets_active()
+    adset_params = retrieve_origin_adset_params(adsets_active_list[0])
+    adset_params.pop("id")
+    ad_id_list = get_ad_id_list(adsets_active_list[0])
+
+    targeting = adset_params.get("targeting")
+    targeting.pop("flexible_spec", None)
+
+    lookalike_audience_dict = lookalike_audience.get_lookalike_audience_id(campaign_id)
+    if not any(lookalike_audience_dict):
+        print('[make_lookalike_adset]: all lookalike is in adset.')
+        return
+    for lookalike_behavior in lookalike_audience_dict.keys():
+        lookalike_audience_id = lookalike_audience_dict[lookalike_behavior]
+        targeting["custom_audiences"] = [{"id": lookalike_audience_id}]
+        adset_params["name"] = "Look-a-like Custom {}".format(lookalike_behavior)
+        print('==================')
+        print(adset_params)
+
+    #     try:
+        new_adset_id = make_adset(adset_params)
+        print('[copy_adset] make_adset success, adset_id', adsets_active_list[0], ' new_adset_id', new_adset_id)
+        time.sleep(10)
+
+        for ad_id in ad_id_list:
+            result_message = assign_copied_ad_to_new_adset(new_adset_id=new_adset_id, ad_id=ad_id)
+            print('[copy_adset] result_message', result_message)
+        lookalike_audience.modify_result_db(campaign_id, lookalike_audience_id, True)
+#     except Exception as error:
+#         print('[copy_adset] this adset is not existed anymore, error:', error)
+
+
+# In[ ]:
+
+
 if __name__ == '__main__':
     import index_collector_conversion_facebook
     current_time = datetime.datetime.now()
@@ -594,10 +674,27 @@ if __name__ == '__main__':
     FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
     df_not_opted = mysql_adactivity_save.get_campaigns_not_optimized()
     print('df_not_opted len:', len(df_not_opted))
-    
+
     for campaign_id in df_not_opted.campaign_id.unique():
-        optimize_campaign(campaign_id)
-#     optimize_campaign(23843467729120098)
+        campaign_name , campaign_fb_status = get_campaign_name_status(campaign_id)
+        print(campaign_id, campaign_fb_status, campaign_name)
+        if campaign_fb_status == 'ACTIVE':
+            optimize_campaign(campaign_id.astype(dtype=object))
+        print('==========next campaign========')
+    print(datetime.datetime.now().date(), '==================!!facebook_externals.py finish!!=======================')
+#     optimize_campaign(23843474858420127)
+
+
+# In[ ]:
+
+
+#!jupyter nbconvert --to script facebook_externals.ipynb
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
