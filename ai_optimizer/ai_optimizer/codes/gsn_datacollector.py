@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[40]:
+# In[1]:
 
 
 import gdn_datacollector as datacollector
@@ -64,7 +64,7 @@ class DatePreset:
 adwords_client = adwords.AdWordsClient.LoadFromStorage(datacollector.AUTH_FILE_PATH)
 
 
-# In[15]:
+# In[3]:
 
 
 class Campaign(datacollector.Campaign):
@@ -137,6 +137,34 @@ class Campaign(datacollector.Campaign):
                 gsn_db.into_table( df, performance_type.lower()+'_insights' )
             return df
         
+    def get_ad_group_status_dict(self):
+        self.ad_group_status_dict=dict()
+        ad_group_service = self.client.GetService('AdGroupService', version='v201809')
+        # Construct selector and get all ad groups.
+        selector = {
+            'fields': ['Id', 'Name', 'Status'],
+            'predicates': [
+                {
+                    'field': 'CampaignId',
+                    'operator': 'EQUALS',
+                    'values': [self.campaign_id]
+                },
+                {
+                    'field': 'Status',
+                    'operator': 'EQUALS',
+                    'values': ['ENABLED']
+                }
+            ]
+        }
+        self.adgroup_id_list = list()
+        page = ad_group_service.get(selector)
+        if 'entries' in page:
+            for ad_group in page['entries']:
+                self.ad_group_status_dict.update({
+                    ad_group['id'] : ad_group['status']
+                })
+        return self.ad_group_status_dict
+
     def get_keyword_id_list(self):
         self.keyword_id_list = []
         # Construct selector and get all ad groups.
@@ -210,7 +238,7 @@ class Campaign(datacollector.Campaign):
         return self.insights_dict
 
 
-# In[16]:
+# In[4]:
 
 
 class KeywordGroup(object):
@@ -276,7 +304,7 @@ class KeywordGroup(object):
         return self.insights_dict
 
     def get_keyword_criterion(self):
-        self.criterion_dict = dict()
+        self.criterion_dict_list = list()
         # Construct selector and get all ad groups.
         selector = {
             'fields': ['Id', 'KeywordText', 'Status', 'KeywordMatchType', 'SystemServingStatus', 'FirstPageCpc', 'FirstPositionCpc', 'BidModifier', 'QualityScore'],
@@ -296,16 +324,22 @@ class KeywordGroup(object):
         page = self.ad_group_criterion_service.get(selector)
         if 'entries' in page:
             for criterion_config in page['entries']:
-                self.ad_group_id = criterion_config['adGroupId']
+                ad_group_id = criterion_config['adGroupId']
                 self.text = criterion_config['criterion']['text']
                 self.match_type = criterion_config['criterion']['matchType']
                 self.serving_status = criterion_config['systemServingStatus']
                 self.status = criterion_config['userStatus']
-                self.first_page_cpc = criterion_config['firstPageCpc']['amount']['microAmount']/1000000
-                self.criterion_dict.update({
-                    'ad_group_id':self.ad_group_id, 'text':self.text, 'match_type':self.match_type,
-                    'serving_status':self.serving_status, 'status':self.status, 'first_page_cpc':self.first_page_cpc})
-            return self.criterion_dict
+                try:
+                    self.first_page_cpc = criterion_config['firstPageCpc']['amount']['microAmount']/1000000
+                except Exception as e:
+                    print('[gsn_datacollector.KeywordGroup.get_keyword_criterion]: first_page_cpc does not exist.', e)
+                    self.first_page_cpc = 0
+                self.criterion_dict = {
+                    'ad_group_id':ad_group_id, 'text':self.text, 'match_type':self.match_type,
+                    'serving_status':self.serving_status, 'status':self.status, 'first_page_cpc':self.first_page_cpc
+                }
+                self.criterion_dict_list.append(self.criterion_dict)
+            return self.criterion_dict_list
         
     def update_status(self, status='PAUSED'):
         self.operand = {
@@ -328,7 +362,7 @@ class KeywordGroup(object):
         adgroups = self.ad_group_criterion_service.mutate(self.operations)
         return adgroups
     
-    def update_bid(self, bid_micro_amount=None):
+    def update_bid(self, ad_group_id=None, bid_micro_amount=None):
         operations = {
             'operator':'SET',
             'operand':None,
@@ -353,7 +387,7 @@ class KeywordGroup(object):
             print('[gsn_datacollector] KeywordGroup.update_bid: bid_micro_amount required.')
             return
         operand['criterion'] = criterion
-        operand['adGroupId'] = self.ad_group_id
+        operand['adGroupId'] = ad_group_id
         operand['biddingStrategyConfiguration'] = bidding_strategy_config
         operations['operand'] = operand
         # Initialize appropriate service.
@@ -361,7 +395,7 @@ class KeywordGroup(object):
         return
 
 
-# In[36]:
+# In[5]:
 
 
 def data_collect(customer_id, campaign_id):
@@ -402,7 +436,7 @@ def data_collect(customer_id, campaign_id):
     return
 
 
-# In[37]:
+# In[6]:
 
 
 def main():
@@ -415,7 +449,7 @@ def main():
     print(datetime.datetime.now()-start_time)
 
 
-# In[38]:
+# In[7]:
 
 
 if __name__=='__main__':
@@ -423,7 +457,7 @@ if __name__=='__main__':
 #     data_collect(customer_id=CUSTOMER_ID, campaign_id=CAMPAIGN_ID)
 
 
-# In[39]:
+# In[8]:
 
 
 #!jupyter nbconvert --to script gsn_datacollector.ipynb

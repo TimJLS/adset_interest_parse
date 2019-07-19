@@ -475,10 +475,56 @@ if __name__=='__main__':
 #     df_campaign = data_collect(camp.customer_id, camp.campaign_id, 10000, camp.destination_type)
 
 
-# In[8]:
+# In[3]:
 
 
 #!jupyter nbconvert --to script gdn_datacollector.ipynb
+
+
+# In[4]:
+
+
+# CUSTOMER_ID = 2042877296
+# CAMPAIGN_ID = 1984860137
+# client.SetClientCustomerId(CUSTOMER_ID)
+# report_downloader = client.GetReportDownloader(version='v201809')
+
+# FIELDS = [
+#     'ContentImpressionShare','HourOfDay'
+# ]
+
+# def get_campaign_insights(campaign_id=None, date_preset=None):
+#     if not date_preset:
+#         date_preset = 'ALL_TIME'
+#     # Create report definition.
+#     report = {
+#         'reportName': 'CAMPAIGN_PERFORMANCE_REPORT',
+# #         'dateRangeType': 'CUSTOM_DATE',
+#         'dateRangeType': date_preset,
+#         'reportType': 'CAMPAIGN_PERFORMANCE_REPORT',
+#         'downloadFormat': 'CSV',
+#         'selector': {
+#             'fields': FIELDS,
+# #             'dateRange': {'min': '20190301','max': '20190401'},
+#             'predicates': [{
+#                 'field': 'CampaignId',
+#                 'operator': 'EQUALS',
+#                 'values':[campaign_id]
+#             }]
+#         }
+#     }
+#     csv = report_downloader.DownloadReportAsString(  
+#         report, skip_report_header=True, skip_column_header=True,   
+#         skip_report_summary=True, include_zero_impressions=False,client_customer_id=CUSTOMER_ID)
+#     csv_list = csv.split('\n')[:-1]
+#     df = pd.DataFrame()
+#     for lil_csv in csv_list:
+#         df_temp = pd.DataFrame(
+#             data=np.array(lil_csv.split(',')).reshape(1,len(FIELDS)),
+#             columns=FIELDS
+#         )
+#         df = df.append(df_temp)
+#     return df
 
 
 # In[ ]:

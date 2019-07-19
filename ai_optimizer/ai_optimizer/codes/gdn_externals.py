@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[38]:
+# In[2]:
 
 
 import gdn_datacollector
 from gdn_datacollector import Campaign
 from gdn_datacollector import AdGroup
 from gdn_datacollector import DatePreset
+import gdn_gsn_ai_behavior_log as logger
+from gdn_gsn_ai_behavior_log import BehaviorType
 import datetime
 import gdn_db
 from googleads import adwords
@@ -311,7 +313,7 @@ class Make(object):
 #                                 mutant_ad_group_id_list=[mutant_ad_group_id])
 
 
-# In[32]:
+# In[3]:
 
 
 def get_sorted_adgroup(campaign_id):
@@ -329,7 +331,6 @@ def get_sorted_adgroup(campaign_id):
         adgroup_list = Campaign( customer_id, campaign_id, destination_type).get_adgroup_id_list()
     mydb.close()
     return adgroup_list.tolist()
-
 
 def split_adgroup_list(adgroup_list):
     import math
@@ -513,6 +514,7 @@ def make_adgroup_criterion_by_score(campaign_id, new_ad_group_id,):
     negative_criterions = []
     biddable_sub_criterion = []
     negative_sub_criterion = []
+
     for criteria in Index.score.keys():
         # select score by campaign level
         df = gdn_db.get_table(campaign_id=campaign_id,
@@ -523,7 +525,6 @@ def make_adgroup_criterion_by_score(campaign_id, new_ad_group_id,):
             df['audience_type'] = df.audience.str.split('::', expand=True)[0]
             df['audience'] = df.audience.str.split('::', expand=True)[1]
         if not df.empty:
-            # 
             df = df.sort_values(by=['score'], ascending=False).drop_duplicates(
                 [ Index.criteria_column[criteria] ] ).reset_index(drop=True)
             half = math.ceil( len(df)/2 )
@@ -538,6 +539,10 @@ def make_adgroup_criterion_by_score(campaign_id, new_ad_group_id,):
 def make_empty_ad_group(adwords_client, campaign_id, ad_group_id_list):
     ad_group_params = make_ad_group(adwords_client, ad_group_id_list[0])
     new_ad_group_id = ad_group_params['value'][0]['id']
+    
+    ad_group_pair = {'db_type': 'dev_gdn', 'adgroup_id': new_ad_group_id, 'criterion_id': None, 'criterion_type': 'adgroup'}
+
+    logger.save_adgroup_behavior(BehaviorType.CREATE, **ad_group_pair)
     return new_ad_group_id
 
 def make_adgroup_with_criterion(adwords_client, update, campaign_id, native_ad_group_id_list, mutant_ad_group_id_list=None):
@@ -545,7 +550,7 @@ def make_adgroup_with_criterion(adwords_client, update, campaign_id, native_ad_g
         enumerate_list = mutant_ad_group_id_list
     else:  # cpa campaign
         enumerate_list = native_ad_group_id_list
-        
+
     # Criterion by Score
     for native_id_idx, mutant_id in enumerate(enumerate_list):
         print('[mutant_id] ', mutant_id)
@@ -559,6 +564,16 @@ def make_adgroup_with_criterion(adwords_client, update, campaign_id, native_ad_g
             id = biddable['criterion']['id']
             try:
                 update.criterion( ad_group_id=mutant_id, id=id, interest_id=interest_id, status=status, )
+                
+                audience_pair = {
+                    'db_type': 'dev_gdn',
+                    'campaign_id': campaign_id,
+                    'adgroup_id': mutant_id,
+                    'criterion_id': id,
+                    'criterion_type': 'audience'
+                }
+                logger.save_adgroup_behavior(BehaviorType.OPEN, **audience_pair)
+
             except Exception as e:
                 print('[make_adgroup_with_criterion]: update unavailable. [criterion id]: ', id)
                 print('[make_adgroup_with_criterion]: ', e)
@@ -569,6 +584,16 @@ def make_adgroup_with_criterion(adwords_client, update, campaign_id, native_ad_g
             id = negative['criterion']['id']
             try:
                 update.criterion( ad_group_id=mutant_id, id=id, interest_id=interest_id, status=status, )
+                
+                audience_pair = {
+                    'db_type': 'dev_gdn',
+                    'campaign_id': campaign_id,
+                    'adgroup_id': mutant_id,
+                    'criterion_id': id,
+                    'criterion_type': 'audience'
+                }
+                logger.save_adgroup_behavior(BehaviorType.CLOSE, **audience_pair)
+                
             except Exception as e:
                 print('[make_adgroup_with_criterion]: update unavailable. [criterion id]: ', id)
                 print('[make_adgroup_with_criterion]: ', e)
@@ -586,6 +611,23 @@ def make_adgroup_with_criterion(adwords_client, update, campaign_id, native_ad_g
 
 
 # In[7]:
+
+
+def is_assessed(campaign_id):
+# Check if assessment is done
+    is_assessed = False
+    for criteria in Index.score.keys():
+        df = gdn_db.get_table( campaign_id=campaign_id, table=Index.score[criteria]+"_score" )
+        df['request_time'] = pd.to_datetime(df['request_time'])
+        df = df[ df.request_time.dt.date == (datetime.datetime.now().date()) ]
+        if not df.empty:
+            is_assessed = True
+    if not is_assessed:
+        print('[make_adgroup_with_criterion]: campaign_id {} is not assessed.'.format(campaign_id))
+    return is_assessed
+
+
+# In[8]:
 
 
 class Status(object):
@@ -669,7 +711,7 @@ class Update(object):
         return result
 
 
-# In[8]:
+# In[9]:
 
 
 # #not use now
@@ -769,7 +811,7 @@ class Update(object):
 #     return
 
 
-# In[9]:
+# In[10]:
 
 
 def handle_initial_bids(campaign_id, spend, budget, daily_target, original_cpa):
@@ -783,15 +825,14 @@ def handle_initial_bids(campaign_id, spend, budget, daily_target, original_cpa):
             gdn_db.adjust_init_bid(campaign_id, 0.9)
         else:
             print('[handle_initial_bids] good enough , keep the bid', ', original_cpa:', original_cpa)
-        
-    elif spend >= 1.5 * budget :
-        print('[handle_initial_bids] stay_init_bid')
-    elif spend < budget:
+    elif spend <= budget * 0.8:
         print('[handle_initial_bids] adjust_init_bid up the bid)')
         gdn_db.adjust_init_bid(campaign_id, 1.1)
+    else:
+        print('[handle_initial_bids] stay_init_bid')
 
 
-# In[39]:
+# In[11]:
 
 
 def optimize_performance_campaign():
@@ -806,7 +847,8 @@ def optimize_performance_campaign():
         destination = df_performance_campaign['destination'][df_performance_campaign.campaign_id==campaign_id].iloc[0]
         ai_spend_cap = df_performance_campaign['ai_spend_cap'][df_performance_campaign.campaign_id==campaign_id].iloc[0]
         original_cpa = ai_spend_cap/destination
-        print('[optimize_branding_campaign]  original_cpa:' , original_cpa)
+        print('[optimize_branding_campaign] campaign_id:' , campaign_id)
+        print('[optimize_branding_campaign] original_cpa:' , original_cpa)
 
         
         adwords_client.SetClientCustomerId( customer_id )
@@ -826,20 +868,20 @@ def optimize_performance_campaign():
         # Init param retriever Retrieve
         retriever = Retrieve(customer_id)
         retriever.generate_ad_group_id_list_type(campaign_id)
-        if day_dict['spend'] < day_dict['daily_budget'] * 0.8:
-            if achieving_rate < 1 and achieving_rate >= 0:
-                update = Update(customer_id)
+        if day_dict['spend'] < 0.8 * day_dict['daily_budget']:
+            update = Update(customer_id)
+            if is_assessed(campaign_id):
                 # Assign criterion to native ad group
-                make_adgroup_with_criterion(adwords_client, update, campaign_id,
-                                            native_ad_group_id_list=retriever.native_ad_group_id_list,)
+                make_adgroup_with_criterion(adwords_client, update, campaign_id, native_ad_group_id_list=retriever.native_ad_group_id_list,)
                 modify_opt_result_db(campaign_id , True)
             else:
+                print('[optimize_branding_campaign] campaign is not assessed. campaign_id: ', campaign_id)
                 modify_opt_result_db(campaign_id , False)
         else:
             modify_opt_result_db(campaign_id , False)
 
 
-# In[40]:
+# In[12]:
 
 
 def optimize_branding_campaign():
@@ -848,7 +890,7 @@ def optimize_branding_campaign():
     print('[optimize_branding_campaign]: campaign_id_list', campaign_id_list)
     
     for campaign_id in campaign_id_list:
-        print('[optimize_branding_campaign] campaign_id', campaign_id)
+        
         
         customer_id = df_branding_campaign['customer_id'][df_branding_campaign.campaign_id==campaign_id].iloc[0]
         destination_type = df_branding_campaign['destination_type'][df_branding_campaign.campaign_id==campaign_id].iloc[0]
@@ -856,8 +898,9 @@ def optimize_branding_campaign():
         
         destination = df_branding_campaign['destination'][df_branding_campaign.campaign_id==campaign_id].iloc[0]
         ai_spend_cap = df_branding_campaign['ai_spend_cap'][df_branding_campaign.campaign_id==campaign_id].iloc[0]
-        original_cpa = ai_spend_cap/destination
-        print('[optimize_branding_campaign]  original_cpa:' , original_cpa)
+        original_cpc = ai_spend_cap/destination
+        print('[optimize_branding_campaign] campaign_id', campaign_id)
+        print('[optimize_branding_campaign] original_cpc:' , original_cpc)
 
         adwords_client.SetClientCustomerId( customer_id )
         
@@ -870,19 +913,20 @@ def optimize_branding_campaign():
         print('[optimize_branding_campaign] lifetime_dict', lifetime_dict)
         
         # Adjust initial bids
-        handle_initial_bids(campaign_id, day_dict['spend'], day_dict['daily_budget'], daily_target, original_cpa)
+        handle_initial_bids(campaign_id, day_dict['spend'], day_dict['daily_budget'], daily_target, original_cpc)
         target = int( day_dict[target] )
         achieving_rate = target / daily_target
         print('[optimize_branding_campaign][achieving rate]', achieving_rate, '[target]', target, '[daily_target]', daily_target)
         # Init param retriever Retrieve
         retriever = Retrieve(customer_id)
         retriever.generate_ad_group_id_list_type(campaign_id)
-        if day_dict['spend'] < day_dict['daily_budget'] * 0.8:
-            if achieving_rate < 1 and achieving_rate >= 0:
-                update = Update(customer_id)
-                # Pause all on-line mutant
-                for id in retriever.mutant_ad_group_id_list:
-                    update.ad_group(id=id, status='PAUSED')
+
+        if achieving_rate < 1 and achieving_rate >= 0:
+            update = Update(customer_id)
+            # Pause all on-line mutant
+            for id in retriever.mutant_ad_group_id_list:
+                update.ad_group(id=id, status='PAUSED')
+            if is_assessed(campaign_id):
                 # Make empty mutant ad group
                 mutant_ad_group_id = make_empty_ad_group(adwords_client, campaign_id, retriever.native_ad_group_id_list)
                 # Assign criterion to native ad group
@@ -892,13 +936,15 @@ def optimize_branding_campaign():
 
                 modify_opt_result_db(campaign_id , True)
             else:
+                print('[optimize_branding_campaign] campaign is not assessed. campaign_id: ', campaign_id)
                 modify_opt_result_db(campaign_id , False)
         else:
+            print('[optimize_branding_campaign] spend money normal , achieving_rate is good ', achieving_rate)
             modify_opt_result_db(campaign_id , False)
     print('[optimize_branding_campaign]: next campaign====================')
 
 
-# In[31]:
+# In[13]:
 
 
 if __name__=="__main__":
@@ -909,10 +955,10 @@ if __name__=="__main__":
     print(datetime.datetime.now() - start_time)
 
 
-# In[42]:
+# In[4]:
 
 
-get_ipython().system('jupyter nbconvert --to script gdn_externals.ipynb')
+#!jupyter nbconvert --to script gdn_externals.ipynb
 
 
 # In[ ]:

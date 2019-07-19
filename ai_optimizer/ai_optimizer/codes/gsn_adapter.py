@@ -6,6 +6,8 @@
 
 import gsn_db
 import gsn_datacollector
+import gdn_gsn_ai_behavior_log as logger
+from gdn_gsn_ai_behavior_log import BehaviorType
 import bid_operator
 
 import datetime
@@ -133,9 +135,10 @@ class CampaignAdapter(object):
 
 
 class KeywordGroupAdapter(object):
-    def __init__(self, keyword_id, camp):
+    def __init__(self, keyword_id, ad_group_id, camp):
         self.mydb = gsn_db.connectDB( DATABASE )
         self.keyword_id = keyword_id
+        self.ad_group_id = ad_group_id
         self.camp = camp
     
     def get_campaign_id(self):
@@ -150,7 +153,7 @@ class KeywordGroupAdapter(object):
     def get_keyword_performance(self):
         try:
             target_performance_index = DESTINATION_INDEX[self.camp.df_camp['destination_type'].iloc[0]]
-            self.keyword_performance = self.camp.df_keyword[self.camp.df_keyword.keyword_id==self.keyword_id][[ target_performance_index ]].tail(1).iloc[0,0]
+            self.keyword_performance = self.camp.df_keyword[(self.camp.df_keyword.keyword_id==self.keyword_id)&(self.camp.df_keyword.adgroup_id==self.ad_group_id)][[ target_performance_index ]].tail(1).iloc[0,0]
         except Exception as e:
             print('[gsn_adapter.KeywordGroupAdapter.get_keyword_performance()]', e)
             self.keyword_performance = 0
@@ -168,7 +171,6 @@ class KeywordGroupAdapter(object):
         return self.keyword_time_target
     
     def get_keyword_progress(self):
-#         print(self.keyword_performance, self.keyword_time_target)
         self.keyword_progress = self.keyword_performance / self.keyword_time_target
         self.keyword_progress = 1 if self.keyword_time_target <= 0 else self.keyword_progress
         return self.keyword_progress
@@ -218,26 +220,39 @@ def main():
         camp.retrieve_campaign_attribute()
         destination_type = camp.df_camp['destination_type'].iloc[0]
         account_id = camp.df_camp['customer_id'].iloc[0]
+        
+        datacollect_campaign = gsn_datacollector.Campaign(customer_id=account_id, campaign_id=campaign_id)
+        ad_group_status_dict = datacollect_campaign.get_ad_group_status_dict()
         for keyword_id in camp.keyword_id_list:
             print('[keyword_id]: ', keyword_id)
-            try:
-                keyword_group = KeywordGroupAdapter( keyword_id, camp )
-                status_dict = keyword_group.retrieve_keyword_attribute()
-                media = result['media']
-                bid_dict = bid_operator.adjust(media, **status_dict)
-                datacollect_keyword_group = gsn_datacollector.KeywordGroup(
-                    customer_id=account_id, campaign_id=campaign_id, keyword_id=keyword_id)
-                datacollect_keyword_group.get_keyword_criterion()
-                datacollect_keyword_group.update_bid(bid_micro_amount=bid_dict['bid'])
-                result['contents'].append(bid_dict)
-                del keyword_group
-            except Exception as e:
-                print('[gsn_adapter.KeywordGroupAdapter] update unavailable: ', e)
+            
+            datacollect_keyword_group = gsn_datacollector.KeywordGroup(
+                customer_id=account_id, campaign_id=campaign_id, keyword_id=keyword_id)
+            keyword_dict_list = datacollect_keyword_group.get_keyword_criterion()
+
+            for keyword_dict in keyword_dict_list:
+                if keyword_dict['ad_group_id'] in ad_group_status_dict:
+                    keyword_group = KeywordGroupAdapter( keyword_id, keyword_dict['ad_group_id'], camp )
+                    status_dict = keyword_group.retrieve_keyword_attribute()
+                    media = result['media']
+                    bid_dict = bid_operator.adjust(media, **status_dict)
+
+                    ad_group_pair = {
+                        'db_type': 'dev_gsn', 'campaign_id': campaign_id, 'adgroup_id': keyword_dict['ad_group_id'],
+                        'criterion_id': keyword_id, 'criterion_type': 'keyword'
+                    }
+                    logger.save_adgroup_behavior(behavior_type=BehaviorType.ADJUST, behavior_misc=bid_dict['bid'], **ad_group_pair)
+                    
+                    datacollect_keyword_group.update_bid(ad_group_id=keyword_dict['ad_group_id'], bid_micro_amount=bid_dict['bid'])                    
+                    result['contents'].append(bid_dict)
+            del keyword_group
+            del datacollect_keyword_group
         
         mydict_json = json.dumps(result, cls=MyEncoder)
         release_json = json.dumps(release_version_result)
         gsn_db.insert_result( campaign_id, mydict_json )
         del camp
+        del datacollect_campaign
 #         except:
 #             print('pass')
 #             pass

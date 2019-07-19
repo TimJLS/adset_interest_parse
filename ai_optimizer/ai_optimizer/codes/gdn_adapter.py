@@ -9,6 +9,8 @@ import pandas as pd
 import numpy as np
 import gdn_db
 import gdn_datacollector
+import gdn_gsn_ai_behavior_log as logger
+from gdn_gsn_ai_behavior_log import BehaviorType
 import bid_operator
 import json
 import math
@@ -66,10 +68,7 @@ class CampaignAdapter(object):
         for adgroup in self.adgroup_list:
             if len(self.df_adgroup[self.df_adgroup.adgroup_id==adgroup]) != 0:
                 init_bid = df_init_bid[BID_AMOUNT][df_init_bid.adgroup_id==adgroup].head(1).iloc[0].astype(dtype=object)
-    #             init_bid = bid_operator.revert_bid_amount(init_bid)
                 last_bid = self.df_adgroup[ bid_amount_type ][self.df_adgroup.adgroup_id==adgroup].tail(1).iloc[0].astype(dtype=object)
-    #             init_bid = bid_operator.revert_bid_amount(init_bid)
-    #             last_bid = bid_operator.reverse_bid_amount(last_bid)
                 self.init_bid_dict.update({ adgroup: init_bid })
                 self.last_bid_dict.update({ adgroup: last_bid })
         return
@@ -236,8 +235,15 @@ def main():
                 print(status_dict)
                 media = result['media']
                 bid_dict = bid_operator.adjust(media, **status_dict)
-                gdn_datacollector.update_adgroup_bid(account_id, adgroup, bid_dict['bid'])
+                
+                ad_group_pair = {
+                    'db_type': 'dev_gdn', 'campaign_id': campaign_id, 'adgroup_id': adgroup,
+                    'criterion_id': None, 'criterion_type': 'adgroup'
+                }
+                logger.save_adgroup_behavior(behavior_type=BehaviorType.ADJUST, behavior_misc=bid_dict['bid'], **ad_group_pair)
                 result['contents'].append(bid_dict)
+                
+                gdn_datacollector.update_adgroup_bid(account_id, adgroup, bid_dict['bid'])
                 del s
             except Exception as e:
                 print('[facebook_adapter.AdGroupAdapter] update unavailable: ', e)
