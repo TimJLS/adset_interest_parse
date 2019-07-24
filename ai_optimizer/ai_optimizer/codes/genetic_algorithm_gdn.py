@@ -75,7 +75,7 @@ def retrive_all_criteria_insights(campaign_id=None):
             camp.get_performance_insights( performance_type=criteria, date_preset='LAST_14_DAYS' )
 
 
-# In[4]:
+# In[9]:
 
 
 def get_criteria_score( campaign_id=None, criteria=None, insights_dict=None):
@@ -417,18 +417,19 @@ class ObjectiveFunc(object):
 # In[6]:
 
 
-if __name__ == "__main__":
+def main():
     starttime = datetime.datetime.now()
     retrive_all_criteria_insights()
     df_camp = gdn_db.get_campaign()
     campaign_id_list = df_camp['campaign_id'].tolist()
+    print('[campaign_id list]: ', campaign_id_list)
     for campaign_id in campaign_id_list:
         print('[current time]: ', datetime.datetime.now())
         print('[campaign_id]:', campaign_id )
         customer_id = df_camp['customer_id'][df_camp.campaign_id==campaign_id].iloc[0]
         destination_type = df_camp['destination_type'][df_camp.campaign_id==campaign_id].iloc[0]
         camp = gdn_datacollector.Campaign(customer_id, campaign_id, destination_type)
-        date_preset = 'LAST_14_DAYS' if destination_type=='CONVERSIONS' else 'TODAY'
+        date_preset = 'LAST_14_DAYS' if destination_type=='CONVERSIONS' else 'YESTERDAY'
         insights_dict = camp.get_campaign_insights(client=None, date_preset=date_preset)
         insights_dict['period'] = df_camp['period'][df_camp.campaign_id==campaign_id].iloc[0]
         insights_dict['destination'] = df_camp['destination'][df_camp.campaign_id==campaign_id].iloc[0]
@@ -457,7 +458,14 @@ if __name__ == "__main__":
     gc.collect()
 
 
-# In[8]:
+# In[7]:
+
+
+if __name__ == "__main__":
+    main()
+
+
+# In[1]:
 
 
 #!jupyter nbconvert --to script genetic_algorithm_gdn.ipynb

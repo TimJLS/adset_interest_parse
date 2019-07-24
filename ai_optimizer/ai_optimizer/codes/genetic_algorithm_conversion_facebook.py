@@ -17,7 +17,7 @@ import copy
 import matplotlib.pyplot as plt
 import pandas as pd
 import datetime
-import index_collector_conversion_facebook
+import index_collector_conversion_facebook as collector
 sizepop, vardim, MAXGEN, params = 500, 8, 15, [0.9, 0.1, 0.5]
 DATABASE = "dev_facebook_test"
 DATE = datetime.datetime.today().date() -datetime.timedelta(1)
@@ -224,18 +224,19 @@ class ObjectiveFunc(object):
     objective function of genetic algorithm
     '''
     def __init__(self, campaign_id=None):
-        self.mydb = index_collector_conversion_facebook.connectDB( DATABASE )
+        self.mydb = collector.connectDB( DATABASE )
         self.charge_type = 'CONVERSIONS'
+        
     def fitness_function(self, optimal_weight, df):
+        self.mydb.close()
         df = df.fillna(0)
-
         m1 = (df['purchase'] / df['add_to_cart']).iloc[0]
         m2 = 0
         m3 = (df['add_to_cart'] / df['view_content']).iloc[0]
         m4 = (df['view_content'] / df['landing_page_view']).iloc[0]
         m5 = (df['landing_page_view'] / df['link_click']).iloc[0]
         m6 = (df['link_click'] / df['impressions']).iloc[0]
-        m_spend = -(( df['daily_budget'] - df['spend'] ) / df['daily_budget']).iloc[0]
+        m_spend = (( df['daily_budget'] - df['spend'] ) / df['daily_budget']).iloc[0]
         m_bid   = (( df['campaign_bid'] - df[ COST_PER_ACTION[self.charge_type] ] ) / df['campaign_bid']).iloc[0]
         status  = np.array( [m1, m2, m3, m4, m5, m6, m_spend, m_bid] )
         status = np.nan_to_num(status)
@@ -251,70 +252,62 @@ class ObjectiveFunc(object):
         m4 = (df['view_content'] / df['landing_page_view']).iloc[0]
         m5 = (df['landing_page_view'] / df['link_click']).iloc[0]
         m6 = (df['link_click'] / df['impressions']).iloc[0]
-        m_spend = -(( df['daily_budget'] - df['spend'] ) / df['daily_budget']).iloc[0]
+        m_spend = (( df['daily_budget'] - df['spend'] ) / df['daily_budget']).iloc[0]
         m_bid   = (( df['bid_amount'] - df[ COST_PER_ACTION[charge_type] ] ) / df['bid_amount']).iloc[0]
         
         status  = np.array( [m1, m2, m3, m4, m5, m6, m_spend, m_bid] )
-#         for idx, j in enumerate(status[:,0]):
-#             if np.isinf(j) or np.isneginf(j):
-#                 status[idx,0] = -100
         status = np.nan_to_num(status)
         r = np.dot( optimal_weight, status )
         r = np.nan_to_num(r)
-#         if math.isinf(r[0,0]):
-#             r[0,0] = -10
         return r
     
     def campaign_status( self, campaign_id ):
         df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id={}" .format(campaign_id), con=self.mydb)
-        df_metrics = pd.read_sql("SELECT * FROM campaign_conversion_metrics WHERE campaign_id={}" .format(campaign_id), con=self.mydb)
-        df_camp['campaign_bid'] = df_camp['ai_spend_cap']/df_camp['destination']
+        self.mydb.close()
+        print(df_camp)
         self.charge_type = df_camp['charge_type'].iloc[0]
+        df_camp['campaign_bid'] = df_camp['ai_spend_cap']/df_camp['destination']
+        
+        campaign_collector = collector.Campaigns(campaign_id)
+        insights = campaign_collector.get_campaign_insights(date_preset=collector.DatePreset.lifetime)
 
-        spend = df_camp['spend'].iloc[0]
-        campaign_cost_per_target = df_camp['cost_per_target'].iloc[0]
-        campaign_target = df_camp['target'].iloc[0]
-        impressions = df_camp['impressions'].iloc[0]
-        df=pd.DataFrame(
-            {
-                'campaign_id':[ campaign_id ],
-                'campaign_cost_per_target':[ campaign_cost_per_target ],
-                'campaign_target':[ campaign_target ],
-                'campaign_bid':[ df_camp['campaign_bid'].iloc[0] ],
-                'daily_budget':[ df_camp['daily_budget'].iloc[0] ],
-                'charge_type':[ df_camp['charge_type'].iloc[0] ]
-            }
-        )
-        df = pd.merge( df, df_metrics, on=['campaign_id'] )
+        df_insights = pd.DataFrame(insights, index=[0])
+        df = pd.concat( [df_insights, df_camp[['campaign_id', 'cost_per_target', 'target', 'campaign_bid', 'daily_budget', 'charge_type']]], axis=1 )
         df.fillna(value=0, inplace=True)
         df = df.convert_objects(convert_numeric=True)
+
         return df
     
     def adset_status( self, adset_id ):
-        df=pd.DataFrame({'adset_id':[],'target':[], 'impressions':[], 'bid_amount':[]})
-
         df_adset = pd.read_sql("SELECT * FROM adset_conversion_metrics WHERE adset_id={} and DATE(request_time) = '{}' ORDER BY request_time DESC LIMIT 1".format(adset_id, DATE), con=self.mydb)
-        df_adset.fillna(value=0, inplace=True)
-        return df_adset
+        self.mydb.close()
+        
+        adset_collector = collector.AdSets(adset_id)
+        insights = adset_collector.retrieve_all(date_preset=collector.DatePreset.lifetime)
+        df_insights = pd.DataFrame(insights, index=[0])
+        df_insights.fillna(value=0, inplace=True)
+        df_insights = df_insights.convert_objects(convert_numeric=True)
+        return df_insights
 
 def ga_optimal_weight(campaign_id, df_weight):
     request_time = datetime.datetime.now().date()
-    mydb = index_collector_conversion_facebook.connectDB( DATABASE )
+    mydb = collector.connectDB( DATABASE )
 #     df_weight = pd.read_sql("SELECT * FROM conversion_optimal_weight WHERE campaign_id={}".format(campaign_id), con=mydb)
     df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id={}".format(campaign_id), con=mydb)
     charge_type = df_camp['charge_type'].iloc[0]
-    adset_list = index_collector_conversion_facebook.Campaigns(campaign_id, charge_type).get_adsets_active()
+    adset_list = collector.Campaigns(campaign_id).get_adsets_active()
     for adset_id in adset_list:
         df = ObjectiveFunc().adset_status( adset_id )
         df['daily_budget'] = df_camp['daily_budget']
         df['add_to_cart'].iloc[0] = df['purchase'].iloc[0] if df['add_to_cart'].iloc[0] < df['purchase'].iloc[0] else df['add_to_cart'].iloc[0]
         df['view_content'].iloc[0] = df['add_to_cart'].iloc[0] if df['view_content'].iloc[0] < df['add_to_cart'].iloc[0] else df['view_content'].iloc[0]
         df['landing_page_view'].iloc[0] = df['view_content'].iloc[0] if df['landing_page_view'].iloc[0] < df['view_content'].iloc[0] else df['landing_page_view'].iloc[0]
-        r = ObjectiveFunc.adset_fitness( df_weight, df, charge_type )
-        print(adset_id, r)
-        df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'score':r[0], 'request_time':request_time}, index=[0])
+        if 'bid_amount' in df.columns:
+            r = ObjectiveFunc.adset_fitness( df_weight, df, charge_type )
+            print(adset_id, r)
+            df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'score':r[0], 'request_time':request_time}, index=[0])
 
-        index_collector_conversion_facebook.insertion("adset_score", df_final)
+            collector.insertion("adset_score", df_final)
 
 
 # In[2]:
@@ -324,7 +317,7 @@ def main(campaign_id=None):
     starttime = datetime.datetime.now()
     global df
     if not campaign_id:
-        campaign_list = index_collector_conversion_facebook.get_running_conversion_campaign()['campaign_id'].unique()
+        campaign_list = collector.get_running_conversion_campaign()['campaign_id'].unique()
         print('[on-going cnvrsn campaign_list]: ', campaign_list)
         for campaign_id in campaign_list:
             df = ObjectiveFunc().campaign_status(campaign_id)
@@ -345,13 +338,10 @@ def main(campaign_id=None):
             weight_columns=['w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w_spend', 'w_bid']
             df_weight = pd.DataFrame(data=[optimal], columns=weight_columns, index=[0])
 
-            df_final = pd.DataFrame({'campaign_id':campaign_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
+            df_final = pd.DataFrame({'campaign_id':campaign_id, 'score':score}, index=[0])
             df_final = pd.concat( [df_weight, df_final], axis=1, sort=True, ignore_index=False)
-            try:
-                index_collector_conversion_facebook.check_optimal_weight(campaign_id, df_final)
-                ga_optimal_weight(campaign_id, df_weight)
-            except:
-                pass
+            collector.check_optimal_weight(campaign_id, df_final)
+            ga_optimal_weight(campaign_id, df_weight)
             print('optimal_weight:', optimal)
             print(datetime.datetime.now()-starttime)
         print(datetime.datetime.now()-starttime)
@@ -374,7 +364,7 @@ def main(campaign_id=None):
 
         df_final = pd.DataFrame({'campaign_id':campaign_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
         df_final = pd.concat( [df_weight, df_final], axis=1, sort=True, ignore_index=False)
-        index_collector_conversion_facebook.check_optimal_weight(campaign_id, df_final)
+        collector.check_optimal_weight(campaign_id, df_final)
         ga_optimal_weight(campaign_id, df_weight)
         print('optimal_weight:', optimal)
         print('[time taken]: ', datetime.datetime.now()-starttime)    
@@ -390,6 +380,12 @@ if __name__ == "__main__":
     import gc
     gc.collect()
 #     main(23843318864630344)
+
+
+# In[5]:
+
+
+#!jupyter nbconvert --to script genetic_algorithm_conversion_facebook.ipynb
 
 
 # In[ ]:

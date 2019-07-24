@@ -229,7 +229,7 @@ class ObjectiveFunc(object):
         m3 = df['fb_pixel_view_content'] / df['landing_page_view']
         m4 = df['landing_page_view'] / df['link_click']
         m5 = df['link_click'] / df['impressions']
-        m_spend = -(df['daily_budget'] - df['spend']) / df['daily_budget']
+        m_spend = (df['daily_budget'] - df['spend']) / df['daily_budget']
         m_bid = (df['campaign_bid'] - df['cost_per_fb_pixel_lead']) / df['campaign_bid']
 
         status = np.array([m1, m2, m3, m4, m5, m_spend, m_bid])
@@ -245,7 +245,7 @@ class ObjectiveFunc(object):
         m3 = df['fb_pixel_view_content'] / df['landing_page_view']
         m4 = df['landing_page_view'] / df['link_click']
         m5 = df['link_click'] / df['impressions']
-        m_spend = -(df['daily_budget'] - df['spend']) / df['daily_budget']
+        m_spend = (df['daily_budget'] - df['spend']) / df['daily_budget']
         m_bid = (df['bid_amount'] - df['cost_per_fb_pixel_lead']) / df['bid_amount']
         
         status = np.array([m1, m2, m3, m4, m5, m_spend, m_bid])
