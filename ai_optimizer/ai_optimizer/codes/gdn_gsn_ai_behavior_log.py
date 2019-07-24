@@ -29,10 +29,10 @@ class BehaviorType:
     OPEN = 'open'
 
 
-# In[13]:
+# In[24]:
 
 
-def get_adgroup_name_bidding(db_type, adgroup_id, criterion_id, criterion_type):
+def get_adgroup_name_bidding(db_type, campaign_id, adgroup_id, criterion_id, criterion_type):
     ADGROUP_SERVICE_FIELDS = ['AdGroupId', 'Name', 'CpcBid', 'CampaignId']
     ADGROUP_CRITERION_SERVICE_FIELDS = ['AdGroupId', 'CpcBid', 'CriteriaType', 'UserInterestId', 'UserInterestName', 'UserListId', 'LabelIds']
     if criterion_type == 'audience':
@@ -52,13 +52,12 @@ def get_adgroup_name_bidding(db_type, adgroup_id, criterion_id, criterion_type):
         service = 'AdGroupCriterionService'
         sql = "SELECT DISTINCT customer_id FROM {} WHERE {}={} AND {}={}".format(table, adgroup, adgroup_id, criterion, criterion_id)
     elif criterion_type == 'adgroup':
-        table = 'adgroup_insights'
-        adgroup = 'adgroup_id'
-        criterion_id = adgroup_id
+        table = 'campaign_target'
+        campaign = 'campaign_id'
         field_list = ADGROUP_SERVICE_FIELDS
         field = 'AdGroupId'
         service = 'AdGroupService'
-        sql = "SELECT DISTINCT customer_id FROM {} WHERE {}={}".format(table, adgroup, adgroup_id)
+        sql = "SELECT DISTINCT customer_id FROM {} WHERE {}={}".format(table, campaign, campaign_id)
     engine = create_engine( 'mysql://{}:{}@{}/{}'.format(gdn_saver.USER, gdn_saver.PASSWORD, gdn_saver.HOST, db_type) )
     with engine.connect() as conn, conn.begin():
         df = pd.read_sql(sql, con=conn)
@@ -95,7 +94,7 @@ def get_adgroup_name_bidding(db_type, adgroup_id, criterion_id, criterion_type):
     return name, bid_amount/pow(10, 6)
 
 
-# In[21]:
+# In[26]:
 
 
 def save_adgroup_behavior(behavior_type, db_type, campaign_id, adgroup_id, criterion_id, criterion_type, behavior_misc = '' ):
@@ -104,7 +103,7 @@ def save_adgroup_behavior(behavior_type, db_type, campaign_id, adgroup_id, crite
     audience_pair = {'db_type': 'dev_gdn', 'adgroup_id': 71252991065, 'criterion_id': 164710527631, 'criterion_type': 'audience'}
     keywords_pair = {'db_type': 'dev_gsn', 'adgroup_id': 71353342785, 'criterion_id': 298175279711, 'criterion_type': 'keyword'}
     '''
-    display_name , criterion_bid = get_adgroup_name_bidding(db_type, adgroup_id, criterion_id, criterion_type)
+    display_name , criterion_bid = get_adgroup_name_bidding(db_type, campaign_id, adgroup_id, criterion_id, criterion_type)
     created_at = int(time.time())
 
     if behavior_type == BehaviorType.ADJUST:
@@ -137,7 +136,7 @@ if __name__ == "__main__":
 #     print(adset_name , adset_bid )"
 
 
-# In[22]:
+# In[25]:
 
 
 #!jupyter nbconvert --to script gdn_gsn_ai_behavior_log.ipynb
