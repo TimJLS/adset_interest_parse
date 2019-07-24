@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[15]:
+# In[3]:
 
 
 import json
@@ -27,7 +27,9 @@ from facebook_adapter import FacebookCampaignAdapter
 import facebook_campaign_suggestion as campaign_suggestion
 import facebook_currency_handler as fb_currency_handler
 import facebook_lookalike_audience as lookalike_audience
-IS_DEBUG = True #debug mode will not modify anything
+import facebook_ai_behavior_log as ai_logger
+
+IS_DEBUG = False #debug mode will not modify anything
 
 
 my_app_id = '958842090856883'
@@ -49,6 +51,7 @@ PERFORMANCE_CAMPAIGN_LIST = ['CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART']
 
 ADSET_COPY_COUNT = 3
 ADSET_MIN_COUNT = 5
+AI_ADSET_PREFIX = '_AI_'
 
 FIELDS = [
     AdSet.Field.id,
@@ -107,6 +110,7 @@ def copy_adset_new_target(new_adset_params, original_adset_id):
         for ad_id in ad_id_list:
             result_message = assign_copied_ad_to_new_adset(new_adset_id=new_adset_id, ad_id=ad_id)
             print('[copy_adset_new_target] result_message', result_message)
+        return new_adset_id
             
     except Exception as error:
         print('[copy_adset_new_target] this adset is not existed anymore, error:', error)
@@ -138,7 +142,8 @@ def make_suggest_adset_by_account_suggestion(original_adset_id):
     print('[make_suggest_adset] new_adset_params',new_adset_params)
     original_adset_id = new_adset_params[AdSet.Field.id]
     new_adset_params[AdSet.Field.id] = None
-    copy_adset_new_target(new_adset_params, original_adset_id)
+    new_adset_id = copy_adset_new_target(new_adset_params, original_adset_id)
+    return new_adset_id
 
 
 def make_suggest_adset(original_adset_id, campaign_id): 
@@ -166,6 +171,11 @@ def make_suggest_adset(original_adset_id, campaign_id):
     
     new_adset_params = retrieve_origin_adset_params(original_adset_id)
     print('[make_suggest_adset] new_adset_params', new_adset_params)
+    
+    if new_adset_params[AdSet.Field.targeting].get("flexible_spec") == None:
+        print('[make_suggest_adset] no flexible_spec')
+        return
+
     suggestion_full_name =  '__'.join(suggest_name_list)
     new_adset_params[AdSet.Field.name] = "AI__" + str(datetime.datetime.now().date()) + '_' + suggestion_full_name
 
@@ -174,16 +184,25 @@ def make_suggest_adset(original_adset_id, campaign_id):
         this_dic = {"id": suggest_id_list[i], "name": suggest_name_list[i]}
         suggest_group_list.append(this_dic)
     
-    if new_adset_params[AdSet.Field.targeting].get("flexible_spec") == None:
-        print('[make_suggest_adset] no flexible_spec')
-        return
+    if new_adset_params[AdSet.Field.targeting].get("custom_audiences"): 
+        print('[make_suggest_adset] remove custom_audiences when add suggestion adset')
+        del new_adset_params[AdSet.Field.targeting]['custom_audiences']
     
+    if new_adset_params.get("daily_min_spend_target"):
+        print('[make_suggest_adset] remove daily_min_spend_target when add suggestion adset')
+        del new_adset_params['daily_min_spend_target']
+    
+    if new_adset_params.get("daily_spend_cap"):
+        print('[make_suggest_adset] remove daily_spend_cap when add suggestion adset')
+        del new_adset_params['daily_spend_cap']
+
     new_adset_params[AdSet.Field.targeting]["flexible_spec"][0]['interests'] = suggest_group_list
 
-    print('[make_suggest_adset] new_adset_params',new_adset_params)
+    print('[make_suggest_adset] new_adset_params after process',new_adset_params)
     original_adset_id = new_adset_params[AdSet.Field.id]
     new_adset_params[AdSet.Field.id] = None
-    copy_adset_new_target(new_adset_params, original_adset_id)
+    new_adset_id = copy_adset_new_target(new_adset_params, original_adset_id)
+    return new_adset_id
 
 
 
@@ -254,6 +273,9 @@ def update_interest(adset_id=None, adset_params=None):
 def update_status(adset_id, status=AdSet.Status.active):
     if IS_DEBUG:
         return 
+    if status == AdSet.Status.paused:
+        ai_logger.save_adset_behavior(adset_id, ai_logger.BehaviorType.CLOSE)
+        
     adset = AdSet(adset_id)
     adset[AdSet.Field.status] = status
     adset.remote_update()
@@ -295,7 +317,7 @@ def split_adset_list(adset_list):
 
 
 def is_contain_copy_string(adset_name):
-    return ('Copy' in adset_name)
+    return (AI_ADSET_PREFIX in adset_name)
 
 def is_contain_rt_string(adset_name):
     return ('RT_' in adset_name)
@@ -311,15 +333,15 @@ def copy_adset(adset_id, actions, adset_params=None):
     
     # Generate new adset name
     new_adset_name = ''
-    index = origin_adset_name.find("Copy")
+    index = origin_adset_name.find(AI_ADSET_PREFIX)
     if index > 0:
-        new_adset_name = origin_adset_name[:index]  + '_Copy_' + str(datetime.datetime.now().date()) 
+        new_adset_name = origin_adset_name[:index]  + AI_ADSET_PREFIX + str(datetime.datetime.now().date()) 
     else:
-        new_adset_name = origin_adset_name + '_Copy_' + str(datetime.datetime.now().date())
+        new_adset_name = origin_adset_name + AI_ADSET_PREFIX + str(datetime.datetime.now().date())
     
     for i, action in enumerate(actions.keys()):
         if action == 'bid':
-            new_adset_params[ACTION_DICT[action]] = math.ceil( revert_bid_amount(actions[action]) )  # for bid
+            new_adset_params[ACTION_DICT[action]] = math.floor( revert_bid_amount(actions[action]) )  # for bid
 
         elif action == 'age':
             age_list = actions[action][0].split('-')
@@ -345,9 +367,11 @@ def copy_adset(adset_id, actions, adset_params=None):
         for ad_id in ad_id_list:
             result_message = assign_copied_ad_to_new_adset(new_adset_id=new_adset_id, ad_id=ad_id)
             print('[copy_adset] result_message', result_message)
+        return new_adset_id
             
     except Exception as error:
         print('[copy_adset] this adset is not existed anymore, error:', error)
+        return False
 
 
 def make_adset(adset_params):
@@ -434,10 +458,15 @@ def optimize_performance_campaign(campaign_id):
             #create one suggestion adset for CPA campaigin
             print('create one suggestion asset for CPA campaigin')        
             adset_id = adsets_active_list[0]
-            make_suggest_adset(adset_id, campaign_id)
+            new_adset_id =  make_suggest_adset(adset_id, campaign_id)
+            if new_adset_id:
+                ai_logger.save_adset_behavior(new_adset_id, ai_logger.BehaviorType.CREATE)
             #create one lookalike adset for CPA campaigin
             print('create one lookalike asset for CPA campaigin')  
-            make_lookalike_adset(campaign_id)
+            new_adset_id = make_lookalike_adset(campaign_id, adsets_active_list)
+#             if new_adset_id:
+#                 ai_logger.save_adset_behavior(new_adset_id, ai_logger.BehaviorType.CREATE)
+            
             modify_opt_result_db(campaign_id, True)
             return
 
@@ -566,13 +595,13 @@ def optimize_branding_campaign(campaign_id):
         origin_adset_params[AdSet.Field.id] = None
         origin_name = origin_adset_params[AdSet.Field.name]
         
-        # optimize by daily_min_spend_target
-        if 'daily_min_spend_target' in origin_adset_params:
-            new_daily_min_spend_target = int( int(origin_adset_params[AdSet.Field.daily_min_spend_target]) * 1.1)
-            actions.update({'daily_min_spend_target':  new_daily_min_spend_target })
-        else:
-            new_daily_min_spend_target = int(  campaign_daily_budget / len(adset_for_copy_list))
-            actions.update({'daily_min_spend_target':  new_daily_min_spend_target })
+#         # optimize by daily_min_spend_target
+#         if 'daily_min_spend_target' in origin_adset_params:
+#             new_daily_min_spend_target = int( int(origin_adset_params[AdSet.Field.daily_min_spend_target]) * 1.1)
+#             actions.update({'daily_min_spend_target':  new_daily_min_spend_target })
+#         else:
+#             new_daily_min_spend_target = int(  campaign_daily_budget / len(adset_for_copy_list))
+#             actions.update({'daily_min_spend_target':  new_daily_min_spend_target })
         
         adset_max = origin_adset_params[AdSet.Field.targeting]["age_max"]
         adset_min = origin_adset_params[AdSet.Field.targeting]["age_min"]
@@ -598,7 +627,9 @@ def optimize_branding_campaign(campaign_id):
                 actions['age'][0] = str(current_adset_min) + '-' + str(current_adset_max)
                 adset_min = current_adset_max
                 actions_copy = deepcopy(actions)
-                copy_adset(adset_id, actions_copy, origin_adset_params)
+                copy_result_new_adset_id = copy_adset(adset_id, actions_copy, origin_adset_params)
+                if copy_result_new_adset_id:
+                    ai_logger.save_adset_behavior(copy_result_new_adset_id, ai_logger.BehaviorType.COPY)
                 
     modify_opt_result_db(campaign_id, True)    
     
@@ -617,41 +648,33 @@ def optimize_campaign(campaign_id):
         print('[optimize_campaign] error, not optimize')
 
 
-# In[2]:
+# In[4]:
 
 
-def get_campaign_name_status(campaign_id):
-    this_campaign = facebook_business_campaign.Campaign( campaign_id).remote_read(fields=["status", "name"])
-    return this_campaign.get('name'), this_campaign.get('status')
-
-
-# In[14]:
-
-
-def make_lookalike_adset(campaign_id):
-    df = mysql_adactivity_save.get_campaign_target(campaign_id)
-    charge_type = df['charge_type'].iloc[0]
-    campaign_instance = Campaigns(campaign_id, charge_type)
-    adsets_active_list = campaign_instance.get_adsets_active()
-    adset_params = retrieve_origin_adset_params(adsets_active_list[0])
+def make_lookalike_adset(campaign_id, adsets_active_list):
+    original_adset_id = adsets_active_list[0]
+    adset_params = retrieve_origin_adset_params(original_adset_id)
     adset_params.pop("id")
-    ad_id_list = get_ad_id_list(adsets_active_list[0])
+    ad_id_list = get_ad_id_list(original_adset_id)
 
     targeting = adset_params.get("targeting")
     targeting.pop("flexible_spec", None)
 
     lookalike_audience_dict = lookalike_audience.get_lookalike_audience_id(campaign_id)
+    if not lookalike_audience_dict:
+        print('[make_lookalike_adset]: lookalike_audience_dict None')
+        return
     if not any(lookalike_audience_dict):
         print('[make_lookalike_adset]: all lookalike is in adset.')
         return
-    for lookalike_behavior in lookalike_audience_dict.keys():
-        lookalike_audience_id = lookalike_audience_dict[lookalike_behavior]
-        targeting["custom_audiences"] = [{"id": lookalike_audience_id}]
-        adset_params["name"] = "Look-a-like Custom {}".format(lookalike_behavior)
-        print('==================')
-        print(adset_params)
-
-    #     try:
+    
+    # Pick first lookalike audience
+    lookalike_audience_id = lookalike_audience_dict.values()[0]
+    targeting["custom_audiences"] = [{"id": lookalike_audience_id}]
+    adset_params["name"] = "Look-a-like Custom {}".format(lookalike_behavior)
+    print('==================')
+    print(adset_params)
+    try:
         new_adset_id = make_adset(adset_params)
         print('[copy_adset] make_adset success, adset_id', adsets_active_list[0], ' new_adset_id', new_adset_id)
         time.sleep(10)
@@ -660,11 +683,20 @@ def make_lookalike_adset(campaign_id):
             result_message = assign_copied_ad_to_new_adset(new_adset_id=new_adset_id, ad_id=ad_id)
             print('[copy_adset] result_message', result_message)
         lookalike_audience.modify_result_db(campaign_id, lookalike_audience_id, True)
-#     except Exception as error:
-#         print('[copy_adset] this adset is not existed anymore, error:', error)
+
+    except Exception as error:
+        print('[copy_adset] this adset is not existed anymore, error:', error)
 
 
-# In[ ]:
+# In[5]:
+
+
+def get_campaign_name_status(campaign_id):
+    this_campaign = facebook_business_campaign.Campaign( campaign_id).remote_read(fields=["status", "name"])
+    return this_campaign.get('name'), this_campaign.get('status')
+
+
+# In[4]:
 
 
 if __name__ == '__main__':
@@ -685,16 +717,17 @@ if __name__ == '__main__':
 #     optimize_campaign(23843474858420127)
 
 
-# In[ ]:
+# In[20]:
 
 
 #!jupyter nbconvert --to script facebook_externals.ipynb
 
 
-# In[ ]:
+# In[21]:
 
 
-
+#nate test
+# make_suggest_adset(23843604240180098,23843467729120098)
 
 
 # In[ ]:

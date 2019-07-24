@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[34]:
+# In[3]:
 
 
 import facebook_business.adobjects.adset as facebook_business_adset
@@ -15,14 +15,17 @@ import mysql_adactivity_save as mysql_saver
 
 import pandas as pd
 import datetime
+import time
 my_app_id = '958842090856883'
 my_app_secret = 'a952f55afca38572cea2994d440d674b'
 my_access_token = 'EAANoD9I4obMBALrHTgMWgRujnWcZA3ZB823phs6ynDDtQxnzIZASyRQZCHfr5soXBZA7NM9Dc4j9O8FtnlIzxiPCsYt4tmPQ6ZAT3yJLPuYQqjnWZBWX5dsOVzNhEqsHYj1jVJ3RAVVueW7RSxRDbNXKvK3W23dcAjNMjxIjQGIOgZDZD'
 
 FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
 
+CONVERSION_BEHAVIOR_LIST = ['Purchase', 'AddToCart', 'ViewContent']
 
-# In[26]:
+
+# In[4]:
 
 
 def get_lookalike_not_used(campaign_id):
@@ -39,15 +42,7 @@ def get_lookalike_not_used(campaign_id):
     return df_not_processed_lookalike
 
 
-# In[ ]:
-
-
-def get_existing_lookalike(campaign_id):
-    
-    return
-
-
-# In[30]:
+# In[5]:
 
 
 def modify_result_db(campaign_id, lookalike_audience_id, is_lookalike_in_adset):
@@ -60,27 +55,61 @@ def modify_result_db(campaign_id, lookalike_audience_id, is_lookalike_in_adset):
     mycursor.execute(sql)
     mydb.commit()
     mydb.close()
+    mycursor.close()
 
 
-# In[32]:
+# In[6]:
 
 
-def get_lookalike_audience_id(campaign_id):
-    lookalike_audience_dict = dict()
+def get_custom_audience_id(campaign_id):
+    custom_audience_dict = dict()
     my_db = mysql_saver.connectDB(mysql_saver.DATABASE)
     my_cursor = my_db.cursor()
-    sql = "SELECT behavior_type, lookalike_audience_id FROM campaign_pixel_id WHERE campaign_id={} AND is_lookalike_in_adset='False'".format(campaign_id)
+    sql = "SELECT behavior_type, audience_id FROM campaign_pixel_id WHERE campaign_id={} AND is_created='True'".format(campaign_id)
     my_cursor.execute(sql)
     results = my_cursor.fetchall()
-    for (behavior_type, audience_id) in results:
-        lookalike_audience_dict[behavior_type] = audience_id
     my_db.commit()
     my_cursor.close()
     my_db.close()
+    
+    if len(results) == 0:
+        print('[get_custom_audience_id]: No custom audience is created.')
+        return 
+    for (behavior_type, audience_id) in results:
+        custom_audience_dict[behavior_type] = audience_id
+
+    return custom_audience_dict
+
+
+# In[50]:
+
+
+def get_lookalike_audience_id(campaign_id):
+    import collections
+    lookalike_audience_dict = collections.OrderedDict()
+    my_db = mysql_saver.connectDB(mysql_saver.DATABASE)
+    my_cursor = my_db.cursor()
+    
+    sql = "SELECT behavior_type, lookalike_audience_id FROM campaign_pixel_id WHERE campaign_id={}".format(campaign_id)
+    my_cursor.execute(sql)
+    results = my_cursor.fetchall()
+    
+    is_in_adset_sql = "SELECT behavior_type, lookalike_audience_id FROM campaign_pixel_id WHERE campaign_id={} AND is_lookalike_in_adset='False' ORDER BY approximate_count DESC".format(campaign_id)
+    my_cursor.execute(is_in_adset_sql)
+    is_in_adset_results = my_cursor.fetchall()
+    
+    if len(results) == 0:
+        print('[get_lookalike_audience_id]: No lookalike audience is created.')
+    elif len(is_in_adset_results) == 0:
+        print('[get_lookalike_audience_id]: All lookalike audience is in adset.')
+    
+    for (behavior_type, audience_id) in is_in_adset_results:
+        lookalike_audience_dict[behavior_type] = audience_id
+
     return lookalike_audience_dict
 
 
-# In[2]:
+# In[6]:
 
 
 def is_lookalike_created(campaign_id):
@@ -95,7 +124,7 @@ def is_lookalike_created(campaign_id):
     return len(result) > 0
 
 
-# In[3]:
+# In[7]:
 
 
 def create_lookalike_custom_audience(account_id, campaign_id, behavior_type, audience_id):
@@ -110,7 +139,13 @@ def create_lookalike_custom_audience(account_id, campaign_id, behavior_type, aud
             'country': 'TW',
         },
     })
-    resp = lookalike.remote_create()
+    try:
+        resp = lookalike.remote_create()
+    except Exception as e:
+        print('[create_lookalike_custom_audience]: unexpected error occired.')
+        my_cursor.close()
+        my_db.close()
+        return
     lookalike_audience_id = resp.get("id")
     print('==========[lookalike response]')
     print(resp)
@@ -119,11 +154,12 @@ def create_lookalike_custom_audience(account_id, campaign_id, behavior_type, aud
     update_sql = ("UPDATE campaign_pixel_id SET is_created='{}', lookalike_audience_id={} WHERE campaign_id={} AND behavior_type='{}'".format( True, lookalike_audience_id, campaign_id, behavior_type ) )
     my_cursor.execute(update_sql)
     my_db.commit()
-    
+    my_cursor.close()
+    my_db.close()
     return
 
 
-# In[4]:
+# In[8]:
 
 
 def create_campaign_custom_audience_by_pixel(campaign_id):
@@ -138,7 +174,11 @@ def create_campaign_custom_audience_by_pixel(campaign_id):
     df_not_opted_pixel_id = pd.read_sql(sql, con=my_db)
     df_not_opted_pixel_id = df_not_opted_pixel_id.dropna(subset=['pixel_id'])
     if df_not_opted_pixel_id.empty:
-        print('[create_campaign_custom_audience_by_pixel]: all custom audience is created.')
+        print('[create_campaign_custom_audience_by_pixel]: all custom audience of campaign {} is created.'.format(campaign_id))
+        if is_lookalike_audience_created(campaign_id):
+            print('[create_campaign_custom_audience_by_pixel]: all lookalike audience of campaign {} is created.'.format(campaign_id))
+        else:
+            print('[create_campaign_custom_audience_by_pixel]: all lookalike audience of campaign {} is not set.'.format(campaign_id))
         return
     for pixel_id in df_not_opted_pixel_id['pixel_id'].unique().tolist():
         event_sources = [{
@@ -175,10 +215,16 @@ def create_campaign_custom_audience_by_pixel(campaign_id):
                     }
                 }
             }
-            resp = facebook_business_adaccount.AdAccount('act_'+account_id).create_custom_audience(
-                fields=fields,
-                params=params,
-            )
+            try:
+                resp = facebook_business_adaccount.AdAccount('act_'+account_id).create_custom_audience(
+                    fields=fields,
+                    params=params,
+                )
+            except Exception as e:
+                print('[create_campaign_custom_audience_by_pixel]: unexpected error occured.')
+                my_cursor.close()
+                my_db.close()
+                return
             print('==================[custom]')
             print(resp)
             audience_id = resp.get("id")
@@ -193,7 +239,7 @@ def create_campaign_custom_audience_by_pixel(campaign_id):
     return
 
 
-# In[18]:
+# In[9]:
 
 
 def get_not_processed_lookalike_df(campaign_id):
@@ -204,7 +250,7 @@ def get_not_processed_lookalike_df(campaign_id):
     return df_saved_pixel_id
 
 
-# In[17]:
+# In[10]:
 
 
 def get_processed_lookalike_df(campaign_id):
@@ -215,11 +261,10 @@ def get_processed_lookalike_df(campaign_id):
     return df_saved_pixel_id
 
 
-# In[10]:
+# In[11]:
 
 
 def save_campaign_pixel_id(campaign_id):
-    CONVERSION_BEHAVIOR_LIST = ['Purchase', 'AddToCart', 'ViewContent']
     campaign = facebook_business_campaign.Campaign(campaign_id)
     campaign_object = campaign.get_ad_sets(
         fields = [facebook_business_adset.AdSet.Field.id, facebook_business_adset.AdSet.Field.status,] )
@@ -229,6 +274,7 @@ def save_campaign_pixel_id(campaign_id):
     promoted_object = adset_object.get("promoted_object")
     pixel_id = promoted_object.get("pixel_id") if promoted_object else None
     if pixel_id is None:
+        print('[facebook_lookalike_audience.save_campaign_pixel_id]: No pixel id in this campaign')
         return
     
     my_db = mysql_saver.connectDB(mysql_saver.DATABASE)
@@ -244,40 +290,218 @@ def save_campaign_pixel_id(campaign_id):
     return
 
 
-# In[11]:
+# In[12]:
 
 
-def save_pixel_id_for_all_campaign():
-    running_campaign_id_list = mysql_saver.get_campaign_target().campaign_id.tolist()
-    conversion_campaign_id_list = mysql_saver.get_running_conversion_campaign().campaign_id.tolist()
-    print('[save_pixel_id_for_all_campaign] current running campaign:', len(running_campaign_id_list), running_campaign_id_list )
-    for campaign_id in running_campaign_id_list:
-        print('[save_pixel_id_for_all_campaign] campaign_id:', campaign_id)
+def is_custom_audience_created(campaign_id):
+    my_db = mysql_saver.connectDB(mysql_saver.DATABASE)
+    my_cursor = my_db.cursor()
+    sql = "SELECT * FROM campaign_pixel_id WHERE campaign_id={} AND is_created='True'".format(campaign_id)
+    my_cursor.execute(sql)
+    result = my_cursor.fetchall()
+    my_db.commit()
+    my_cursor.close()
+    my_db.close()
+    return len(result) == len(CONVERSION_BEHAVIOR_LIST)
+
+def is_lookalike_audience_created(campaign_id):
+    my_db = mysql_saver.connectDB(mysql_saver.DATABASE)
+    my_cursor = my_db.cursor()
+    # First check campaign in db
+    sql = "SELECT * FROM campaign_pixel_id WHERE campaign_id={}".format(campaign_id)
+    my_cursor.execute(sql)
+    result = my_cursor.fetchall()
+    if len(result) == 0:
+        print('[is_lookalike_audience_created]: campaign not in DB.')
         save_campaign_pixel_id(campaign_id)
-    print('[save_pixel_id_for_all_campaign] current conversion campaign:', len(running_campaign_id_list), running_campaign_id_list )
-    for campaign_id in conversion_campaign_id_list:
-        print('[save_pixel_id_for_all_campaign] conveersion campaign_id:', campaign_id)
+        return False
+    # Then check campaign lookalike in adset
+    lookalike_sql = "SELECT * FROM campaign_pixel_id WHERE campaign_id={} AND is_lookalike_in_adset='True'".format(campaign_id)
+    my_cursor.execute(lookalike_sql)
+    result = my_cursor.fetchall()
+    my_db.commit()
+    my_cursor.close()
+    my_db.close()
+    return len(result) == len(CONVERSION_BEHAVIOR_LIST)
+
+def is_operation_status_normal(campaign_id):
+    my_db = mysql_saver.connectDB(mysql_saver.DATABASE)
+    my_cursor = my_db.cursor()
+    # First check campaign in db
+    sql = "SELECT * FROM campaign_pixel_id WHERE campaign_id={}".format(campaign_id)
+    my_cursor.execute(sql)
+    result = my_cursor.fetchall()
+    if len(result) == 0:
+        print('[is_operation_status_normal]: campaign not in DB.')
+        save_campaign_pixel_id(campaign_id)
+        return False
+    # Then check custom audience operation status
+    operation_status_sql = "SELECT * FROM campaign_pixel_id WHERE campaign_id={} AND operation_status='Normal'".format(campaign_id)
+    my_cursor.execute(operation_status_sql)
+    result = my_cursor.fetchall()
+    my_db.commit()
+    my_cursor.close()
+    my_db.close()
+    return len(result) > 0
+
+
+# In[13]:
+
+
+def retrieve_custom_audience_spec(campaign_id):
+    audience_attribute_list = []
+    custom_audience_dict = get_custom_audience_id(campaign_id)
+    for audience_id in custom_audience_dict.values():
+        custom_audience = facebook_business_custom_audience.CustomAudience(audience_id)
+        audience_attribute = custom_audience.remote_read(fields=[
+            custom_audience.Field.data_source,
+            custom_audience.Field.operation_status,
+            custom_audience.Field.retention_days,
+            custom_audience.Field.approximate_count,
+        ])
+        approximate_count = audience_attribute.get("approximate_count")
+        operation_status = audience_attribute.get("operation_status").get("description") if audience_attribute.get("operation_status").get("code")==200 else "Abnormal"
+        retention_days = audience_attribute.get("retention_days")
+        data_source = audience_attribute.get("data_source")
+        audience_id = audience_attribute.get("id")
+        audience_attribute = {
+            "audience_id": audience_id,
+            "retention_days": retention_days,
+            "operation_status": operation_status, 
+            "approximate_count": approximate_count,
+            "data_source": data_source
+        }
+        audience_attribute_list.append(audience_attribute)
+    return audience_attribute_list
+
+def update_audience_attribute(audience_id, retention_days, operation_status, approximate_count, data_source):    
+    my_db = mysql_saver.connectDB(mysql_saver.DATABASE)
+    my_cursor = my_db.cursor()
+    update_sql = ("UPDATE campaign_pixel_id SET data_source='{}', retention_days={}, operation_status='{}', approximate_count={} WHERE audience_id={}".format( data_source, retention_days, operation_status, approximate_count, audience_id ) )
+    my_cursor.execute(update_sql)
+    my_db.commit()
+    my_cursor.close()
+    my_db.close()
+    return
+
+
+# In[14]:
+
+
+def process_campaign_custom_audience(campaign_id):
+    if is_lookalike_audience_created(campaign_id):
+        print('[process_campaign_custom_audience]: lookalike audience is created.')
+        return
+    else:
+        print('[process_campaign_custom_audience] lookalike audience not created.')
         create_campaign_custom_audience_by_pixel(campaign_id)
 
 
-# In[8]:
+# In[15]:
+
+
+def save_pixel_id_for_all_campaign(campaign_id=None):
+    if campaign_id:
+        save_campaign_pixel_id(campaign_id)
+        create_campaign_custom_audience_by_pixel(campaign_id)
+    else:
+        running_campaign_id_list = mysql_saver.get_campaign_target().campaign_id.tolist()
+        conversion_campaign_id_list = mysql_saver.get_running_conversion_campaign().campaign_id.tolist()
+        print('[save_pixel_id_for_all_campaign] current running campaign:', len(running_campaign_id_list), running_campaign_id_list )
+        for campaign_id in running_campaign_id_list:
+            print('[save_pixel_id_for_all_campaign] campaign_id:', campaign_id)
+            save_campaign_pixel_id(campaign_id)
+        print('[save_pixel_id_for_all_campaign] current conversion campaign:', len(conversion_campaign_id_list), conversion_campaign_id_list )
+        for campaign_id in conversion_campaign_id_list:
+            print('[save_pixel_id_for_all_campaign] conversion campaign_id:', campaign_id)
+            process_campaign_custom_audience(campaign_id)
+
+
+# In[16]:
+
+
+def update_all_custom_audience():
+    conversion_campaign_id_list = mysql_saver.get_running_conversion_campaign().campaign_id.tolist()
+    print('[update_all_custom_audience]: conversion_campaign_id_list')
+    print(conversion_campaign_id_list)
+    for campaign_id in conversion_campaign_id_list:
+        audience_attribute_list = retrieve_custom_audience_spec(campaign_id)
+        for audience_attribute in audience_attribute_list:
+            update_audience_attribute(**audience_attribute)
+
+
+# In[17]:
 
 
 def main():
     save_pixel_id_for_all_campaign()
+    update_all_custom_audience()
 
 
-# In[9]:
+# In[18]:
 
 
 if __name__ == "__main__":
     main()
 
 
-# In[33]:
+# In[19]:
 
 
 #!jupyter nbconvert --to script facebook_lookalike_audience.ipynb
+
+
+# In[20]:
+
+
+# def make_lookalike_adset(campaign_id):
+#     import facebook_externals as externals
+#     import facebook_datacollector as collector
+    
+# #     df = mysql_saver.get_campaign_target(campaign_id)
+    
+#     # Testing
+#     mydb = mysql_saver.connectDB(mysql_saver.DATABASE)
+#     request_date = datetime.datetime.now().date()
+#     df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}' AND ai_status='active'".format(campaign_id), con=mydb )
+#     mydb.close()
+    
+    
+    
+#     charge_type = df['charge_type'].iloc[0]
+#     campaign_instance = collector.Campaigns(campaign_id, charge_type)
+#     adsets_active_list = campaign_instance.get_adsets_active()
+#     adset_params = externals.retrieve_origin_adset_params(adsets_active_list[0])
+#     adset_params.pop("id")
+#     ad_id_list = externals.get_ad_id_list(adsets_active_list[0])
+
+#     targeting = adset_params.get("targeting")
+#     targeting.pop("flexible_spec", None)
+    
+#     if is_lookalike_audience_created(campaign_id):
+#         return
+#     save_pixel_id_for_all_campaign(campaign_id)
+#     lookalike_audience_dict = get_lookalike_audience_id(campaign_id)
+
+#     if not any(lookalike_audience_dict):
+#         print('[make_lookalike_adset]: all lookalike is in adset.')
+#         return
+#     for lookalike_behavior in lookalike_audience_dict.keys():
+#         lookalike_audience_id = lookalike_audience_dict[lookalike_behavior]
+#         targeting["custom_audiences"] = [{"id": lookalike_audience_id}]
+#         adset_params["name"] = "Look-a-like Custom {}".format(lookalike_behavior)
+#         print('==================')
+#         print(adset_params)
+
+#     #     try:
+#         new_adset_id = externals.make_adset(adset_params)
+#         print('[copy_adset] make_adset success, adset_id', adsets_active_list[0], ' new_adset_id', new_adset_id)
+#         time.sleep(10)
+
+#         for ad_id in ad_id_list:
+#             result_message = externals.assign_copied_ad_to_new_adset(new_adset_id=new_adset_id, ad_id=ad_id)
+#             print('[copy_adset] result_message', result_message)
+#         modify_result_db(campaign_id, lookalike_audience_id, True)
 
 
 # In[ ]:
