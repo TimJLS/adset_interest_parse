@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[19]:
+# In[2]:
 
 
 import mysql.connector
@@ -130,30 +130,31 @@ def get_campaigns_not_optimized():
 
 
 
-def check_campaignid_target(account_id, campaign_id, destination, destination_type, ai_start_date, ai_stop_date, ai_spend_cap):
+def check_campaignid_target(account_id, campaign_id, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap):
     mydb = connectDB(DATABASE)
     df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
     mycursor = mydb.cursor()
     if df.empty:
-        sql = "INSERT INTO campaign_target ( customer_id, campaign_id, destination, destination_type, ai_start_date, ai_stop_date, ai_spend_cap ) VALUES ( %s, %s, %s, %s, %s, %s, %s )"
-        val = ( account_id, campaign_id, destination, destination_type, ai_start_date, ai_stop_date, ai_spend_cap )
+        sql = "INSERT INTO campaign_target ( customer_id, campaign_id, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap ) VALUES ( %s, %s, %s, %s, %s, %s, %s )"
+        val = ( account_id, campaign_id, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap )
         mycursor.execute(sql, val)
         mydb.commit()
         mycursor.close()
         mydb.close()
         return False
     else:
-        sql = "UPDATE campaign_target SET destination=%s, destination_type=%s, ai_start_date=%s, ai_stop_date=%s, ai_spend_cap=%s WHERE campaign_id=%s"
-        val = ( destination, destination_type, ai_start_date, ai_stop_date, ai_spend_cap, campaign_id )
+        sql = "UPDATE campaign_target SET destination=%s, destination_type=%s, ai_status=%s, ai_start_date=%s, ai_stop_date=%s, ai_spend_cap=%s WHERE campaign_id=%s"
+        val = ( destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap, campaign_id )
         mycursor.execute(sql, val)
         mydb.commit()
         mycursor.close()
         mydb.close()
         return True
 
-def check_initial_bid(adgroup_id, df):
+def check_initial_bid(keyword_id, df):
     mydb = connectDB(DATABASE)
-    df_check = pd.read_sql( "SELECT * FROM adgroup_initial_bid WHERE keyword_id={}".format(adgroup_id), con=mydb )
+    adgroup_id = df['adgroup_id'].iloc[0]
+    df_check = pd.read_sql( "SELECT * FROM adgroup_initial_bid WHERE keyword_id={} AND adgroup_id={}".format(keyword_id, adgroup_id), con=mydb )
 #     print(type(campaign_id.astype(dtype=object)))
     if df_check.empty:
         engine = create_engine( 'mysql://{}:{}@{}/{}'.format(USER, PASSWORD, HOST, DATABASE) )
@@ -211,15 +212,15 @@ def check_optimal_weight(campaign_id, df):
     mydb.close()
     return
 
-def update_init_bid(campaign_id=None, keyword_id=None, bid_ratio=None):
+def update_init_bid(campaign_id=None, keyword_id=None, ad_group_id=None, bid_ratio=None):
     mydb = connectDB(DATABASE)
     mycursor = mydb.cursor()
     if campaign_id and bid_ratio:
-        query_column = 'campaign_id'
-        query_value = campaign_id
-    elif keyword_id and bid_ratio:
-        query_column = 'keyword_id'
-        query_value = keyword_id
+        sql = "SELECT bid_amount FROM adgroup_initial_bid WHERE {}={}".format('campaign_id', campaign_id)
+        update_sql = "UPDATE adgroup_initial_bid SET bid_amount={} WHERE {}={}".format('{}', 'campaign_id', campaign_id)
+    elif keyword_id and ad_group_id and bid_ratio:
+        sql = "SELECT bid_amount FROM adgroup_initial_bid WHERE {}={} AND {}={}".format('keyword_id', keyword_id, 'adgroup_id', ad_group_id)
+        update_sql = "UPDATE adgroup_initial_bid SET bid_amount={} WHERE {}={} AND {}={}".format('{}', 'keyword_id', keyword_id, 'adgroup_id', ad_group_id)
     else:
         mycursor.close()
         mydb.close()
@@ -229,29 +230,26 @@ def update_init_bid(campaign_id=None, keyword_id=None, bid_ratio=None):
             print('[update_init_bid]: bid_ratio not set.')
         return
     ### select
-    sql = "SELECT bid_amount FROM adgroup_initial_bid WHERE {column}={value}".format(column=query_column, value=query_value)
     mycursor.execute(sql)
     init_bid = mycursor.fetchall()
     init_bid = int(init_bid[0][0])
     init_bid = init_bid * bid_ratio
     ### update
-    sql = "UPDATE adgroup_initial_bid SET bid_amount={} WHERE {column}={value}".format(init_bid, column=query_column, value=query_value)
-    mycursor.execute(sql)
+    update_sql = update_sql.format(init_bid)
+    mycursor.execute(update_sql)
     mydb.commit()
     mycursor.close()
     mydb.close()    
     return
 
-def get_current_init_bid(campaign_id=None, keyword_id=None):
+def get_current_init_bid(campaign_id=None, keyword_id=None, ad_group_id=None):
     mydb = connectDB(DATABASE)
     mycursor = mydb.cursor()
     ### select
     if campaign_id:
-        query_column = 'campaign_id'
-        query_value = campaign_id
-    elif keyword_id:
-        query_column = 'keyword_id'
-        query_value = keyword_id
+        sql = "SELECT bid_amount FROM adgroup_initial_bid WHERE {column}={value}".format(column='campaign_id', value=campaign_id)
+    elif keyword_id and ad_group_id:
+        sql = "SELECT bid_amount FROM adgroup_initial_bid WHERE {}={} AND {}={}".format('keyword_id', keyword_id, 'adgroup_id', ad_group_id)
     else:
         mycursor.close()
         mydb.close()
@@ -260,7 +258,6 @@ def get_current_init_bid(campaign_id=None, keyword_id=None):
         elif not bid_ratio:
             print('[update_init_bid]: bid_ratio not set.')
         return
-    sql = "SELECT bid_amount FROM adgroup_initial_bid WHERE {column}={value}".format(column=query_column, value=query_value)
     mycursor.execute(sql)
     init_bid = mycursor.fetchall()
     init_bid = init_bid[0][0]
@@ -281,7 +278,7 @@ def get_campaign_ai_brief( campaign_id ):
     return row
 
 
-# In[22]:
+# In[1]:
 
 
 #!jupyter nbconvert --to script gsn_db.ipynb

@@ -13,8 +13,8 @@ pymysql.install_as_MySQLdb()
 import MySQLdb
 import sys
 
-BRANDING_CAMPAIGN_LIST = [
-    'LINK_CLICKS', 'ALL_CLICKS','VIDEO_VIEWS', 'REACH', 'POST_ENGAGEMENT', 'PAGE_LIKES', 'LANDING_PAGE_VIEW']
+BRANDING_CAMPAIGN_LIST = ['LINK_CLICKS', 'ALL_CLICKS','VIDEO_VIEWS', 'VIDEO_VIEW', 'REACH', 'POST_ENGAGEMENT', 'PAGE_LIKES', 'LANDING_PAGE_VIEW','IMPRESSIONS']
+
 PERFORMANCE_CAMPAIGN_LIST = [
     'CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART']
 # import fb_graph
@@ -101,21 +101,21 @@ def get_result( campaign_id ):
 
 #campaign_target
 
-def check_campaignid_target(campaign_id, destination, charge_type, ai_start_date, ai_stop_date, ai_spend_cap):
+def check_campaignid_target(campaign_id, destination, charge_type, ai_start_date, ai_stop_date, ai_spend_cap, ai_status, custom_conversion_id):
     mydb = connectDB(DATABASE)
     df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id=%s" % (campaign_id), con=mydb )   
     if df.empty:
         mycursor = mydb.cursor()
-        sql = "INSERT INTO campaign_target ( campaign_id, destination, charge_type, ai_start_date, ai_stop_date, ai_spend_cap ) VALUES ( %s, %s, %s, %s, %s, %s )"
-        val = ( campaign_id, destination, charge_type, ai_start_date, ai_stop_date, ai_spend_cap )
+        sql = "INSERT INTO campaign_target ( campaign_id, destination, charge_type, ai_start_date, ai_stop_date, ai_spend_cap, ai_status, custom_conversion_id ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s )"
+        val = ( campaign_id, destination, charge_type, ai_start_date, ai_stop_date, ai_spend_cap, ai_status, custom_conversion_id )
         mycursor.execute(sql, val)
         mydb.commit()
         mycursor.close()
         mydb.close()
         return False
     else:
-        sql = "UPDATE campaign_target SET destination=%s, charge_type=%s, ai_start_date=%s, ai_stop_date=%s, ai_spend_cap=%s WHERE campaign_id=%s"
-        val = ( destination, charge_type, ai_start_date, ai_stop_date, ai_spend_cap, campaign_id )
+        sql = "UPDATE campaign_target SET destination=%s, charge_type=%s, ai_start_date=%s, ai_stop_date=%s, ai_spend_cap=%s, ai_status=%s,custom_conversion_id=%s WHERE campaign_id=%s"
+        val = ( destination, charge_type, ai_start_date, ai_stop_date, ai_spend_cap, ai_status, custom_conversion_id, campaign_id )
         mycursor = mydb.cursor()
         mycursor.execute(sql, val)
         mydb.commit()
@@ -195,7 +195,7 @@ def get_campaigns_not_optimized():
     request_time = datetime.datetime.now().date()
 
     df_not_optimized = pd.read_sql( 
-        "SELECT * FROM campaign_target where ai_stop_date>='{0}' and ( ai_status <> 'inactive' or ai_status is null ) and (optimized_date <> '{0}' or optimized_date is null )  ".format(request_time),
+        "SELECT * FROM campaign_target where ai_stop_date>='{0}' and  ai_status='active' and (optimized_date <> '{0}' or optimized_date is null )  ".format(request_time),
         con=mydb )
         
     return df_not_optimized
@@ -222,14 +222,25 @@ def get_running_branding_campaign(campaign_id=None):
     request_time = datetime.datetime.now()
     if campaign_id is None:
         df = pd.read_sql( "SELECT * FROM campaign_target WHERE ai_status='active'", con=mydb )
-        df = df[ (df['target_type'].isin(BRANDING_CAMPAIGN_LIST)) & (df.stop_time >= request_time) ]
+        df = df[ (df['target_type'].isin(BRANDING_CAMPAIGN_LIST)) & (df.ai_stop_date >= request_time.date()) ]
         mydb.close()
         return df
     else:
         df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}' AND ai_status='active'".format(campaign_id), con=mydb )
         mydb.close()
         return df
-
+    
+def get_running_conversion_campaign(campaign_id=None):
+    mydb = connectDB(DATABASE)
+    request_time = datetime.datetime.now()
+    if campaign_id is None:
+        df = pd.read_sql( "SELECT * FROM campaign_target WHERE ai_status='active' AND charge_type='CONVERSIONS'", con=mydb )
+        df = df[ (df['target_type'].isin(PERFORMANCE_CAMPAIGN_LIST)) & (df.ai_stop_date >= request_time.date()) ]
+    else:
+        df = pd.read_sql(
+            "SELECT * FROM campaign_target WHERE campaign_id='{}' AND ai_status='active' AND charge_type='CONVERSIONS'".format(campaign_id), con=mydb )
+    mydb.close()
+    return df
     
 def update_campaign_target(df):
     mydb = connectDB(DATABASE)
@@ -369,15 +380,12 @@ def update_init_bid_by_campaign(campaign_id, init_bid):
 def get_campaign_ai_brief( campaign_id ):
     mydb = connectDB(DATABASE)
     mycursor = mydb.cursor()
-    sql =  "SELECT ai_spend_cap, ai_start_date, ai_stop_date FROM campaign_target WHERE campaign_id={}".format(campaign_id)
+    sql =  "SELECT ai_spend_cap, ai_start_date, ai_stop_date, charge_type, custom_conversion_id FROM campaign_target WHERE campaign_id={}".format(campaign_id)
 
     mycursor.execute(sql)
     field_name = [field[0] for field in mycursor.description]
     values = mycursor.fetchone()
     row = dict(zip(field_name, values))
-    spend_cap = row['ai_spend_cap']
-    start_date = row['ai_start_date']
-    stop_date = row['ai_stop_date']
     mycursor.close()
     mydb.close()
     return row

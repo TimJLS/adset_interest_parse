@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[5]:
+# In[1]:
 
 
 import mysql.connector
@@ -129,23 +129,34 @@ def get_campaigns_not_optimized():
     mydb.close()
     return df_not_optimized
 
+def get_campaign_ai_brief( campaign_id ):
+    mydb = connectDB(DATABASE)
+    mycursor = mydb.cursor()
+    sql =  "SELECT ai_spend_cap, ai_start_date, ai_stop_date, destination_type FROM campaign_target WHERE campaign_id={}".format(campaign_id)
 
+    mycursor.execute(sql)
+    field_name = [field[0] for field in mycursor.description]
+    values = mycursor.fetchone()
+    row = dict(zip(field_name, values))
+    mycursor.close()
+    mydb.close()
+    return row
 
-def check_campaignid_target(account_id, campaign_id, destination, destination_type, ai_start_date, ai_stop_date, ai_spend_cap):
+def check_campaignid_target(account_id, campaign_id, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap):
     mydb = connectDB(DATABASE)
     df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
     mycursor = mydb.cursor()
     if df.empty:
-        sql = "INSERT INTO campaign_target ( customer_id, campaign_id, destination, destination_type, ai_start_date, ai_stop_date, ai_spend_cap ) VALUES ( %s, %s, %s, %s, %s, %s, %s )"
-        val = ( account_id, campaign_id, destination, destination_type, ai_start_date, ai_stop_date, ai_spend_cap )
+        sql = "INSERT INTO campaign_target ( customer_id, campaign_id, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap ) VALUES ( %s, %s, %s, %s, %s, %s, %s )"
+        val = ( account_id, campaign_id, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap )
         mycursor.execute(sql, val)
         mydb.commit()
         mycursor.close()
         mydb.close()
         return False
     else:
-        sql = "UPDATE campaign_target SET destination=%s, destination_type=%s, ai_start_date=%s, ai_stop_date=%s, ai_spend_cap=%s WHERE campaign_id=%s"
-        val = ( destination, destination_type, ai_start_date, ai_stop_date, ai_spend_cap, campaign_id )
+        sql = "UPDATE campaign_target SET destination=%s, destination_type=%s, ai_status=%s, ai_start_date=%s, ai_stop_date=%s, ai_spend_cap=%s WHERE campaign_id=%s"
+        val = ( destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap, campaign_id )
         mycursor.execute(sql, val)
         mydb.commit()
         mycursor.close()
@@ -245,7 +256,7 @@ def get_current_init_bid(campaign_id):
     
 
 
-# In[6]:
+# In[4]:
 
 
 #!jupyter nbconvert --to script gdn_db.ipynb
