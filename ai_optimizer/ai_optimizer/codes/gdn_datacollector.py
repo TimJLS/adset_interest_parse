@@ -135,6 +135,11 @@ class Campaign(object):
         self.client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
         self.client.SetClientCustomerId(self.customer_id)
         self.report_downloader = self.client.GetReportDownloader(version='v201809')
+        brief_dict = gdn_db.get_campaign_ai_brief( self.campaign_id )
+        self.ai_start_date = brief_dict['ai_start_date'].strftime("%Y%m%d")
+        self.ai_stop_date = brief_dict['ai_stop_date'].strftime("%Y%m%d")
+        self.ai_spend_cap = brief_dict['ai_spend_cap']
+        self.destination_type = brief_dict['destination_type']
     
     def get_adgroup_id_list(self):
         ad_group_service = self.client.GetService('AdGroupService', version='v201809')
@@ -162,25 +167,31 @@ class Campaign(object):
         return self.adgroup_id_list
     
     def get_campaign_insights(self, client, date_preset=None):
-        if not date_preset:
-            date_preset = 'ALL_TIME'
         # Create report definition.
+        date_range = { 'min': None, 'max': None }
+        selector = {
+            'fields': CAMPAIGN_FIELDS,
+            'predicates': [{
+                'field': 'CampaignId',
+                'operator': 'EQUALS',
+                'values':[self.campaign_id]
+            }]
+        }
         report = {
             'reportName': 'CAMPAIGN_PERFORMANCE_REPORT',
-    #         'dateRangeType': 'CUSTOM_DATE',
-            'dateRangeType': date_preset,
             'reportType': 'CAMPAIGN_PERFORMANCE_REPORT',
             'downloadFormat': 'CSV',
-            'selector': {
-                'fields': CAMPAIGN_FIELDS,
-    #             'dateRange': {'min': '20190301','max': '20190401'},
-                'predicates': [{
-                    'field': 'CampaignId',
-                    'operator': 'EQUALS',
-                    'values':[self.campaign_id]
-                }]
-            }
+            'selector': selector
         }
+
+        if not date_preset or date_preset == DatePreset.lifetime:
+            date_range['min'], date_range['max'] = self.ai_start_date, self.ai_stop_date
+            selector['dateRange'] = date_range
+            report['dateRangeType'] = 'CUSTOM_DATE'
+            report['selector'] = selector
+        else:
+            report['dateRangeType'] = date_preset
+
         csv = self.report_downloader.DownloadReportAsString(  
             report, skip_report_header=True, skip_column_header=True,   
             skip_report_summary=True, include_zero_impressions=True,client_customer_id=self.customer_id)
@@ -225,8 +236,6 @@ class Campaign(object):
                                  campaign_id=None,
                                  date_preset=None, performance_type='ADGROUP'):
         report_downloader = self.client.GetReportDownloader(version='v201809')
-        if not date_preset:
-            date_preset = 'ALL_TIME'
         # Create report definition.
         if self.campaign_id:
             operand = {
@@ -240,16 +249,28 @@ class Campaign(object):
             print('get_performance_insights: Missing arguments campaign_id or adgroup_id.')
             operand = None
             return
+        date_range = { 'min': None, 'max': None }
+        selector = {
+            'fields': fields,
+            'predicates': [operand]
+        }
         report = {
             'downloadFormat': 'CSV',
             'reportName': performance_type+'_PERFORMANCE_REPORT',
             'reportType': performance_type+'_PERFORMANCE_REPORT',
-            'dateRangeType': date_preset,
             'selector': {
                 'fields': fields,
                 'predicates': [operand]
             }
         }
+        if not date_preset or date_preset == DatePreset.lifetime:
+            date_range['min'], date_range['max'] = self.ai_start_date, self.ai_stop_date
+            selector['dateRange'] = date_range
+            report['dateRangeType'] = 'CUSTOM_DATE'
+            report['selector'] = selector
+        else:
+            report['dateRangeType'] = date_preset
+
         # Print out the report as a string
         with open(performance_type+'.csv', 'wb') as output_file:
             report_downloader.DownloadReport(
@@ -281,8 +302,14 @@ class AdGroup(Campaign):
         self.client = client
         self.client.SetClientCustomerId(self.customer_id)
         self.report_downloader = self.client.GetReportDownloader(version='v201809')
+        brief_dict = gdn_db.get_campaign_ai_brief( self.campaign_id )
+        self.ai_start_date = brief_dict['ai_start_date'].strftime("%Y%m%d")
+        self.ai_stop_date = brief_dict['ai_stop_date'].strftime("%Y%m%d")
+        self.ai_spend_cap = brief_dict['ai_spend_cap']
+        self.destination_type = brief_dict['destination_type']
         
-    def get_adgroup_insights(self, client, date_preset='ALL_TIME', by_device=False, by_hour=False):
+        
+    def get_adgroup_insights(self, client, date_preset=None, by_device=False, by_hour=False):
         self.report_metrics = [
             'ExternalCustomerId','CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus', 'CpmBid','CpvBid', 'CpcBid',
             'TargetCpa', 'BiddingStrategyType','Cost', 'AverageCost','Impressions', 'Clicks','Conversions', 'AllConversions', 'AverageCpc',
@@ -319,20 +346,26 @@ class AdGroup(Campaign):
             print('get_adgroup_insights: Missing arguments campaign_id or adgroup_id.' )
             operand = None
             return
+        date_range = { 'min': None, 'max': None }
+        selector = {
+            'fields': self.report_metrics,
+            'predicates': [operand]
+        }
         report = {
             'reportName': 'ADGROUP_PERFORMANCE_REPORT',
     #         'dateRangeType': 'CUSTOM_DATE',
             'dateRangeType': date_preset,
             'reportType': 'ADGROUP_PERFORMANCE_REPORT',
             'downloadFormat': 'CSV',
-            'selector': {
-                'fields': self.report_metrics,
-    #             'dateRange': {'min': '20190301','max': '20190401'},
-                'predicates': [
-                    operand
-                ]
-            }
+            'selector': selector
         }
+        if not date_preset or date_preset == DatePreset.lifetime:
+            date_range['min'], date_range['max'] = self.ai_start_date, self.ai_stop_date
+            selector['dateRange'] = date_range
+            report['dateRangeType'] = 'CUSTOM_DATE'
+            report['selector'] = selector
+        else:
+            report['dateRangeType'] = date_preset
         # Print out the report as a string
         csv =self.report_downloader.DownloadReportAsString(  
             report, skip_report_header=True, skip_column_header=True,   
@@ -348,8 +381,8 @@ class AdGroup(Campaign):
             df['Ctr'] = df.Ctr.str.split('%', expand = True)[0]
         df[df.columns.difference(['AdGroupType', 'AdGroupStatus', 'BiddingStrategyType', 'Device'])] = df[df.columns.difference(
             ['AdGroupType', 'AdGroupStatus', 'BiddingStrategyType', 'Device'])].apply(pd.to_numeric, errors='coerce')
-        df[df.columns.difference( ['HourOfDay','Device','ExternalCustomerId','CampaignId','AdGroupType','AdGroupId','AdGroupStatus','BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'] )] = df[df.columns.difference(
-            ['HourOfDay','Device','ExternalCustomerId','CampaignId','AdGroupType','AdGroupId','AdGroupStatus','BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'])].div(1000000)
+        df[df.columns.difference( ['HourOfDay','Device','ExternalCustomerId','CampaignId','AdGroupType','AdGroupId','AdGroupStatus','BiddingStrategyType','Impressions','Clicks', 'AllConversions', 'Conversions', 'Ctr'] )] = df[df.columns.difference(
+            ['HourOfDay','Device','ExternalCustomerId','CampaignId','AdGroupType','AdGroupId','AdGroupStatus','BiddingStrategyType','Impressions','Clicks', 'AllConversions', 'Conversions', 'Ctr'])].div(1000000)
         df.rename( columns=dict( zip(df.columns, self.db_column_name_list) ), inplace=True )
 #         return df
         self.insights_dict = df.reset_index(drop=True).to_dict(orient='records')
