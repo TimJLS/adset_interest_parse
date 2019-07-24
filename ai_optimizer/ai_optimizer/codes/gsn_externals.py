@@ -24,43 +24,6 @@ AGE_RANGE_LIST = [503001,503002,503003,503004,503005,503006,503999,]
 # In[2]:
 
 
-def handle_initial_bids(spend, budget, daily_target, original_cpa, keyword_insights_dict, campaign_id=None):
-    keyword_id = keyword_insights_dict['keyword_id']
-    ad_group_id = keyword_insights_dict['adgroup_id']
-    if IS_DEBUG:
-        print('[handle_initial_bids] IS_DEBUG == True , not adjust bid')
-        return
-    if campaign_id:
-        if daily_target < 0:
-            if gsn_db.get_current_init_bid(campaign_id=campaign_id) >= original_cpa:
-                print('[handle_initial_bids] good enough , lower the bid')
-                gsn_db.update_init_bid(campaign_id=campaign_id, bid_ratio = 0.9)
-            else:
-                print('[handle_initial_bids] good enough , keep the bid', ', original_cpa:', original_cpa)
-
-        elif spend >= 1.5 * budget :
-            print('[handle_initial_bids] stay_init_bid')
-        elif spend < budget:
-            print('[handle_initial_bids] adjust_init_bid up the bid)')
-            gsn_db.update_init_bid(campaign_id=campaign_id, bid_ratio = 1.1)
-    elif keyword_id and ad_group_id:
-        if daily_target < 0:
-            if gsn_db.get_current_init_bid(ad_group_id = ad_group_id, keyword_id = keyword_id) >= original_cpa:
-                print('[handle_initial_bids] good enough , lower the bid')
-                gsn_db.update_init_bid(keyword_id = keyword_id, ad_group_id = ad_group_id, bid_ratio = 0.9)
-            else:
-                print('[handle_initial_bids] good enough , keep the bid', ', original_cpa:', original_cpa)
-
-        elif spend >= 1.5 * budget :
-            print('[handle_initial_bids] stay_init_bid')
-        elif spend < 0.8 * budget:
-            print('[handle_initial_bids] adjust_init_bid up the bid)')
-            gsn_db.update_init_bid(keyword_id = keyword_id, ad_group_id = ad_group_id, bid_ratio = 1.1)
-
-
-# In[3]:
-
-
 def modify_opt_result_db(campaign_id, is_optimized):
     #get date
     opt_date = datetime.datetime.now()
@@ -77,14 +40,14 @@ def modify_opt_result_db(campaign_id, is_optimized):
         mydb.close()
 
 
-# In[4]:
+# In[3]:
 
 
 def optimize_performance_campaign():
     return
 
 
-# In[5]:
+# In[4]:
 
 
 def optimize_branding_campaign():
@@ -103,37 +66,76 @@ def optimize_branding_campaign():
         print('[optimize_branding_campaign]  original_cpa:' , original_cpa)
 
         adwords_client.SetClientCustomerId( customer_id )
-
-        target = 'clicks'
+        
+        objective = 'clicks'
         # Init datacollector Campaign
         camp = datacollector.Campaign(customer_id, campaign_id)
-        day_dict = camp.get_campaign_insights(adwords_client, date_preset=datacollector.DatePreset.yesterday)
-        print('[optimize_branding_campaign] day_dict', day_dict)
-        lifetime_dict = camp.get_campaign_insights(adwords_client, date_preset=datacollector.DatePreset.lifetime)
-        print('[optimize_branding_campaign] lifetime_dict', lifetime_dict)
-        target = int( day_dict[target] )
-        achieving_rate = target / daily_target
-        print('[optimize_branding_campaign][achieving rate]', achieving_rate, '[target]', target, '[daily_target]', daily_target)
-#         if day_dict['spend'] < day_dict['daily_budget'] * 0.8:
-#             print('[optimize_branding_campaign] spending is not enough')
-        if  0 <= achieving_rate < 1 and day_dict['spend'] < day_dict['daily_budget'] * 0.8:
-            print('[optimize_branding_campaign] achieving_rate is not OK, optimze')
-            print('[optimize_branding_campaign] spending is not enough')
+        campaign_day_insights_dict = camp.get_campaign_insights(adwords_client, date_preset=datacollector.DatePreset.yesterday)
+        print('[optimize_branding_campaign] campaign_day_insights_dict', campaign_day_insights_dict)
+        campaign_lifetime_insights_dict = camp.get_campaign_insights(adwords_client, date_preset=datacollector.DatePreset.lifetime)
+        print('[optimize_branding_campaign] campaign_lifetime_insights_dict', campaign_lifetime_insights_dict)
+        
+        campaign_day_insights_dict['original_cpa'] = original_cpa
+        campaign_day_insights_dict['daily_target'] = daily_target
+        campaign_day_insights_dict['achieving_rate'] = int( campaign_day_insights_dict[objective] ) / daily_target
+        campaign_day_insights_dict['target'] = campaign_day_insights_dict[objective]
+        print('[optimize_branding_campaign][achieving rate]', campaign_day_insights_dict['achieving_rate'], '[target]', campaign_day_insights_dict[objective], '[daily_target]', daily_target)
+        optimize_list = ['customer_id', 'campaign_id', 'daily_target', 'daily_budget', 'spend', 'cost_per_target', 'target', 'original_cpa', 'achieving_rate']
+        campaign_status_dict = dict([(key, value) for key, value in campaign_day_insights_dict.items() if key in optimize_list])
+#         print(campaign_status_dict)
+        handle_initial_bids(**campaign_status_dict)
+
+
+# In[36]:
+
+
+def handle_initial_bids(customer_id, campaign_id, spend, daily_budget, cost_per_target, target, original_cpa, daily_target, achieving_rate):
+    if IS_DEBUG:
+        print('[handle_initial_bids] IS_DEBUG == True , not adjust bid')
+        return
+
+    if daily_target < 0:
+        if gsn_db.get_current_init_bid(campaign_id=campaign_id) >= original_cpa:
+            print('[handle_initial_bids] lifetime target has reached, no optimize.')
+            gsn_db.update_init_bid(campaign_id=campaign_id, bid_ratio=0.9)
+            modify_opt_result_db(campaign_id , True)
+        else:
+            print('[handle_initial_bids] good enough , keep the bid', ', original_cpa:', original_cpa)
+            modify_opt_result_db(campaign_id , False)
+        return
+    
+    if 0 <= achieving_rate < 1:
+        if spend >= 1.5 * daily_budget:
+            print('[handle_initial_bids] achieving_rate is not OK, while spending is.')
+            print('[handle_initial_bids] We might have KPI setting issues, contact AM/OPT')
+            print('[handle_initial_bids] stay_init_bid')
+        elif spend < 0.8 * daily_budget:
+            print('[handle_initial_bids] achieving_rate is not OK, spending is not.')
+            print('[handle_initial_bids] adjust init_bid up the bid')
+            gsn_db.update_init_bid(campaign_id=campaign_id, bid_ratio=1.1)
+        else:
+            print('[handle_initial_bids] achieving_rate is not OK, spending is just fine.')
+        return
+    else:     
+        if spend < 0.8 * daily_budget:
+            print('[handle_initial_bids] achieving_rate is OK, but spending is not.')
+            print('[handle_initial_bids] increase init_bid of keywords which is low ranking and under KPI.')
+            
+            camp = datacollector.Campaign(customer_id, campaign_id)
             keyword_insights_dict_list = camp.get_keyword_insights(date_preset=datacollector.DatePreset.lifetime)
             for keyword_insights_dict in keyword_insights_dict_list:
                 if keyword_insights_dict['position'] >= 2 or keyword_insights_dict['position'] <1 and keyword_insights_dict['cost_per_target'] < original_cpa:
-                    # Update initial bids
-                    handle_initial_bids(day_dict['spend'], day_dict['daily_budget'], daily_target, original_cpa, keyword_insights_dict)
-            modify_opt_result_db(campaign_id , True)
+                    keyword_id = keyword_insights_dict['keyword_id']
+                    ad_group_id = keyword_insights_dict['adgroup_id']
+                    gsn_db.update_init_bid(keyword_id=keyword_id, ad_group_id=ad_group_id, bid_ratio=1.1)
+                    modify_opt_result_db(campaign_id , True)
         else:
+            print('[handle_initial_bids] everything is fine.')
             modify_opt_result_db(campaign_id , False)
-#         else:
-#             print('[optimize_branding_campaign] spending is enough, no optimize')
-#             modify_opt_result_db(campaign_id , False)
-        print('[optimize_branding_campaign]: next campaign====================')
+        return
 
 
-# In[6]:
+# In[ ]:
 
 
 if __name__=="__main__":
@@ -144,14 +146,8 @@ if __name__=="__main__":
     print(datetime.datetime.now() - start_time)
 
 
-# In[8]:
-
-
-#!jupyter nbconvert --to script gsn_externals.ipynb
-
-
 # In[ ]:
 
 
-
+#!jupyter nbconvert --to script gsn_externals.ipynb
 

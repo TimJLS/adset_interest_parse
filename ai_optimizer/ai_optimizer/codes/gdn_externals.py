@@ -293,7 +293,7 @@ class Make(object):
     
 
 
-# In[ ]:
+# In[5]:
 
 
 # # init param retriever Retrieve
@@ -313,7 +313,7 @@ class Make(object):
 #                                 mutant_ad_group_id_list=[mutant_ad_group_id])
 
 
-# In[5]:
+# In[6]:
 
 
 def get_sorted_adgroup(campaign_id):
@@ -540,7 +540,7 @@ def make_empty_ad_group(adwords_client, campaign_id, ad_group_id_list):
     ad_group_params = make_ad_group(adwords_client, ad_group_id_list[0])
     new_ad_group_id = ad_group_params['value'][0]['id']
     
-    ad_group_pair = {'db_type': 'dev_gdn', 'adgroup_id': new_ad_group_id, 'criterion_id': None, 'criterion_type': 'adgroup'}
+    ad_group_pair = {'db_type': 'dev_gdn', 'campaign_id': campaign_id, 'adgroup_id': new_ad_group_id, 'criterion_id': new_ad_group_id, 'criterion_type': 'adgroup'}
 
     logger.save_adgroup_behavior(BehaviorType.CREATE, **ad_group_pair)
     return new_ad_group_id
@@ -610,7 +610,7 @@ def make_adgroup_with_criterion(adwords_client, update, campaign_id, native_ad_g
     return
 
 
-# In[6]:
+# In[7]:
 
 
 def is_assessed(campaign_id):
@@ -627,7 +627,7 @@ def is_assessed(campaign_id):
     return is_assessed
 
 
-# In[7]:
+# In[8]:
 
 
 class Status(object):
@@ -711,7 +711,7 @@ class Update(object):
         return result
 
 
-# In[8]:
+# In[9]:
 
 
 def handle_initial_bids(campaign_id, spend, budget, daily_target, original_cpa):
@@ -732,7 +732,7 @@ def handle_initial_bids(campaign_id, spend, budget, daily_target, original_cpa):
         print('[handle_initial_bids] stay_init_bid')
 
 
-# In[30]:
+# In[10]:
 
 
 def make_basic_adgroup_criterion(adwords_client, native_id, mutant_id):
@@ -772,7 +772,7 @@ def make_basic_adgroup_criterion(adwords_client, native_id, mutant_id):
     result = ad_group_service.mutate(operations)
 
 
-# In[20]:
+# In[11]:
 
 
 def retrieve_ad_group_basic_criterion(adwords_client, ad_group_id):
@@ -792,7 +792,7 @@ def retrieve_ad_group_basic_criterion(adwords_client, ad_group_id):
     return biddable_criterions, negative_criterions
 
 
-# In[9]:
+# In[12]:
 
 
 def optimize_performance_campaign():
@@ -828,20 +828,20 @@ def optimize_performance_campaign():
         # Init param retriever Retrieve
         retriever = Retrieve(customer_id)
         retriever.generate_ad_group_id_list_type(campaign_id)
-        if day_dict['spend'] < 0.8 * day_dict['daily_budget']:
+        
+        if is_assessed(campaign_id):
             update = Update(customer_id)
-            if is_assessed(campaign_id):
-                # Assign criterion to native ad group
-                make_adgroup_with_criterion(adwords_client, update, campaign_id, native_ad_group_id_list=retriever.native_ad_group_id_list,)
-                modify_opt_result_db(campaign_id , True)
-            else:
-                print('[optimize_branding_campaign] campaign is not assessed. campaign_id: ', campaign_id)
-                modify_opt_result_db(campaign_id , False)
+            print('[optimize_branding_campaign]: campaign is assessed.')
+            # Assign criterion to native ad group
+            make_adgroup_with_criterion(adwords_client, update, campaign_id, native_ad_group_id_list=retriever.native_ad_group_id_list,)
+            modify_opt_result_db(campaign_id , True)
+
         else:
+            print('[optimize_branding_campaign] campaign is not assessed. campaign_id: ', campaign_id)
             modify_opt_result_db(campaign_id , False)
 
 
-# In[32]:
+# In[13]:
 
 
 def optimize_branding_campaign():
@@ -887,6 +887,7 @@ def optimize_branding_campaign():
             for id in retriever.mutant_ad_group_id_list:
                 update.ad_group(id=id, status='PAUSED')
             if is_assessed(campaign_id):
+                print('[optimize_branding_campaign]: campaign is assessed.')
                 # Make empty mutant ad group
                 mutant_ad_group_id = make_empty_ad_group(adwords_client, campaign_id, retriever.native_ad_group_id_list)
                 make_basic_adgroup_criterion(adwords_client,
@@ -908,7 +909,7 @@ def optimize_branding_campaign():
     print('[gdn_externals]: main finish!!!!!!!!====================')
 
 
-# In[ ]:
+# In[14]:
 
 
 if __name__=="__main__":
@@ -919,10 +920,10 @@ if __name__=="__main__":
     print(datetime.datetime.now() - start_time)
 
 
-# In[33]:
+# In[ ]:
 
 
-#!jupyter nbconvert --to script gdn_externals.ipynb
+get_ipython().system('jupyter nbconvert --to script gdn_externals.ipynb')
 
 
 # In[ ]:
