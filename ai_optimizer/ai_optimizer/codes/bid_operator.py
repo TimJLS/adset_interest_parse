@@ -21,6 +21,12 @@ ADAPTER = {
         "campaign_id":"campaign_id",
         "adset_progress":"adgroup_progress",
         "campaign_progress":"campaign_progress"
+    },
+    "GSN":{
+        "adset_id":"keyword_id",
+        "campaign_id":"campaign_id",
+        "adset_progress":"keyword_progress",
+        "campaign_progress":"campaign_progress"
     }
 }
 
