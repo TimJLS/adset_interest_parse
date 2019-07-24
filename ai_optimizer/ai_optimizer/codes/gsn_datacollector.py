@@ -77,17 +77,17 @@ class Campaign(datacollector.Campaign):
         'operator': 'EQUALS',
         'values': None
     }
+    date_range = { 'min': None, 'max': None }
+    selector = {
+        'fields': None,
+        'predicates': [operand]
+    }
     report = {
         'reportName': None,
         'dateRangeType': 'ALL_TIME',
         'reportType': None,
         'downloadFormat': 'CSV',
-        'selector': {
-            'fields': None,
-            'predicates': [
-                operand
-            ]
-        }
+        'selector': selector
     }
     def __init__(self, customer_id, campaign_id):
         self.customer_id = customer_id
@@ -111,11 +111,16 @@ class Campaign(datacollector.Campaign):
         self.operand['values']=[self.campaign_id]
         self.report['reportName']=performance_type+'_PERFORMANCE_REPORT'
         self.report['reportType']=performance_type+'_PERFORMANCE_REPORT'
-
-        self.report['selector']['fields']=fields
+        self.selector['fields']=fields
+#         self.report['selector']['fields']=fields
       
-        if date_preset is None:
-            date_preset=datacollector.DatePreset.lifetime
+        if date_preset is None or date_preset == datacollector.DatePreset.lifetime:
+            self.date_range['min'], self.date_range['max'] = self.ai_start_date, self.ai_stop_date
+            self.selector['dateRange'] = self.date_range
+            self.report['dateRangeType'] = 'CUSTOM_DATE'
+            self.report['selector'] = self.selector
+        else:
+            self.report['dateRangeType'] = date_preset
         with open(performance_type+'.csv', 'wb') as output_file:
             self.report_downloader.DownloadReport(
                 self.report, output=output_file, skip_report_header=True, skip_column_header=False,
@@ -191,7 +196,7 @@ class Campaign(datacollector.Campaign):
                     self.keyword_id_list.append(id)
             return self.keyword_id_list
         
-    def get_keyword_insights(self, date_preset='ALL_TIME'):
+    def get_keyword_insights(self, date_preset=None):
         self.report_metrics = [
             'ExternalCustomerId','CampaignId', 'AdGroupId', 'AdGroupStatus', 'Criteria', 'Id','AveragePosition', 'SystemServingStatus', 'FirstPageCpc',
             'CpmBid', 'CpcBid', 'BiddingStrategyType', 'AverageCost','Cost','Impressions', 'Clicks','Conversions', 'AverageCpc',
@@ -250,6 +255,11 @@ class KeywordGroup(object):
         self.client.SetClientCustomerId(self.customer_id)
         self.report_downloader = self.client.GetReportDownloader(version='v201809')
         self.ad_group_criterion_service = self.client.GetService('AdGroupCriterionService', version='v201809')
+        brief_dict = gsn_db.get_campaign_ai_brief( self.campaign_id )
+        self.ai_start_date = brief_dict['ai_start_date'].strftime("%Y%m%d")
+        self.ai_stop_date = brief_dict['ai_stop_date'].strftime("%Y%m%d")
+        self.ai_spend_cap = brief_dict['ai_spend_cap']
+        self.destination_type = brief_dict['destination_type']
     
     def get_keyword_insights(self, date_preset='ALL_TIME'):
         self.report_metrics = [
@@ -270,18 +280,26 @@ class KeywordGroup(object):
                 'values':[self.campaign_id]
             }
         ]
+        self.date_range = { 'min': None, 'max': None }
+        self.selector = {
+            'fields': self.report_metrics,
+            'predicates': [self.operand]
+        }
         self.report = {
             'reportName': 'KEYWORDS_PERFORMANCE_REPORT',
     #         'dateRangeType': 'CUSTOM_DATE',
-            'dateRangeType': date_preset,
+#             'dateRangeType': date_preset,
             'reportType': 'KEYWORDS_PERFORMANCE_REPORT',
             'downloadFormat': 'CSV',
-            'selector': {
-                'fields': self.report_metrics,
-    #             'dateRange': {'min': '20190301','max': '20190401'},
-                'predicates': self.operand
-            }
+            'selector': selector
         }
+        if not date_preset or date_preset == DatePreset.lifetime:
+            self.date_range['min'], self.date_range['max'] = self.ai_start_date, self.ai_stop_date
+            self.selector['dateRange'] = self.date_range
+            self.report['dateRangeType'] = 'CUSTOM_DATE'
+            self.report['selector'] = self.selector
+        else:
+            self.report['dateRangeType'] = date_preset   
         # Print out the report as a string
         csv =self.report_downloader.DownloadReportAsString(  
             self.report, skip_report_header=True, skip_column_header=True,   
@@ -449,7 +467,7 @@ def main():
     print(datetime.datetime.now()-start_time)
 
 
-# In[7]:
+# In[2]:
 
 
 if __name__=='__main__':
@@ -457,14 +475,8 @@ if __name__=='__main__':
 #     data_collect(customer_id=CUSTOMER_ID, campaign_id=CAMPAIGN_ID)
 
 
-# In[8]:
+# In[3]:
 
 
 #!jupyter nbconvert --to script gsn_datacollector.ipynb
-
-
-# In[ ]:
-
-
-
 

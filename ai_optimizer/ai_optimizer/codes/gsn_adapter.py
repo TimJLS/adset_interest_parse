@@ -245,7 +245,7 @@ def main():
                     
                     datacollect_keyword_group.update_bid(ad_group_id=keyword_dict['ad_group_id'], bid_micro_amount=bid_dict['bid'])                    
                     result['contents'].append(bid_dict)
-            del keyword_group
+                    del keyword_group
             del datacollect_keyword_group
         
         mydict_json = json.dumps(result, cls=MyEncoder)
