@@ -1,0 +1,265 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Nate Dashboard</title>
+        <style>
+            body {
+             
+            }
+            table, th, td {
+                border: 1px solid black;
+                text-align: right;
+            }
+            
+            
+        </style>
+    </head>
+    <body>
+        
+        <!------------ FB branding------------->
+        <!------------ FB branding------------->       
+        <h3>FB branding</h3>
+        <table>
+        <tr>
+            <td>campaign_id</td>
+            <td>目標類別</td>
+            <td style="background-color:DeepPink;">表定走期</td>
+            <td style="background-color:DeepPink;">走了幾天</td>
+            <td style="background-color:Yellow;">表定 KPI</td>
+            <td style="background-color:Yellow;">目前 CPC</td>
+            <td style="background-color:GreenYellow;">表定成果數</td>
+            <td style="background-color:GreenYellow;">目前成果數</td>
+            <td style="background-color:GreenYellow;">至今應有成果數</td>
+            <td style="background-color:Cyan;">表定總預算</td>
+            <td style="background-color:Cyan;">目前花費</td>
+            <td style="background-color:Cyan;">目前應有花費</td>
+            <td>AI 開始日</td>
+            <td>AI 結束日</td>
+            <td>活動名稱</td>
+        </tr>
+            
+            
+        {% for campaign in campaign_fb_branding_list %}      
+            <tr>
+                <td>{{campaign.campaign_id}}</td>
+                <td>{{campaign.charge_type}}</td>             
+                <td>{{campaign.ai_period}}</td>
+                <td>{{campaign.ai_running_days}}</td>
+                
+                <td>{{campaign.kpi_cpc}}</td>
+                
+                
+                {% if campaign.current_cpc >= campaign.kpi_cpc %}
+                    <td style="background-color:Tomato;">{{campaign.current_cpc}}</td>
+                {% else %}
+                    <td>{{campaign.current_cpc}}</td>
+                {% endif %}
+                
+                <td>{{campaign.destination}}</td>
+                {% if campaign.destination_speed_ratio >= 1 %}
+                    <td>{{campaign.current_target_count}}</td>
+                {% else %}
+                    <td style="background-color:Tomato;">{{campaign.current_target_count}}</td>
+                {% endif %}
+                <td>{{campaign.destination_count_until_today}}</td>
+               
+                
+                <td>{{campaign.ai_spend_cap}}</td>
+                <td>{{campaign.current_total_spend}}</td>
+                <td>{{campaign.spend_until_today}}</td>
+                
+                <td>{{campaign.ai_start_date}}</td>
+                <td>{{campaign.ai_stop_date}}</td>
+                <td style="font-size:small;">{{campaign.name}}</td>
+                
+            </tr>            
+        {% endfor %}    
+        </table> 
+        
+        
+        
+        <!------------ FB performance------------->
+        <!------------ FB performance------------->
+        <h3>FB performance</h3>
+        <table>
+        <tr>
+            <td>campaign_id</td>
+            <td>目標類別</td>
+            <td style="background-color:DeepPink;">表定走期</td>
+            <td style="background-color:DeepPink;">走了幾天</td>
+            <td style="background-color:Yellow;">表定 KPI</td>
+            <td style="background-color:Yellow;">目前 CPC</td>
+            <td style="background-color:GreenYellow;">表定成果數</td>
+            <td style="background-color:GreenYellow;">目前成果數</td>
+            <td style="background-color:GreenYellow;">至今應有成果數</td>
+            <td style="background-color:Cyan;">表定總預算</td>
+            <td style="background-color:Cyan;">目前花費</td>
+            <td style="background-color:Cyan;">目前應有花費</td>
+            <td>AI 開始日</td>
+            <td>AI 結束日</td>
+            <td>活動名稱</td>
+        </tr>
+            
+            
+        {% for campaign in campaign_fb_performance_list %}      
+            <tr>
+                <td>{{campaign.campaign_id}}</td>
+                <td>{{campaign.charge_type}}</td>             
+                <td>{{campaign.ai_period}}</td>
+                <td>{{campaign.ai_running_days}}</td>
+                
+                <td>{{campaign.kpi_cpc}}</td>
+                
+                
+                {% if campaign.current_cpc >= campaign.kpi_cpc %}
+                    <td style="background-color:Tomato;">{{campaign.current_cpc}}</td>
+                {% else %}
+                    <td>{{campaign.current_cpc}}</td>
+                {% endif %}
+                
+                <td>{{campaign.destination}}</td>
+                {% if campaign.destination_speed_ratio >= 1 %}
+                    <td>{{campaign.current_target_count}}</td>
+                {% else %}
+                    <td style="background-color:Tomato;">{{campaign.current_target_count}}</td>
+                {% endif %}
+                <td>{{campaign.destination_count_until_today}}</td>
+               
+                
+                <td>{{campaign.ai_spend_cap}}</td>
+                <td>{{campaign.current_total_spend}}</td>
+                <td>{{campaign.spend_until_today}}</td>
+                
+                <td>{{campaign.ai_start_date}}</td>
+                <td>{{campaign.ai_stop_date}}</td>
+                <td style="font-size:small;">{{campaign.name}}</td>
+                
+            </tr>            
+        {% endfor %}    
+        </table> 
+        
+        
+        <!------------ GDN ------------->
+        <!------------ GDN ------------->
+        <h3>GDN</h3>
+        <table>
+        <tr>
+            <td>campaign_id</td>
+            <td>目標類別</td>
+            <td style="background-color:DeepPink;">表定走期</td>
+            <td style="background-color:DeepPink;">走了幾天</td>
+            <td style="background-color:Yellow;">表定 KPI</td>
+            <td style="background-color:Yellow;">目前 CPC</td>
+            <td style="background-color:GreenYellow;">表定成果數</td>
+            <td style="background-color:GreenYellow;">目前成果數</td>
+            <td style="background-color:GreenYellow;">至今應有成果數</td>
+            <td style="background-color:Cyan;">表定總預算</td>
+            <td style="background-color:Cyan;">目前花費</td>
+            <td style="background-color:Cyan;">目前應有花費</td>
+            <td>AI 開始日</td>
+            <td>AI 結束日</td>
+            <td>活動名稱</td>
+        </tr>
+            
+            
+        {% for campaign in campaign_gdn_list %}      
+            <tr>
+                <td>{{campaign.campaign_id}}</td>
+                <td>{{campaign.charge_type}}</td>             
+                <td>{{campaign.ai_period}}</td>
+                <td>{{campaign.ai_running_days}}</td>
+                
+                <td>{{campaign.kpi_cpc}}</td>
+                
+                
+                {% if campaign.current_cpc >= campaign.kpi_cpc %}
+                    <td style="background-color:Tomato;">{{campaign.current_cpc}}</td>
+                {% else %}
+                    <td>{{campaign.current_cpc}}</td>
+                {% endif %}
+                
+                <td>{{campaign.destination}}</td>
+                {% if campaign.destination_speed_ratio >= 1 %}
+                    <td>{{campaign.current_target_count}}</td>
+                {% else %}
+                    <td style="background-color:Tomato;">{{campaign.current_target_count}}</td>
+                {% endif %}
+                <td>{{campaign.destination_count_until_today}}</td>
+               
+                
+                <td>{{campaign.ai_spend_cap}}</td>
+                <td>{{campaign.current_total_spend}}</td>
+                <td>{{campaign.spend_until_today}}</td>
+                
+                <td>{{campaign.ai_start_date}}</td>
+                <td>{{campaign.ai_stop_date}}</td>
+                <td style="font-size:small;">{{campaign.name}}</td>
+                
+            </tr>            
+        {% endfor %}    
+        </table> 
+        
+        
+        <!------------ GSN ------------->
+        <!------------ GSN ------------->
+        <h3>GSN</h3>
+        <table>
+        <tr>
+            <td>campaign_id</td>
+            <td>目標類別</td>
+            <td style="background-color:DeepPink;">表定走期</td>
+            <td style="background-color:DeepPink;">走了幾天</td>
+            <td style="background-color:Yellow;">表定 KPI</td>
+            <td style="background-color:Yellow;">目前 CPC</td>
+            <td style="background-color:GreenYellow;">表定成果數</td>
+            <td style="background-color:GreenYellow;">目前成果數</td>
+            <td style="background-color:GreenYellow;">至今應有成果數</td>
+            <td style="background-color:Cyan;">表定總預算</td>
+            <td style="background-color:Cyan;">目前花費</td>
+            <td style="background-color:Cyan;">目前應有花費</td>
+            <td>AI 開始日</td>
+            <td>AI 結束日</td>
+            <td>活動名稱</td>
+        </tr>
+            
+            
+        {% for campaign in campaign_gsn_list %}      
+            <tr>
+                <td>{{campaign.campaign_id}}</td>
+                <td>{{campaign.charge_type}}</td>             
+                <td>{{campaign.ai_period}}</td>
+                <td>{{campaign.ai_running_days}}</td>
+                
+                <td>{{campaign.kpi_cpc}}</td>
+                
+                
+                {% if campaign.current_cpc >= campaign.kpi_cpc %}
+                    <td style="background-color:Tomato;">{{campaign.current_cpc}}</td>
+                {% else %}
+                    <td>{{campaign.current_cpc}}</td>
+                {% endif %}
+                
+                <td>{{campaign.destination}}</td>
+                {% if campaign.destination_speed_ratio >= 1 %}
+                    <td>{{campaign.current_target_count}}</td>
+                {% else %}
+                    <td style="background-color:Tomato;">{{campaign.current_target_count}}</td>
+                {% endif %}
+                <td>{{campaign.destination_count_until_today}}</td>
+               
+                
+                <td>{{campaign.ai_spend_cap}}</td>
+                <td>{{campaign.current_total_spend}}</td>
+                <td>{{campaign.spend_until_today}}</td>
+                
+                <td>{{campaign.ai_start_date}}</td>
+                <td>{{campaign.ai_stop_date}}</td>
+                <td style="font-size:small;">{{campaign.name}}</td>
+                
+            </tr>            
+        {% endfor %}    
+        </table> 
+        
+    </body>
+</html>
