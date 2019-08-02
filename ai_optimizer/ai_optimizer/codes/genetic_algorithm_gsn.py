@@ -438,7 +438,7 @@ if __name__ == "__main__":
         customer_id = df_camp['customer_id'][df_camp.campaign_id==campaign_id].iloc[0]
         destination_type = df_camp['destination_type'][df_camp.campaign_id==campaign_id].iloc[0]
         camp = gsn_datacollector.Campaign(customer_id, campaign_id)
-        df_insights = camp.get_performance_insights(date_preset='LAST_14_DAYS', performance_type='CAMPAIGN')
+        df_insights = camp.get_performance_insights(date_preset='YESTERDAY', performance_type='CAMPAIGN')
         insights_dict = df_insights.to_dict(orient='records')[0]
         insights_dict['period'] = df_camp['period'][df_camp.campaign_id==campaign_id].iloc[0]
         insights_dict['destination'] = df_camp['destination'][df_camp.campaign_id==campaign_id].iloc[0]

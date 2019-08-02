@@ -9,18 +9,15 @@ import facebook_business.adobjects.campaign as facebook_business_campaign
 import facebook_business.adobjects.adaccount as facebook_business_adaccount
 import facebook_business.adobjects.customaudience as facebook_business_custom_audience
 
-from facebook_business.api import FacebookAdsApi
 import facebook_datacollector as collector
 import mysql_adactivity_save as mysql_saver
 
 import pandas as pd
 import datetime
 import time
-my_app_id = '958842090856883'
-my_app_secret = 'a952f55afca38572cea2994d440d674b'
-my_access_token = 'EAANoD9I4obMBALrHTgMWgRujnWcZA3ZB823phs6ynDDtQxnzIZASyRQZCHfr5soXBZA7NM9Dc4j9O8FtnlIzxiPCsYt4tmPQ6ZAT3yJLPuYQqjnWZBWX5dsOVzNhEqsHYj1jVJ3RAVVueW7RSxRDbNXKvK3W23dcAjNMjxIjQGIOgZDZD'
 
-FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
+import adgeek_permission as permission
+permission.init_facebook_api()
 
 CONVERSION_BEHAVIOR_LIST = ['Purchase', 'AddToCart', 'ViewContent']
 
@@ -316,7 +313,7 @@ def is_lookalike_audience_created(campaign_id):
         save_campaign_pixel_id(campaign_id)
         return False
     # Then check campaign lookalike in adset
-    lookalike_sql = "SELECT * FROM campaign_pixel_id WHERE campaign_id={} AND is_lookalike_in_adset='True'".format(campaign_id)
+    lookalike_sql = "SELECT * FROM campaign_pixel_id WHERE campaign_id={} AND is_created='True'".format(campaign_id)
     my_cursor.execute(lookalike_sql)
     result = my_cursor.fetchall()
     my_db.commit()
@@ -397,31 +394,31 @@ def process_campaign_custom_audience(campaign_id):
         create_campaign_custom_audience_by_pixel(campaign_id)
 
 
+# In[ ]:
+
+
+def save_pixel_id_for_one_campaign(campaign_id):
+    save_campaign_pixel_id(campaign_id)
+    process_campaign_custom_audience(campaign_id)
+
+
 # In[15]:
 
 
-def save_pixel_id_for_all_campaign(campaign_id=None):
-    if campaign_id:
-        save_campaign_pixel_id(campaign_id)
-        create_campaign_custom_audience_by_pixel(campaign_id)
-    else:
-        running_campaign_id_list = mysql_saver.get_campaign_target().campaign_id.tolist()
-        conversion_campaign_id_list = mysql_saver.get_running_conversion_campaign().campaign_id.tolist()
-        print('[save_pixel_id_for_all_campaign] current running campaign:', len(running_campaign_id_list), running_campaign_id_list )
-        for campaign_id in running_campaign_id_list:
-            print('[save_pixel_id_for_all_campaign] campaign_id:', campaign_id)
-            save_campaign_pixel_id(campaign_id)
-        print('[save_pixel_id_for_all_campaign] current conversion campaign:', len(conversion_campaign_id_list), conversion_campaign_id_list )
-        for campaign_id in conversion_campaign_id_list:
-            print('[save_pixel_id_for_all_campaign] conversion campaign_id:', campaign_id)
-            process_campaign_custom_audience(campaign_id)
+def save_pixel_id_for_all_campaign():
+    performance_campaign_id_list = mysql_saver.get_running_performance_campaign().campaign_id.tolist()
+    
+    for campaign_id in performance_campaign_id_list:
+        print('[save_pixel_id_for_all_campaign] conversion campaign_id:', campaign_id)
+        save_pixel_id_for_one_campaign(campaign_id)
+    
 
 
 # In[16]:
 
 
 def update_all_custom_audience():
-    conversion_campaign_id_list = mysql_saver.get_running_conversion_campaign().campaign_id.tolist()
+    conversion_campaign_id_list = mysql_saver.get_running_performance_campaign().campaign_id.tolist()
     print('[update_all_custom_audience]: conversion_campaign_id_list')
     print(conversion_campaign_id_list)
     for campaign_id in conversion_campaign_id_list:
@@ -445,7 +442,7 @@ if __name__ == "__main__":
     main()
 
 
-# In[19]:
+# In[52]:
 
 
 #!jupyter nbconvert --to script facebook_lookalike_audience.ipynb

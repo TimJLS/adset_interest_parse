@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[14]:
+# In[1]:
 
 
 import facebook_datacollector as datacollector
@@ -15,16 +15,16 @@ import datetime
 DATABASE="dev_facebook_test"
 HOST = "aws-prod-ai-private.adgeek.cc"
 DATE = datetime.datetime.now().date()
-BRANDING_LIST = ['LINK_CLICKS', 'ALL_CLICKS', 'VIDEO_VIEWS', 'REACH']
+BRANDING_LIST = ['LINK_CLICKS', 'ALL_CLICKS', 'VIDEO_VIEWS', 'REACH', 'IMPRESSIONS']
 
 
-# In[15]:
+# In[2]:
 
 
 import mysql_adactivity_save as ad_save
 
 
-# In[18]:
+# In[3]:
 
 
 
@@ -64,14 +64,14 @@ def main_retrieve():
     mydb.close()
 
 
-# In[19]:
+# In[4]:
 
 
 if __name__ == '__main__':
     main_retrieve()
 
 
-# In[20]:
+# In[5]:
 
 
 #!jupyter nbconvert --to script i_love_retrieve_predict_data.ipynb

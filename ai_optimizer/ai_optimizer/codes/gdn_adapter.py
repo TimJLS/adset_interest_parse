@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import gdn_db
 import gdn_datacollector
+import gdn_controller as controller
 import gdn_gsn_ai_behavior_log as logger
 from gdn_gsn_ai_behavior_log import BehaviorType
 import bid_operator
@@ -221,7 +222,7 @@ def main():
         print(campaign_id)
         campaign_id = campaign_id.astype(dtype=object)
         result={ 'media': 'GDN', 'campaign_id': campaign_id, 'contents':[] }
-        release_version_result = {  }
+        release_version_result = {}
 #         try:
         camp = CampaignAdapter( campaign_id )
         camp.retrieve_campaign_attribute()

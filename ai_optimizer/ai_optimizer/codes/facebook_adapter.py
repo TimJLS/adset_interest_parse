@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[5]:
+# In[1]:
 
 
 # %load facebook_adapter.py
@@ -267,7 +267,7 @@ def main(campaign_id=None):
     return
 
 
-# In[7]:
+# In[2]:
 
 
 if __name__=='__main__':
@@ -277,7 +277,7 @@ if __name__=='__main__':
 #     main(23842953829930431)
 
 
-# In[8]:
+# In[ ]:
 
 
 #!jupyter nbconvert --to script facebook_adapter.ipynb

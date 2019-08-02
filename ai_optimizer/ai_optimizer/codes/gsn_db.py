@@ -278,7 +278,7 @@ def get_campaign_ai_brief( campaign_id ):
     return row
 
 
-# In[1]:
+# In[3]:
 
 
 #!jupyter nbconvert --to script gsn_db.ipynb

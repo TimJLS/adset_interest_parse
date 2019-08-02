@@ -99,7 +99,7 @@ def get_performance_campaign_is_running(campaign_id=None):
     mydb = connectDB(DATABASE)
     request_time = datetime.datetime.now()
     if campaign_id is None:
-        df = pd.read_sql( "SELECT * FROM campaign_target" , con=mydb )
+        df = pd.read_sql( "SELECT * FROM campaign_target WHERE ai_status" , con=mydb )
         df_performance_campaign_is_running = df[ (df['ai_stop_date']>=request_time.date())&(df['destination_type']=='CONVERSIONS') ]
     else:
         df_performance_campaign_is_running = pd.read_sql( 
@@ -113,7 +113,7 @@ def get_campaign_target(campaign_id=None):
     if campaign_id:
         df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
     else:
-        df = pd.read_sql( "SELECT * FROM campaign_target" , con=mydb )
+        df = pd.read_sql( "SELECT * FROM campaign_target WHERE ai_status='active'" , con=mydb )
         
     df_is_running = df[ df['ai_stop_date'] >= request_time.date()]
     mydb.close()
@@ -132,7 +132,7 @@ def get_campaigns_not_optimized():
 def get_campaign_ai_brief( campaign_id ):
     mydb = connectDB(DATABASE)
     mycursor = mydb.cursor()
-    sql =  "SELECT ai_spend_cap, ai_start_date, ai_stop_date, destination_type FROM campaign_target WHERE campaign_id={}".format(campaign_id)
+    sql =  "SELECT ai_spend_cap, ai_start_date, ai_stop_date, period, destination_type FROM campaign_target WHERE campaign_id={}".format(campaign_id)
 
     mycursor.execute(sql)
     field_name = [field[0] for field in mycursor.description]
@@ -256,7 +256,7 @@ def get_current_init_bid(campaign_id):
     
 
 
-# In[4]:
+# In[5]:
 
 
 #!jupyter nbconvert --to script gdn_db.ipynb

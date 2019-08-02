@@ -140,6 +140,7 @@ class Campaign(object):
         self.ai_stop_date = brief_dict['ai_stop_date'].strftime("%Y%m%d")
         self.ai_spend_cap = brief_dict['ai_spend_cap']
         self.destination_type = brief_dict['destination_type']
+        self.ai_period = brief_dict['period']
     
     def get_adgroup_id_list(self):
         ad_group_service = self.client.GetService('AdGroupService', version='v201809')
@@ -258,10 +259,7 @@ class Campaign(object):
             'downloadFormat': 'CSV',
             'reportName': performance_type+'_PERFORMANCE_REPORT',
             'reportType': performance_type+'_PERFORMANCE_REPORT',
-            'selector': {
-                'fields': fields,
-                'predicates': [operand]
-            }
+            'selector': selector
         }
         if not date_preset or date_preset == DatePreset.lifetime:
             date_range['min'], date_range['max'] = self.ai_start_date, self.ai_stop_date
@@ -353,7 +351,6 @@ class AdGroup(Campaign):
         }
         report = {
             'reportName': 'ADGROUP_PERFORMANCE_REPORT',
-    #         'dateRangeType': 'CUSTOM_DATE',
             'dateRangeType': date_preset,
             'reportType': 'ADGROUP_PERFORMANCE_REPORT',
             'downloadFormat': 'CSV',
@@ -508,7 +505,7 @@ if __name__=='__main__':
 #     df_campaign = data_collect(camp.customer_id, camp.campaign_id, 10000, camp.destination_type)
 
 
-# In[3]:
+# In[5]:
 
 
 #!jupyter nbconvert --to script gdn_datacollector.ipynb

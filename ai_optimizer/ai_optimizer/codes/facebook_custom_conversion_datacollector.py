@@ -5,7 +5,7 @@
 
 
 from pathlib import Path
-from facebook_business.api import FacebookAdsApi
+
 import facebook_business.adobjects.adaccount as adaccount
 import facebook_business.adobjects.adset as adset
 import facebook_business.adobjects.ad as ad
@@ -16,11 +16,10 @@ from facebook_business.adobjects.insightsresult import InsightsResult
 from facebook_business.adobjects.adsinsights import AdsInsights
 from facebook_datacollector import Field
 from facebook_datacollector import DatePreset
-my_app_id = '958842090856883'
-my_app_secret = 'a952f55afca38572cea2994d440d674b'
-my_access_token = 'EAANoD9I4obMBALrHTgMWgRujnWcZA3ZB823phs6ynDDtQxnzIZASyRQZCHfr5soXBZA7NM9Dc4j9O8FtnlIzxiPCsYt4tmPQ6ZAT3yJLPuYQqjnWZBWX5dsOVzNhEqsHYj1jVJ3RAVVueW7RSxRDbNXKvK3W23dcAjNMjxIjQGIOgZDZD'
+import mysql_adactivity_save as mysql_saver
 
-FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
+import adgeek_permission as permission
+permission.init_facebook_api()
 
 import json
 import datetime
@@ -38,7 +37,6 @@ CONVERSION_METRICS = {
     'link_click': 'link_click'
 }
 CONVERSION_KEYS = [ "purchase", "add_to_cart", "view_content" ]
-CONVERSION_CAMPAIGN_LIST = ['CONVERSIONS', 'ADD_TO_CART']
 CAMPAIGN_OBJECTIVE = {
     'LINK_CLICKS': 'link_click',
     'POST_ENGAGEMENT': 'post_engagement', 
@@ -146,6 +144,7 @@ def update_campaign_target(df_camp):
     return
 
 def check_conv_metrics(campaign_id, campaign_conv_metrics):
+    print('[check_conv_metrics] campaign_conv_metrics', campaign_conv_metrics)
     mydb = connectDB(DATABASE)
     df = pd.read_sql( "SELECT * FROM campaign_conversion_metrics WHERE campaign_id={}".format(campaign_id), con=mydb )
     df_camp = pd.DataFrame(campaign_conv_metrics, index=[0])
@@ -170,19 +169,6 @@ def check_conv_metrics(campaign_id, campaign_conv_metrics):
         mycursor.close()
         mydb.close()
         return True
-
-def get_running_custom_conversion_campaign(campaign_id=None):
-    mydb = connectDB(DATABASE)
-    request_time = datetime.datetime.now().date()
-    if campaign_id is None:
-        df = pd.read_sql( "SELECT * FROM campaign_target WHERE ai_status='active' AND custom_conversion_id IS NOT NULL", con=mydb )
-        df = df[ (df['target_type'].isin(CONVERSION_CAMPAIGN_LIST)) & (df.ai_stop_date >= request_time) ]
-        mydb.close()
-        return df
-    else:
-        df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}' AND ai_status='active'".format(campaign_id), con=mydb )
-        mydb.close()
-        return df
 
 
 # In[4]:
@@ -228,10 +214,12 @@ class Campaigns(object):
                 params=params,
                 fields=list( GENERAL_INSIGHTS.values() )+list( TARGET_INSIGHTS.values() )
             )
+
         except:
             insights = campaigns.get_insights(
                 fields=list( GENERAL_INSIGHTS.values() )+list( TARGET_INSIGHTS.values() )
-            )
+            )         
+            
         if len(insights) > 0:
             current_campaign = insights[0]
             if current_campaign.get(Field.impressions) and current_campaign.get(Field.spend):
@@ -247,10 +235,10 @@ class Campaigns(object):
                     self.optimization_goal: 0,
                     })
                 self.temp_campaign_insights.update( { self.optimization_goal: 0 } )
-                
-                for act in current_campaign.get( Field.actions ):
-                    if 'offsite_conversion' in act["action_type"] or act["action_type"] in CONVERSION_METRICS:
-                        self.temp_campaign_insights.update({act["action_type"]: int(act["value"])})
+                if current_campaign.get( Field.actions ):
+                    for act in current_campaign.get( Field.actions ):
+                        if 'offsite_conversion' in act["action_type"] or act["action_type"] in CONVERSION_METRICS:
+                            self.temp_campaign_insights.update({act["action_type"]: int(act["value"])})
                 for key, val in self.temp_campaign_insights.copy().items():
                     if val < self.temp_campaign_insights[self.optimization_goal]:
                         self.temp_campaign_insights.pop(key)
@@ -405,7 +393,7 @@ def data_collect( campaign_id, total_clicks ):
     camp = Campaigns( campaign_id )
     life_time_campaign_status = camp.retrieve_all( date_preset=DatePreset.lifetime )
     period_left = (camp.ai_stop_date-datetime.datetime.now().date()).days + 1
-    
+    print('total_clicks', total_clicks)
     target_left = int(total_clicks)
     target_pair = {
         "purchase": 0,
@@ -456,16 +444,17 @@ def data_collect( campaign_id, total_clicks ):
 # In[7]:
 
 
-def main(campaign_id=None, destination=None):
+def main():
     start_time = datetime.datetime.now()
-    if campaign_id:
+    
+    df_camp = mysql_saver.get_running_custom_conversion_campaign()
+#     print(df_camp)
+
+    for campaign_id in df_camp.campaign_id.unique().tolist():
+        print('[main] campaign_id', campaign_id)
+        destination = df_camp['destination'][df_camp.campaign_id==campaign_id].iloc[0]
         data_collect( campaign_id, destination )#存資料
-    else:
-        df_camp = get_running_custom_conversion_campaign()
-        for campaign_id in df_camp.campaign_id.unique().tolist():
-            
-            destination = df_camp['destination'][df_camp.campaign_id==campaign_id].iloc[0]
-            data_collect( campaign_id, destination )#存資料
+        
     print(datetime.datetime.now()-start_time)
     import gc
     gc.collect()
@@ -475,11 +464,16 @@ def main(campaign_id=None, destination=None):
 
 
 if __name__ == "__main__":
-    FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
     main()
 
 
-# In[10]:
+# In[ ]:
+
+
+
+
+
+# In[9]:
 
 
 #!jupyter nbconvert --to script facebook_custom_conversion_datacollector.ipynb

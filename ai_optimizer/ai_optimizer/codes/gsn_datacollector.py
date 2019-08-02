@@ -419,7 +419,7 @@ class KeywordGroup(object):
 def data_collect(customer_id, campaign_id):
     camp = Campaign(customer_id, campaign_id)
     ###
-    campaign_lifetime_insights = camp.get_performance_insights( date_preset=datacollector.DatePreset.today, performance_type='CAMPAIGN' )
+    campaign_lifetime_insights = camp.get_performance_insights( date_preset=datacollector.DatePreset.lifetime, performance_type='CAMPAIGN' )
 #     campaign_lifetime_insights = camp.get_campaign_insights( client=None, date_preset=datacollector.DatePreset.today )
     ###
     addition_column_list = [ 'period', 'period_left', 'target', 'target_left', 'daily_target', 'destination', 'destination_type' ]
@@ -479,4 +479,10 @@ if __name__=='__main__':
 
 
 #!jupyter nbconvert --to script gsn_datacollector.ipynb
+
+
+# In[ ]:
+
+
+
 

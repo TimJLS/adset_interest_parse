@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[41]:
+# In[1]:
 
 
 # ref: https://developers.facebook.com/tools/explorer?method=GET&path=act_516689492098932%2Ftargetingsuggestions&version=v3.3&classic=0
@@ -103,6 +103,48 @@ def main():
     
 if __name__ == "__main__":
     main()
+
+
+# In[2]:
+
+
+# #nate test
+# from facebook_business.adobjects.targetingsearch import TargetingSearch
+# params = {
+#     'type': 'adTargetingCategory',
+#     'class': 'demographics',
+#      'limit':1000    
+# }
+
+# resp = TargetingSearch.search(params=params)
+# # print(resp)
+
+# target_name = []
+# for targeting in resp:
+#     print(targeting.get('name'))
+    
+    
+# # print(len(target_name))
+# # target_name
+
+
+# In[3]:
+
+
+# params = {
+
+#     'type': 'adgeolocation',
+#     'location_types': ['city'],
+#      'limit':1000
+# }
+
+# resp = TargetingSearch.search(params=params)
+# # print(resp)
+
+# target_name = []
+# for targeting in resp:
+#     print(targeting.get('name'))
+    
 
 
 # In[ ]:

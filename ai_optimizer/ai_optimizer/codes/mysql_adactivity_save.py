@@ -200,47 +200,36 @@ def get_campaigns_not_optimized():
         
     return df_not_optimized
 
-
-def get_campaign(campaign_id=None):
-    mydb = connectDB(DATABASE)
-    request_time = datetime.datetime.now()
-    if campaign_id is None:
-        df = pd.read_sql( "SELECT * FROM campaign_target WHERE ai_status='active'", con=mydb )
-        mydb.close()
-        return df
-    else:
-        df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
-        df_camp = pd.DataFrame(columns=df.columns)
-        stop_time = df['stop_time'][df.campaign_id==campaign_id].iloc[0]
-        if stop_time.date() >= request_time.date():
-            df_camp= pd.concat( [ df_camp, df[df.campaign_id==campaign_id] ], axis=0 )
-        mydb.close()
-        return df_camp
     
-def get_running_branding_campaign(campaign_id=None):
+def get_running_branding_campaign():
     mydb = connectDB(DATABASE)
     request_time = datetime.datetime.now()
-    if campaign_id is None:
-        df = pd.read_sql( "SELECT * FROM campaign_target WHERE ai_status='active'", con=mydb )
-        df = df[ (df['target_type'].isin(BRANDING_CAMPAIGN_LIST)) & (df.ai_stop_date >= request_time.date()) ]
-        mydb.close()
-        return df
-    else:
-        df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}' AND ai_status='active'".format(campaign_id), con=mydb )
-        mydb.close()
-        return df
     
-def get_running_conversion_campaign(campaign_id=None):
-    mydb = connectDB(DATABASE)
-    request_time = datetime.datetime.now()
-    if campaign_id is None:
-        df = pd.read_sql( "SELECT * FROM campaign_target WHERE ai_status='active' AND charge_type='CONVERSIONS'", con=mydb )
-        df = df[ (df['target_type'].isin(PERFORMANCE_CAMPAIGN_LIST)) & (df.ai_stop_date >= request_time.date()) ]
-    else:
-        df = pd.read_sql(
-            "SELECT * FROM campaign_target WHERE campaign_id='{}' AND ai_status='active' AND charge_type='CONVERSIONS'".format(campaign_id), con=mydb )
+    df = pd.read_sql( "SELECT * FROM campaign_target WHERE ai_status='active'", con=mydb )
+    df = df[ (df['target_type'].isin(BRANDING_CAMPAIGN_LIST)) & (df.ai_stop_date >= request_time.date())  & (df.ai_start_date <= request_time.date())]
     mydb.close()
     return df
+
+def get_running_performance_campaign():
+    mydb = connectDB(DATABASE)
+    request_time = datetime.datetime.now()
+
+    df = pd.read_sql( "SELECT * FROM campaign_target WHERE ai_status='active'", con=mydb )
+    df = df[ (df['target_type'].isin(PERFORMANCE_CAMPAIGN_LIST)) & (df.ai_stop_date >= request_time.date())  & (df.ai_start_date <= request_time.date())]
+    mydb.close()
+    return df
+    
+
+def get_running_custom_conversion_campaign():
+    mydb = connectDB(DATABASE)
+    request_time = datetime.datetime.now()
+
+    df = pd.read_sql( "SELECT * FROM campaign_target WHERE ai_status='active' AND custom_conversion_id IS NOT NULL", con=mydb )
+    df = df[ (df['target_type'].isin(PERFORMANCE_CAMPAIGN_LIST)) & (df.ai_stop_date >= request_time.date()) ]
+
+    mydb.close()
+    return df
+    
     
 def update_campaign_target(df):
     mydb = connectDB(DATABASE)

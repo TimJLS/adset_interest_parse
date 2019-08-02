@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[12]:
+# In[1]:
 
 
 from pathlib import Path
@@ -342,7 +342,10 @@ class Campaigns(object):
         self.get_campaign_insights( date_preset )
         self.campaign_features[ Field.campaign_id ] = self.campaign_features.pop('id')
         self.campaign_features[ Field.target_type ] = self.campaign_features.pop('objective')
-        self.campaign_features[ Field.start_time ] = datetime.datetime.strptime( self.campaign_features[Field.start_time],'%Y-%m-%dT%H:%M:%S+%f' )
+        print('self.campaign_features[Field.start_time]', self.campaign_features[Field.start_time])
+        start_time_str = str(self.campaign_features[Field.start_time])[:-5]
+#         print('start_time_str', start_time_str)
+        self.campaign_features[ Field.start_time ] = datetime.datetime.strptime( start_time_str,'%Y-%m-%dT%H:%M:%S' )
 #         try:
 #             self.campaign_features[ Field.stop_time ] = datetime.datetime.strptime( self.campaign_features[Field.stop_time],'%Y-%m-%dT%H:%M:%S+%f' )
 #             self.campaign_features[Field.spend_cap]
@@ -602,13 +605,21 @@ def main():
     FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
     df_camp = mysql_adactivity_save.get_campaign_target()
     print(df_camp.campaign_id.tolist())
+#     print(df_camp)
+
     for campaign_id in df_camp.campaign_id.tolist():
+#         if campaign_id != 23843457813880014:
+#             continue
+            
         destination = df_camp[df_camp.campaign_id==campaign_id].destination.iloc[0]
         charge_type = df_camp[df_camp.campaign_id==campaign_id].charge_type.iloc[0]
         ai_start_date = df_camp[df_camp.campaign_id==campaign_id].ai_start_date.iloc[0]
         ai_stop_date = df_camp[df_camp.campaign_id==campaign_id].ai_stop_date.iloc[0]
-        print(campaign_id, charge_type)
+        custom_conversion_id = df_camp[df_camp.campaign_id==campaign_id].custom_conversion_id.iloc[0]
+        print(campaign_id, charge_type, custom_conversion_id)
+
         data_collect( int(campaign_id), destination, charge_type, ai_start_date, ai_stop_date )
+
     print(datetime.datetime.now()-start_time)
 
 
@@ -617,14 +628,17 @@ def main():
 
 if __name__ == "__main__":
     main()
-#     data_collect( int(23843460479780395), 302850, 'IMPRESSIONS',
-#                  datetime.datetime.strptime("2019-06-25", "%Y-%m-%d").date(),
-#                  datetime.datetime.strptime("2019-07-31", "%Y-%m-%d").date() )
     import gc
     gc.collect()
 
 
-# In[20]:
+# In[ ]:
+
+
+
+
+
+# In[3]:
 
 
 #!jupyter nbconvert --to script facebook_datacollector.ipynb

@@ -19,6 +19,7 @@ adwords_client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
 DEVICE_BALANCE_PROPORTION = 0.5
 TIME_RANGE = 3
 MINIMUM_SPEND = 10
+DAY_HOUR = 24
 DEVICE_CRITERION = {
     'Desktop': 30000,
     'HighEndMobile': 30001,
@@ -49,7 +50,7 @@ def assign_bid_modifier(adwords_client, ad_group_id, **bid_modifier_dict,):
         
         ad_group_bid_modifier_service = adwords_client.GetService( 'AdGroupBidModifierService', version='v201809')
         resp = ad_group_bid_modifier_service.mutate(operations)
-        print('[resp]: ', resp)
+#         print('[resp]: ', resp)
     return resp
 
 def retrieve_bid_modifier(client, ad_group_id):
@@ -83,7 +84,7 @@ def bid_modifier_adjust(ad_group_id, device_target, direction):
         if bid_modifier == -1 or bid_modifier is None:
             bid_modifier = 1
         bid_modifier_dict.update({platform: bid_modifier})
-        
+    
     # Adjust bid modifier
     for device in bid_modifier_dict.keys():
         if device == device_target:
@@ -95,15 +96,34 @@ def bid_modifier_adjust(ad_group_id, device_target, direction):
                     bid_modifier_dict[device] -= 0.1 
        
     # Update back
-    print('[ad_group_id]: ', ad_group_id)
-    print('[bid_modifier_dict]: ', bid_modifier_dict)
+#     print('[ad_group_id]: ', ad_group_id)
+#     print('[bid_modifier_dict]: ', bid_modifier_dict)
     resp = assign_bid_modifier(adwords_client, ad_group_id, **bid_modifier_dict)
     return resp
 
 
 # In[15]:
 
+def get_campaign_budget(adwords_client, campaign_id):
+    adword_service = adwords_client.GetService('CampaignService', version='v201809')
+    selector = [{
+            'fields': 'Amount',
+            'predicates': [{
+                        'field': 'CampaignId',
+                        'operator': 'EQUALS',
+                        'values': campaign_id
+                    }]
+        }]
 
+    ad_params = adword_service.get(selector)
+    if 'entries' in ad_params:
+#         print('ad_params', ad_params)
+        for ad_dic in ad_params['entries']:
+            if 'budget' in ad_dic and 'amount' in ad_dic['budget'] and 'microAmount' in ad_dic['budget']['amount']:
+                microAmount = ad_dic['budget']['amount']['microAmount']
+                amount = microAmount/ 1000000
+                return amount
+            
 def main():
     df_performance_campaign = gdn_db.get_performance_campaign_is_running()
     for campaign_id in df_performance_campaign['campaign_id'].tolist():
@@ -113,6 +133,16 @@ def main():
         adwords_client.SetClientCustomerId(customer_id)
         camp = datacollector.Campaign(customer_id=customer_id, campaign_id=campaign_id, destination_type='CONVERSIONS')
         ad_group_id_list = camp.get_adgroup_id_list()
+        
+        daily_budget = get_campaign_budget(adwords_client, campaign_id)
+        if not daily_budget:
+            print('camp.ai_spend_cap:', camp.ai_spend_cap, 'ai_period:', camp.ai_period)
+            daily_budget =  camp.ai_spend_cap / int(camp.ai_period)
+            
+        daily_budget_per_group = daily_budget / len(ad_group_id_list)
+        print('[main] ad_group_id_list count:', len(ad_group_id_list))
+        print('[main] daily_budget_per_group:', daily_budget_per_group)
+        
         for ad_group_id in ad_group_id_list:
             print('[ad_group_id]: ', ad_group_id)
             ad_group = datacollector.AdGroup(
@@ -122,36 +152,63 @@ def main():
             df_hourly_insights = pd.DataFrame(hourly_insights).sort_values(by=['hour_of_day']).reset_index(drop=True)  
             # Check last time interval spend is normal or not
             current_hour = datetime.datetime.now().hour
-            last_interval_spend = df_hourly_insights[
-                df_hourly_insights.hour_of_day.between(current_hour-TIME_RANGE, current_hour, inclusive=True)]['spend'].sum()
+            last_interval_spend = df_hourly_insights[ df_hourly_insights.hour_of_day.between(current_hour-TIME_RANGE, current_hour, inclusive=True)]['spend'].sum()
+            adgroup_today_spend = df_hourly_insights[ df_hourly_insights.hour_of_day.between(0, current_hour, inclusive=True)]['spend'].sum()
+            adgroup_now_should_spend = daily_budget_per_group * (current_hour / DAY_HOUR)
+            
+            #handle money spend spend too slow 
+            print('[main] current_hour:', current_hour, ' last_interval_spend:', last_interval_spend)
+            print('[main] adgroup_today_spend:',adgroup_today_spend, ' adgroup_now_should_spend:' , adgroup_now_should_spend)
+            if adgroup_today_spend < adgroup_now_should_spend * 0.8:
+                print('spend too slow , up device price')
+                bid_modifier_adjust(ad_group_id, 'Desktop', 'up')
+                bid_modifier_adjust(ad_group_id, 'HighEndMobile', 'up')
+                bid_modifier_adjust(ad_group_id, 'Tablet', 'up')
+            elif  adgroup_today_spend > adgroup_now_should_spend * 1.05:
+                print('spend too quick , down device price')
+                bid_modifier_adjust(ad_group_id, 'Desktop', 'down')
+                bid_modifier_adjust(ad_group_id, 'HighEndMobile', 'down')
+                bid_modifier_adjust(ad_group_id, 'Tablet', 'down')
+                
+            
             if last_interval_spend <= MINIMUM_SPEND:
                 print('last time interval spend too low, no adjustment')
                 return
             # Retrieve device seperated report
             device_insights = ad_group.get_adgroup_insights(adwords_client, date_preset='TODAY', by_device=True)
             df_device_insights = pd.DataFrame(device_insights)
+        
             df_mobile = df_device_insights[['device', 'spend']].sort_values(by=['spend'], ascending=False)[df_device_insights['device'].str.contains("Mobile")].reset_index(drop=True)
             df_desktop = df_device_insights[['device', 'spend']].sort_values(by=['spend'], ascending=False)[df_device_insights['device'].str.contains("Computers")].reset_index(drop=True)
-
+            df_tablets = df_device_insights[['device', 'spend']].sort_values(by=['spend'], ascending=False)[df_device_insights['device'].str.contains("Tablets")].reset_index(drop=True)
+            
             # Check whether to adjust bid modifier
             all_device_spend = df_device_insights['spend'].sum()
             with np.errstate(divide='ignore', invalid='ignore'):
                 desktop_spend_ratio = np.true_divide(df_desktop['spend'].iloc[0], all_device_spend)
                 mobile_spend_ratio = np.true_divide(df_mobile['spend'].iloc[0], all_device_spend)
+                tablets_spend_ratio = np.true_divide(df_tablets['spend'].iloc[0], all_device_spend)
+                
                 desktop_spend_ratio = np.nan_to_num(desktop_spend_ratio)
                 mobile_spend_ratio = np.nan_to_num(mobile_spend_ratio)
+                tablets_spend_ratio = np.nan_to_num(tablets_spend_ratio)
             
-            print('desktop_spend_ratio: ', desktop_spend_ratio,)
-            print('mobile_spend_ratio: ', mobile_spend_ratio,)
+            print('desktop_spend_ratio:', desktop_spend_ratio,' mobile_spend_ratio:', mobile_spend_ratio,' tablets_spend_ratio: ', tablets_spend_ratio)
             
-            if desktop_spend_ratio < mobile_spend_ratio:
+            
+            if desktop_spend_ratio < (tablets_spend_ratio + mobile_spend_ratio):
                 print('desktop spend ratio low, direction up')
                 bid_modifier_adjust(ad_group_id, 'Desktop', 'up')
                 bid_modifier_adjust(ad_group_id, 'HighEndMobile', 'down')
-            elif desktop_spend_ratio > mobile_spend_ratio:
+                bid_modifier_adjust(ad_group_id, 'Tablet', 'down')
+                
+            elif desktop_spend_ratio > (tablets_spend_ratio + mobile_spend_ratio):
                 print('desktop spend ratio high, direction down')
                 bid_modifier_adjust(ad_group_id, 'Desktop', 'down')
                 bid_modifier_adjust(ad_group_id, 'HighEndMobile', 'up')
+                bid_modifier_adjust(ad_group_id, 'Tablet', 'up')
+
+                
 
 
 # In[2]:

@@ -29,42 +29,41 @@ class BehaviorType:
     OPEN = 'open'
 
 
-# In[32]:
+# In[3]:
 
 
-def get_adgroup_name_bidding(db_type, campaign_id, adgroup_id, criterion_id, criterion_type):
+def get_adgroup_name_bidding(db_type, adgroup_id, criterion_id, criterion_type):
     ADGROUP_SERVICE_FIELDS = ['AdGroupId', 'Name', 'CpcBid', 'CampaignId']
     ADGROUP_CRITERION_SERVICE_FIELDS = ['AdGroupId', 'CpcBid', 'CriteriaType', 'UserInterestId', 'UserInterestName', 'UserListId', 'LabelIds']
     if criterion_type == 'audience':
-#         table = 'audience_insights'
-#         criterion = 'criterion_id'
-#         adgroup = 'adgroup_id'
+        table = 'audience_insights'
+        criterion = 'criterion_id'
+        adgroup = 'adgroup_id'
         field_list = ADGROUP_CRITERION_SERVICE_FIELDS
         field = 'Id'
         service = 'AdGroupCriterionService'
-#         sql = "SELECT DISTINCT customer_id FROM {} WHERE {}={} AND {}={}".format(table, adgroup, adgroup_id, criterion, criterion_id)
+        sql = "SELECT DISTINCT customer_id FROM {} WHERE {}={} AND {}={}".format(table, adgroup, adgroup_id, criterion, criterion_id)
     elif criterion_type == 'keyword':
-#         table = 'keywords_insights'
-#         criterion = 'keyword_id'
-#         adgroup = 'adgroup_id'
+        table = 'keywords_insights'
+        criterion = 'keyword_id'
+        adgroup = 'adgroup_id'
         field_list = ADGROUP_CRITERION_SERVICE_FIELDS
         field = 'Id'
         service = 'AdGroupCriterionService'
-#         sql = "SELECT DISTINCT customer_id FROM {} WHERE {}={} AND {}={}".format(table, adgroup, adgroup_id, criterion, criterion_id)
+        sql = "SELECT DISTINCT customer_id FROM {} WHERE {}={} AND {}={}".format(table, adgroup, adgroup_id, criterion, criterion_id)
     elif criterion_type == 'adgroup':
-#         table = 'campaign_target'
-#         campaign = 'campaign_id'
+        table = 'adgroup_insights'
+        adgroup = 'adgroup_id'
+        criterion_id = adgroup_id
         field_list = ADGROUP_SERVICE_FIELDS
         field = 'AdGroupId'
         service = 'AdGroupService'
-#         sql = "SELECT DISTINCT customer_id FROM {} WHERE {}={}".format(table, campaign, campaign_id)
+        sql = "SELECT DISTINCT customer_id FROM {} WHERE {}={}".format(table, adgroup, adgroup_id)
     engine = create_engine( 'mysql://{}:{}@{}/{}'.format(gdn_saver.USER, gdn_saver.PASSWORD, gdn_saver.HOST, db_type) )
-    sql = "SELECT DISTINCT customer_id FROM campaign_target WHERE campaign_id={}".format(campaign_id)
     with engine.connect() as conn, conn.begin():
         df = pd.read_sql(sql, con=conn)
         engine.dispose()
         customer_id = df.customer_id.iloc[0]
-        print(customer_id)
     adwords_client.SetClientCustomerId(customer_id)
 
     selector= [{
@@ -90,33 +89,34 @@ def get_adgroup_name_bidding(db_type, campaign_id, adgroup_id, criterion_id, cri
     
     elif criterion_type == 'adgroup':
         criterion = None
-        bid_amount = [ entry['biddingStrategyConfiguration']['bids'][0]['bid']['microAmount'] for i, entry in enumerate(entries) ][0]
+        bid_amount = [ entry['biddingStrategyConfiguration']['bids'][0]['bid']['microAmount'] for i, entry in enumerate(entries) ]
         name = entries[0]['name']
 
-    return name, bid_amount/pow(10, 6)
+    return name, bid_amount
 
 
-# In[33]:
+# In[5]:
 
 
-def save_adgroup_behavior(behavior_type, db_type, campaign_id, adgroup_id, criterion_id, criterion_type, behavior_misc = '' ):
+def save_adgroup_behavior(behavior_type, db_type, adgroup_id, criterion_id, criterion_type, behavior_misc = '' ):
     '''
     ad_group_pair = {'db_type': 'dev_gdn', 'adgroup_id': 71252991065, 'criterion_id': None, 'criterion_type': 'adgroup'}
     audience_pair = {'db_type': 'dev_gdn', 'adgroup_id': 71252991065, 'criterion_id': 164710527631, 'criterion_type': 'audience'}
     keywords_pair = {'db_type': 'dev_gsn', 'adgroup_id': 71353342785, 'criterion_id': 298175279711, 'criterion_type': 'keyword'}
     '''
-    display_name , criterion_bid = get_adgroup_name_bidding(db_type, campaign_id, adgroup_id, criterion_id, criterion_type)
+
+    display_name , criterion_bid = get_adgroup_name_bidding(db_type, adgroup_id, criterion_id, criterion_type)
     created_at = int(time.time())
 
-    if behavior_type == BehaviorType.ADJUST:
-        if criterion_bid == behavior_misc:
-            return
-        behavior_misc = str(criterion_bid) + ':' + str(behavior_misc)
+#     if behavior_type == BehaviorType.ADJUST:
+#         if adgroup_bid == behavior_misc:
+#             return
+#         behavior_misc = str(adgroup_bid) + ':' + str(behavior_misc)
 
     my_db = gdn_saver.connectDB( db_type )
     my_cursor = my_db.cursor()
-    sql = "INSERT INTO ai_behavior_log ( campaign_id, adgroup_id, criterion_id, display_name, criterion_type, behavior, behavior_misc, created_at ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s )"
-    val = ( int(campaign_id), int(adgroup_id), criterion_id, display_name, criterion_type, behavior_type, behavior_misc, int(created_at) )
+    sql = "INSERT INTO ai_behavior_log ( adgroup_id, criterion_id, display_name, criterion_type, behavior, behavior_misc, created_at ) VALUES ( %s, %s, %s, %s, %s, %s, %s )"
+    val = ( int(adgroup_id), criterion_id, display_name, criterion_type, behavior_type, behavior_misc, int(created_at) )
     my_cursor.execute(sql, val)
     my_db.commit()
     my_cursor.close()
@@ -124,22 +124,22 @@ def save_adgroup_behavior(behavior_type, db_type, campaign_id, adgroup_id, crite
     
 
 
-# In[19]:
+# In[6]:
 
 
 if __name__ == "__main__":
-    ad_group_pair = {'db_type': 'dev_gdn', 'campaign_id': 1111, 'adgroup_id': 71252991065, 'criterion_id': None, 'criterion_type': 'adgroup'}
-    audience_pair = {'db_type': 'dev_gdn', 'campaign_id': 1111, 'adgroup_id': 71252991065, 'criterion_id': 164710527631, 'criterion_type': 'audience'}
-    keywords_pair = {'db_type': 'dev_gsn', 'campaign_id': 1111, 'adgroup_id': 71353342785, 'criterion_id': 298175279711, 'criterion_type': 'keyword'}
+    ad_group_pair = {'db_type': 'dev_gdn', 'adgroup_id': 71252991065, 'criterion_id': None, 'criterion_type': 'adgroup'}
+    audience_pair = {'db_type': 'dev_gdn', 'adgroup_id': 71252991065, 'criterion_id': 164710527631, 'criterion_type': 'audience'}
+    keywords_pair = {'db_type': 'dev_gsn', 'adgroup_id': 71353342785, 'criterion_id': 298175279711, 'criterion_type': 'keyword'}
 
-    save_adgroup_behavior(BehaviorType.CREATE, **ad_group_pair)
-#     save_adgroup_behavior(BehaviorType.ADJUST, **audience_pair, behavior_misc=15)
-#     save_adgroup_behavior(BehaviorType.ADJUST, **keywords_pair, behavior_misc=15)
+    save_adgroup_behavior(BehaviorType.ADJUST, **ad_group_pair)
+    save_adgroup_behavior(BehaviorType.ADJUST, **audience_pair)
+    save_adgroup_behavior(BehaviorType.ADJUST, **keywords_pair)
 #     print(adset_name , adset_bid )"
 
 
-# In[27]:
+# In[ ]:
 
 
-#!jupyter nbconvert --to script gdn_gsn_ai_behavior_log.ipynb
+
 

@@ -9,7 +9,7 @@ import pandas as pd
 import facebook_datacollector as datacollector
 DATABASE = "dev_facebook_test"
 
-BRANDING_LIST = ['LINK_CLICKS', 'ALL_CLICKS', 'VIDEO_VIEWS', 'REACH']
+BRANDING_LIST = ['LINK_CLICKS', 'ALL_CLICKS', 'VIDEO_VIEWS', 'REACH', 'IMPRESSIONS']
 
 TIME_WINDOW_CONST = 36
 PREDICT_STEP = 6
@@ -52,6 +52,8 @@ def make_predict():
             result = i_love_predict(df_train_x, df_train_y)
             df_insights['predict_bids'] = result
             mysql_adactivity_save.intoDB("campaign_predict_bids", df_insights)
+        else:
+            print('[make_predict]: campaign_id {} not enough data to predict.'.format(campaign_id))
     mydb.close()
     mycursor.close()
 
@@ -59,7 +61,7 @@ def make_predict():
 # In[4]:
 
 
-get_ipython().run_line_magic('matplotlib', 'inline')
+# %matplotlib inline
 def i_love_predict(df_train_x, df_train_y):
     import matplotlib.pyplot as plt
     import numpy as np
@@ -87,7 +89,7 @@ if __name__ == '__main__':
     make_predict()
 
 
-# In[6]:
+# In[7]:
 
 
 #!jupyter nbconvert --to script i_love_predictive_bids.ipynb
