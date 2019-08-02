@@ -70,7 +70,11 @@
                 <td>{{campaign.spend_until_today}}</td>
                 
                 <td>{{campaign.ai_start_date}}</td>
-                <td>{{campaign.ai_stop_date}}</td>
+                {% if campaign.ai_period == campaign.ai_running_days %}
+                    <td style="background-color:#ff9900;">{{campaign.ai_stop_date}}</td>
+                {% else %}
+                    <td>{{campaign.ai_stop_date}}</td>
+                {% endif %}
                 <td style="font-size:small;">{{campaign.name}}</td>
                 
             </tr>            
@@ -132,7 +136,11 @@
                 <td>{{campaign.spend_until_today}}</td>
                 
                 <td>{{campaign.ai_start_date}}</td>
-                <td>{{campaign.ai_stop_date}}</td>
+                {% if campaign.ai_period == campaign.ai_running_days %}
+                    <td style="background-color:#ff9900;">{{campaign.ai_stop_date}}</td>
+                {% else %}
+                    <td>{{campaign.ai_stop_date}}</td>
+                {% endif %}
                 <td style="font-size:small;">{{campaign.name}}</td>
                 
             </tr>            
@@ -193,7 +201,11 @@
                 <td>{{campaign.spend_until_today}}</td>
                 
                 <td>{{campaign.ai_start_date}}</td>
-                <td>{{campaign.ai_stop_date}}</td>
+                {% if campaign.ai_period == campaign.ai_running_days %}
+                    <td style="background-color:#ff9900;">{{campaign.ai_stop_date}}</td>
+                {% else %}
+                    <td>{{campaign.ai_stop_date}}</td>
+                {% endif %}
                 <td style="font-size:small;">{{campaign.name}}</td>
                 
             </tr>            
@@ -254,7 +266,11 @@
                 <td>{{campaign.spend_until_today}}</td>
                 
                 <td>{{campaign.ai_start_date}}</td>
-                <td>{{campaign.ai_stop_date}}</td>
+                {% if campaign.ai_period == campaign.ai_running_days %}
+                    <td style="background-color:#ff9900;">{{campaign.ai_stop_date}}</td>
+                {% else %}
+                    <td>{{campaign.ai_stop_date}}</td>
+                {% endif %}
                 <td style="font-size:small;">{{campaign.name}}</td>
                 
             </tr>            

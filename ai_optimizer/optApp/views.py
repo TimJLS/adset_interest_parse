@@ -18,10 +18,13 @@ import pandas as pd
 from sklearn.externals import joblib
 from ai_optimizer.codes import mysql_adactivity_save
 from ai_optimizer.codes import gdn_db
+from ai_optimizer.codes import gsn_db
 from ai_optimizer.codes import gdn_datacollector
+from ai_optimizer.codes import gsn_datacollector
 from facebook_business.api import FacebookAdsApi
 from facebook_datacollector import Campaigns
 import facebook_datacollector
+import facebook_custom_conversion_handler as custom_conversion_handler
 import datetime
 # FOLDER_PATH = 'ai_optimizer/models/cpc_120/'
 # MODEL_PATH = FOLDER_PATH + 'cpc_20_500_64.h5'
@@ -40,7 +43,7 @@ class Field(object):
     ai_start_date = 'ai_start_date'
     ai_stop_date = 'ai_stop_date'
     ai_spend_cap = 'ai_spend_cap'
-
+    ai_status = 'ai_status'
 
 
 my_app_id = '958842090856883'
@@ -59,23 +62,30 @@ def opt_api(request):
         destination_type = request.POST.get(Field.destination_type)
         media = request.POST.get(Field.media)
         
+        ai_status = request.POST.get(Field.ai_status)
         ai_start_date = request.POST.get(Field.ai_start_date)
         ai_stop_date = request.POST.get(Field.ai_stop_date)
         ai_spend_cap = request.POST.get(Field.ai_spend_cap)
         print('request post is:',  request.POST)
         
-#         if campaign_id and destination and destination_type and media: # new release version
-        if campaign_id and destination and destination_type and ai_start_date and ai_stop_date and  ai_spend_cap:
+        if campaign_id and destination and destination_type and ai_start_date and ai_stop_date and ai_spend_cap and ai_status:
+            brief_dict = {
+                'campaign_id': campaign_id,
+                'destination': destination,
+                'destination_type': destination_type,
+                'ai_start_date': ai_start_date,
+                'ai_stop_date': ai_stop_date,
+                'ai_spend_cap': ai_spend_cap,
+                'ai_status': ai_status,
+            }
             if media == 'Facebook' or not media:
+                mydict = dict()
                 FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-                queue = mysql_adactivity_save.check_campaignid_target( campaign_id,
-                                                                      destination,
-                                                                      destination_type,
-                                                                      ai_start_date,
-                                                                      ai_stop_date,
-                                                                      ai_spend_cap )
-                if mysql_adactivity_save.check_default_price(campaign_id):
-                    facebook_datacollector.make_default( int(campaign_id), destination_type )
+                
+                custom_conversion_id = custom_conversion_handler.get_conversion_id_by_compaign(campaign_id)
+                brief_dict['custom_conversion_id'] = custom_conversion_id
+                brief_dict['charge_type'] = brief_dict.pop('destination_type')
+                queue = mysql_adactivity_save.check_campaignid_target( **brief_dict )
                 if queue:
                     campaign = Campaigns( int(campaign_id), destination_type )
                     campaign_dict = campaign.generate_campaign_info()
@@ -104,36 +114,33 @@ def opt_api(request):
                     df_camp[df_camp.columns] = df_camp[df_camp.columns].apply(pd.to_numeric, errors='ignore')
                     mysql_adactivity_save.update_campaign_target(df_camp)
                     try:
-#                         mydict = mysql_adactivity_save.get_result( campaign_id ) #new version
-                        mydict = mysql_adactivity_save.get_release_result( campaign_id ) #release version
+                        mydict = mysql_adactivity_save.get_result( campaign_id )
                     except:
-#                         mydict = mysql_adactivity_save.get_default( campaign_id ) #new version
-                        mydict = mysql_adactivity_save.get_release_default( campaign_id )#release version
+                        pass
+                return JsonResponse( json.loads(str(mydict)), safe=False )
+
+            elif media == 'GDN' and account_id:
+                brief_dict['account_id'] = account_id
+                if not gdn_db.check_campaignid_target(**brief_dict):
+                    return JsonResponse( '{Tim}', safe=False )
                 else:
-#                     mydict = mysql_adactivity_save.get_default( campaign_id ) #new version
-                    mydict = mysql_adactivity_save.get_release_default( campaign_id )#release version
-                return JsonResponse( json.loads(mydict), safe=False )
-        elif campaign_id: # eric issue , brief system not OK
-            print(campaign_id)
-            try:
-#                         mydict = mysql_adactivity_save.get_result( campaign_id ) #new version
-                mydict = mysql_adactivity_save.get_release_result( campaign_id ) #release version
-            except:
-#                         mydict = mysql_adactivity_save.get_default( campaign_id ) #new version
-                mydict = mysql_adactivity_save.get_release_default( campaign_id )#release version
-            return JsonResponse( json.loads(mydict), safe=False )
-        if media == 'GDN':
-            if account_id and campaign_id and destination and destination_type:
-                if not gdn_db.check_campaignid_target(account_id, campaign_id, destination, destination_type):
-                    gdn_datacollector.data_collect(account_id, campaign_id, destination, destination_type)
+                    mydict = gdn_db.get_result( campaign_id ) #new version
+                    return JsonResponse( json.loads(mydict), safe=False )
+                
+            elif media == 'GSN' and account_id:
+                brief_dict['account_id'] = account_id
+                if not gsn_db.check_campaignid_target(**brief_dict):
                     return JsonResponse( {}, safe=False )
                 else:
                     mydict = gdn_db.get_result( campaign_id ) #new version
-#                         mydict = gdn_db.get_release_result( campaign_id ) #release version
-#                     except:
-#     #                         mydict = gdn_db.get_default( campaign_id ) #new version
-#                         mydict = gdn_db.get_release_default( campaign_id )#release version
-                return JsonResponse( json.loads(mydict), safe=False )
+                    return JsonResponse( json.loads(mydict), safe=False )
+        elif campaign_id: # brief system not OK yet
+            print(campaign_id)
+            try:
+                mydict = mysql_adactivity_save.get_result( campaign_id )
+            except:
+                mydict = '{}'
+            return JsonResponse( json.loads(mydict), safe=False )
     else:
         return JsonResponse( {}, safe=False )
         

@@ -19,15 +19,11 @@ import facebook_custom_conversion_handler as custom_conversion_handler
 import facebook_business.adobjects.campaign as facebook_business_campaign
 import datetime
 
-##FB
-my_app_id = '958842090856883'
-my_app_secret = 'a952f55afca38572cea2994d440d674b'
-my_access_token = 'EAANoD9I4obMBALrHTgMWgRujnWcZA3ZB823phs6ynDDtQxnzIZASyRQZCHfr5soXBZA7NM9Dc4j9O8FtnlIzxiPCsYt4tmPQ6ZAT3yJLPuYQqjnWZBWX5dsOVzNhEqsHYj1jVJ3RAVVueW7RSxRDbNXKvK3W23dcAjNMjxIjQGIOgZDZD'
-
+## FB
+import adgeek_permission as permission
+permission.init_facebook_api()
 ##GOOGLE
-from googleads import adwords
-AUTH_FILE_PATH = '/home/tim_su/ai_optimizer/opt/ai_optimizer/googleads.yaml'
-adwords_client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
+adwords_client = permission.init_google_api()
 
 
 class Campaign_FB():
@@ -57,6 +53,13 @@ class Campaign_FB():
 #         if currency == 'USD':
 #             self.ai_spend_cap = self.ai_spend_cap / 100
 
+        if self.current_total_spend is None:
+            self.current_total_spend = 0
+        if self.left_target_count is None:
+            self.left_target_count = 0    
+        if self.current_target_count is None:
+            self.current_target_count = 0    
+            
         self.ai_period = (self.ai_stop_date - self.ai_start_date ).days + 1
         today = datetime.date.today()
         self.ai_left_days = (self.ai_stop_date - today ).days + 1
@@ -123,11 +126,18 @@ class Campaign_GDN():
 #         if currency == 'USD':
 #             self.ai_spend_cap = self.ai_spend_cap / 100
 
+        if self.current_total_spend is None:
+            self.current_total_spend = 0
+        if self.left_target_count is None:
+            self.left_target_count = 0    
+        if self.current_target_count is None:
+            self.current_target_count = 0    
+            
         self.ai_period = (self.ai_stop_date - self.ai_start_date ).days + 1
         today = datetime.date.today()
         self.ai_left_days = (self.ai_stop_date - today ).days + 1
         self.ai_running_days = (today - self.ai_start_date ).days + 1
-
+        
         self.ai_daily_budget = self.ai_spend_cap / self.ai_period
         self.left_money_can_spend = self.ai_spend_cap - self.current_total_spend
         self.left_money_can_spend_per_day = self.left_money_can_spend / self.ai_left_days
@@ -189,6 +199,13 @@ class Campaign_GSN():
         self.ai_running_days = (today - self.ai_start_date ).days + 1
 
         self.ai_daily_budget = self.ai_spend_cap / self.ai_period
+        if self.current_total_spend is None:
+            self.current_total_spend = 0
+        if self.left_target_count is None:
+            self.left_target_count = 0    
+        if self.current_target_count is None:
+            self.current_target_count = 0    
+            
         self.left_money_can_spend = self.ai_spend_cap - self.current_total_spend
         self.left_money_can_spend_per_day = self.left_money_can_spend / self.ai_left_days
         self.max_cpc_for_future = self.left_money_can_spend / self.left_target_count if self.left_target_count>0 else self.left_money_can_spend
@@ -214,7 +231,7 @@ def get_fb_branding_campaign():
     return campaign_list
 
 def get_fb_performance_campaign():    
-    df_branding = mysql_saver.get_running_conversion_campaign()
+    df_branding = mysql_saver.get_running_performance_campaign()
     campaign_list = []
     for index, row in df_branding.iterrows():
         campaign_id = row['campaign_id']

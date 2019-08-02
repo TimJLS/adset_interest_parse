@@ -18,7 +18,10 @@ from django.urls import path
 from django.urls import include
 from django.conf.urls import url
 from optApp.views import opt_api
+from optApp.home_view import home_page
+
 urlpatterns = [
 #     path('admin/', admin.site.urls),
-        url(r'^opt_api/', opt_api),
+    url(r'^opt_api/', opt_api),
+    url(r'^home/', home_page),
 ]
