@@ -173,8 +173,8 @@ class AdGroupAdapter(CampaignAdapter):
         return self.adgroup_performance
     
     def get_bid(self):
-        self.init_bid = self.init_bid_dict[self.adgroup_id]
-        self.last_bid = self.last_bid_dict[self.adgroup_id]
+        self.init_bid = self.init_bid_dict.get(self.adgroup_id) 
+        self.last_bid = self.last_bid_dict.get(self.adgroup_id)
         return
     
     def get_adgroup_time_target(self):
@@ -217,61 +217,43 @@ class MyEncoder(json.JSONEncoder):
         
 def main():
     start_time = datetime.datetime.now()
-    campaign_id_list = gdn_db.get_campaign()['campaign_id'].unique()
-    for campaign_id in campaign_id_list:
-        print(campaign_id)
-        campaign_id = campaign_id.astype(dtype=object)
+    campaign_dict_list = gdn_db.get_campaign().to_dict('records')
+    for campaign_dict in campaign_dict_list:
+        campaign_id = campaign_dict['campaign_id']
+        destination_type = campaign_dict['destination_type']
+        account_id = campaign_dict['customer_id']
+        
         result={ 'media': 'GDN', 'campaign_id': campaign_id, 'contents':[] }
-        release_version_result = {}
-#         try:
-        camp = CampaignAdapter( campaign_id )
-        camp.retrieve_campaign_attribute()
-        adgroup_list = camp.adgroup_list
-        destination_type = camp.df_camp['destination_type'].iloc[0]
-        account_id = camp.df_camp['customer_id'].iloc[0]
-        for adgroup in adgroup_list:
-            try:
-                s = AdGroupAdapter( adgroup, camp )
-                status_dict = s.retrieve_adgroup_attribute()
-                print(status_dict)
-                media = result['media']
-                bid_dict = bid_operator.adjust(media, **status_dict)
-                
-                ad_group_pair = {
-                    'db_type': 'dev_gdn', 'campaign_id': campaign_id, 'adgroup_id': adgroup,
-                    'criterion_id': None, 'criterion_type': 'adgroup'
-                }
-                logger.save_adgroup_behavior(behavior_type=BehaviorType.ADJUST, behavior_misc=bid_dict['bid'], **ad_group_pair)
-                result['contents'].append(bid_dict)
-                
-                gdn_datacollector.update_adgroup_bid(account_id, adgroup, bid_dict['bid'])
-                del s
-            except Exception as e:
-                print('[facebook_adapter.AdGroupAdapter] update unavailable: ', e)
-        
+        print('[campaign_id]: ', campaign_id)
+        service_container = controller.AdGroupServiceContainer(account_id)
+        adapter_campaign = CampaignAdapter( campaign_id )
+        controller_campaign = controller.Campaign(service_container, campaign_id=campaign_id)
+        controller_campaign.get_ad_groups()
+        adapter_campaign.retrieve_campaign_attribute()
+        adgroup_list = controller_campaign.ad_groups
+
+        for controller_ad_group in adgroup_list:
+            ad_group_id = controller_ad_group.ad_group_id
+            adapter_ad_group = AdGroupAdapter( ad_group_id, adapter_campaign )
+            status_dict = adapter_ad_group.retrieve_adgroup_attribute()
+            print(status_dict)
+            media = result['media']
+            
+            bid_dict = bid_operator.adjust(media, **status_dict)
+
+            ad_group_pair = {
+                'db_type': 'dev_gdn', 'campaign_id': campaign_id, 'adgroup_id': ad_group_id,
+                'criterion_id': ad_group_id, 'criterion_type': 'adgroup'
+            }
+            logger.save_adgroup_behavior(
+                behavior_type=BehaviorType.ADJUST, behavior_misc=bid_dict['bid'], **ad_group_pair)
+            result['contents'].append(bid_dict)
+            controller_ad_group.param.update_bid(bid_micro_amount=bid_dict['bid'])
+            del adapter_ad_group
+            del controller_ad_group
         mydict_json = json.dumps(result, cls=MyEncoder)
-        release_json = json.dumps(release_version_result)
         gdn_db.insert_result( campaign_id, mydict_json )
-        del camp
-#         except:
-#             print('pass')
-#             pass
-        
-#     campaign_id = 1747836664
-#     result={ 'media': 'GDN', 'campaign_id': campaign_id, 'contents':[] }
-#     camp = CampaignAdapter( campaign_id )
-#     camp.retrieve_campaign_attribute()
-#     adgroup_list = camp.get_adgroup_list()
-#     for adgroup in adgroup_list:
-#         s = AdGroupAdapter( adgroup, camp )
-#         status = s.retrieve_adgroup_attribute()
-#         media = result['media']
-#         bid = bid_operator.adjust(media, **status)
-#         result['contents'].append(bid)
-#         print(result)
-#         del s
-#     del camp
-    
+        del adapter_campaign    
     print(datetime.datetime.now()-start_time)
     return
     
