@@ -4,10 +4,7 @@
 # In[1]:
 
 
-import gdn_datacollector
-from gdn_datacollector import Campaign
-from gdn_datacollector import AdGroup
-from gdn_datacollector import DatePreset
+import gdn_datacollector as collector
 import gdn_gsn_ai_behavior_log as logger
 from gdn_gsn_ai_behavior_log import BehaviorType
 import datetime
@@ -24,7 +21,7 @@ DATE = datetime.datetime.now().date()
 DATETIME = datetime.datetime.now()
 AGE_RANGE_LIST = [503001,503002,503003,503004,503005,503006,503999,]
 
-import gdn_controller as controller
+import google_adwords_controller as controller
 import gdn_custom_audience as custom_audience
 
 
@@ -288,16 +285,17 @@ def make_user_list_criterion(campaign_id, ad_group):
 
 
 def optimize_performance_campaign():
-    df_performance_campaign = gdn_db.get_performance_campaign_is_running()
-    campaign_id_list = df_performance_campaign['campaign_id'].tolist()
+    performance_campaign_dict_list = gdn_db.get_performance_campaign_is_running().to_dict('records')
+    campaign_id_list = [ performance_campaign_dict['campaign_id'] for performance_campaign_dict in performance_campaign_dict_list ]
     print('[optimize_performance_campaign]: campaign_id_list', campaign_id_list)
-    for campaign_id in campaign_id_list:
-        customer_id = df_performance_campaign['customer_id'][df_performance_campaign.campaign_id==campaign_id].iloc[0]
-        destination_type = df_performance_campaign['destination_type'][df_performance_campaign.campaign_id==campaign_id].iloc[0]
-        daily_target = df_performance_campaign['daily_target'][df_performance_campaign.campaign_id==campaign_id].iloc[0]
+    for performance_campaign_dict in performance_campaign_dict_list:
+        customer_id = performance_campaign_dict['customer_id']
+        campaign_id = performance_campaign_dict['campaign_id']
+        destination_type = performance_campaign_dict['destination_type']
+        daily_target = performance_campaign_dict['daily_target']
         
-        destination = df_performance_campaign['destination'][df_performance_campaign.campaign_id==campaign_id].iloc[0]
-        ai_spend_cap = df_performance_campaign['ai_spend_cap'][df_performance_campaign.campaign_id==campaign_id].iloc[0]
+        destination = performance_campaign_dict['destination']
+        ai_spend_cap = performance_campaign_dict['ai_spend_cap']
         original_cpa = ai_spend_cap/destination
         print('[optimize_branding_campaign] campaign_id:' , campaign_id)
         print('[optimize_branding_campaign] original_cpa:' , original_cpa)
@@ -305,24 +303,24 @@ def optimize_performance_campaign():
         adwords_client.SetClientCustomerId( customer_id )
         service_container = container.AdGroupServiceContainer( customer_id )
         
-        target = 'conversions'
+        objective = 'conversions'
         # Init datacollector Campaign
-        camp = Campaign(customer_id, campaign_id, destination_type)
-        day_dict = camp.get_campaign_insights(adwords_client,
-            date_preset=DatePreset.yesterday)
-        lifetime_dict = camp.get_campaign_insights(adwords_client,
-            date_preset=DatePreset.lifetime)
+        collector_campaign = collector.Campaign(customer_id, campaign_id, destination_type)
+        day_dict = collector_campaign.get_campaign_insights(
+            adwords_client, date_preset=collector.DatePreset.yesterday)
+        lifetime_dict = collector_campaign.get_campaign_insights(
+            adwords_client, date_preset=collector.DatePreset.lifetime)
         # Adjust initial bids
         handle_initial_bids(campaign_id, day_dict['spend'], day_dict['daily_budget'], daily_target, original_cpa)
         
-        target = int( day_dict[target] )
+        target = int( day_dict[objective] )
         achieving_rate = target / daily_target
         print('[optimize_performance_campaign][achieving rate]', achieving_rate, '[target]', target, '[daily_target]', daily_target)
         # Init param retriever Retrieve
-        campaign = controller.Campaign(service_container, campaign_id)
-        campaign.generate_ad_group_id_type_list()
-        native_ad_group_id_list = campaign.native_ad_group_id_list
-        native_ad_group_id = campaign.native_ad_group_id_list[0]
+        controller_campaign = controller.Campaign(service_container, campaign_id)
+        controller_campaign.generate_ad_group_id_type_list()
+        native_ad_group_id_list = controller_campaign.native_ad_group_id_list
+        native_ad_group_id = controller_campaign.native_ad_group_id_list[0]
         
         if is_assessed(campaign_id):
             print('[optimize_branding_campaign]: campaign is assessed.')
@@ -344,17 +342,18 @@ def optimize_performance_campaign():
 
 
 def optimize_branding_campaign():
-    df_branding_campaign = gdn_db.get_branding_campaign_is_running()
-    campaign_id_list = df_branding_campaign['campaign_id'].tolist()
+    branding_campaign_dict_list = gdn_db.get_branding_campaign_is_running().to_dict('records')
+    campaign_id_list = [ branding_campaign_dict['campaign_id'] for branding_campaign_dict in branding_campaign_dict_list ]
     print('[optimize_branding_campaign]: campaign_id_list', campaign_id_list)
     
-    for campaign_id in campaign_id_list:
-        customer_id = df_branding_campaign['customer_id'][df_branding_campaign.campaign_id==campaign_id].iloc[0]
-        destination_type = df_branding_campaign['destination_type'][df_branding_campaign.campaign_id==campaign_id].iloc[0]
-        daily_target = df_branding_campaign['daily_target'][df_branding_campaign.campaign_id==campaign_id].iloc[0]
+    for branding_campaign_dict in branding_campaign_dict_list:
+        customer_id = branding_campaign_dict['customer_id']
+        campaign_id = branding_campaign_dict['campaign_id']
+        destination_type = branding_campaign_dict['destination_type']
+        daily_target = branding_campaign_dict['daily_target']
         
-        destination = df_branding_campaign['destination'][df_branding_campaign.campaign_id==campaign_id].iloc[0]
-        ai_spend_cap = df_branding_campaign['ai_spend_cap'][df_branding_campaign.campaign_id==campaign_id].iloc[0]
+        destination = branding_campaign_dict['destination']
+        ai_spend_cap = branding_campaign_dict['ai_spend_cap']
         original_cpc = ai_spend_cap/destination
         print('[optimize_branding_campaign] campaign_id', campaign_id)
         print('[optimize_branding_campaign] original_cpc:' , original_cpc)
@@ -362,24 +361,24 @@ def optimize_branding_campaign():
         adwords_client.SetClientCustomerId( customer_id )
         service_container = controller.AdGroupServiceContainer( customer_id )
         
-        target = 'clicks'
+        objective = 'clicks'
         # Init datacollector Campaign
-        camp = Campaign(customer_id, campaign_id, destination_type)
-        day_dict = camp.get_campaign_insights(adwords_client, date_preset=DatePreset.yesterday)
+        collector_campaign = collector.Campaign(customer_id, campaign_id, destination_type)
+        day_dict = collector_campaign.get_campaign_insights(adwords_client, date_preset=collector.DatePreset.yesterday)
         print('[optimize_branding_campaign] day_dict', day_dict)
-        lifetime_dict = camp.get_campaign_insights(adwords_client, date_preset=DatePreset.lifetime)
+        lifetime_dict = collector_campaign.get_campaign_insights(adwords_client, date_preset=collector.DatePreset.lifetime)
         print('[optimize_branding_campaign] lifetime_dict', lifetime_dict)
         
         # Adjust initial bids
         handle_initial_bids(campaign_id, day_dict['spend'], day_dict['daily_budget'], daily_target, original_cpc)
-        target = int( day_dict[target] )
+        target = int( day_dict[objective] )
         achieving_rate = target / daily_target
         print('[optimize_branding_campaign][achieving rate]', achieving_rate, '[target]', target, '[daily_target]', daily_target)
         # Init param retriever Retrieve
-        campaign = controller.Campaign(service_container, campaign_id)
-        campaign.generate_ad_group_id_type_list()
-        native_ad_group_id_list = campaign.native_ad_group_id_list
-        native_ad_group_id = campaign.native_ad_group_id_list[0]
+        controller_campaign = controller.Campaign(service_container, campaign_id)
+        controller_campaign.generate_ad_group_id_type_list()
+        native_ad_group_id_list = controller_campaign.native_ad_group_id_list
+        native_ad_group_id = controller_campaign.native_ad_group_id_list[0]
 
         if achieving_rate < 1 and achieving_rate >= 0:
             update = Update(customer_id)
@@ -424,13 +423,13 @@ if __name__=="__main__":
     print(datetime.datetime.now() - start_time)
 
 
-# In[14]:
+# In[12]:
 
 
 #!jupyter nbconvert --to script gdn_externals.ipynb
 
 
-# In[13]:
+# In[ ]:
 
 
 # customer_id = 6714857152

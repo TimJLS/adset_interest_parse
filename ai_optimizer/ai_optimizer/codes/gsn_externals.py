@@ -5,6 +5,7 @@
 
 
 import gsn_datacollector as datacollector
+import google_adwords_controller as controller
 import gsn_db
 from googleads import adwords
 
@@ -51,21 +52,22 @@ def optimize_performance_campaign():
 
 
 def optimize_branding_campaign():
-    df_branding_campaign = gsn_db.get_branding_campaign_is_running()
-    campaign_id_list = df_branding_campaign['campaign_id'].tolist()
+    branding_campaign_dict_list = gsn_db.get_branding_campaign_is_running().to_dict('records')
+    campaign_id_list = [ branding_campaign_dict['campaign_id'] for branding_campaign_dict in branding_campaign_dict_list ]
     print('[optimize_branding_campaign]: campaign_id_list', campaign_id_list)
-    for campaign_id in campaign_id_list:
-        print('[optimize_branding_campaign] campaign_id', campaign_id)
-        customer_id = df_branding_campaign['customer_id'][df_branding_campaign.campaign_id==campaign_id].iloc[0]
-        destination_type = df_branding_campaign['destination_type'][df_branding_campaign.campaign_id==campaign_id].iloc[0]
-        daily_target = df_branding_campaign['daily_target'][df_branding_campaign.campaign_id==campaign_id].iloc[0]
+    for branding_campaign_dict in branding_campaign_dict_list:
+        print('[optimize_branding_campaign] campaign_id', branding_campaign_dict['campaign_id'])
+        customer_id = branding_campaign_dict['customer_id']
+        destination_type = branding_campaign_dict['destination_type']
+        daily_target = branding_campaign_dict['daily_target']
 
-        destination = df_branding_campaign['destination'][df_branding_campaign.campaign_id==campaign_id].iloc[0]
-        ai_spend_cap = df_branding_campaign['ai_spend_cap'][df_branding_campaign.campaign_id==campaign_id].iloc[0]
+        destination = branding_campaign_dict['destination']
+        ai_spend_cap = branding_campaign_dict['ai_spend_cap']
         original_cpa = ai_spend_cap/destination
         print('[optimize_branding_campaign]  original_cpa:' , original_cpa)
 
         adwords_client.SetClientCustomerId( customer_id )
+        service_container = controller.AdGroupServiceContainer( customer_id )
         
         objective = 'clicks'
         # Init datacollector Campaign
@@ -162,16 +164,16 @@ if __name__=="__main__":
 # In[9]:
 
 
-customer_id = 9716870905
-campaign_id = 2058587510
-camp = datacollector.Campaign(customer_id, campaign_id)
-keyword_insights_dict_list = camp.get_keyword_insights(date_preset=datacollector.DatePreset.lifetime)
+# customer_id = 9716870905
+# campaign_id = 2058587510
+# camp = datacollector.Campaign(customer_id, campaign_id)
+# keyword_insights_dict_list = camp.get_keyword_insights(date_preset=datacollector.DatePreset.lifetime)
 
 
 # In[11]:
 
 
-[keyword_insights for keyword_insights in keyword_insights_dict_list]
+# [keyword_insights for keyword_insights in keyword_insights_dict_list]
 
 
 # In[ ]:

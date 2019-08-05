@@ -6,6 +6,7 @@
 
 import gsn_db
 import gsn_datacollector
+import google_adwords_controller as controller
 import gdn_gsn_ai_behavior_log as logger
 from gdn_gsn_ai_behavior_log import BehaviorType
 import bid_operator
@@ -209,68 +210,48 @@ class MyEncoder(json.JSONEncoder):
         
 def main():
     start_time = datetime.datetime.now()
-    campaign_id_list = gsn_db.get_campaign()['campaign_id'].tolist()
-    print('[on-going campaign_id_list]: ', campaign_id_list)
-    for campaign_id in campaign_id_list:
-        print('[campaign_id]: ', campaign_id)
-        result={ 'media': 'GSN', 'campaign_id': campaign_id, 'contents':[] }
-        release_version_result = {  }
-#         try:
-        camp = CampaignAdapter( campaign_id )
-        camp.retrieve_campaign_attribute()
-        destination_type = camp.df_camp['destination_type'].iloc[0]
-        account_id = camp.df_camp['customer_id'].iloc[0]
+    campaign_dict_list = gsn_db.get_campaign().to_dict('records')
+    for campaign_dict in campaign_dict_list:
+        campaign_id = campaign_dict['campaign_id']
+        destination_type = campaign_dict['destination_type']
+        account_id = campaign_dict['customer_id']
         
-        datacollect_campaign = gsn_datacollector.Campaign(customer_id=account_id, campaign_id=campaign_id)
-        ad_group_status_dict = datacollect_campaign.get_ad_group_status_dict()
-        for keyword_id in camp.keyword_id_list:
-            print('[keyword_id]: ', keyword_id)
-            
-            datacollect_keyword_group = gsn_datacollector.KeywordGroup(
-                customer_id=account_id, campaign_id=campaign_id, keyword_id=keyword_id)
-            keyword_dict_list = datacollect_keyword_group.get_keyword_criterion()
 
-            for keyword_dict in keyword_dict_list:
-                if keyword_dict['ad_group_id'] in ad_group_status_dict:
-                    keyword_group = KeywordGroupAdapter( keyword_id, keyword_dict['ad_group_id'], camp )
-                    status_dict = keyword_group.retrieve_keyword_attribute()
-                    media = result['media']
-                    bid_dict = bid_operator.adjust(media, **status_dict)
+        result={ 'media': 'GSN', 'campaign_id': campaign_id, 'contents':[] }
+        print('[campaign_id]: ', campaign_id)
+        service_container = controller.AdGroupServiceContainer(account_id)
+        adapter_campaign = CampaignAdapter( campaign_id )
+        controller_campaign = controller.Campaign(service_container, campaign_id=campaign_id)
+        controller_campaign.get_ad_groups()
+        adapter_campaign.retrieve_campaign_attribute()
+        adgroup_list = controller_campaign.ad_groups
+        
+        
+        controller_campaign.get_keywords()
+        for controller_keyword in controller_campaign.keywords:
+            print('[keyword_id]: ', controller_keyword.keyword_id)
 
-                    ad_group_pair = {
-                        'db_type': 'dev_gsn', 'campaign_id': campaign_id, 'adgroup_id': keyword_dict['ad_group_id'],
-                        'criterion_id': keyword_id, 'criterion_type': 'keyword'
-                    }
-                    logger.save_adgroup_behavior(behavior_type=BehaviorType.ADJUST, behavior_misc=bid_dict['bid'], **ad_group_pair)
-                    
-                    datacollect_keyword_group.update_bid(ad_group_id=keyword_dict['ad_group_id'], bid_micro_amount=bid_dict['bid'])                    
-                    result['contents'].append(bid_dict)
-                    del keyword_group
-            del datacollect_keyword_group
+            adapter_keyword = KeywordGroupAdapter( 
+                controller_keyword.keyword_id, controller_keyword.ad_group.ad_group_id, adapter_campaign )
+            status_dict = adapter_keyword.retrieve_keyword_attribute()
+            media = result['media']
+            bid_dict = bid_operator.adjust(media, **status_dict)
+
+            ad_group_pair = {
+                'db_type': 'dev_gsn', 'campaign_id': campaign_id, 'adgroup_id': controller_keyword.ad_group.ad_group_id,
+                'criterion_id': controller_keyword.keyword_id, 'criterion_type': 'keyword'
+            }
+            logger.save_adgroup_behavior(
+                behavior_type=BehaviorType.ADJUST, behavior_misc=bid_dict['bid'], **ad_group_pair)
+
+            controller_keyword.update_bid(bid_micro_amount=bid_dict['bid'])                   
+            result['contents'].append(bid_dict)
+            del adapter_keyword
         
         mydict_json = json.dumps(result, cls=MyEncoder)
-        release_json = json.dumps(release_version_result)
         gsn_db.insert_result( campaign_id, mydict_json )
-        del camp
-        del datacollect_campaign
-#         except:
-#             print('pass')
-#             pass
-        
-#     campaign_id = 1747836664
-#     result={ 'media': 'GSN', 'campaign_id': campaign_id, 'contents':[] }
-#     camp = CampaignAdapter( campaign_id )
-#     camp.retrieve_campaign_attribute()
-#     keyword_list = camp.get_keyword_list()
-#     for keyword in keyword_list:
-#         s = AdGroupAdapter( keyword, camp )
-#         status = s.retrieve_keyword_attribute()
-#         media = result['media']
-#         bid = bid_operator.adjust(media, **status)
-#         result['contents'].append(bid)
-#         print(result)
-#         del s
-#     del camp
+        del adapter_campaign
+        del controller_campaign
     
     print(datetime.datetime.now()-start_time)
     return
