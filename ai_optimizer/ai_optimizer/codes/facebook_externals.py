@@ -30,7 +30,6 @@ import facebook_ai_behavior_log as ai_logger
 import facebook_adset_controller as adset_controller
 
 import adgeek_permission as permission
-permission.init_facebook_api()
 
 IS_DEBUG = False #debug mode will not modify anything
 
@@ -391,23 +390,34 @@ def get_campaign_name_status(campaign_id):
     return this_campaign.get('name'), this_campaign.get('status')
 
 
-# In[3]:
+# In[6]:
 
 
 if __name__ == '__main__':
     current_time = datetime.datetime.now()
     print('[facebook_externals] current_time:', current_time)
-    df_not_opted = mysql_adactivity_save.get_campaigns_not_optimized()
-    print('df_not_opted len:', len(df_not_opted))
+    campaign_not_opted_list = mysql_adactivity_save.get_campaigns_not_optimized().to_dict('records')
+    
+    print('df_not_opted len:', len(campaign_not_opted_list))
 
-    for campaign_id in df_not_opted.campaign_id.unique():
+    for campaign in campaign_not_opted_list:
+        account_id = campaign.get("account_id")
+        campaign_id = campaign.get("campaign_id")
+        destination = campaign.get("destination")
+        charge_type = campaign.get("charge_type")
+        ai_start_date = campaign.get("ai_start_date")
+        ai_stop_date = campaign.get("ai_stop_date")
+        custom_conversion_id = campaign.get("custom_conversion_id")
+        permission.init_facebook_api(account_id)
+
         campaign_name , campaign_fb_status = get_campaign_name_status(campaign_id)
         print(campaign_id, campaign_fb_status, campaign_name)
         if campaign_fb_status == 'ACTIVE':
-            optimize_campaign(campaign_id.astype(dtype=object))
+            optimize_campaign(campaign_id)
         print('==========next campaign========')
     print(datetime.datetime.now().date(), '==================!!facebook_externals.py finish!!=======================')
-#     optimize_campaign(23843592731740022)
+    
+#     optimize_campaign(23843457813880014)
 
 
 # In[4]:

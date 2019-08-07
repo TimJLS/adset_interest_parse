@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[6]:
 
 
 
@@ -19,9 +19,10 @@ import facebook_business.adobjects.customconversion as facebook_business_customc
 
 import facebook_datacollector as fb_collector
 import mysql_adactivity_save as mysql_saver
+import adgeek_permission as permission
 
 
-# In[2]:
+# In[7]:
 
 
 
@@ -32,7 +33,7 @@ def get_account_id_by_campaign(campaign_id):
     
 
 
-# In[3]:
+# In[8]:
 
 
 def save_account_custom_conversions_intodb(account_id, campaign_id, customconversions_id_list):
@@ -56,7 +57,7 @@ def save_account_custom_conversions_intodb(account_id, campaign_id, customconver
     my_db.close()
 
 
-# In[4]:
+# In[9]:
 
 
 def get_account_custom_conversions(account_id, campaign_id):
@@ -78,7 +79,7 @@ def get_account_custom_conversions(account_id, campaign_id):
     
 
 
-# In[5]:
+# In[10]:
 
 
 def process_account_custom_conversion(campaign_id):
@@ -91,7 +92,7 @@ def process_account_custom_conversion(campaign_id):
     
 
 
-# In[6]:
+# In[11]:
 
 
 def save_adset_optimization_goal_intodb(campaign_id, adset_id_list):
@@ -125,7 +126,7 @@ def save_adset_optimization_goal_intodb(campaign_id, adset_id_list):
     
 
 
-# In[7]:
+# In[12]:
 
 
 def process_campaign_adset_optimization_goal(campaign_id):
@@ -140,15 +141,14 @@ def process_campaign_adset_optimization_goal(campaign_id):
     
 
 
-# In[8]:
+# In[21]:
 
 
-def get_conversion_id_by_rule(pixel_rule):
+def get_conversion_id_by_rule(pixel_rule, campaign_id):
     my_db = mysql_saver.connectDB(mysql_saver.DATABASE)
     my_cursor = my_db.cursor()
-    sql = "SELECT conversion_id FROM facebook_custom_conversion where conversion_rule = %(conversion_rule)s"
-    val = {'conversion_rule': pixel_rule }
-
+    sql = "SELECT conversion_id FROM facebook_custom_conversion where conversion_rule = %(conversion_rule)s and campaign_id = %(campaign_id)s"
+    val = {'conversion_rule': pixel_rule, 'campaign_id': str(campaign_id) }
     my_cursor.execute(sql,val)
     result = my_cursor.fetchall()
     my_db.commit()
@@ -206,7 +206,7 @@ def get_campaign_custom_goal_id(campaign_id):
 #         print('----')
         pixel_rule = get_rule_by_adset_id(adset_id)
         if pixel_rule:
-            conversion_id = get_conversion_id_by_rule(pixel_rule)
+            conversion_id = get_conversion_id_by_rule(pixel_rule, campaign_id)
 #             print('conversion_id:', conversion_id)
 #             print('pixel_rule:', pixel_rule)
             if conversion_id:
@@ -254,4 +254,10 @@ def main():
 if __name__ == "__main__":
     main()
     
+
+
+# In[ ]:
+
+
+
 

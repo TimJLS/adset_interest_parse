@@ -11,13 +11,13 @@ import facebook_business.adobjects.customaudience as facebook_business_custom_au
 
 import facebook_datacollector as collector
 import mysql_adactivity_save as mysql_saver
+import adgeek_permission as permission
 
 import pandas as pd
 import datetime
 import time
 
-import adgeek_permission as permission
-permission.init_facebook_api()
+
 
 CONVERSION_BEHAVIOR_LIST = ['Purchase', 'AddToCart', 'ViewContent']
 
@@ -406,9 +406,13 @@ def save_pixel_id_for_one_campaign(campaign_id):
 
 
 def save_pixel_id_for_all_campaign():
-    performance_campaign_id_list = mysql_saver.get_running_performance_campaign().campaign_id.tolist()
+    performance_campaign_list = mysql_saver.get_running_performance_campaign().to_dict('records')
     
-    for campaign_id in performance_campaign_id_list:
+    for campaign in performance_campaign_list:
+        account_id = campaign.get("account_id")
+        campaign_id = campaign.get("campaign_id")
+        permission.init_facebook_api(account_id)
+        
         print('[save_pixel_id_for_all_campaign] conversion campaign_id:', campaign_id)
         save_pixel_id_for_one_campaign(campaign_id)
     
@@ -418,10 +422,13 @@ def save_pixel_id_for_all_campaign():
 
 
 def update_all_custom_audience():
-    conversion_campaign_id_list = mysql_saver.get_running_performance_campaign().campaign_id.tolist()
+    conversion_campaign_list = mysql_saver.get_running_performance_campaign().to_dict('records')
     print('[update_all_custom_audience]: conversion_campaign_id_list')
-    print(conversion_campaign_id_list)
-    for campaign_id in conversion_campaign_id_list:
+    print(conversion_campaign_list)
+    for campaign in conversion_campaign_list:
+        account_id = campaign.get("account_id")
+        campaign_id = campaign.get("campaign_id")
+        permission.init_facebook_api(account_id)
         audience_attribute_list = retrieve_custom_audience_spec(campaign_id)
         for audience_attribute in audience_attribute_list:
             update_audience_attribute(**audience_attribute)

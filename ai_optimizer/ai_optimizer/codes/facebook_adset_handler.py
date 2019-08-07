@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[12]:
+# In[2]:
 
 
 from pathlib import Path
@@ -20,10 +20,10 @@ import facebook_business.adobjects.adsinsights as facebook_business_adsinsights
 
 import facebook_datacollector as fb_collector
 import mysql_adactivity_save as mysql_saver
-
-my_app_id = '958842090856883'
-my_app_secret = 'a952f55afca38572cea2994d440d674b'
-my_access_token = 'EAANoD9I4obMBALrHTgMWgRujnWcZA3ZB823phs6ynDDtQxnzIZASyRQZCHfr5soXBZA7NM9Dc4j9O8FtnlIzxiPCsYt4tmPQ6ZAT3yJLPuYQqjnWZBWX5dsOVzNhEqsHYj1jVJ3RAVVueW7RSxRDbNXKvK3W23dcAjNMjxIjQGIOgZDZD'
+import adgeek_permission as permission
+# my_app_id = '958842090856883'
+# my_app_secret = 'a952f55afca38572cea2994d440d674b'
+# my_access_token = 'EAANoD9I4obMBACygIE9jqmlaWeOW6tBma0oS6JbRpLgAvOYXpVi2XcXuasuwbBgqmaZBj5cP8MHE5WY2l9tAoi549eGZCP61mKr9BA8rZA6kxEW4ovX3KlbbrRGgt4RZC8MAi1UG0l0ZBUd0UBAhIPhzkZBi46ncuyCwkYPB7a6voVBZBTbEZAwH3azZA3Ph6g7aCOfxZCdDOp4AZDZD'
 
 
 class DatePreset:
@@ -129,9 +129,13 @@ def process_campaign(campaign_id):
     
 def main():
 
-    campaign_list =  mysql_saver.get_campaign_target().campaign_id.unique().tolist()
+    campaign_list =  mysql_saver.get_campaign_target().to_dict('records')
 
-    for campaign_id in campaign_list:
+    for campaign in campaign_list:
+        account_id = campaign.get("account_id")
+        campaign_id = campaign.get("campaign_id")
+        permission.init_facebook_api(account_id)
+        
         start_time = time.time()
         process_campaign(campaign_id)
         print('campaign_id:', campaign_id, ' spend seconds:', time.time() - start_time)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[2]:
 
 
 from pathlib import Path
@@ -23,13 +23,14 @@ import facebook_business.adobjects.adsinsights as facebook_business_adsinsights
 import facebook_datacollector as fb_collector
 import mysql_adactivity_save as mysql_saver
 import facebook_currency_handler as currency_handler
+import adgeek_permission as permission
 import datetime
 
 IS_DEBUG = True
 DESTINATION_SPEED_RATIO_VALUE = 1.1
 
 
-# In[2]:
+# In[3]:
 
 
 def update_campaign_daily_budget(campaign_id, daily_budget):
@@ -57,7 +58,7 @@ def get_campaign_name_status(campaign_id):
     
 
 
-# In[3]:
+# In[4]:
 
 
 def get_campaign_status(campaign_id):
@@ -196,16 +197,18 @@ def get_campaign_status(campaign_id):
     
 
 
-# In[4]:
+# In[5]:
 
 
 def main():
 #     get_campaign_status(23843605741390744)
 
-    df_branding = mysql_saver.get_running_branding_campaign()
-    for index, row in df_branding.iterrows():
-        campaign_id = row['campaign_id']
-        charge_type = row['charge_type']
+    branding_campaign_list = mysql_saver.get_running_branding_campaign().to_dict('records')
+    for campaign in branding_campaign_list:
+        account_id = campaign.get("account_id")
+        campaign_id = campaign.get("campaign_id")
+        charge_type = campaign.get("charge_type")
+        permission.init_facebook_api(account_id)
         campaign_name , campaign_fb_status = get_campaign_name_status(campaign_id)
         print('[main] campaign_id', campaign_id, charge_type, campaign_fb_status, campaign_name)
         
@@ -221,7 +224,7 @@ def main():
     
 
 
-# In[5]:
+# In[6]:
 
 
 
@@ -231,7 +234,7 @@ if __name__ == "__main__":
     get_campaign_status(23843537403310559)
 
 
-# In[6]:
+# In[7]:
 
 
 # UPDATE `campaign_target` SET  `destination`=100,`destination_max`=110 WHERE `campaign_id` = 23843605741390744

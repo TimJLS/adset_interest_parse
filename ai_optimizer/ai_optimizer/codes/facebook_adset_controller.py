@@ -21,6 +21,8 @@ import facebook_business.adobjects.ad as facebook_business_ad
 
 from bid_operator import revert_bid_amount
 import mysql_adactivity_save
+import adgeek_permission as permission
+
 from facebook_datacollector import Campaigns
 from facebook_datacollector import DatePreset
 from facebook_adapter import FacebookCampaignAdapter
@@ -28,7 +30,7 @@ import facebook_currency_handler as fb_currency_handler
 import facebook_lookalike_audience as lookalike_audience
 import facebook_campaign_suggestion as campaign_suggestion
 
-my_access_token = 'EAANoD9I4obMBALrHTgMWgRujnWcZA3ZB823phs6ynDDtQxnzIZASyRQZCHfr5soXBZA7NM9Dc4j9O8FtnlIzxiPCsYt4tmPQ6ZAT3yJLPuYQqjnWZBWX5dsOVzNhEqsHYj1jVJ3RAVVueW7RSxRDbNXKvK3W23dcAjNMjxIjQGIOgZDZD'
+# my_access_token = 'EAANoD9I4obMBACygIE9jqmlaWeOW6tBma0oS6JbRpLgAvOYXpVi2XcXuasuwbBgqmaZBj5cP8MHE5WY2l9tAoi549eGZCP61mKr9BA8rZA6kxEW4ovX3KlbbrRGgt4RZC8MAi1UG0l0ZBUd0UBAhIPhzkZBi46ncuyCwkYPB7a6voVBZBTbEZAwH3azZA3Ph6g7aCOfxZCdDOp4AZDZD'
 ADSET_COPY_STRING = ' - Copy'
 AI_ADSET_PREFIX = '_AI_'
 IS_DEBUG = False #debug mode will not modify anything

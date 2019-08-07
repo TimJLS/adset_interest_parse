@@ -20,6 +20,7 @@ import facebook_business.adobjects.adsinsights as facebook_business_adsinsights
 
 import facebook_datacollector as fb_collector
 import mysql_adactivity_save as mysql_saver
+import adgeek_permission as permission
 
 IGNORE_ADSET_STR_LIST = ['AI', 'Copy', 'COPY', 'Lookalike', 'RT', 'Look-a-like']
 

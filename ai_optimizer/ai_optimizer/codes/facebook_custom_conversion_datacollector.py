@@ -19,7 +19,6 @@ from facebook_datacollector import DatePreset
 import mysql_adactivity_save as mysql_saver
 
 import adgeek_permission as permission
-permission.init_facebook_api()
 
 import json
 import datetime
@@ -447,12 +446,16 @@ def data_collect( campaign_id, total_clicks ):
 def main():
     start_time = datetime.datetime.now()
     
-    df_camp = mysql_saver.get_running_custom_conversion_campaign()
+    custom_conversion_campaign_list = mysql_saver.get_running_custom_conversion_campaign().to_dict('records')
 #     print(df_camp)
 
-    for campaign_id in df_camp.campaign_id.unique().tolist():
+    for campaign in custom_conversion_campaign_list:
+        account_id = campaign.get("account_id")
+        campaign_id = campaign.get("campaign_id")
+        destination = campaign.get("destination")
+        permission.init_facebook_api(account_id)
+        
         print('[main] campaign_id', campaign_id)
-        destination = df_camp['destination'][df_camp.campaign_id==campaign_id].iloc[0]
         data_collect( campaign_id, destination )#存資料
         
     print(datetime.datetime.now()-start_time)
@@ -473,7 +476,7 @@ if __name__ == "__main__":
 
 
 
-# In[9]:
+# In[10]:
 
 
 #!jupyter nbconvert --to script facebook_custom_conversion_datacollector.ipynb

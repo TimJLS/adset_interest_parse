@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[10]:
 
 
 from pathlib import Path
@@ -16,18 +16,20 @@ from facebook_business.adobjects.insightsresult import InsightsResult
 from facebook_business.adobjects.adsinsights import AdsInsights
 my_app_id = '958842090856883'
 my_app_secret = 'a952f55afca38572cea2994d440d674b'
-my_access_token = 'EAANoD9I4obMBALrHTgMWgRujnWcZA3ZB823phs6ynDDtQxnzIZASyRQZCHfr5soXBZA7NM9Dc4j9O8FtnlIzxiPCsYt4tmPQ6ZAT3yJLPuYQqjnWZBWX5dsOVzNhEqsHYj1jVJ3RAVVueW7RSxRDbNXKvK3W23dcAjNMjxIjQGIOgZDZD'
+my_access_token = 'EAANoD9I4obMBACygIE9jqmlaWeOW6tBma0oS6JbRpLgAvOYXpVi2XcXuasuwbBgqmaZBj5cP8MHE5WY2l9tAoi549eGZCP61mKr9BA8rZA6kxEW4ovX3KlbbrRGgt4RZC8MAi1UG0l0ZBUd0UBAhIPhzkZBi46ncuyCwkYPB7a6voVBZBTbEZAwH3azZA3Ph6g7aCOfxZCdDOp4AZDZD'
+#'EAANoD9I4obMBALrHTgMWgRujnWcZA3ZB823phs6ynDDtQxnzIZASyRQZCHfr5soXBZA7NM9Dc4j9O8FtnlIzxiPCsYt4tmPQ6ZAT3yJLPuYQqjnWZBWX5dsOVzNhEqsHYj1jVJ3RAVVueW7RSxRDbNXKvK3W23dcAjNMjxIjQGIOgZDZD'
 
 FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
 
 import json
 import datetime
 import pandas as pd
-import mysql_adactivity_save
-from bid_operator import *
 import math
 import random
 
+import adgeek_permission as permission
+import mysql_adactivity_save
+from bid_operator import *
 CAMPAIGN_OBJECTIVE_FIELD = {
     'LINK_CLICKS': 'link_click',
     'POST_ENGAGEMENT': 'post_engagement', 
@@ -595,27 +597,23 @@ def make_default( campaign_id, charge_type ):
         
         release_json = json.dumps(release_version_result)
         mysql_adactivity_save.insert_release_default( campaign_id, release_json, datetime.datetime.now() )
-#     if bool(mydict):
-#         mydict_json = json.dumps(mydict)
-#         mysql_adactivity_save.insert_default( str( campaign_id ), mydict_json, datetime.datetime.now() ) 
     return
 
 def main():
     start_time = datetime.datetime.now()
-    FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-    df_camp = mysql_adactivity_save.get_campaign_target()
-    print(df_camp.campaign_id.tolist())
+    campaign_running_list = mysql_adactivity_save.get_campaign_target().to_dict('records')
+    print([campaign['campaign_id'] for campaign in campaign_running_list])
 #     print(df_camp)
 
-    for campaign_id in df_camp.campaign_id.tolist():
-#         if campaign_id != 23843457813880014:
-#             continue
-            
-        destination = df_camp[df_camp.campaign_id==campaign_id].destination.iloc[0]
-        charge_type = df_camp[df_camp.campaign_id==campaign_id].charge_type.iloc[0]
-        ai_start_date = df_camp[df_camp.campaign_id==campaign_id].ai_start_date.iloc[0]
-        ai_stop_date = df_camp[df_camp.campaign_id==campaign_id].ai_stop_date.iloc[0]
-        custom_conversion_id = df_camp[df_camp.campaign_id==campaign_id].custom_conversion_id.iloc[0]
+    for campaign in campaign_running_list:
+        account_id = campaign.get("account_id")
+        campaign_id = campaign.get("campaign_id")
+        destination = campaign.get("destination")
+        charge_type = campaign.get("charge_type")
+        ai_start_date = campaign.get("ai_start_date")
+        ai_stop_date = campaign.get("ai_stop_date")
+        custom_conversion_id = campaign.get("custom_conversion_id")
+        permission.init_facebook_api(account_id)
         print(campaign_id, charge_type, custom_conversion_id)
 
         data_collect( int(campaign_id), destination, charge_type, ai_start_date, ai_stop_date )
@@ -623,7 +621,7 @@ def main():
     print(datetime.datetime.now()-start_time)
 
 
-# In[2]:
+# In[11]:
 
 
 if __name__ == "__main__":
@@ -632,13 +630,7 @@ if __name__ == "__main__":
     gc.collect()
 
 
-# In[ ]:
-
-
-
-
-
-# In[3]:
+# In[13]:
 
 
 #!jupyter nbconvert --to script facebook_datacollector.ipynb
