@@ -26,6 +26,8 @@ from facebook_datacollector import Campaigns
 import facebook_datacollector
 import facebook_custom_conversion_handler as custom_conversion_handler
 import datetime
+import adgeek_permission as permission
+
 # FOLDER_PATH = 'ai_optimizer/models/cpc_120/'
 # MODEL_PATH = FOLDER_PATH + 'cpc_20_500_64.h5'
 class Field(object):
@@ -38,6 +40,7 @@ class Field(object):
     account_id = 'account_id'
     campaign_id = 'campaign_id'
     destination = 'total_clicks'
+    destination_max = 'destination_max'
     destination_type = 'destination_type'
     media = 'media'
     ai_start_date = 'ai_start_date'
@@ -45,10 +48,6 @@ class Field(object):
     ai_spend_cap = 'ai_spend_cap'
     ai_status = 'ai_status'
 
-
-my_app_id = '958842090856883'
-my_app_secret = 'a952f55afca38572cea2994d440d674b'
-my_access_token = 'EAANoD9I4obMBALrHTgMWgRujnWcZA3ZB823phs6ynDDtQxnzIZASyRQZCHfr5soXBZA7NM9Dc4j9O8FtnlIzxiPCsYt4tmPQ6ZAT3yJLPuYQqjnWZBWX5dsOVzNhEqsHYj1jVJ3RAVVueW7RSxRDbNXKvK3W23dcAjNMjxIjQGIOgZDZD'
 
 @csrf_exempt
 def opt_api(request):
@@ -59,6 +58,7 @@ def opt_api(request):
         account_id = request.POST.get(Field.account_id)
         campaign_id = request.POST.get(Field.campaign_id)
         destination = request.POST.get(Field.destination)
+        destination_max = request.POST.get(Field.destination_max)
         destination_type = request.POST.get(Field.destination_type)
         media = request.POST.get(Field.media)
         
@@ -68,7 +68,7 @@ def opt_api(request):
         ai_spend_cap = request.POST.get(Field.ai_spend_cap)
         print('request post is:',  request.POST)
         
-        if campaign_id and destination and destination_type and ai_start_date and ai_stop_date and ai_spend_cap and ai_status:
+        if account_id and campaign_id and destination and destination_type and ai_start_date and ai_stop_date and ai_spend_cap and ai_status:
             brief_dict = {
                 'campaign_id': campaign_id,
                 'destination': destination,
@@ -77,12 +77,14 @@ def opt_api(request):
                 'ai_stop_date': ai_stop_date,
                 'ai_spend_cap': ai_spend_cap,
                 'ai_status': ai_status,
+                'destination_max': destination_max,
             }
             if media == 'Facebook' or not media:
                 mydict = dict()
-                FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
+                permission.init_facebook_api(int(account_id))
                 
                 custom_conversion_id = custom_conversion_handler.get_conversion_id_by_compaign(campaign_id)
+                brief_dict['account_id'] = account_id
                 brief_dict['custom_conversion_id'] = custom_conversion_id
                 brief_dict['charge_type'] = brief_dict.pop('destination_type')
                 queue = mysql_adactivity_save.check_campaignid_target( **brief_dict )
@@ -122,7 +124,7 @@ def opt_api(request):
             elif media == 'GDN' and account_id:
                 brief_dict['account_id'] = account_id
                 if not gdn_db.check_campaignid_target(**brief_dict):
-                    return JsonResponse( '{Tim}', safe=False )
+                    return JsonResponse( {}, safe=False )
                 else:
                     mydict = gdn_db.get_result( campaign_id ) #new version
                     return JsonResponse( json.loads(mydict), safe=False )
