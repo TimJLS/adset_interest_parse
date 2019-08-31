@@ -4,15 +4,15 @@
 # In[1]:
 
 
-# %load facebook_adapter.py
 import datetime
 import pandas as pd
-import mysql_adactivity_save
+import database_controller
 import bid_operator
 import json
 import math
-from facebook_datacollector import AdSets
+import facebook_datacollector as collector
 import facebook_ai_behavior_log as ai_logger
+import adgeek_permission as permission
 
 DATADASE = "dev_facebook_test"
 START_TIME = 'start_time'
@@ -24,6 +24,7 @@ ADSET_ID = 'adset_id'
 CAMPAIGN_ID = 'campaign_id'
 CHARGE = 'charge'
 TARGET = 'target'
+ACTION = 'action'
 BID_AMOUNT = 'bid_amount'
 REQUEST_TIME = 'request_time'
 TARGET_LEFT = 'target_left'
@@ -34,8 +35,8 @@ ADSET_PROGRESS = 'adset_progress'
 CAMPAIGN_PROGRESS = 'campaign_progress'
 
 class FacebookCampaignAdapter(object):
-    def __init__(self, campaign_id):
-        self.mydb = mysql_adactivity_save.connectDB( DATADASE )
+    def __init__(self, campaign_id, database_fb):
+        self.database_fb = database_fb
         self.limit = 9000
         self.hour_per_day = 20
         self.campaign_id = campaign_id
@@ -45,30 +46,36 @@ class FacebookCampaignAdapter(object):
         self.init_bid_dict = dict()
         self.last_bid_dict = dict()
         
-        self.df_camp = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id={}".format( campaign_id ), con=self.mydb )
+        self.df_camp = self.database_fb.get_one_campaign(self.campaign_id)
+#         self.df_camp = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id={}".format( campaign_id ), con=self.mydb )
         try:
             self.campaign_days_left = ( self.df_camp[ AI_STOP_DATE ].iloc[0] - self.request_date ).days + 1
         except Exception as e:
             self.campaign_days_left = 1
+        
         self.campaign_days = ( self.df_camp[ AI_STOP_DATE ].iloc[0] - self.df_camp[ AI_START_DATE ].iloc[0] ).days
         self.campaign_performance = self.df_camp[ TARGET ].sum()
         self.campaign_target = self.df_camp[ TARGET_LEFT ].iloc[0].astype(dtype=object)
         self.campaign_day_target = self.campaign_target / self.campaign_days_left
         self.campaign_progress = self.campaign_performance / self.campaign_day_target
         self.campaign_progress = 1 if self.campaign_day_target <= 0 else self.campaign_progress
-        self.mydb.close()
+#         self.mydb.close()
+        self.account_id = self.df_camp[ 'account_id' ].iloc[0].astype(dtype=object)
+        permission.init_facebook_api(self.account_id)
             
     def get_df(self):
         return
     
     def get_bid(self):
-        df_init_bid = pd.read_sql( "SELECT * FROM adset_initial_bid WHERE campaign_id={} ;".format( self.campaign_id ), con=self.mydb )
+#         df_init_bid = pd.read_sql( "SELECT * FROM adset_initial_bid WHERE campaign_id={} ;".format( self.campaign_id ), con=self.mydb )
 
         for adset in self.adset_list:           
             try:
-                init_bid = df_init_bid[BID_AMOUNT][df_init_bid.adset_id==adset].head(1).iloc[0].astype(dtype=object)
-                df_adset = pd.read_sql("select bid_amount from adset_insights WHERE adset_id = {} order by request_time desc limit 1".format(adset), con=self.mydb)
-                last_bid = df_adset.bid_amount.iloc[0].astype(dtype=object)
+                init_bid = self.database_fb.get_init_bid(adset)
+                last_bid = self.database_fb.get_last_bid(adset)
+#                 init_bid = df_init_bid[BID_AMOUNT][df_init_bid.adset_id==adset].head(1).iloc[0].astype(dtype=object)
+#                 df_adset = pd.read_sql("select bid_amount from adset_metrics WHERE adset_id = {} order by request_time desc limit 1".format(adset), con=self.mydb)
+#                 last_bid = df_adset.bid_amount.iloc[0].astype(dtype=object)
                 self.init_bid_dict.update({ adset: init_bid })
                 self.last_bid_dict.update({ adset: last_bid })
             except Exception as e:
@@ -98,19 +105,20 @@ class FacebookCampaignAdapter(object):
         return self.adset_list
     
     def retrieve_campaign_attribute(self):
-        self.mydb = mysql_adactivity_save.connectDB( DATADASE )
-        
-        self.df_ad = pd.read_sql( "SELECT * FROM adset_insights where campaign_id={}".format( self.campaign_id ), con=self.mydb )
-        self.adset_list = self.df_ad[ADSET_ID][( self.df_ad.request_time.dt.date == self.request_time.date())].unique().tolist()
+#         self.mydb = mysql_adactivity_save.connectDB( DATADASE )
+        self.df_ad = self.database_fb.retrieve('table_insights', self.campaign_id)
+        self.adset_list = [adset['adset_id'] for adset in self.df_ad.to_dict('records')]
+#         self.df_ad = pd.read_sql( "SELECT * FROM adset_metrics where campaign_id={}".format( self.campaign_id ), con=self.mydb )
+#         self.adset_list = self.df_ad[ADSET_ID][( self.df_ad.request_time.dt.date == self.request_time.date())].unique().tolist()
         self.get_bid()
         
-        self.mydb.close()
+#         self.mydb.close()
         return
 
 class FacebookAdSetAdapter(FacebookCampaignAdapter):
     def __init__(self, adset_id, fb):
-        self.mydb = mysql_adactivity_save.connectDB( DATADASE )
-        self.adset_id = adset_id
+#         self.mydb = mysql_adactivity_save.connectDB( DATADASE )
+        self.adset_id = int(adset_id)
         self.fb = fb
 
     def init_campaign(self, fb):
@@ -130,7 +138,7 @@ class FacebookAdSetAdapter(FacebookCampaignAdapter):
         return
     
     def get_campaign_id(self):
-        self.campaign_id = self.df_ad[ CAMPAIGN_ID ].iloc[0].astype(dtype=object)
+        self.campaign_id = self.fb.campaign_id
         return self.campaign_id
     
     def get_adset_day_target(self):
@@ -140,8 +148,8 @@ class FacebookAdSetAdapter(FacebookCampaignAdapter):
     
     def get_adset_performance(self):
         try:
-            self.adset_performance = self.df_ad[self.df_ad.adset_id==self.adset_id][[ TARGET ]].tail(1).iloc[0,0]
-        except ValueError as e:
+            self.adset_performance = self.df_ad[self.df_ad.adset_id==self.adset_id][[ ACTION ]].tail(1).iloc[0,0]
+        except Exception as e:
             print('[facebook_adapter.FacebookAdSetAdapter.get_adset_performance()]', e)
             self.adset_performance = 0
         if math.isnan(self.adset_performance):
@@ -170,7 +178,7 @@ class FacebookAdSetAdapter(FacebookCampaignAdapter):
         self.get_bid()
         self.get_adset_time_target()
         self.get_adset_progress()
-        self.mydb.close()
+#         self.mydb.close()
         return {
             ADSET_ID:self.adset_id,
             INIT_BID:self.init_bid,
@@ -181,15 +189,17 @@ class FacebookAdSetAdapter(FacebookCampaignAdapter):
 
 def main(campaign_id=None):
     start_time = datetime.datetime.now()
+    db = database_controller.Database()
+    database_fb = database_controller.FB(db)
     if campaign_id:
         print('==========[campaign_id]: {} =========='.format(campaign_id))
         result={ 'media': 'Facebook', 'campaign_id': campaign_id, 'contents':[] }
-        release_version_result = {}
+        collector_campaign = collector.Campaigns(campaign_id, database_fb=database_fb)
         fb = FacebookCampaignAdapter( campaign_id )
         fb.get_df()
         fb.retrieve_campaign_attribute()
-        adset_list = fb.get_adset_list()
-        charge_type = fb.df_camp['charge_type'].iloc[0]
+        adset_list = collector_campaign.get_adsets_active()
+        destination_type = collector_campaign.charge_type
         for adset_id in adset_list:
             s = FacebookAdSetAdapter( adset_id, fb )
             status = s.retrieve_adset_attribute()
@@ -203,7 +213,7 @@ def main(campaign_id=None):
                 bid = bid_operator.adjust(media, **status)
                 result['contents'].append(bid)
                 print('[facebook_adapter.main]: adset_id: {}, bid is {}'.format(adset_id, bid['bid']))
-                adset = AdSets(adset_id, charge_type)
+                adset = collector.AdSets(adset_id, database_fb=database_fb)
                 adset.get_adset_features()
                 bid['pred_cpc'] = bid.pop('bid')
                 bid['pred_cpc'] = int( bid['pred_cpc'] )
@@ -216,22 +226,20 @@ def main(campaign_id=None):
                     print('[main]: update bid unavailable..', e)
                     pass
             del s
-        mydict_json = json.dumps(result)
-        release_json = json.dumps(release_version_result)
-        mysql_adactivity_save.insert_result( campaign_id, mydict_json, datetime.datetime.now() )
         del fb
     else:
-        campaign_id_list = mysql_adactivity_save.get_campaign_target()['campaign_id'].unique().tolist()
-        print('[campaign id list]: {}'.format(campaign_id_list))
-        for campaign_id in campaign_id_list:
+        campaign_running_list = database_fb.get_running_campaign().to_dict('records')
+        print('[campaign id list]: {}'.format([campaign['campaign_id'] for campaign in campaign_running_list]))
+        for campaign in campaign_running_list:
+            campaign_id = campaign.get("campaign_id")
             print('==========[campaign_id]: {} =========='.format(campaign_id))
+            collector_campaign = collector.Campaigns(campaign_id, database_fb=database_fb)
             result={ 'media': 'Facebook', 'campaign_id': campaign_id, 'contents':[] }
-            release_version_result = {}
-            fb = FacebookCampaignAdapter( campaign_id )
+            fb = FacebookCampaignAdapter( campaign_id, database_fb )
             fb.get_df()
             fb.retrieve_campaign_attribute()
-            adset_list = fb.get_adset_list()
-            charge_type = fb.df_camp['charge_type'].iloc[0]
+            adset_list = collector_campaign.get_adsets_active()
+            charge_type = campaign.get("destination_type")
             for adset_id in adset_list:
                 s = FacebookAdSetAdapter( adset_id, fb )
                 status = s.retrieve_adset_attribute()
@@ -245,7 +253,7 @@ def main(campaign_id=None):
                     bid = bid_operator.adjust(media, **status)
                     result['contents'].append(bid)
                     print('[facebook_adapter.main]: adset_id: {}, bid is {}'.format(adset_id, bid['bid']))
-                    adset = AdSets(adset_id, charge_type)
+                    adset = collector.AdSets(adset_id, database_fb=database_fb)
                     adset.get_adset_features()
                     bid['pred_cpc'] = bid.pop('bid')
                     bid['pred_cpc'] = int( bid['pred_cpc'] )
@@ -258,9 +266,6 @@ def main(campaign_id=None):
                         print('[main]: update bid unavailable..', e)
                         pass
                 del s
-            mydict_json = json.dumps(result)
-            release_json = json.dumps(release_version_result)
-            mysql_adactivity_save.insert_result( campaign_id, mydict_json, datetime.datetime.now() )
             del fb
     
     print(datetime.datetime.now()-start_time)
@@ -277,7 +282,7 @@ if __name__=='__main__':
 #     main(23842953829930431)
 
 
-# In[3]:
+# In[4]:
 
 
 #!jupyter nbconvert --to script facebook_adapter.ipynb

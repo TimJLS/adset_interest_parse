@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[36]:
 
 
 import mysql.connector
@@ -17,7 +17,7 @@ pymysql.install_as_MySQLdb()
 import MySQLdb
 
 
-# In[2]:
+# In[37]:
 
 
 class Database(object):
@@ -26,18 +26,35 @@ class Database(object):
     password = "adgeek1234"
 
 
-# In[3]:
+# In[38]:
+
+
+class DevDatabase(Database):
+    host = "aws-dev-ai-private.adgeek.cc"
+    pass
+
+
+# In[59]:
 
 
 class CRUDController(object):
     dt = datetime.date.today()
     metrics_converter = {
         'facebook': {
+            'account_id': sql.column("account_id"),
             'campaign_id': sql.column("campaign_id"),
             'adset_id': sql.column("adset_id"),
             'table_init_bid': "adset_initial_bid",
             'table_insights': "adset_metrics",
             'score': "adset_score",
+            'optimal_weight': "campaign_optimal_weight",
+            'campaign_target_suggestion': "campaign_target_suggestion",
+            'facebook_campaign_currency': "facebook_campaign_currency",
+            'campaign_pixel_id': "campaign_pixel_id",
+            'campaign_target': "campaign_target",
+            'custom_conversion': "facebook_custom_conversion",
+            'facebook_adset_optimization_goal': "facebook_adset_optimization_goal",
+            'account_target_suggestion': "account_target_suggestion",
         },
         'gdn': {
             'campaign_id': sql.column("campaign_id"),
@@ -45,6 +62,7 @@ class CRUDController(object):
             'table_init_bid': "adgroup_initial_bid",
             'table_insights': "adgroup_insights",
             'score': "adgroup_score",
+            'optimal_weight': "optimal_weight",
         },
         'gsn': {
             'campaign_id': sql.column("campaign_id"),
@@ -52,12 +70,16 @@ class CRUDController(object):
             'table_init_bid': "adgroup_initial_bid",
             'table_insights': "keywords_insights",
             'score': "adgroup_score",
+            'optimal_weight': "optimal_weight",
         }
     }
     BRANDING_CAMPAIGN_LIST = [
         'THRUPLAY', 'LINK_CLICKS', 'ALL_CLICKS', 'VIDEO_VIEWS', 'REACH', 'POST_ENGAGEMENT', 'PAGE_LIKES', 'LANDING_PAGE_VIEW']
     PERFORMANCE_CAMPAIGN_LIST = [
-        'CONVERSIONS', 'MESSAGES', 'SEARCH', 'INITIATE_CHECKOUT', 'LEAD_WEBSITE', 'PURCHASES', 'ADD_TO_WISHLIST', 'VIEW_CONTENT', 'ADD_PAYMENT_INFO', 'COMPLETE_REGISTRATION', 'CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART']
+        'PURCHASE', 'MESSAGES', 'SEARCH', 'INITIATE_CHECKOUT', 'LEAD_WEBSITE', 'PURCHASES', 'ADD_TO_WISHLIST', 'VIEW_CONTENT', 'ADD_PAYMENT_INFO', 'COMPLETE_REGISTRATION', 'CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART']
+    CUSTOM_CONVERSION_CAMPAIGN_LIST = [
+        'CUSTOM', 'CONVERSIONS'
+    ]
     def __init__(self, database):
         self.database = database
     
@@ -102,6 +124,36 @@ class CRUDController(object):
                 ), con=self.conn
             )
         
+    def get_standard_performance_campaign(self,):
+        with self.engine.connect() as self.conn:
+            tbl = Table("campaign_target", self.metadata, autoload=True)
+            return pd.read_sql(
+                sql.select(['*'], from_obj=tbl).where(
+                    sql.and_(
+                        tbl.c.destination_type.in_(self.PERFORMANCE_CAMPAIGN_LIST),
+                        tbl.c.custom_conversion_id == None,
+                        sql.func.date(tbl.c.ai_stop_date) >= '{:%Y/%m/%d}'.format(self.dt),
+                        sql.func.date(tbl.c.ai_start_date) <= '{:%Y/%m/%d}'.format(self.dt),
+                        tbl.c.ai_status == 'active',
+                    )
+                ), con=self.conn
+            )
+        
+    def get_custom_performance_campaign(self,):
+        with self.engine.connect() as self.conn:
+            tbl = Table("campaign_target", self.metadata, autoload=True)
+            return pd.read_sql(
+                sql.select(['*'], from_obj=tbl).where(
+                    sql.and_(
+                        tbl.c.destination_type.in_(self.CUSTOM_CONVERSION_CAMPAIGN_LIST),
+                        tbl.c.custom_conversion_id != None,
+                        sql.func.date(tbl.c.ai_stop_date) >= '{:%Y/%m/%d}'.format(self.dt),
+                        sql.func.date(tbl.c.ai_start_date) <= '{:%Y/%m/%d}'.format(self.dt),
+                        tbl.c.ai_status == 'active',
+                    )
+                ), con=self.conn
+            )
+        
     def get_branding_campaign(self,):
         with self.engine.connect() as self.conn:
             tbl = Table("campaign_target", self.metadata, autoload=True)
@@ -116,13 +168,14 @@ class CRUDController(object):
                 ), con=self.conn
             )
     
-    def get_custom_conversion(self,):
+    def get_custom_conversion_campaign(self,):
         with self.engine.connect() as self.conn:
             tbl = Table("campaign_target", self.metadata, autoload=True)
             return pd.read_sql(
-                sql.select(['*'], from_obj=t).where(
+                sql.select(['*'], from_obj=tbl).where(
                     sql.and_(
-                        tbl.c.destination_type.in_(self.BRANDING_CAMPAIGN_LIST), 
+                        tbl.c.destination_type.in_(self.CUSTOM_CONVERSION_CAMPAIGN_LIST),
+                        tbl.c.custom_conversion_id != None,
                         sql.func.date(tbl.c.ai_stop_date) >= '{:%Y/%m/%d}'.format(self.dt),
                         sql.func.date(tbl.c.ai_start_date) <= '{:%Y/%m/%d}'.format(self.dt),
                         tbl.c.ai_status == 'active',
@@ -186,19 +239,40 @@ class CRUDController(object):
             for (result, ) in results:
                 return result
 
-    def retrieve(self, table_name, campaign_id):
+    def retrieve(self, table_name, campaign_id=None, adset_id=None, account_id=None, by_request_time=True):
         table_name = self.metrics_converter[self.media][table_name]
         with self.engine.connect() as self.conn:
             tbl = Table(table_name, self.metadata, autoload=True)
-            return pd.read_sql( 
-                sql.select(['*'], from_obj=tbl).where(
-                    sql.and_(
+            if campaign_id:
+                if by_request_time:
+                    stmt =  sql.select(['*'], from_obj=tbl).where(sql.and_(
                         self.metrics_converter[self.media]['campaign_id'] == campaign_id,
                         sql.func.date(tbl.c.request_time) == '{:%Y/%m/%d}'.format(self.dt),
-                    )
-                ), con=self.conn,
-            )
-            
+                    ))
+                    return pd.read_sql( stmt, con=self.conn,)
+                else:
+                    stmt = sql.select(['*'], from_obj=tbl).where(sql.and_(
+                        self.metrics_converter[self.media]['campaign_id'] == campaign_id,
+                    ))
+                    return pd.read_sql( stmt, con=self.conn,)
+            elif adset_id:
+                stmt = sql.select(['*'], from_obj=tbl).where( sql.and_(
+                    self.metrics_converter[self.media]['adset_id'] == adset_id,
+                ))
+                return pd.read_sql( stmt, con=self.conn,)
+            elif account_id:
+                stmt = sql.select(['*'], from_obj=tbl).where( sql.and_(
+                    self.metrics_converter[self.media]['account_id'] == account_id,
+                ))
+                return pd.read_sql( stmt, con=self.conn,)
+            else:
+                self.engine.dispose()
+    def retrieve_all(self, table_name, ):
+        with self.engine.connect() as self.conn:
+            tbl = Table(table_name, self.metadata, autoload=True)
+            stmt =  sql.select(['*'], from_obj=tbl)
+            return pd.read_sql( stmt, con=self.conn,)
+        
     def insert(self, table_name, values_dict):
         with self.engine.connect() as self.conn:
             tbl = Table(table_name, self.metadata, autoload=True)
@@ -223,15 +297,17 @@ class CRUDController(object):
             ins = mysql.insert(tbl).values( **values_dict ).prefix_with('IGNORE')#.where(tbl.c.campaign_id==111)
             self.conn.execute( ins, )
             
-    def update(self, table_name, values_dict, campaign_id=None, adset_id=None):
+    def update(self, table_name, values_dict, campaign_id=None, adset_id=None, audience_id=None):
         with self.engine.connect() as self.conn:
             tbl = Table(table_name, self.metadata, autoload=True)
             if campaign_id:
                 stmt = sql.update(tbl).where( tbl.c.campaign_id==campaign_id ).values( **values_dict )
             elif adset_id:
                 stmt = sql.update(tbl).where( tbl.c.adset_id==adset_id ).values( **values_dict )
+            elif audience_id:
+                stmt = sql.update(tbl).where( tbl.c.audience_id==audience_id ).values( **values_dict )
             else:
-                return
+                return self.engine.dispose()
             self.conn.execute( stmt, )
             
     def update_init_bid(self, campaign_id, update_ratio=1.1):
@@ -249,7 +325,7 @@ class CRUDController(object):
 #             return results
 
 
-# In[4]:
+# In[52]:
 
 
 class FB(CRUDController):
@@ -261,6 +337,9 @@ class FB(CRUDController):
                 user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database
             )
         )
+        print('mysql://{user}:{password}@{host}/{database}'.format(
+                user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database
+            ))
         self.metadata = MetaData(bind=self.engine)
         self.table_init_bid = 'adset_initial_bid'
         self.media = 'facebook'
@@ -297,7 +376,7 @@ class GSN(CRUDController):
         )
 
 
-# In[7]:
+# In[ ]:
 
 
 #!jupyter nbconvert --to script database_controller.ipynb

@@ -4,24 +4,26 @@
 # In[1]:
 
 
-# %load genetic_algorithm.py
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import random
 import copy
-import matplotlib.pyplot as plt
 import math
 import datetime
-# import main_func
-import facebook_datacollector
-import pandas as pd
-import mysql_adactivity_save
-
-# sizepop, vardim, MAXGEN, params = 2000, 3, 30, [0.9, 0.5, 0.5]
-sizepop, vardim, MAXGEN, params = 1000, 3, 15, [0.9, 0.5, 0.5]
+import adgeek_permission as permission
+import facebook_datacollector as collector
+import database_controller
+sizepop, vardim, MAXGEN, params = 1000, 7, 15, [0.9, 0.5, 0.5]
 BRANDING_CAMPAIGN_LIST = [
-    'LINK_CLICKS', 'ALL_CLICKS','VIDEO_VIEWS', 'REACH', 'IMPRESSIONS', 'POST_ENGAGEMENT', 'PAGE_LIKES', 'LANDING_PAGE_VIEW']
+    'THRUPLAY', 'LINK_CLICKS', 'ALL_CLICKS','VIDEO_VIEWS', 'REACH', 'IMPRESSIONS', 'POST_ENGAGEMENT', 'PAGE_LIKES', 'LANDING_PAGE_VIEW']
 PERFORMANCE_CAMPAIGN_LIST = [
     'CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART']
+
+
+# In[2]:
+
+
 class GeneticAlgorithm(object):
     '''
     The class for genetic algorithm
@@ -207,168 +209,306 @@ class GAIndividual(object):
         '''
         calculate the fitness of the chromsome
         '''
-        self.fitness = ObjectiveFunc.fitnessfunc( self.chrom, df )
-        
-class ObjectiveFunc(object):
-    '''
-    objective function of genetic algorithm
-    '''
-    def fitnessfunc(optimal_weight, df):
-        m_kpi   = df['campaign_charge'] / df['charge_per_day']
-        m_spend = -( df['budget_per_day'] - df['spend'] ) / df['budget_per_day']
-        m_bid   = ( df['campaign_bid'] - df['campaign_cpc'] ) / df['campaign_bid']
+        optimal_weight = OptimalWeight(self.chrom)
+        self.fitness = np.dot(optimal_weight.matrix, chromosome.matrix)
+#         self.fitness = ObjectiveFunc.fitnessfunc( self.chrom, df )
 
-        status  = np.array( [m_kpi, m_spend, m_bid] )
-        r = np.dot( optimal_weight, status )
-        return r
 
-    def adset_fitness(optimal_weight, df):
-        df = df.fillna(0)
-        m_kpi = df['target'] / df['daily_charge'] * 10
-        if df['target'].iloc[0] == 0:
-            m_kpi = -10
-        m_spend = -( df['daily_budget'] - df['spend'] ) / df['daily_budget']
-        m_bid   = ( df['bid_amount'] - df['cost_per_target'] ) / df['bid_amount']
-        status  = np.array( [m_kpi, m_spend.iloc[0], m_bid.iloc[0]] )
+# def ga_optimal_weight(campaign_id):
+#     request_time = datetime.datetime.now().date()
+#     mydb = mysql_saver.connectDB( mysql_saver.DATABASE )
+#     df_weight = pd.read_sql("SELECT * FROM optimal_weight WHERE campaign_id=%s " %(campaign_id), con=mydb)
+#     df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id=%s " %(campaign_id), con=mydb)
+#     charge_type = df_camp['charge_type'].iloc[0]
+#     adset_list = collector.Campaigns(campaign_id, charge_type).get_adsets_active()
+#     if len(df_weight) > 0:
+#         for adset_id in adset_list:
+#             df = ObjectiveFunc.adset_status( adset_id, df_camp )
+#             r = ObjectiveFunc.adset_fitness( df_weight, df )
+#             print('[score]', r)
+#             df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'score':r, 'request_time':request_time}, index=[0])
+#             try:
+#                 mysql_saver.intoDB("adset_score", df_final)
+#             except Exception as e:
+#                 print('score is inf: ', e)
+#                 pass
+#     else:
+#         pass
+#     mydb.close()
+#     return
 
-        for idx, j in enumerate(status):
-            if np.isinf(idx) or np.isneginf(idx):
-                status[idx] = -100
-        status = np.nan_to_num(status)
-        optimal_weight = np.array([
-            optimal_weight['weight_kpi'].iloc[0],
-            optimal_weight['weight_spend'].iloc[0],
-            optimal_weight['weight_bid'].iloc[0]
-        ])
-        r = np.dot( optimal_weight, status )
-        return r
+
+# In[3]:
+
+
+def generate_optimal_weight(campaign_id, charge_type):
+    global chromosome
+    print('[campaign_id]:', campaign_id )
+    print('[current time]: ', datetime.datetime.now() )
+    start_time = datetime.datetime.now()
     
-    def campaign_status( campaign_id ):
+    campaign = Campaign(campaign_id)
+    chromosome = ObjectChromosome(campaign.condition)
 
-        mydb = mysql_adactivity_save.connectDB( "dev_facebook_test" )
-        df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id=%s" %(campaign_id), con=mydb)
-        print(df_camp)
-        charge_type = df_camp['charge_type'].iloc[0]
-        df_camp['charge_per_day'] = df_camp['target']/df_camp['period']
-        df_camp['campaign_bid'] = df_camp['ai_spend_cap']/df_camp['destination']
-        df_camp['budget_per_day'] = df_camp['daily_budget']
-        df_camp['charge_per_day'] = df_camp['daily_charge']
-        
-        campaign_collector = facebook_datacollector.Campaigns(campaign_id, charge_type)
-        insights = campaign_collector.get_campaign_insights()
-        wanted_key_list = ['target', 'cost_per_target', 'impressions', 'spend']
-
-        unwanted_key_list = set(insights) - set(wanted_key_list)
-        for unwanted_key in unwanted_key_list: del insights[unwanted_key]
-        
-        df_insights = pd.DataFrame(insights, index=[0])
-        df_insights = df_insights.rename(columns = {
-            'target':'campaign_charge',
-            'cost_per_target':'campaign_cpc'
-        })
-        
-        df = pd.concat([ df_insights, df_camp[['campaign_id', 'charge_per_day', 'budget_per_day', 'daily_budget', 'daily_charge', 'charge_type', 'campaign_bid']] ], axis=1)
-        df = df.convert_objects(convert_numeric=True)
-        mydb.close()
-        return df
+    bound = np.tile([[0], [1]], vardim)
+    ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
+    result_optimal_weight = ga.solve()
     
-    def adset_status( adset_id, df_camp ):
-        charge_type = df_camp['charge_type'].iloc[0]
-        adset_collector = facebook_datacollector.AdSets(adset_id, charge_type)
-        ### Campaign lifetime insights
-        df_camp['campaign_daily_budget'] = df_camp['daily_budget']
-        df_camp[['campaign_id', 'daily_charge', 'campaign_daily_budget']]
-        ### Adset lifetime insights
-        
-        insights = adset_collector.generate_adset_info()
-        
-        wanted_key_list = ['adset_id', 'target', 'cost_per_target', 'impressions', 'reach', 'spend', 'bid_amount']
+    optimal_campaign = CampaignOptimalWeight(campaign_id, charge_type, result_optimal_weight)
+    
+    score = np.dot(optimal_campaign.matrix, chromosome.matrix)
+    print('==========SCORE========')
+    print(score)
 
-        unwanted_key_list = set(insights) - set(wanted_key_list)
-        for unwanted_key in unwanted_key_list: del insights[unwanted_key]
+    score_columns=['w_action', 'w_desire', 'w_interest', 'w_awareness', 'w_discovery', 'w_spend', 'w_bid']
+    df_score = pd.DataFrame(data=[optimal_campaign.matrix], columns=score_columns, index=[0])
+    df_score['campaign_id'], df_score['score'] = campaign_id, score
+
+    database_fb.upsert("campaign_optimal_weight", df_score.to_dict('records')[0])
+
+    assess_adset(campaign, optimal_campaign)
+
+    print('[optimal_weight]:', optimal_campaign.matrix)
+    print('[operation time]: ', datetime.datetime.now()-start_time)
+
+
+# In[4]:
+
+
+def assess_adset(campaign_object, campaign_optimal_object):
+    for adset in campaign_object.adsets:
         
-        df_adset = pd.DataFrame(insights, index=[0])
-        df = pd.concat(
-            [df_camp[['campaign_id', 'daily_charge', 'daily_budget', 'campaign_daily_budget']], df_adset], ignore_index=True, sort=True)
-        df = df.convert_objects(convert_numeric=True)
-        return df
+        chromosome_adset = ObjectChromosome(adset.condition)
+        
+        score = np.dot(campaign_optimal_object.matrix, chromosome_adset.matrix)
+        
+        print('=====[adset_id]=====', adset.adset_id, '==========[score]', score)
 
-def ga_optimal_weight(campaign_id):
-    request_time = datetime.datetime.now().date()
-    mydb = mysql_adactivity_save.connectDB( "dev_facebook_test" )
-    df_weight = pd.read_sql("SELECT * FROM optimal_weight WHERE campaign_id=%s " %(campaign_id), con=mydb)
-    df_camp = pd.read_sql("SELECT * FROM campaign_target WHERE campaign_id=%s " %(campaign_id), con=mydb)
-    charge_type = df_camp['charge_type'].iloc[0]
-    adset_list = facebook_datacollector.Campaigns(campaign_id, charge_type).get_adsets_active()
-    if len(df_weight) > 0:
-        for adset_id in adset_list:
-            df = ObjectiveFunc.adset_status( adset_id, df_camp )
-            r = ObjectiveFunc.adset_fitness( df_weight, df )
-            print('[score]', r)
-            df_final = pd.DataFrame({'campaign_id':campaign_id, 'adset_id':adset_id, 'score':r, 'request_time':request_time}, index=[0])
-            try:
-                mysql_adactivity_save.intoDB("adset_score", df_final)
-            except Exception as e:
-                print('score is inf: ', e)
-                pass
-    else:
-        pass
-    mydb.close()
-    return
+        database_fb.insert(
+            "adset_score", 
+            {'campaign_id':campaign_object.campaign_id, 'adset_id':adset.adset_id, 'score':score.item()}
+        )
 
-def main(campaign_id=None):
+
+# In[6]:
+
+
+def main():
     starttime = datetime.datetime.now()
-    global df
-    if not campaign_id:
-        camp_id_list = mysql_adactivity_save.get_running_branding_campaign()['campaign_id'].unique()
-        for camp_id in camp_id_list:
-            print('campaign_id:', camp_id )
-            print('current time: ', starttime )
-            df = ObjectiveFunc.campaign_status(camp_id)
-            bound = np.tile([[0], [1]], vardim)
-            ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
-            optimal = ga.solve()
-            score = ObjectiveFunc.fitnessfunc(optimal, df)
-
-            score_columns=['weight_kpi', 'weight_spend', 'weight_bid']
-            df_score = pd.DataFrame(data=[optimal], columns=['weight_kpi', 'weight_spend', 'weight_bid'], index=[0])
-
-            df_final = pd.DataFrame({'campaign_id':camp_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
-            df_final = pd.concat( [df_score, df_final], axis=1, sort=True, ignore_index=False)
-
-            print(df_final)
-            mysql_adactivity_save.check_optimal_weight(camp_id, df_final)
-            ga_optimal_weight(camp_id)
-
-            print('optimal_weight:', optimal)
-            print(datetime.datetime.now()-starttime)    
-        print(datetime.datetime.now()-starttime)
-    else:
-        print('campaign_id:', campaign_id )
-        print('current time: ', starttime )
-        df = ObjectiveFunc.campaign_status(campaign_id)
-        print(df)
-        if df['charge_type'].iloc[0] in BRANDING_CAMPAIGN_LIST:
-            bound = np.tile([[0], [1]], vardim)
-            ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
-            optimal = ga.solve()
-            score = ObjectiveFunc.fitnessfunc(optimal, df)
-
-            score_columns=['weight_kpi', 'weight_spend', 'weight_bid']
-            df_score = pd.DataFrame(data=[optimal], columns=['weight_kpi', 'weight_spend', 'weight_bid'], index=[0])
-
-            df_final = pd.DataFrame({'campaign_id':campaign_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
-            df_final = pd.concat( [df_score, df_final], axis=1, sort=True, ignore_index=False)
-
-            print(df_final)
-            mysql_adactivity_save.check_optimal_weight(campaign_id, df_final)
-            ga_optimal_weight(campaign_id)
-
-            print('optimal_weight:', optimal)
+    print('[start time]: ', starttime)
+    global database_fb
+    db = database_controller.Database()
+    database_fb = database_controller.FB(db)
+    campaign_list = database_fb.get_branding_campaign().to_dict('records')
+    print([campaign['campaign_id'] for campaign in campaign_list])
+    for campaign in campaign_list:
+        campaign_id = campaign.get("campaign_id")
+        charge_type = campaign.get("charge_type")
+        generate_optimal_weight(campaign_id, charge_type)
+    
+    campaign_list = database_fb.get_performance_campaign().to_dict('records')
+    for campaign in campaign_list:
+        campaign_id = campaign.get("campaign_id")
+        charge_type = campaign.get("charge_type")
+        generate_optimal_weight(campaign_id, charge_type)
+        
+    print('[total operation time]: ', datetime.datetime.now()-starttime)
+    print('genetic algorithm finish.')
     return
 
 
-# In[2]:
+# In[7]:
+
+
+class Campaign(object):
+    __condition_field = ["action", "desire", "interest", "awareness", "attention", "discovery", "impressions", "destination_daily_spend",
+                       "destination_daily_target", "cost_per_action", "spend", "daily_spend", "daily_target", "KPI", "destination_type"]
+    def __init__(self, campaign_id):
+        self.campaign_id = campaign_id
+        self.__get_brief()
+        self.brief_dict["destination_type"] = self.brief_dict.pop("charge_type")
+        self.destination_type = self.brief_dict.get("destination_type")
+        permission.init_facebook_api(self.brief_dict.get("account_id"))
+        self.service_collect = collector.Campaigns(self.campaign_id, charge_type=None)
+        self.__create_condition()
+        self.__get_adsets()
+        
+    def __get_brief(self):
+        df_list = database_fb.get_one_campaign(self.campaign_id).to_dict('records')
+
+        self.brief_dict = df_list[0]
+        self.brief_dict['KPI'] = self.brief_dict.get("ai_spend_cap")/self.brief_dict.get("destination")
+    
+    def get_weight(self):
+        optimal_weight_list = database_fb.retrieve("optimal_weight", self.campaign_id).to_dict('records')
+        
+        return optimal_weight_list[0]
+        
+    def __get_adsets(self):
+        adset_id_list = self.service_collect.get_adsets_active()
+        self.adsets = [ AdSet(self, adset_id) for adset_id in adset_id_list ]
+        
+    def __create_condition(self):
+        self.condition = self.service_collect.generate_info(date_preset = collector.DatePreset.lifetime)
+        self.condition.update(self.brief_dict)
+        self.condition.update({
+            "flight": (datetime.date.today()-self.brief_dict.get("ai_start_date")).days
+        })
+        self.condition['spend'] = int(self.condition.get("spend") if self.condition.get("spend") else 0)
+        self.condition['impressions'] = int(self.condition.get("impressions") if self.condition.get("impressions") else 0)
+        self.condition.update({
+            "attention": self.condition.get("impressions"),
+            "discovery": self.condition.get("reach"),
+            "destination_daily_spend": self.condition.get("ai_spend_cap") / self.condition.get("period"),
+            "destination_daily_target":self.condition.get("destination") / self.condition.get("period"),
+            "cost_per_action": self.condition.get("cost_per_target") if self.condition.get("cost_per_target") else 0,
+            "spend": self.condition.get("spend") / self.condition.get("flight") if self.condition.get("flight") != 0 else 1,
+            "action": self.condition.get("target") / self.condition.get("flight") if self.condition.get("flight") != 0 else 1,
+        })
+        self.condition = {k: v for k, v in self.condition.items() if k in self.__condition_field}
+        
+        
+class AdSet(object):
+    __condition_field = ["action", "desire", "interest", "awareness", "impressions", "destination_daily_spend",
+                         "destination_daily_target", "bid_amount", "cost_per_action", "spend", "KPI", "destination_type"]
+    def __init__(self, campaign, adset_id):
+        self.campaign = campaign
+        self.adset_id = adset_id
+        self.destination_type = self.campaign.destination_type
+        self.service_collect = collector.AdSets(self.adset_id, charge_type=None)
+        self.__create_condition()
+        
+    def __create_condition(self):
+        self.condition = self.service_collect.generate_info(date_preset = collector.DatePreset.lifetime)
+        self.condition['spend'] = float(self.condition.get("spend") if self.condition.get("spend") else 0)
+        self.condition['impressions'] = int(self.condition.get("impressions") if self.condition.get("impressions") else 0)
+        self.condition.update({
+            "KPI": self.campaign.condition.get("KPI"),
+            "destination_type": self.destination_type,
+            "destination_daily_spend": self.campaign.condition.get("destination_daily_spend"),
+            "destination_daily_target": self.campaign.condition.get("destination_daily_target"),
+            "cost_per_action": int(self.condition.get("spend")) / int(self.condition.get("action")) if int(self.condition.get("action")) != 0 else 0
+        })
+        self.condition = {k: v for k, v in self.condition.items() if k in self.__condition_field}
+        
+    def __create_fitness(self):
+        self.fitness = Chromosome(self.condition)
+        
+    def __create_optimal_weight(self):
+        self.optimal_weight = OptimalWeight(self.destination_type)
+
+
+# In[8]:
+
+
+class OptimalWeight(object):        
+    def __init__(self, optimal_weight):
+        self.matrix = optimal_weight
+        self.action = self.matrix[0]
+        self.desire = self.matrix[1]
+        self.interest = self.matrix[2]
+        self.awareness = self.matrix[3]
+        self.discovery = self.matrix[4]
+        self.spend = self.matrix[5]
+        self.kpi = self.matrix[6]
+
+class CampaignOptimalWeight(OptimalWeight):
+    def __init__(self, campaign_id, destination_type, optimal_weight):
+        super().__init__(optimal_weight)
+        self.destination_type = destination_type
+        if self.destination_type in collector.BRANDING_CAMPAIGN_LIST:
+            self.desire, self.interest, self.awareness, self.discovery = 0, 0, 0, 0
+            self.matrix = np.array([
+                self.action, self.desire, self.interest, self.awareness, self.discovery, self.spend, self.kpi
+            ])
+
+    
+
+
+# In[9]:
+
+
+class Chromosome(object):
+    def __init__(self,):
+        self.matrix = np.random.rand(vardim,)
+        self.action = self.matrix[0]
+        self.desire = self.matrix[1]
+        self.interest = self.matrix[2]
+        self.awareness = self.matrix[3]
+        self.discovery = self.matrix[4]
+        self.spend = self.matrix[5]
+        self.kpi = self.matrix[6]
+
+class RandomChromosome(Chromosome):
+    pass
+
+class ObjectChromosome(Chromosome):
+    __fields = [
+        "action", "desire", "interest", "awareness", "discovery", "attention", "spend"
+    ]
+    def __init__(self, condition):
+        super().__init__()
+        self.condition = condition
+        self.destination_type = condition.get("destination_type")
+        self.__initialize()
+        self.__create_m_action()
+        self.__create_m_desire()
+        self.__create_m_interest()
+        self.__create_m_awareness()
+        self.__create_m_discovery()
+        self.__create_m_spend()
+        self.__create_m_kpi()
+        self.__create_matrix()
+        
+    def __initialize(self):
+        for field in self.__fields:
+            if not self.condition.get(field):
+                self.condition[field] = 0
+        
+    def __create_m_action(self):
+        if self.destination_type in collector.BRANDING_CAMPAIGN_LIST:
+            self.m_action = (self.condition.get("destination_daily_target")/int(self.condition.get("action"))) if int(self.condition.get("action")) != 0 else 0
+        else:
+            self.m_action = (int(self.condition.get("action")) / self.condition.get("desire")) if int(self.condition.get("desire")) != 0 else 0
+        
+    def __create_m_desire(self):
+        if self.destination_type in collector.BRANDING_CAMPAIGN_LIST:
+            self.m_desire = 0
+        else:
+            self.m_desire = (self.condition.get("desire") / self.condition.get("interest")) if self.condition.get("interest") != 0 else 0
+        
+    def __create_m_interest(self):
+        if self.destination_type in collector.BRANDING_CAMPAIGN_LIST:
+            self.m_interest = 0
+        else:
+            self.m_interest = (self.condition.get("interest") / self.condition.get("awareness")) if self.condition.get("awareness") != 0 else 0
+        
+    def __create_m_awareness(self):
+        if self.destination_type in collector.BRANDING_CAMPAIGN_LIST:
+            self.m_awareness = 0
+        else:
+            self.m_awareness = (self.condition.get("awareness") / self.condition.get("discovery")) if self.condition.get("discovery") != 0 else 0
+        
+    def __create_m_discovery(self):
+        if self.destination_type in collector.BRANDING_CAMPAIGN_LIST:
+            self.m_discovery = 0
+        else:
+            self.m_discovery = (self.condition.get("discovery") / self.condition.get("attention")) if self.condition.get("attention") != 0 else 0
+        
+    def __create_m_spend(self):
+        self.m_spend = ( self.condition.get("destination_daily_spend")-self.condition.get("spend")) / self.condition.get("destination_daily_spend")
+        
+    def __create_m_kpi(self):
+        self.m_kpi = ( self.condition.get("KPI")-self.condition.get("cost_per_action") ) / self.condition.get("KPI")
+    
+    def __create_matrix(self):
+        self.matrix = np.array([
+            self.m_action, self.m_desire, self.m_interest, self.m_awareness, self.m_discovery, self.m_spend, self.m_kpi
+        ])
+    
+
+
+# In[10]:
 
 
 if __name__ == "__main__":
@@ -378,10 +518,10 @@ if __name__ == "__main__":
 #     main(campaign_id=23843467729120098)
 
 
-# In[ ]:
+# In[11]:
 
 
-#!jupyter nbconvert --to script genetic_algorithm.ipynb
+# !jupyter nbconvert --to script genetic_algorithm.ipynb
 
 
 # In[ ]:
