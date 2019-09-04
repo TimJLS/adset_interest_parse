@@ -13,30 +13,63 @@ ADGEEK_FACEBOOK_ACCESS_TOKEN = 'EAANoD9I4obMBACygIE9jqmlaWeOW6tBma0oS6JbRpLgAvOY
 ACCOUNT_API_URL = 'http://mpc.adgeek.net/v2/accounts/'
 ACCOUNT_TOEKN_API_URL = 'http://mpc.adgeek.net/v2/credentials/'
 
+FACEBOOK_API_VERSION_URL = 'https://graph.facebook.com/v3.3/'
+
+from facebook_business.session import FacebookSession
 from facebook_business.api import FacebookAdsApi
 
 def init_facebook_api(account_id = None):
     if not account_id:
-        FacebookAdsApi.init(ADGEEK_FACEBOOK_API_ID, ADGEEK_FACEBOOK_APP_SECRET, ADGEEK_FACEBOOK_ACCESS_TOKEN)
+        session = FacebookSession()
+#         FacebookAdsApi(session, api_version="latest")
+        FacebookAdsApi(session, api_version="3.3").init(ADGEEK_FACEBOOK_API_ID, ADGEEK_FACEBOOK_APP_SECRET, ADGEEK_FACEBOOK_ACCESS_TOKEN)
         return
     
     try:
         query_id = get_queryid_by_accountid(account_id)
-        credential_id, credential_secret, credential_token = get_media_token_by_queryid(query_id)
-        FacebookAdsApi.init(credential_id, credential_secret, credential_token)
+        token_dic = get_media_token_by_queryid(query_id)
+        credential_id = token_dic['credential_id']
+        credential_secret = token_dic['credential_secret']
+        credential_token  = token_dic['credential_token']
+        session = FacebookSession()
+#         FacebookAdsApi(session, api_version="latest")
+        
+        FacebookAdsApi(session, api_version="3.3").init(credential_id, credential_secret, credential_token)
 
     except:
-        FacebookAdsApi.init(ADGEEK_FACEBOOK_API_ID, ADGEEK_FACEBOOK_APP_SECRET, ADGEEK_FACEBOOK_ACCESS_TOKEN)
+        print('[init_facebook_api] error')
+        session = FacebookSession()
+#         FacebookAdsApi(session, api_version="latest")
+        FacebookAdsApi(session, api_version="3.3").init(ADGEEK_FACEBOOK_API_ID, ADGEEK_FACEBOOK_APP_SECRET, ADGEEK_FACEBOOK_ACCESS_TOKEN)
 
 ##############################################################################
 
 ###GOOGLE
 from googleads import adwords
+from googleads import oauth2
 AUTH_FILE_PATH = '/home/tim_su/ai_optimizer/opt/ai_optimizer/googleads.yaml'
-adwords_client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
+adgeek_adwords_client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
 
-def init_google_api():
-    return adwords_client
+def init_google_api(account_id = None):
+    if not account_id:
+        return adgeek_adwords_client
+    
+    try:
+        query_id = get_queryid_by_accountid(account_id)
+        token_dic = get_media_token_by_queryid(query_id)
+        credential_id = token_dic['credential_id']
+        credential_secret = token_dic['credential_secret']
+        credential_developer_token  = token_dic['credential_developer_token']
+        credential_refresh_token = token_dic['credential_refresh_token']
+        
+        oauth2_client = oauth2.GoogleRefreshTokenClient(credential_id, credential_secret, credential_refresh_token)
+        my_adwords_client = adwords.AdWordsClient(credential_developer_token, oauth2_client, client_customer_id=account_id)
+        return my_adwords_client
+
+
+    except:
+        print('[init_google_api] error')
+        return adgeek_adwords_client
 
 
 # In[2]:
@@ -71,21 +104,44 @@ def get_media_token_by_queryid(query_id):
     
     r = requests.get(request_url)
     if r.status_code == requests.codes.ok:
+        token_dic = {}
         content = json.loads(r.text)    
 #         print('[get_media_token_by_queryid] content:', content )
-        credential_id = content.get('credential_id')
-        credential_secret = content.get('credential_secret')
-        credential_token = content.get('credential_token')
-#         print('[get_media_token_by_queryid] credential_id:', credential_id, ' credential_secret', credential_secret, ' credential_token', credential_token )
-        return credential_id, credential_secret, credential_token
+        token_dic['credential_id'] = content.get('credential_id')#F #G
+        token_dic['credential_secret'] = content.get('credential_secret')#F #G
+        token_dic['credential_token'] = content.get('credential_token')#F
+        token_dic['credential_developer_token'] = content.get('credential_developer_token')#G
+        token_dic['credential_refresh_token'] = content.get('credential_refresh_token')#G
+        token_dic['name'] = content.get('name')#G
+        
+        print('[get_media_token_by_queryid] token_dic', token_dic)
+        return token_dic
         
 
 
 # In[3]:
 
 
+def get_access_token_by_account(account_id):
+    query_id = get_queryid_by_accountid(account_id)
+    token_dic = get_media_token_by_queryid(query_id)
+    credential_token  = token_dic['credential_token']
+    return credential_token
+    
+def get_access_name_by_account(account_id):
+    query_id = get_queryid_by_accountid(account_id)
+    token_dic = get_media_token_by_queryid(query_id)
+    credential_token  = token_dic['name']
+    return credential_token
+    
+
+
+# In[4]:
+
+
 if __name__=='__main__':
-    init_facebook_api(350498128813378)
+    init_facebook_api(341659359840575)
+#     init_google_api(6714857152)
 
 
 # In[ ]:

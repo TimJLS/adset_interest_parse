@@ -47,7 +47,6 @@ class FacebookCampaignAdapter(object):
         self.last_bid_dict = dict()
         
         self.df_camp = self.database_fb.get_one_campaign(self.campaign_id)
-#         self.df_camp = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id={}".format( campaign_id ), con=self.mydb )
         try:
             self.campaign_days_left = ( self.df_camp[ AI_STOP_DATE ].iloc[0] - self.request_date ).days + 1
         except Exception as e:
@@ -178,7 +177,6 @@ class FacebookAdSetAdapter(FacebookCampaignAdapter):
         self.get_bid()
         self.get_adset_time_target()
         self.get_adset_progress()
-#         self.mydb.close()
         return {
             ADSET_ID:self.adset_id,
             INIT_BID:self.init_bid,
@@ -266,8 +264,10 @@ def main(campaign_id=None):
                         print('[main]: update bid unavailable..', e)
                         pass
                 del s
+            fb.database_fb.dispose()
             del fb
-    
+    database_fb.dispose()
+    del database_fb
     print(datetime.datetime.now()-start_time)
     return
 
@@ -282,10 +282,10 @@ if __name__=='__main__':
 #     main(23842953829930431)
 
 
-# In[4]:
+# In[3]:
 
 
-#!jupyter nbconvert --to script facebook_adapter.ipynb
+# !jupyter nbconvert --to script facebook_adapter.ipynb
 
 
 # In[ ]:

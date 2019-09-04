@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[36]:
+# In[ ]:
 
 
 import mysql.connector
@@ -17,7 +17,7 @@ pymysql.install_as_MySQLdb()
 import MySQLdb
 
 
-# In[37]:
+# In[ ]:
 
 
 class Database(object):
@@ -26,7 +26,7 @@ class Database(object):
     password = "adgeek1234"
 
 
-# In[38]:
+# In[ ]:
 
 
 class DevDatabase(Database):
@@ -34,7 +34,7 @@ class DevDatabase(Database):
     pass
 
 
-# In[59]:
+# In[ ]:
 
 
 class CRUDController(object):
@@ -82,6 +82,9 @@ class CRUDController(object):
     ]
     def __init__(self, database):
         self.database = database
+        
+    def dispose(self):
+        self.engine.dispose()
     
     def get_one_campaign(self, campaign_id):
         with self.engine.connect() as self.conn:
@@ -376,7 +379,7 @@ class GSN(CRUDController):
         )
 
 
-# In[ ]:
+# In[1]:
 
 
 #!jupyter nbconvert --to script database_controller.ipynb

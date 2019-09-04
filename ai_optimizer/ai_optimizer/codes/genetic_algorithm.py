@@ -290,7 +290,7 @@ def assess_adset(campaign_object, campaign_optimal_object):
         )
 
 
-# In[6]:
+# In[5]:
 
 
 def main():
@@ -317,7 +317,7 @@ def main():
     return
 
 
-# In[7]:
+# In[6]:
 
 
 class Campaign(object):
@@ -354,14 +354,14 @@ class Campaign(object):
         self.condition.update({
             "flight": (datetime.date.today()-self.brief_dict.get("ai_start_date")).days
         })
-        self.condition['spend'] = int(self.condition.get("spend") if self.condition.get("spend") else 0)
-        self.condition['impressions'] = int(self.condition.get("impressions") if self.condition.get("impressions") else 0)
+        self.condition['spend'] = int(self.condition.get("spend", 0))
+        self.condition['impressions'] = int(self.condition.get("impressions", 0))
         self.condition.update({
             "attention": self.condition.get("impressions"),
             "discovery": self.condition.get("reach"),
             "destination_daily_spend": self.condition.get("ai_spend_cap") / self.condition.get("period"),
             "destination_daily_target":self.condition.get("destination") / self.condition.get("period"),
-            "cost_per_action": self.condition.get("cost_per_target") if self.condition.get("cost_per_target") else 0,
+            "cost_per_action": self.condition.get("cost_per_target", 0),
             "spend": self.condition.get("spend") / self.condition.get("flight") if self.condition.get("flight") != 0 else 1,
             "action": self.condition.get("target") / self.condition.get("flight") if self.condition.get("flight") != 0 else 1,
         })
@@ -380,8 +380,8 @@ class AdSet(object):
         
     def __create_condition(self):
         self.condition = self.service_collect.generate_info(date_preset = collector.DatePreset.lifetime)
-        self.condition['spend'] = float(self.condition.get("spend") if self.condition.get("spend") else 0)
-        self.condition['impressions'] = int(self.condition.get("impressions") if self.condition.get("impressions") else 0)
+        self.condition['spend'] = float(self.condition.get("spend", 0))
+        self.condition['impressions'] = int(self.condition.get("impressions", 0))
         self.condition.update({
             "KPI": self.campaign.condition.get("KPI"),
             "destination_type": self.destination_type,
@@ -398,7 +398,7 @@ class AdSet(object):
         self.optimal_weight = OptimalWeight(self.destination_type)
 
 
-# In[8]:
+# In[7]:
 
 
 class OptimalWeight(object):        
@@ -425,7 +425,7 @@ class CampaignOptimalWeight(OptimalWeight):
     
 
 
-# In[9]:
+# In[8]:
 
 
 class Chromosome(object):
@@ -508,7 +508,7 @@ class ObjectChromosome(Chromosome):
     
 
 
-# In[10]:
+# In[9]:
 
 
 if __name__ == "__main__":
@@ -518,7 +518,7 @@ if __name__ == "__main__":
 #     main(campaign_id=23843467729120098)
 
 
-# In[11]:
+# In[10]:
 
 
 # !jupyter nbconvert --to script genetic_algorithm.ipynb
