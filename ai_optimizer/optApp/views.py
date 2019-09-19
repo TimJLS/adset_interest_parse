@@ -17,16 +17,18 @@ import numpy as np
 import pandas as pd
 from sklearn.externals import joblib
 from ai_optimizer.codes import mysql_adactivity_save
+from ai_optimizer.codes import database_controller
 from ai_optimizer.codes import gdn_db
 from ai_optimizer.codes import gsn_db
 from ai_optimizer.codes import gdn_datacollector
 from ai_optimizer.codes import gsn_datacollector
 from facebook_business.api import FacebookAdsApi
-from facebook_datacollector import Campaigns
-import facebook_datacollector
+from facebook_datacollector_test import Campaigns
+import facebook_datacollector_test
 import facebook_custom_conversion_handler as custom_conversion_handler
 import datetime
 import adgeek_permission as permission
+
 
 # FOLDER_PATH = 'ai_optimizer/models/cpc_120/'
 # MODEL_PATH = FOLDER_PATH + 'cpc_20_500_64.h5'
@@ -47,8 +49,16 @@ class Field(object):
     ai_stop_date = 'ai_stop_date'
     ai_spend_cap = 'ai_spend_cap'
     ai_status = 'ai_status'
-
-
+    is_smart_spending = 'is_smart_spending'
+    is_target_suggest = 'is_target_suggest'
+    is_lookalike = 'is_lookalike'
+    is_creative_opt = 'is_creative_opt'
+    
+ESSENTIAL_PARAMETERS = [
+    Field.account_id, Field.campaign_id, Field.destination, Field.destination_type, Field.ai_start_date, Field.ai_stop_date,
+    Field.ai_spend_cap, Field.ai_status, Field.is_smart_spending, Field.is_target_suggest, Field.is_lookalike, Field.is_creative_opt,
+]
+    
 @csrf_exempt
 def opt_api(request):
     
@@ -66,9 +76,14 @@ def opt_api(request):
         ai_start_date = request.POST.get(Field.ai_start_date)
         ai_stop_date = request.POST.get(Field.ai_stop_date)
         ai_spend_cap = request.POST.get(Field.ai_spend_cap)
+        is_smart_spending = request.POST.get(Field.is_smart_spending)
+        is_target_suggest = request.POST.get(Field.is_target_suggest)
+        is_lookalike = request.POST.get(Field.is_lookalike)
+        is_creative_opt = request.POST.get(Field.is_creative_opt)
         print('request post is:',  request.POST)
-        
-        if account_id and campaign_id and destination and destination_type and ai_start_date and ai_stop_date and ai_spend_cap and ai_status:
+        db = database_controller.Database()
+        if all (k in request.POST for k in ESSENTIAL_PARAMETERS):
+            database_fb = database_controller.FB( db )
             brief_dict = {
                 'campaign_id': campaign_id,
                 'destination': destination,
@@ -78,49 +93,46 @@ def opt_api(request):
                 'ai_spend_cap': ai_spend_cap,
                 'ai_status': ai_status,
                 'destination_max': destination_max,
+                'is_smart_spending': is_smart_spending, 
+                'is_target_suggest': is_target_suggest,
+                'is_lookalike': is_lookalike,
+                'is_creative_opt': is_creative_opt,
             }
-            if media == 'Facebook' or not media:
+            if media == 'Facebook':
                 mydict = dict()
                 permission.init_facebook_api(int(account_id))
                 
                 custom_conversion_id = custom_conversion_handler.get_conversion_id_by_compaign(campaign_id)
                 brief_dict['account_id'] = account_id
-                brief_dict['custom_conversion_id'] = custom_conversion_id
-                brief_dict['charge_type'] = brief_dict.pop('destination_type')
-                queue = mysql_adactivity_save.check_campaignid_target( **brief_dict )
-                if queue:
-                    campaign = Campaigns( int(campaign_id), destination_type )
-                    campaign_dict = campaign.generate_campaign_info()
-                    try:lifetime_target = campaign_dict['target']
-                    except:lifetime_target=0
-                    try:
-                        target_left_dict = {
-                            'target_left': int(destination) - int(lifetime_target)
-                        }
-                    except:
-                        temp = mysql_adactivity_save.get_campaign_target_dict()
-                        destination = temp[ int(campaign_id) ]
-                        target_left_dict = {
-                            'target_left': int(destination) - int(charge)
-                        }
-                    charge_dict = { 'charge_type': destination_type }
-                    target_dict = { 'destination': int(destination) }
-                    campaign_dict = {
-                        **campaign_dict,
-                        **charge_dict,
-                        **target_dict,
-                        **target_left_dict,
-                    }
-                    print('[campaign_dict] ', campaign_dict)
-                    df_camp = pd.DataFrame( campaign_dict, index=[0] )
-                    df_camp[df_camp.columns] = df_camp[df_camp.columns].apply(pd.to_numeric, errors='ignore')
-                    mysql_adactivity_save.update_campaign_target(df_camp)
-                    try:
-                        mydict = mysql_adactivity_save.get_result( campaign_id )
-                    except:
-                        pass
-                return JsonResponse( json.loads(str(mydict)), safe=False )
-
+                brief_dict['custom_conversion_id'] = custom_conversion_id.item() if custom_conversion_id else None
+                brief_dict['charge_type'] = brief_dict['destination_type']
+                database_fb.upsert("campaign_target", brief_dict)
+                campaign = Campaigns( int(campaign_id) )
+                campaign_dict = campaign.generate_info()
+                campaign_dict['target'] = int( campaign_dict.pop('action') )
+                campaign_dict.pop('desire')
+                campaign_dict.pop('interest')
+                campaign_dict.pop('awareness')
+                campaign_dict['actual_metrics'] = str( campaign_dict.get('actual_metrics') )
+                lifetime_target = 0 if campaign_dict.get('target') is None else campaign_dict.get('target')
+                target_left_dict = {
+                    'target_left': int(destination) - int(lifetime_target)
+                }
+                charge_type_dict = { 'charge_type': destination_type }
+                destination_type_dict = { 'destination_type': destination_type }
+                target_dict = { 'destination': int(destination) }
+                campaign_dict = {
+                    **campaign_dict,
+                    **charge_type_dict,
+                    **destination_type_dict,
+                    **charge_type_dict,
+                    **target_dict,
+                    **target_left_dict,
+                }
+                print('[campaign_dict] ', campaign_dict)
+                database_fb.upsert("campaign_target", campaign_dict)
+                return JsonResponse( {}, safe=False )
+            
             elif media == 'GDN' and account_id:
                 brief_dict['account_id'] = account_id
                 if not gdn_db.check_campaignid_target(**brief_dict):
@@ -135,14 +147,8 @@ def opt_api(request):
                     return JsonResponse( {}, safe=False )
                 else:
                     mydict = gdn_db.get_result( campaign_id ) #new version
-                    return JsonResponse( json.loads(mydict), safe=False )
-        elif campaign_id: # brief system not OK yet
-            print(campaign_id)
-            try:
-                mydict = mysql_adactivity_save.get_result( campaign_id )
-            except:
-                mydict = '{}'
-            return JsonResponse( json.loads(mydict), safe=False )
+                    return JsonResponse( json.loads(mydict), safe=False )                
+            return JsonResponse( {}, safe=False )
     else:
         return JsonResponse( {}, safe=False )
         
