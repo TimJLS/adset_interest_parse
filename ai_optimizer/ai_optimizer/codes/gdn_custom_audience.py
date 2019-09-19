@@ -8,7 +8,7 @@ import gdn_datacollector
 from gdn_datacollector import Campaign
 from gdn_datacollector import AdGroup
 from gdn_datacollector import DatePreset
-import gdn_controller as controller
+import google_adwords_controller as controller
 import gdn_db
 import datetime
 from googleads import adwords
@@ -25,7 +25,7 @@ DATETIME = datetime.datetime.now()
 AGE_RANGE_LIST = [503001,503002,503003,503004,503005,503006,503999,]
 
 
-# In[14]:
+# In[2]:
 
 
 def get_campaign_custom_audience(campaign_id):
@@ -59,7 +59,7 @@ def get_campaign_custom_audience(campaign_id):
     
 
 
-# In[15]:
+# In[3]:
 
 
 def get_ad_groups_include_custom_audience(customer_id, campaign_id):
@@ -78,7 +78,7 @@ def get_ad_groups_include_custom_audience(customer_id, campaign_id):
     return user_list_criterion_list
 
 
-# In[16]:
+# In[4]:
 
 
 def save_campaign_custom_audience(customer_id, campaign_id):
@@ -145,7 +145,7 @@ def save_campaign_custom_audience(customer_id, campaign_id):
     return custom_criterion_list
 
 
-# In[17]:
+# In[5]:
 
 
 def save_custom_audience_for_all_campaign(campaign_id=None):
@@ -163,12 +163,12 @@ def save_custom_audience_for_all_campaign(campaign_id=None):
             print('[save_custom_audience_for_all_campaign]: no running conversion campaigns.')
             return
         for idx, row in df_conversion_campaign.iterrows():
-            customer_id, campaign_id = row.customer_id.tolist()[idx], row.campaign_id.tolist()[idx]
+            customer_id, campaign_id = row.customer_id.tolist(), row.campaign_id.tolist()
             save_campaign_custom_audience(customer_id, campaign_id)
 #         print('[save_custom_audience_for_all_campaign] current conversion campaign:', len(conversion_campaign_id_list), conversion_campaign_id_list )
 
 
-# In[18]:
+# In[6]:
 
 
 def get_current_ad_group_ids(campaign_id, criterion_id):
@@ -182,7 +182,7 @@ def get_current_ad_group_ids(campaign_id, criterion_id):
     return ad_group_ids[0][0].split(',')
 
 
-# In[19]:
+# In[7]:
 
 
 def modify_result_db(campaign_id, criterion_id, ad_group_id):
@@ -201,7 +201,7 @@ def modify_result_db(campaign_id, criterion_id, ad_group_id):
     mycursor.close()
 
 
-# In[20]:
+# In[8]:
 
 
 def main():
@@ -215,7 +215,7 @@ if __name__=='__main__':
     main()
 
 
-# In[21]:
+# In[10]:
 
 
 #!jupyter nbconvert --to script gdn_custom_audience.ipynb

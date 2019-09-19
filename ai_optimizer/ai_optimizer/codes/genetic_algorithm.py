@@ -312,6 +312,12 @@ def main():
         charge_type = campaign.get("charge_type")
         generate_optimal_weight(campaign_id, charge_type)
         
+#     campaign_list = database_fb.get_custom_performance_campaign().to_dict('records')
+#     for campaign in campaign_list:
+#         campaign_id = campaign.get("campaign_id")
+#         charge_type = campaign.get("charge_type")
+#         generate_optimal_weight(campaign_id, charge_type) 
+        
     print('[total operation time]: ', datetime.datetime.now()-starttime)
     print('genetic algorithm finish.')
     return
@@ -518,7 +524,7 @@ if __name__ == "__main__":
 #     main(campaign_id=23843467729120098)
 
 
-# In[10]:
+# In[11]:
 
 
 # !jupyter nbconvert --to script genetic_algorithm.ipynb

@@ -9,7 +9,7 @@ import gsn_datacollector
 import google_adwords_controller as controller
 import gdn_gsn_ai_behavior_log as logger
 from gdn_gsn_ai_behavior_log import BehaviorType
-import bid_operator
+import gsn_bid_operator as bid_operator
 
 import datetime
 import pandas as pd
@@ -83,6 +83,8 @@ class CampaignAdapter(object):
     
     def _get_bid(self):
         df_init_bid = pd.read_sql( "SELECT * FROM adgroup_initial_bid WHERE campaign_id={} ;".format( self.campaign_id ), con=self.mydb )
+        if df_init_bid.empty:
+            return
         self.get_keyword_id_list()
         bid_amount_type = BIDDING_INDEX[ self.df_keyword['bidding_type'].iloc[0] ]
         for keyword_id in self.keyword_id_list:
@@ -163,8 +165,8 @@ class KeywordGroupAdapter(object):
         return self.keyword_performance
     
     def get_bid(self):
-        self.init_bid = self.camp.init_bid_dict[self.keyword_id]
-        self.last_bid = self.camp.last_bid_dict[self.keyword_id]
+        self.init_bid = self.camp.init_bid_dict.get(self.keyword_id)
+        self.last_bid = self.camp.last_bid_dict.get(self.keyword_id)
         return
     
     def get_keyword_time_target(self):
@@ -193,7 +195,7 @@ class KeywordGroupAdapter(object):
         }
 
 
-# In[6]:
+# In[9]:
 
 
 
@@ -243,8 +245,8 @@ def main():
             }
             logger.save_adgroup_behavior(
                 behavior_type=BehaviorType.ADJUST, behavior_misc=bid_dict['bid'], **ad_group_pair)
-
-            controller_keyword.update_bid(bid_micro_amount=bid_dict['bid'])                   
+            controller_keyword.update_bid(bid_micro_amount=bid_dict['bid'])
+            print('[update_bid]: keyword_id {}, bid is {}'.format(controller_keyword.keyword_id, bid_dict['bid']))
             result['contents'].append(bid_dict)
             del adapter_keyword
         
@@ -257,7 +259,7 @@ def main():
     return
 
 
-# In[7]:
+# In[10]:
 
 
 if __name__=='__main__':
@@ -267,7 +269,7 @@ if __name__=='__main__':
 # In[8]:
 
 
-#!jupyter nbconvert --to script gsn_adapter.ipynb
+# !jupyter nbconvert --to script gsn_adapter.ipynb
 
 
 # In[ ]:

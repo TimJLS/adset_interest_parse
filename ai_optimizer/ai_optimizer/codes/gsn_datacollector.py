@@ -4,31 +4,24 @@
 # In[1]:
 
 
-import gdn_datacollector as datacollector
-import bid_operator
-# from gdn_datacollector import Campaign
-# from gdn_datacollector import AdGroup
-# from gdn_datacollector import ReportColumn
-# from gdn_datacollector import ReportField
-# from gdn_datacollector import AUTH_FILE_PATH
-# from gdn_datacollector import Field
-# from gdn_datacollector import DatePreset
-# from gdn_datacollector import CAMPAIGN_OBJECTIVE_FIELD
-# from gdn_datacollector import CAMPAIGN_FIELDS
-# from gdn_datacollector import ADGROUP_FIELDS
 from googleads import adwords
 import pandas as pd
 import numpy as np
 import math
 import datetime
 import gsn_db
+import google_adwords_controller as controller
+import gdn_datacollector as datacollector
+import bid_operator
+import adgeek_permission as permission
 
-CAMPAIGN_FIELDS = ['ExternalCustomerId','CampaignId', 'AveragePosition','AdvertisingChannelType', 'CampaignStatus',
-                   'BiddingStrategyType','Amount','StartDate','EndDate','Cost',
-                   'AverageCost','Impressions', 'Clicks','Conversions', 'AllConversions',
-                   'AverageCpc','CostPerConversion', 'CostPerAllConversion', 'Ctr']
+CAMPAIGN_FIELDS = [
+    'ExternalCustomerId','CampaignId', 'TopImpressionPercentage','AdvertisingChannelType', 'CampaignStatus', 'BiddingStrategyType',
+    'Amount','StartDate','EndDate','Cost', 'AverageCost','Impressions', 'Clicks','Conversions', 'AllConversions', 'AverageCpc',
+    'CostPerConversion', 'CostPerAllConversion', 'Ctr'
+]
 DB_CAMPAIGN_COLUMN_NAME_LIST = [
-    'customer_id', 'campaign_id', 'average_position', 'channel_type', 'status', 'bidding_type', 'daily_budget', 'start_time', 'stop_time',
+    'customer_id', 'campaign_id', 'top_impression_percentage', 'channel_type', 'status', 'bidding_type', 'daily_budget', 'start_time', 'stop_time',
     'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr',
 ]
 NON_NUMERIC_LIST = ['Criterion serving status',
@@ -57,21 +50,14 @@ class DatePreset:
     lifetime = 'ALL_TIME'
     last_14_days = 'LAST_14_DAYS'
 
-
-# In[2]:
-
-
-adwords_client = adwords.AdWordsClient.LoadFromStorage(datacollector.AUTH_FILE_PATH)
-
-
 # In[3]:
 
 
-class Campaign(datacollector.Campaign):
+class Campaign(object):
     report_metrics = [
         'ExternalCustomerId','CampaignId', 'AdGroupId', 'AdGroupStatus', 'Criteria', 'Id', 'CpmBid', 'CpcBidSource', 'CpcBid',
         'BiddingStrategyType', 'FirstPageCpc','Cost', 'AverageCost','Impressions', 'Clicks','Conversions', 'AverageCpc',
-        'CostPerConversion', 'Ctr','AveragePosition', 'SystemServingStatus']
+        'CostPerConversion', 'Ctr','TopImpressionPercentage', 'SystemServingStatus']
     operand = {
         'field': 'CampaignId',
         'operator': 'EQUALS',
@@ -91,8 +77,7 @@ class Campaign(datacollector.Campaign):
     }
     def __init__(self, customer_id, campaign_id):
         self.customer_id = customer_id
-        self.client = adwords.AdWordsClient.LoadFromStorage(datacollector.AUTH_FILE_PATH)
-        self.client.SetClientCustomerId(self.customer_id)
+        self.client = permission.init_google_api(self.customer_id)
         self.campaign_id = campaign_id
         self.report_downloader = self.client.GetReportDownloader(version='v201809')
         self.brief_dict = gsn_db.get_campaign_ai_brief(campaign_id=self.campaign_id)
@@ -136,73 +121,21 @@ class Campaign(datacollector.Campaign):
             df[df.columns.intersection( NUMERIC_LIST )] = df[df.columns.intersection( NUMERIC_LIST )].div(1000000)
             df.columns = columns
             df.sort_values(by=['impressions'], ascending=False).reset_index(drop=True)
+            if df.empty:
+                return df
             if performance_type=='CAMPAIGN':
                 gsn_db.update_table(df, table="campaign_target")
             else:
                 gsn_db.into_table( df, performance_type.lower()+'_insights' )
             return df
         
-    def get_ad_group_status_dict(self):
-        self.ad_group_status_dict=dict()
-        ad_group_service = self.client.GetService('AdGroupService', version='v201809')
-        # Construct selector and get all ad groups.
-        selector = {
-            'fields': ['Id', 'Name', 'Status'],
-            'predicates': [
-                {
-                    'field': 'CampaignId',
-                    'operator': 'EQUALS',
-                    'values': [self.campaign_id]
-                },
-                {
-                    'field': 'Status',
-                    'operator': 'EQUALS',
-                    'values': ['ENABLED']
-                }
-            ]
-        }
-        self.adgroup_id_list = list()
-        page = ad_group_service.get(selector)
-        if 'entries' in page:
-            for ad_group in page['entries']:
-                self.ad_group_status_dict.update({
-                    ad_group['id'] : ad_group['status']
-                })
-        return self.ad_group_status_dict
-
-    def get_keyword_id_list(self):
-        self.keyword_id_list = []
-        # Construct selector and get all ad groups.
-        selector = {
-            'fields': ['Id', 'KeywordText', 'Status', 'SystemServingStatus'],
-            'predicates': [
-                {
-                    'field': 'CampaignId',
-                    'operator': 'EQUALS',
-                    'values': [self.campaign_id]
-                },
-                {
-                    'field': 'Status',
-                    'operator': 'EQUALS',
-                    'values': ['ENABLED']
-                }
-            ]
-        }
-        page = self.ad_group_criterion_service.get(selector)
-        if 'entries' in page:
-            for criterion_config in page['entries']:
-                if criterion_config['criterionUse'] == 'BIDDABLE' and criterion_config['criterion']['type'] == 'KEYWORD':
-                    id = criterion_config['criterion']['id']
-                    self.keyword_id_list.append(id)
-            return self.keyword_id_list
-        
     def get_keyword_insights(self, date_preset=None):
         self.report_metrics = [
-            'ExternalCustomerId','CampaignId', 'AdGroupId', 'AdGroupStatus', 'Criteria', 'Id','AveragePosition', 'SystemServingStatus', 'FirstPageCpc',
+            'ExternalCustomerId','CampaignId', 'AdGroupId', 'AdGroupStatus', 'Criteria', 'Id','TopImpressionPercentage', 'SystemServingStatus', 'FirstPageCpc',
             'CpmBid', 'CpcBid', 'BiddingStrategyType', 'AverageCost','Cost','Impressions', 'Clicks','Conversions', 'AverageCpc',
             'CostPerConversion', 'Ctr']
         self.db_column_name_list = [
-            'customer_id', 'campaign_id', 'adgroup_id', 'status', 'keyword', 'keyword_id', 'position', 'serving_status', 'first_page_cpc', 'cpm_bid', 'cpc_bid', 'bidding_type', 'cost_per_target', 'spend', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'ctr'
+            'customer_id', 'campaign_id', 'adgroup_id', 'status', 'keyword', 'keyword_id', 'top_impression_percentage', 'serving_status', 'first_page_cpc', 'cpm_bid', 'cpc_bid', 'bidding_type', 'cost_per_target', 'spend', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'ctr'
         ]
         self.operand = [{
                 'field': 'CampaignId',
@@ -236,8 +169,8 @@ class Campaign(datacollector.Campaign):
             df['Ctr'] = df.Ctr.str.split('%', expand = True)[0]
         df[df.columns.difference(['Criteria','SystemServingStatus', 'AdGroupType', 'AdGroupStatus', 'BiddingStrategyType', 'Device'])] = df[df.columns.difference(
             ['Criteria','SystemServingStatus', 'AdGroupType', 'AdGroupStatus', 'BiddingStrategyType', 'Device'])].apply(pd.to_numeric, errors='coerce')
-        df[df.columns.difference( ['AveragePosition','Id','Criteria','SystemServingStatus', 'HourOfDay','Device','ExternalCustomerId','CampaignId','AdGroupType','AdGroupId','AdGroupStatus','BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'] )] = df[df.columns.difference(
-            ['AveragePosition','Id','Criteria','SystemServingStatus','HourOfDay','Device','ExternalCustomerId','CampaignId','AdGroupType','AdGroupId','AdGroupStatus','BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'])].div(1000000)
+        df[df.columns.difference( ['TopImpressionPercentage','Id','Criteria','SystemServingStatus', 'HourOfDay','Device','ExternalCustomerId','CampaignId','AdGroupType','AdGroupId','AdGroupStatus','BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'] )] = df[df.columns.difference(
+            ['TopImpressionPercentage','Id','Criteria','SystemServingStatus','HourOfDay','Device','ExternalCustomerId','CampaignId','AdGroupType','AdGroupId','AdGroupStatus','BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'])].div(1000000)
         df.rename( columns=dict( zip(df.columns, self.db_column_name_list) ), inplace=True )
         self.insights_dict = df.reset_index(drop=True).to_dict(orient='records')
         return self.insights_dict
@@ -251,8 +184,7 @@ class KeywordGroup(object):
         self.customer_id = customer_id
         self.campaign_id = campaign_id
         self.keyword_id = keyword_id
-        self.client = adwords.AdWordsClient.LoadFromStorage(datacollector.AUTH_FILE_PATH)
-        self.client.SetClientCustomerId(self.customer_id)
+        self.client = permission.init_google_api(self.customer_id)
         self.report_downloader = self.client.GetReportDownloader(version='v201809')
         self.ad_group_criterion_service = self.client.GetService('AdGroupCriterionService', version='v201809')
         brief_dict = gsn_db.get_campaign_ai_brief( self.campaign_id )
@@ -263,11 +195,11 @@ class KeywordGroup(object):
     
     def get_keyword_insights(self, date_preset='ALL_TIME'):
         self.report_metrics = [
-            'ExternalCustomerId','CampaignId', 'AdGroupId', 'AdGroupStatus', 'Criteria', 'Id','AveragePosition', 'SystemServingStatus', 'FirstPageCpc',
+            'ExternalCustomerId','CampaignId', 'AdGroupId', 'AdGroupStatus', 'Criteria', 'Id','TopImpressionPercentage', 'SystemServingStatus', 'FirstPageCpc',
             'CpmBid', 'CpcBid', 'BiddingStrategyType', 'AverageCost','Cost','Impressions', 'Clicks','Conversions', 'AverageCpc',
             'CostPerConversion', 'Ctr']
         self.db_column_name_list = [
-            'customer_id', 'campaign_id', 'adgroup_id', 'status', 'keyword', 'keyword_id', 'position', 'serving_status', 'first_page_cpc', 'cpm_bid', 'cpc_bid', 'bidding_type', 'cost_per_target', 'spend', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'ctr'
+            'customer_id', 'campaign_id', 'adgroup_id', 'status', 'keyword', 'keyword_id', 'top_impression_percentage', 'serving_status', 'first_page_cpc', 'cpm_bid', 'cpc_bid', 'bidding_type', 'cost_per_target', 'spend', 'impressions', 'clicks', 'conversions', 'cost_per_click', 'cost_per_conversion', 'ctr'
         ]
         self.operand = [
             {
@@ -315,102 +247,11 @@ class KeywordGroup(object):
             df['Ctr'] = df.Ctr.str.split('%', expand = True)[0]
         df[df.columns.difference(['Criteria','SystemServingStatus', 'AdGroupType', 'AdGroupStatus', 'BiddingStrategyType', 'Device'])] = df[df.columns.difference(
             ['Criteria','SystemServingStatus', 'AdGroupType', 'AdGroupStatus', 'BiddingStrategyType', 'Device'])].apply(pd.to_numeric, errors='coerce')
-        df[df.columns.difference( ['AveragePosition','Id','Criteria','SystemServingStatus', 'HourOfDay','Device','ExternalCustomerId','CampaignId','AdGroupType','AdGroupId','AdGroupStatus','BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'] )] = df[df.columns.difference(
-            ['AveragePosition','Id','Criteria','SystemServingStatus','HourOfDay','Device','ExternalCustomerId','CampaignId','AdGroupType','AdGroupId','AdGroupStatus','BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'])].div(1000000)
+        df[df.columns.difference( ['TopImpressionPercentage','Id','Criteria','SystemServingStatus', 'HourOfDay','Device','ExternalCustomerId','CampaignId','AdGroupType','AdGroupId','AdGroupStatus','BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'] )] = df[df.columns.difference(
+            ['TopImpressionPercentage','Id','Criteria','SystemServingStatus','HourOfDay','Device','ExternalCustomerId','CampaignId','AdGroupType','AdGroupId','AdGroupStatus','BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'])].div(1000000)
         df.rename( columns=dict( zip(df.columns, self.db_column_name_list) ), inplace=True )
         self.insights_dict = df.reset_index(drop=True).to_dict(orient='records')
         return self.insights_dict
-
-    def get_keyword_criterion(self):
-        self.criterion_dict_list = list()
-        # Construct selector and get all ad groups.
-        selector = {
-            'fields': ['Id', 'KeywordText', 'Status', 'KeywordMatchType', 'SystemServingStatus', 'FirstPageCpc', 'FirstPositionCpc', 'BidModifier', 'QualityScore'],
-            'predicates': [
-                {
-                    'field': 'CampaignId',
-                    'operator': 'EQUALS',
-                    'values': [self.campaign_id]
-                },
-                {
-                    'field': 'Id',
-                    'operator': 'EQUALS',
-                    'values': [self.keyword_id]
-                }
-            ]
-        }
-        page = self.ad_group_criterion_service.get(selector)
-        if 'entries' in page:
-            for criterion_config in page['entries']:
-                ad_group_id = criterion_config['adGroupId']
-                self.text = criterion_config['criterion']['text']
-                self.match_type = criterion_config['criterion']['matchType']
-                self.serving_status = criterion_config['systemServingStatus']
-                self.status = criterion_config['userStatus']
-                try:
-                    self.first_page_cpc = criterion_config['firstPageCpc']['amount']['microAmount']/1000000
-                except Exception as e:
-                    print('[gsn_datacollector.KeywordGroup.get_keyword_criterion]: first_page_cpc does not exist.', e)
-                    self.first_page_cpc = 0
-                self.criterion_dict = {
-                    'ad_group_id':ad_group_id, 'text':self.text, 'match_type':self.match_type,
-                    'serving_status':self.serving_status, 'status':self.status, 'first_page_cpc':self.first_page_cpc
-                }
-                self.criterion_dict_list.append(self.criterion_dict)
-            return self.criterion_dict_list
-        
-    def update_status(self, status='PAUSED'):
-        self.operand = {
-        }
-        self.operations = [{
-            'operator': 'SET',
-            'operand': None
-        }]
-        # Construct operations and update an ad group.
-        self.operand['adGroupId'] = self.ad_group_id
-        self.operand['xsi_type'] = 'BiddableAdGroupCriterion'
-        self.operand['userStatus'] = status
-        criterion = {'id':None, 'xsi_type':None}
-        criterion['id'] = self.keyword_id
-        criterion['xsi_type'] = 'Keyword'
-        self.operand['criterion'] = []
-        # Put operations > operand > criterion together
-        self.operand['criterion'].append(criterion)
-        self.operations[0]['operand'] = self.operand
-        adgroups = self.ad_group_criterion_service.mutate(self.operations)
-        return adgroups
-    
-    def update_bid(self, ad_group_id=None, bid_micro_amount=None):
-        operations = {
-            'operator':'SET',
-            'operand':None,
-        }
-        operand = {
-            'xsi_type':'BiddableAdGroupCriterion',
-            'adGroupId':None,
-            'criterion':None,
-            'biddingStrategyConfiguration':None,
-        }
-        criterion = { 'id':self.keyword_id }
-        bidding_strategy_config = { 'bids':[] }
-        if bid_micro_amount:
-            bids = {
-                'xsi_type':'CpcBid',
-                'bid':{
-                    'microAmount': int(bid_micro_amount * 1000000)
-                }
-            }
-            bidding_strategy_config['bids'].append(bids)
-        else:
-            print('[gsn_datacollector] KeywordGroup.update_bid: bid_micro_amount required.')
-            return
-        operand['criterion'] = criterion
-        operand['adGroupId'] = ad_group_id
-        operand['biddingStrategyConfiguration'] = bidding_strategy_config
-        operations['operand'] = operand
-        # Initialize appropriate service.
-        ad_groups = self.ad_group_criterion_service.mutate(operations)
-        return
 
 
 # In[5]:
@@ -420,6 +261,8 @@ def data_collect(customer_id, campaign_id):
     camp = Campaign(customer_id, campaign_id)
     ###
     campaign_lifetime_insights = camp.get_performance_insights( date_preset=datacollector.DatePreset.lifetime, performance_type='CAMPAIGN' )
+    if campaign_lifetime_insights.empty:
+        return
 #     campaign_lifetime_insights = camp.get_campaign_insights( client=None, date_preset=datacollector.DatePreset.today )
     ###
     addition_column_list = [ 'period', 'period_left', 'target', 'target_left', 'daily_target', 'destination', 'destination_type' ]
@@ -441,7 +284,6 @@ def data_collect(customer_id, campaign_id):
     df_campaign = pd.DataFrame(campaign_dict, index=[0])
     print(campaign_lifetime_insights.to_dict('records')[0])
     gsn_db.update_table(df_campaign, table="campaign_target")
-    keyword_id_list = camp.get_keyword_id_list()
     keyword_insights_dict = camp.get_keyword_insights(date_preset='TODAY')
     for keyword_insights in keyword_insights_dict:
         df_keyword_group = pd.DataFrame(keyword_insights, index=[0])
@@ -475,10 +317,10 @@ if __name__=='__main__':
 #     data_collect(customer_id=CUSTOMER_ID, campaign_id=CAMPAIGN_ID)
 
 
-# In[3]:
+# In[6]:
 
 
-#!jupyter nbconvert --to script gsn_datacollector.ipynb
+# !jupyter nbconvert --to script gsn_datacollector.ipynb
 
 
 # In[ ]:

@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[11]:
 
 
 import mysql.connector
 import pandas as pd
 import datetime
 # from pandas.io import sql
+from sqlalchemy.pool import NullPool
 from sqlalchemy import create_engine
 from sqlalchemy import Table, MetaData
 from sqlalchemy import sql
@@ -17,7 +18,7 @@ pymysql.install_as_MySQLdb()
 import MySQLdb
 
 
-# In[ ]:
+# In[12]:
 
 
 class Database(object):
@@ -26,15 +27,14 @@ class Database(object):
     password = "adgeek1234"
 
 
-# In[ ]:
+# In[19]:
 
 
 class DevDatabase(Database):
     host = "aws-dev-ai-private.adgeek.cc"
-    pass
 
 
-# In[ ]:
+# In[14]:
 
 
 class CRUDController(object):
@@ -77,8 +77,8 @@ class CRUDController(object):
         'THRUPLAY', 'LINK_CLICKS', 'ALL_CLICKS', 'VIDEO_VIEWS', 'REACH', 'POST_ENGAGEMENT', 'PAGE_LIKES', 'LANDING_PAGE_VIEW']
     PERFORMANCE_CAMPAIGN_LIST = [
         'PURCHASE', 'MESSAGES', 'SEARCH', 'INITIATE_CHECKOUT', 'LEAD_WEBSITE', 'PURCHASES', 'ADD_TO_WISHLIST', 'VIEW_CONTENT', 'ADD_PAYMENT_INFO', 'COMPLETE_REGISTRATION', 'CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART']
-    CUSTOM_CONVERSION_CAMPAIGN_LIST = [
-        'CUSTOM', 'CONVERSIONS'
+    CUSTOM_CAMPAIGN_LIST = [
+        'CUSTOM', 'CONVERSIONS',
     ]
     def __init__(self, database):
         self.database = database
@@ -119,7 +119,7 @@ class CRUDController(object):
             return pd.read_sql(
                 sql.select(['*'], from_obj=tbl).where(
                     sql.and_(
-                        tbl.c.destination_type.in_(self.PERFORMANCE_CAMPAIGN_LIST),
+                        tbl.c.destination_type.in_(self.PERFORMANCE_CAMPAIGN_LIST + self.CUSTOM_CAMPAIGN_LIST),
                         sql.func.date(tbl.c.ai_stop_date) >= '{:%Y/%m/%d}'.format(self.dt),
                         sql.func.date(tbl.c.ai_start_date) <= '{:%Y/%m/%d}'.format(self.dt),
                         tbl.c.ai_status == 'active',
@@ -148,7 +148,7 @@ class CRUDController(object):
             return pd.read_sql(
                 sql.select(['*'], from_obj=tbl).where(
                     sql.and_(
-                        tbl.c.destination_type.in_(self.CUSTOM_CONVERSION_CAMPAIGN_LIST),
+                        tbl.c.destination_type.in_(self.CUSTOM_CAMPAIGN_LIST),
                         tbl.c.custom_conversion_id != None,
                         sql.func.date(tbl.c.ai_stop_date) >= '{:%Y/%m/%d}'.format(self.dt),
                         sql.func.date(tbl.c.ai_start_date) <= '{:%Y/%m/%d}'.format(self.dt),
@@ -164,21 +164,6 @@ class CRUDController(object):
                 sql.select(['*'], from_obj=tbl).where(
                     sql.and_( 
                         tbl.c.destination_type.in_(self.BRANDING_CAMPAIGN_LIST),
-                        sql.func.date(tbl.c.ai_stop_date) >= '{:%Y/%m/%d}'.format(self.dt),
-                        sql.func.date(tbl.c.ai_start_date) <= '{:%Y/%m/%d}'.format(self.dt),
-                        tbl.c.ai_status == 'active',
-                    )
-                ), con=self.conn
-            )
-    
-    def get_custom_conversion_campaign(self,):
-        with self.engine.connect() as self.conn:
-            tbl = Table("campaign_target", self.metadata, autoload=True)
-            return pd.read_sql(
-                sql.select(['*'], from_obj=tbl).where(
-                    sql.and_(
-                        tbl.c.destination_type.in_(self.CUSTOM_CONVERSION_CAMPAIGN_LIST),
-                        tbl.c.custom_conversion_id != None,
                         sql.func.date(tbl.c.ai_stop_date) >= '{:%Y/%m/%d}'.format(self.dt),
                         sql.func.date(tbl.c.ai_start_date) <= '{:%Y/%m/%d}'.format(self.dt),
                         tbl.c.ai_status == 'active',
@@ -207,7 +192,8 @@ class CRUDController(object):
         with self.engine.connect() as self.conn:
             tbl = Table("campaign_target", self.metadata, autoload=True)
             df = pd.read_sql(
-                sql.select([tbl.c.ai_spend_cap, tbl.c.ai_start_date, tbl.c.ai_stop_date, tbl.c.destination_type, tbl.c.custom_conversion_id], from_obj=tbl).where(
+                sql.select([
+                    tbl.c.ai_spend_cap, tbl.c.ai_start_date, tbl.c.ai_stop_date, tbl.c.destination_type, tbl.c.custom_conversion_id], from_obj=tbl).where(
                     sql.and_(
                         tbl.c.ai_status == 'active',
                         tbl.c.campaign_id == campaign_id,
@@ -328,7 +314,7 @@ class CRUDController(object):
 #             return results
 
 
-# In[52]:
+# In[15]:
 
 
 class FB(CRUDController):
@@ -338,11 +324,11 @@ class FB(CRUDController):
         self.engine = create_engine(
             'mysql://{user}:{password}@{host}/{database}'.format(
                 user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database
-            )
+            ),
+            poolclass=NullPool,
         )
         print('mysql://{user}:{password}@{host}/{database}'.format(
-                user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database
-            ))
+                user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database))
         self.metadata = MetaData(bind=self.engine)
         self.table_init_bid = 'adset_initial_bid'
         self.media = 'facebook'
@@ -358,8 +344,12 @@ class GDN(CRUDController):
         self.engine = create_engine(
             'mysql://{user}:{password}@{host}/{database}'.format(
                 user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database
-            )
+            ),
+            poolclass=NullPool,
         )
+        print('mysql://{user}:{password}@{host}/{database}'.format(
+                user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database
+        ))
         self.metadata = MetaData(bind=self.engine)
         self.table_init_bid = 'adgroup_initial_bid'
         self.media = 'gdn'
@@ -375,14 +365,18 @@ class GSN(CRUDController):
         self.engine = create_engine(
             'mysql://{user}:{password}@{host}/{database}'.format(
                 user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database
-            )
+            ),
+            poolclass=NullPool,
         )
+        print('mysql://{user}:{password}@{host}/{database}'.format(
+                user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database
+        ))
 
 
-# In[1]:
+# In[ ]:
 
 
-#!jupyter nbconvert --to script database_controller.ipynb
+# !jupyter nbconvert --to script database_controller.ipynb
 
 
 # In[ ]:

@@ -12,9 +12,9 @@ import numpy as np
 import math
 import datetime
 from bid_operator import reverse_bid_amount
-AUTH_FILE_PATH = '/home/tim_su/ai_optimizer/opt/ai_optimizer/googleads.yaml'
-client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
+import adgeek_permission as permission
 import gdn_db
+import google_adwords_controller as controller
 CAMPAIGN_OBJECTIVE_FIELD = {
     'LINK_CLICKS': 'clicks',
     'CONVERSIONS':'conversions',
@@ -22,14 +22,15 @@ CAMPAIGN_OBJECTIVE_FIELD = {
     'cpa':'conversions',
 }
 
-CAMPAIGN_FIELDS = ['ExternalCustomerId','CampaignId','AdvertisingChannelType', 'CampaignStatus',
-                   'BiddingStrategyType','Amount','StartDate','EndDate','Cost',
-                   'AverageCost','Impressions', 'Clicks','Conversions', 'AllConversions',
-                   'AverageCpc','CostPerConversion', 'CostPerAllConversion', 'Ctr']
+CAMPAIGN_FIELDS = [
+    'ExternalCustomerId', 'CampaignId', 'AdvertisingChannelType', 'CampaignStatus', 'BiddingStrategyType', 'Amount', 'StartDate',
+    'EndDate', 'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'AverageCpc', 'CostPerConversion',
+    'CostPerAllConversion', 'Ctr', 'ViewThroughConversions'
+]
 DB_CAMPAIGN_COLUMN_NAME_LIST = [
-    'customer_id', 'campaign_id', 'channel_type', 'status', 'bidding_type', 'daily_budget', 'start_time', 'stop_time',
-    'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click',
-    'cost_per_conversion', 'cost_per_all_conversion', 'ctr'
+    'customer_id', 'campaign_id', 'channel_type', 'status', 'bidding_type', 'daily_budget', 'start_time', 'stop_time', 'spend',
+    'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion',
+    'cost_per_all_conversion', 'ctr', 'view_conversions'
 ]
 BIDDING_INDEX = {
     'cpc': 'cpc_bid',
@@ -39,32 +40,32 @@ BIDDING_INDEX = {
 class ReportField:
     # URL
     URL_LIST = [
-        'ExternalCustomerId', 'CampaignId', 'AdGroupId', 'AdGroupStatus', 'Cost', 'AverageCost',
-        'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'AverageCpc', 'CostPerConversion', 'CostPerAllConversion', 'DisplayName', 'Ctr']
+        'ExternalCustomerId', 'CampaignId', 'AdGroupId', 'AdGroupStatus', 'Cost', 'AverageCost', 'Impressions', 'Clicks',
+        'Conversions', 'AllConversions', 'AverageCpc', 'CostPerConversion', 'CostPerAllConversion', 'DisplayName', 'Ctr', 'ViewThroughConversions']
     # CRITERIA,
     CRITERIA_LIST = [
-        'ExternalCustomerId', 'CampaignId', 'AdGroupId', 'Criteria', 'Id', 'AdGroupStatus', 'CpmBid', 'CpcBid',
-        'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'AverageCpc', 'CostPerConversion', 'CostPerAllConversion', 'Ctr',]
+        'ExternalCustomerId', 'CampaignId', 'AdGroupId', 'Criteria', 'Id', 'AdGroupStatus', 'CpmBid', 'CpcBid', 'Cost',
+        'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'AverageCpc', 'CostPerConversion', 'CostPerAllConversion', 'Ctr', 'ViewThroughConversions']
     # AUDIENCE, AGE_RANGE, DISPLAY_KEYWORD
     BIDDABLE_LIST = [
-        'ExternalCustomerId', 'CampaignId', 'AdGroupId', 'Criteria', 'Id', 'AdGroupStatus', 'CpmBid', 'CpcBid',
-        'BiddingStrategyType', 'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'AverageCpc', 'CostPerConversion', 'CostPerAllConversion', 'Ctr']
+        'ExternalCustomerId', 'CampaignId', 'AdGroupId', 'Criteria', 'Id', 'AdGroupStatus', 'CpmBid', 'CpcBid', 'BiddingStrategyType', 
+        'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'AverageCpc', 'CostPerConversion', 'CostPerAllConversion', 'Ctr', 'ViewThroughConversions']
     # ADGROUP
     ADGROUP_LIST = [
         'ExternalCustomerId', 'CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus', 'CpmBid', 'CpvBid', 'CpcBid', 'TargetCpa',
-        'BiddingStrategyType', 'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'AverageCpc', 'CostPerConversion', 'CostPerAllConversion', 'Ctr']
+        'BiddingStrategyType', 'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'AverageCpc', 'CostPerConversion', 'CostPerAllConversion', 'Ctr', 'ViewThroughConversions']
     # KEYWORDS
     KEYWORDS_LIST = [
         'ExternalCustomerId','CampaignId', 'AdGroupId', 'AdGroupStatus', 'Criteria', 'Id','AveragePosition', 'SystemServingStatus', 'FirstPageCpc',
         'CpmBid', 'CpcBid', 'BiddingStrategyType', 'AverageCost','Cost','Impressions', 'Clicks','Conversions', 'AllConversions', 'AverageCpc',
-        'CostPerConversion', 'CostPerAllConversion', 'Ctr']
+        'CostPerConversion', 'CostPerAllConversion', 'Ctr', 'ViewThroughConversions']
     
     NON_NUMERIC_LIST = [
-        'Criterion serving status', 'Ad group type', 'Ad group state', 'Bid Strategy Type', 'Keyword', 'Age Range', 'Audience', 'Keyword / Placement', 'Criteria Display Name']
-
+        'Criterion serving status', 'Ad group type', 'Ad group state', 'Bid Strategy Type', 'Keyword', 'Age Range', 'Audience',
+        'Keyword / Placement', 'Criteria Display Name']
     NUMERIC_LIST = [
-        'First page CPC', 'Max. CPM', 'Max. CPV', 'Max. CPC', 'Default max. CPC', 'Target CPA', 'Cost', 'Avg. Cost', 'Avg. CPC', 'Cost / conv.', 'Cost / all conv.']
-
+        'First page CPC', 'Max. CPM', 'Max. CPV', 'Max. CPC', 'Default max. CPC', 'Target CPA', 'Cost', 'Avg. Cost', 'Avg. CPC',
+        'Cost / conv.', 'Cost / all conv.', 'ViewThroughConversions']
     INDEX = {
         'ADGROUP': ADGROUP_LIST,
         'URL': URL_LIST,
@@ -76,19 +77,19 @@ class ReportField:
     }
 class ReportColumn:
     ADGROUP_LIST  = [
-        'customer_id', 'campaign_id', 'channel_type', 'adgroup_id', 'status', 'cpm_bid', 'cpv_bid', 'cpc_bid', 'cpa_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr']
+        'customer_id', 'campaign_id', 'channel_type', 'adgroup_id', 'status', 'cpm_bid', 'cpv_bid', 'cpc_bid', 'cpa_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr', 'view_conversions']
     URL_LIST      = [
-        'customer_id', 'campaign_id', 'adgroup_id', 'status', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'url_display_name', 'ctr']
+        'customer_id', 'campaign_id', 'adgroup_id', 'status', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'url_display_name', 'ctr', 'view_conversions']
     CRITERIA_LIST = [
-        'customer_id', 'campaign_id', 'adgroup_id', 'keyword_placement', 'keyword_id', 'status', 'cpm_bid', 'cpc_bid', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr',]
+        'customer_id', 'campaign_id', 'adgroup_id', 'keyword_placement', 'keyword_id', 'status', 'cpm_bid', 'cpc_bid', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr', 'view_conversions']
     AUDIENCE_LIST = [
-        'customer_id', 'campaign_id', 'adgroup_id', 'audience', 'criterion_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr']
+        'customer_id', 'campaign_id', 'adgroup_id', 'audience', 'criterion_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr', 'view_conversions']
     AGE_RANGE_LIST = [
-        'customer_id', 'campaign_id', 'adgroup_id', 'age_range', 'criterion_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr']
+        'customer_id', 'campaign_id', 'adgroup_id', 'age_range', 'criterion_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr', 'view_conversions']
     BIDDABLE_LIST = [
-        'customer_id', 'campaign_id', 'adgroup_id', 'keyword', 'keyword_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr']
+        'customer_id', 'campaign_id', 'adgroup_id', 'keyword', 'keyword_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr', 'view_conversions']
     KEYWORDS_LIST = [
-        'customer_id', 'campaign_id', 'adgroup_id', 'status', 'keyword', 'keyword_id', 'position', 'serving_status', 'first_page_cpc', 'cpm_bid', 'cpc_bid', 'bidding_type', 'cost_per_target', 'spend', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr'
+        'customer_id', 'campaign_id', 'adgroup_id', 'status', 'keyword', 'keyword_id', 'position', 'serving_status', 'first_page_cpc', 'cpm_bid', 'cpc_bid', 'bidding_type', 'cost_per_target', 'spend', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr', 'view_conversions'
     ]
     INDEX = {
         'ADGROUP': ADGROUP_LIST,
@@ -128,12 +129,11 @@ class DatePreset:
     last_14_days = 'LAST_14_DAYS'
 
 class Campaign(object):
-    def __init__(self, customer_id, campaign_id, destination_type):
+    def __init__(self, customer_id, campaign_id, destination_type=None):
         self.customer_id = customer_id
         self.campaign_id = campaign_id
         self.destination_type = destination_type
-        self.client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
-        self.client.SetClientCustomerId(self.customer_id)
+        self.client = permission.init_google_api(self.customer_id)
         self.report_downloader = self.client.GetReportDownloader(version='v201809')
         brief_dict = gdn_db.get_campaign_ai_brief( self.campaign_id )
         self.ai_start_date = brief_dict['ai_start_date'].strftime("%Y%m%d")
@@ -142,32 +142,7 @@ class Campaign(object):
         self.destination_type = brief_dict['destination_type']
         self.ai_period = brief_dict['period']
     
-    def get_adgroup_id_list(self):
-        ad_group_service = self.client.GetService('AdGroupService', version='v201809')
-        # Construct selector and get all ad groups.
-        selector = {
-            'fields': ['Id', 'Name', 'Status'],
-            'predicates': [
-                {
-                    'field': 'CampaignId',
-                    'operator': 'EQUALS',
-                    'values': [self.campaign_id]
-                },
-                {
-                    'field': 'Status',
-                    'operator': 'EQUALS',
-                    'values': ['ENABLED']
-                }
-            ]
-        }
-        self.adgroup_id_list = list()
-        page = ad_group_service.get(selector)
-        if 'entries' in page:
-            for ad_group in page['entries']:
-                self.adgroup_id_list.append( ad_group['id'] )
-        return self.adgroup_id_list
-    
-    def get_campaign_insights(self, client, date_preset=None):
+    def get_campaign_insights(self, date_preset=None):
         # Create report definition.
         date_range = { 'min': None, 'max': None }
         selector = {
@@ -205,33 +180,14 @@ class Campaign(object):
             )
             df = df.append(df_temp)
             df['Ctr'] = df.Ctr.str.split('%', expand = True)[0]
-
         df[df.columns.difference(['CampaignStatus', 'AdvertisingChannelType', 'BiddingStrategyType', 'StartDate', 'EndDate'])] = df[df.columns.difference(
             ['CampaignStatus', 'AdvertisingChannelType', 'BiddingStrategyType', 'StartDate', 'EndDate'])].apply(pd.to_numeric, errors='coerce')
-        df[df.columns.difference(['ExternalCustomerId', 'CampaignId', 'AdvertisingChannelType', 'CampaignStatus', 'BiddingStrategyType', 'StartDate', 'EndDate', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'Ctr'])] = df[df.columns.difference(
-            ['ExternalCustomerId', 'CampaignId', 'CampaignStatus', 'AdvertisingChannelType', 'BiddingStrategyType', 'StartDate', 'EndDate', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'Ctr'])].div(1000000)
+        df[df.columns.difference(['ExternalCustomerId', 'CampaignId', 'AdvertisingChannelType', 'CampaignStatus', 'BiddingStrategyType', 'StartDate', 'EndDate', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'Ctr', 'ViewThroughConversions'])] = df[df.columns.difference(
+            ['ExternalCustomerId', 'CampaignId', 'CampaignStatus', 'AdvertisingChannelType', 'BiddingStrategyType', 'StartDate', 'EndDate', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'Ctr', 'ViewThroughConversions'])].div(1000000)
         df[['StartDate','EndDate']] = df[['StartDate','EndDate']].apply( pd.to_datetime, errors='coerce' )
         df.rename( columns=dict( zip(df.columns, DB_CAMPAIGN_COLUMN_NAME_LIST) ), inplace=True )
         self.insights_dict = df.to_dict(orient='records')[0]
         return self.insights_dict
-    
-    def update_status(client=client, status='PAUSED'):
-        # Initialize appropriate service.
-        client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
-        client.SetClientCustomerId(customer_id)
-        campaign_service = client.GetService('CampaignService', version='v201809')
-
-        # Construct operations and update an ad group.
-        operations = [{
-            'operator': 'SET',
-            'operand': {
-                'id': self.campaign_id,
-                'status': status
-            }
-        }]
-
-        campaigns = campaign_service.mutate(operations)
-        return campaigns
     
     def get_performance_insights(self, client=None,
                                  campaign_id=None,
@@ -291,14 +247,17 @@ class Campaign(object):
 # In[10]:
 
 
+
+# In[2]:
+
+
 class AdGroup(Campaign):
     def __init__(self, customer_id, campaign_id, destination_type, adgroup_id):
         super().__init__(customer_id, campaign_id, destination_type)
         self.customer_id = customer_id
         self.campaign_id = campaign_id
         self.adgroup_id = adgroup_id
-        self.client = client
-        self.client.SetClientCustomerId(self.customer_id)
+        self.client = permission.init_google_api(self.customer_id)
         self.report_downloader = self.client.GetReportDownloader(version='v201809')
         brief_dict = gdn_db.get_campaign_ai_brief( self.campaign_id )
         self.ai_start_date = brief_dict['ai_start_date'].strftime("%Y%m%d")
@@ -307,7 +266,7 @@ class AdGroup(Campaign):
         self.destination_type = brief_dict['destination_type']
         
         
-    def get_adgroup_insights(self, client, date_preset=None, by_device=False, by_hour=False):
+    def get_adgroup_insights(self, date_preset=None, by_device=False, by_hour=False):
         self.report_metrics = [
             'ExternalCustomerId','CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus', 'CpmBid','CpvBid', 'CpcBid',
             'TargetCpa', 'BiddingStrategyType','Cost', 'AverageCost','Impressions', 'Clicks','Conversions', 'AllConversions', 'AverageCpc',
@@ -385,61 +344,16 @@ class AdGroup(Campaign):
         self.insights_dict = df.reset_index(drop=True).to_dict(orient='records')
         return self.insights_dict
 
-    def update_status(self, client=client, status='PAUSED'):
-        # Initialize appropriate service.
-        client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
-        client.SetClientCustomerId(self.customer_id)
-        ad_group_service = client.GetService('AdGroupService', version='v201809')
-        # Construct operations and update an ad group.
-        operations = [{
-            'operator': 'SET',
-            'operand': {
-                'id': self.adgroup_id,
-                'status': status
-            }
-        }]
-        adgroups = ad_group_service.mutate(operations)
-        return adgroups
 
-# In[6]:
-
-
-def update_adgroup_bid(customer_id, ad_group_id, bid_micro_amount=None, client=client):
-    # Initialize appropriate service.
-    client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
-    client.SetClientCustomerId(customer_id)
-    ad_group_service = client.GetService('AdGroupService', version='v201809')
-    
-    # Construct operations and update an ad group.
-    operations = [{
-        'operator': 'SET',
-        'operand': {
-            'id': ad_group_id,
-        }
-    }]
-  
-    if bid_micro_amount:
-        bid_micro_amount = int(bid_micro_amount * 1000000)
-        operations[0]['operand']['biddingStrategyConfiguration'] = {
-            'bids': [{
-                'xsi_type': 'CpcBid',
-                'bid': {
-                    'microAmount': bid_micro_amount,
-                }
-            }]
-        }
-  
-    ad_groups = ad_group_service.mutate(operations)
-    return ad_groups
-
-
-# In[7]:
+# In[3]:
 
 
 def data_collect(customer_id, campaign_id, destination, destination_type, ai_start_date, ai_stop_date):
+    service_container = controller.AdGroupServiceContainer(customer_id=customer_id)
     camp = Campaign(customer_id, campaign_id, destination_type)
+    controller_campaign = controller.Campaign(service_container=service_container, campaign_id=campaign_id)
     ###
-    campaign_lifetime_insights = camp.get_campaign_insights( client, date_preset=DatePreset.lifetime )
+    campaign_lifetime_insights = camp.get_campaign_insights( date_preset=DatePreset.lifetime )
 #     campaign_today_insights = camp.get_campaign_insights( client, date_preset=DatePreset.today )
     ###
     addition_column_list = [ 'period', 'period_left', 'target', 'target_left', 'daily_target', 'destination', 'destination_type' ]
@@ -453,18 +367,18 @@ def data_collect(customer_id, campaign_id, destination, destination_type, ai_sta
     daily_target = target_left / period_left
         
     addition_value_list = [period, period_left, target, target_left, daily_target, destination, destination_type]
-    addition_dict = dict( zip(addition_column_list, addition_value_list))
+    addition_dict = dict( zip(addition_column_list, addition_value_list) )
     campaign_dict = {
         **campaign_lifetime_insights,
         **addition_dict,
     }
     df_campaign = pd.DataFrame(campaign_dict, index=[0])
     gdn_db.update_table(df_campaign, table="campaign_target")
-    adgroup_id_list = camp.get_adgroup_id_list()
-
-    for adgroup_id in adgroup_id_list:
+    ad_group_list = controller_campaign.get_ad_groups()
+    for ad_group in ad_group_list:
+        adgroup_id = ad_group.ad_group_id
         adgroup = AdGroup(camp.customer_id,camp.campaign_id,camp.destination_type, adgroup_id)
-        adgroup_today_insights = adgroup.get_adgroup_insights(client, date_preset=DatePreset.today)
+        adgroup_today_insights = adgroup.get_adgroup_insights(date_preset=DatePreset.today)
         df_adgroup = pd.DataFrame(adgroup_today_insights)
         gdn_db.into_table(df_adgroup, table="adgroup_insights")
         bidding_type = adgroup_today_insights[0]['bidding_type']
@@ -473,10 +387,8 @@ def data_collect(customer_id, campaign_id, destination, destination_type, ai_sta
         df_adgroup['bid_amount'] = math.ceil(reverse_bid_amount(df_adgroup[bid_amount_column]))
         gdn_db.check_initial_bid(adgroup_id, df_adgroup[[Field.campaign_id, Field.adgroup_id, Field.bid_amount]])
 
-    return
 
-
-# In[8]:
+# In[4]:
 
 
 def main():
@@ -490,14 +402,15 @@ def main():
         destination_type = df_camp['destination_type'][df_camp.campaign_id==campaign_id].iloc[0]
         ai_start_date = df_camp['ai_start_date'][df_camp.campaign_id==campaign_id].iloc[0]
         ai_stop_date = df_camp['ai_stop_date'][df_camp.campaign_id==campaign_id].iloc[0]
+        
+#         adwords_client = permission.init_google_api(customer_id)
+        
         data_collect( customer_id, int(campaign_id), destination, destination_type, ai_start_date, ai_stop_date )
 
-
-        
     print(datetime.datetime.now()-start_time)
 
 
-# In[2]:
+# In[5]:
 
 
 if __name__=='__main__':
@@ -505,13 +418,13 @@ if __name__=='__main__':
 #     df_campaign = data_collect(camp.customer_id, camp.campaign_id, 10000, camp.destination_type)
 
 
-# In[5]:
+# In[ ]:
 
 
-#!jupyter nbconvert --to script gdn_datacollector.ipynb
+# !jupyter nbconvert --to script gdn_datacollector.ipynb
 
 
-# In[4]:
+# In[7]:
 
 
 # CUSTOMER_ID = 2042877296

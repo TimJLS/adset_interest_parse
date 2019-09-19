@@ -1,22 +1,20 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[5]:
 
 
 import gsn_db
-import datetime
 from googleads import adwords
 import pandas as pd
 import copy
 import math
 import datetime
 from enum import Enum
-AUTH_FILE_PATH = '/home/tim_su/ai_optimizer/opt/ai_optimizer/googleads.yaml'
-adwords_client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
+import adgeek_permission as permission
 
 
-# In[2]:
+# In[6]:
 
 
 class Status(object):
@@ -24,7 +22,7 @@ class Status(object):
     pause = 'PAUSED'
 
 
-# In[3]:
+# In[7]:
 
 
 class OperatorContainer():
@@ -84,15 +82,14 @@ class OperatorContainer():
         self.operations = []
 
 
-# In[74]:
+# In[8]:
 
 
 class CampaignServiceContainer(object):
 
     def __init__(self, customer_id):
-        self.customer_id = customer_id
-        adwords_client.SetClientCustomerId(self.customer_id)
-        self.service_campaign = adwords_client.GetService('CampaignService', version='v201809')
+        self.adwords_client = permission.init_google_api(account_id=self.customer_id)
+        self.service_campaign = self.adwords_client.GetService('CampaignService', version='v201809')
         self.operator_container = OperatorContainer()
         self.ad_group = AdGroup
         
@@ -131,27 +128,20 @@ class Campaign(object):
         if len(self.ad_groups) == 0:
             self.get_ad_groups()
         self.keywords = [ keywords.retrieve() for ad_group in self.ad_groups for keywords in ad_group.get_keywords() ]
-#         self.operator_container.selector_campaign[0]['fields'] = Keyword.fields
-#         self.operator_container.selector_campaign[0]['predicates'][0]['values'][0] = self.campaign_id
-#         results = self.service_container.service_criterion.get(self.operator_container.selector_campaign)['entries']
-#         self.keywords = [ Keyword( AdGroup(self.service_container, result['adGroupId']), result['criterion']['id'] ) for result in results if result['criterionUse']=='BIDDABLE' and result['criterion']['type']=='KEYWORD' ]
         return self.keywords
-#         self.ad_groups = [ AdGroup(self.service_container, result['id']) for result in results ]
-#         return self.keywords
 
 
-# In[81]:
+# In[9]:
 
 
 class AdGroupServiceContainer(object):
 
-    def __init__(self, customer_id=None):
-        if customer_id:
-            self.customer_id = customer_id
-            adwords_client.SetClientCustomerId(self.customer_id)
-        self.service_ad_group = adwords_client.GetService('AdGroupService', version='v201809')
-        self.service_criterion = adwords_client.GetService('AdGroupCriterionService', version='v201809')
-        self.service_ad = adwords_client.GetService('AdGroupAdService', version='v201809')
+    def __init__(self, customer_id):
+        self.customer_id = customer_id
+        self.adwords_client = permission.init_google_api(account_id=self.customer_id)
+        self.service_ad_group = self.adwords_client.GetService('AdGroupService', version='v201809')
+        self.service_criterion = self.adwords_client.GetService('AdGroupCriterionService', version='v201809')
+        self.service_ad = self.adwords_client.GetService('AdGroupAdService', version='v201809')
         self.operator_container = OperatorContainer()
         self.ad_group = AdGroup
         
@@ -202,25 +192,25 @@ class AdGroup(object):
         self.basic_criterions = self.create_basic_criterions()
         self.user_interest_criterions = self.create_user_interest_criterions()
         self.user_list_criterions = self.create_user_list_criterions()
-
+    
     def create_keyword(self,):
         return Keyword
     
     def create_creative(self,):
         return Creative
-
+    
     def create_param(self,):
         return Param(self)
-
+    
     def create_criterions(self,):
         return Criterion(self)
-
+    
     def create_basic_criterions(self,):
         return BasicCriterion(self)
-
+    
     def create_user_interest_criterions(self,):
         return UserInterestCriterion(self)
-
+    
     def create_user_list_criterions(self,):
         return UserListCriterion(self)
     
@@ -233,7 +223,7 @@ class AdGroup(object):
 #             keyword_id = result['criterion']['id']
 #             keyword = Keyword(self, keyword_id)
         return keywords
-
+    
     def get_ads(self,):
         self.operator_container.selector[0]['fields'] = Creative.fields
         self.operator_container.selector[0]['predicates'][0]['values'][0] = self.ad_group_id
@@ -248,7 +238,7 @@ class AdGroup(object):
         return
 
 
-# In[95]:
+# In[10]:
 
 
 class Keyword(object):
@@ -260,7 +250,6 @@ class Keyword(object):
         self.ad_group = AdGroup
         self.keyword_id = keyword_id
         self.operator_container = OperatorContainer()
-
         
     def retrieve(self,):
         self.operator_container.selector[0]['fields'] = Keyword.fields
@@ -314,7 +303,7 @@ class Keyword(object):
         return result
 
 
-# In[96]:
+# In[11]:
 
 
 class Param(object):
@@ -361,13 +350,13 @@ class Param(object):
         return result
 
 
-# In[97]:
+# In[122]:
 
 
 class Criterion(object):
     fields = [
         'AdGroupId', 'CriteriaType', 'UserInterestId', 'UserInterestName', 'UserListId', 'VerticalId', 'LabelIds',
-        'BiddingStrategyType', 'BiddingStrategySource', 'BiddingStrategyId',
+        'BiddingStrategyType', 'BiddingStrategySource', 'BiddingStrategyId', 'Status',
     ]
     def __init__(self, AdGroup):
         self.ad_group = AdGroup
@@ -387,6 +376,13 @@ class Criterion(object):
         biddable_criterions = [ entry['criterion'] for i, entry in enumerate(biddable_criterions) if entry['criterion']['type']==self.criterion_type or self.criterion_type is None]
         negative_criterions = [ entry['criterion'] for i, entry in enumerate(negative_criterions) if entry['criterion']['type']==self.criterion_type or self.criterion_type is None]
         return biddable_criterions, negative_criterions
+    
+    def retrieve_status(self,):
+        entries = self.ad_group.service_container.service_criterion.get(self.operation_container.selector)['entries']
+        biddable_criterions = [ entry for i, entry in enumerate(entries) if entry["AdGroupCriterion.Type"] == 'BiddableAdGroupCriterion']
+        biddable_criterions = [ entry for i, entry in enumerate(entries) if entry['criterion']['type']==self.criterion_type or self.criterion_type is None]
+        biddable_status = [ dict(zip([entry['criterion']['userListId']],[entry['userStatus']])) for i, entry in enumerate(entries) if 'userStatus' in entry]
+        return biddable_status
 
     def update(self, criterions, is_delivering=True, is_included=True):
         biddable_criterions, negative_criterions = self.retrieve()
@@ -399,11 +395,11 @@ class Criterion(object):
             self.operation_container.criterion_operand.pop('userStatus')
             self.operation_container.criterion_operand['xsi_type'] =  'NegativeAdGroupCriterion'
         for criterion in criterions:
-            self.operation_container.criterion = criterions['id']
+            self.operation_container.criterion['id'] = criterion['id'] if criterion['xsi_type'] != 'Keyword' else None
             self.operation_container.criterion_operand['adGroupId'] = self.ad_group.ad_group_id
-            self.operation_container.criterion_operand['criterion'] = criterions
+            self.operation_container.criterion_operand['criterion'] = criterion
             self.operation_container.operation['operand'] = self.operation_container.criterion_operand
-            self.operation_container.operation['operator'] = 'SET' if  criterions['id'] in criterion_id_list else 'ADD'
+            self.operation_container.operation['operator'] = 'SET' if  criterion.get('id') in criterion_id_list else 'ADD'
             self.operation_container.operations.append(copy.deepcopy(self.operation_container.operation))
         if len(self.operation_container.operations)!=0:
             result = self.ad_group.service_container.service_criterion.mutate(self.operation_container.operations)
@@ -417,6 +413,28 @@ class BasicCriterion(Criterion):
         self.operation_container.criterion['xsi_type'] = 'AgeRange'
         self.criterion_type = 'AGE_RANGE'
 
+    def update(self, criterions, is_delivering=True, is_included=True):
+        biddable_criterions, negative_criterions = self.retrieve()
+        all_criterions = biddable_criterions + negative_criterions
+        criterion_id_list = [ all_criterion['id'] for all_criterion in all_criterions ]
+        
+        if not is_delivering:
+            self.operation_container.criterion_operand['userStatus'] = 'PAUSED'
+        if not is_included:
+            self.operation_container.criterion_operand.pop('userStatus')
+            self.operation_container.criterion_operand['xsi_type'] =  'NegativeAdGroupCriterion'
+        for criterion in criterions:
+            self.operation_container.criterion['id'] = criterion['id'] if criterion['Criterion.Type'] != 'Keyword' else None
+            self.operation_container.criterion_operand['adGroupId'] = self.ad_group.ad_group_id
+            self.operation_container.criterion_operand['criterion'] = criterion
+            self.operation_container.operation['operand'] = self.operation_container.criterion_operand
+            self.operation_container.operation['operator'] = 'SET' if  criterion['id'] in criterion_id_list else 'ADD'
+            self.operation_container.operations.append(copy.deepcopy(self.operation_container.operation))
+        if len(self.operation_container.operations)!=0:
+            result = self.ad_group.service_container.service_criterion.mutate(self.operation_container.operations)
+            self.operation_container.operations=[]
+            return result
+        
 
 class UserInterestCriterion(Criterion):
     def __init__(self, AdGroup):
@@ -430,25 +448,39 @@ class UserListCriterion(Criterion):
         self.operation_container.criterion['xsi_type'] = 'CriterionUserList'
         self.criterion_type = 'USER_LIST'
     
-    def make(self, criterion_id):
+    def make(self, user_list_id):
         biddable_criterions, negative_criterions = self.retrieve()
         all_criterions = biddable_criterions + negative_criterions
-        criterion_id_list = [ all_criterion['id'] for all_criterion in all_criterions ]
+        user_list_id_list = [ all_criterion['userListId'] for all_criterion in all_criterions if all_criterion['userListId'] ]
+        criterion_id_list = [ all_criterion['id'] for all_criterion in all_criterions if all_criterion['id'] ]
+        biddable_status = self.retrieve_status()
+        status = [ status[userlist_id] for status in biddable_status if userlist_id in status ]
+        status = status[0] if any(status) else 'PAUSED'
         # Make criterion
-        self.operation_container.criterion = {'userListId':None, 'xsi_type':None,}
-        self.operation_container.criterion['userListId'] = criterion_id
+#         self.operation_container.criterion.update({'userListId':None})
+        self.operation_container.criterion['userListId'] = user_list_id
         # Put operations > operand > criterion together
-        self.operation_container.operand['criterion'] = self.operation_container.criterion
-        self.operation_container.operation['operand'] = self.operation_container.operand
-        self.operation_container.operation['operator'] = 'SET' if  criterion_id in criterion_id_list else 'ADD'
+        self.operation_container.criterion_operand['adGroupId'] = self.ad_group.ad_group_id
+        self.operation_container.criterion_operand['criterion'] = self.operation_container.criterion
+        self.operation_container.criterion_operand['xsi_type'] = 'BiddableAdGroupCriterion'
+        self.operation_container.operation['operand'] = self.operation_container.criterion_operand
+        if user_list_id in user_list_id_list:
+            self.operation_container.operation['operator'] = 'SET'
+            self.operation_container.criterion_operand['userStatus'] = status
+            self.operation_container.criterion_operand['criterion']['id'] = criterion_id_list[user_list_id_list.index(user_list_id)]
+        else:
+            self.operation_container.operation['operator'] = 'ADD'
+            self.operation_container.criterion_operand['criterion'].pop('id', None)
+            self.operation_container.criterion_operand.pop('id', None)
             
         self.operation_container.operations.append( copy.deepcopy( self.operation_container.operation ) )
+        print(self.operation_container.operations)
         result = self.ad_group.service_container.service_criterion.mutate(self.operation_container.operations)
         self.operation_container.operations=[]
         return result
 
 
-# In[98]:
+# In[40]:
 
 
 class Creative(object):
@@ -473,31 +505,44 @@ class Creative(object):
             return result['entries']
         
     def assign(self, ad_group_id):
-        self.ad_group_id = ad_group_id
         result = self.retrieve()
-        self.operator_container.operations = []
-        self.operator_container.operation['operator'] = 'SET' if result else 'ADD'
-        self.operator_container.operand.pop('id')
-        self.operator_container.operand['adGroupId'] = self.ad_group_id
-        self.operator_container.operand['status'] = Status.enable
-        self.operator_container.operand['ad'] = {}
-        self.operator_container.operand['ad']['id'] = self.ad_id
-        self.operator_container.operation['operand'] = self.operator_container.operand
-        self.operator_container.operations.append(self.operator_container.operation)
-        result = self.service_ad.mutate(self.operator_container.operations)
-        return result
+        if len(result) != 0:
+            self.ad_group_id = ad_group_id
+            self.operator_container.operations = []
+            self.operator_container.operation['operator'] = 'SET' if result else 'ADD'
+            self.operator_container.operand.pop('id')
+            self.operator_container.operand['adGroupId'] = self.ad_group_id
+#             print(result[0]['status'])
+            self.operator_container.operand['status'] = result[0]['status']
+            self.operator_container.operand['ad'] = {}
+            self.operator_container.operand['ad']['id'] = self.ad_id
+            self.operator_container.operation['operand'] = self.operator_container.operand
+            self.operator_container.operations.append(self.operator_container.operation)
+            result = self.service_ad.mutate(self.operator_container.operations)
+            return result
 
 
-# In[99]:
+# In[ ]:
 
 
-# group_service = AdGroupServiceContainer(customer_id=9716870905)
-# ad_group = AdGroup(group_service, ad_group_id=77633162298)
-# keywords_list = ad_group.get_keywords()
-# campaign = Campaign(group_service, campaign_id=2058587510)
+# !jupyter nbconvert --to script google_adwords_controller.ipynb
 
-# ad_group_list = campaign.get_ad_groups()
-# leywords_list = campaign.get_keywords()
+
+# In[14]:
+
+
+# service_container = AdGroupServiceContainer(customer_id=3165812026)
+
+# ad_group = AdGroup(service_container, 76633831865)
+
+# ad_group.user_list_criterions.retrieve()
+
+# import gdn_custom_audience as custom_audience
+# optimized_list_dict_list, all_converters_dict_list = custom_audience.get_campaign_custom_audience(6451753179)
+
+# optimized_list_dict_list
+
+# all_converters_dict_list
 
 
 # In[ ]:

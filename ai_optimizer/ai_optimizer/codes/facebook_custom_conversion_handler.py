@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[6]:
+# In[1]:
 
 
 
@@ -18,11 +18,10 @@ import facebook_business.adobjects.adaccounttargetingunified as facebook_busines
 import facebook_business.adobjects.customconversion as facebook_business_customconversion
 
 import facebook_datacollector as fb_collector
-import mysql_adactivity_save as mysql_saver
-import adgeek_permission as permission
+import database_controller
 
 
-# In[7]:
+# In[2]:
 
 
 
@@ -33,12 +32,13 @@ def get_account_id_by_campaign(campaign_id):
     
 
 
-# In[8]:
+# In[3]:
 
 
 def save_account_custom_conversions_intodb(account_id, campaign_id, customconversions_id_list):
-    my_db = mysql_saver.connectDB(mysql_saver.DATABASE)
-    my_cursor = my_db.cursor()
+    
+    db = database_controller.Database()
+    database_fb = database_controller.FB(db)
     
     for customconversions_id in customconversions_id_list:
         this_customconversions = facebook_business_customconversion.CustomConversion(customconversions_id)
@@ -48,16 +48,20 @@ def save_account_custom_conversions_intodb(account_id, campaign_id, customconver
         conversion_id  = this_customconversions.get('id')
         print('[save_custom_conversions_intodb] conversion_id:', conversion_id, conversion_name, conversion_rule)
         
-        sql = "INSERT INTO facebook_custom_conversion ( account_id, campaign_id, conversion_id, conversion_name, conversion_rule, created_at ) VALUES ( %s, %s, %s, %s, %s, %s )"
-        val = ( int(account_id), int(campaign_id), int(conversion_id), conversion_name, conversion_rule, datetime.datetime.now() )
-        my_cursor.execute(sql, val)
-        my_db.commit()  
-      
-    my_cursor.close()
-    my_db.close()
+        database_fb.insert(
+            "facebook_custom_conversion",
+            {
+                'account_id': int(account_id),
+                'campaign_id': int(campaign_id),
+                'conversion_id': int(conversion_id),
+                'conversion_name': conversion_name,
+                'conversion_rule': conversion_rule,
+                'created_at': datetime.datetime.now(),
+            }
+        )
 
 
-# In[9]:
+# In[4]:
 
 
 def get_account_custom_conversions(account_id, campaign_id):
@@ -79,7 +83,7 @@ def get_account_custom_conversions(account_id, campaign_id):
     
 
 
-# In[10]:
+# In[5]:
 
 
 def process_account_custom_conversion(campaign_id):
@@ -92,12 +96,13 @@ def process_account_custom_conversion(campaign_id):
     
 
 
-# In[11]:
+# In[6]:
 
 
 def save_adset_optimization_goal_intodb(campaign_id, adset_id_list):
-    my_db = mysql_saver.connectDB(mysql_saver.DATABASE)
-    my_cursor = my_db.cursor()
+    
+    db = database_controller.Database()
+    database_fb = database_controller.FB(db)
     
     for adset_id in adset_id_list:
         this_adset = facebook_business_adset.AdSet( adset_id ).remote_read(fields=['name','id','optimization_goal','optimization_sub_event','promoted_object'])
@@ -115,18 +120,22 @@ def save_adset_optimization_goal_intodb(campaign_id, adset_id_list):
         print('[save_adset_optimization_goal_intodb]', campaign_id ,adset_id ,adset_name ,pixel_rule ,pixel_id ,custom_event_type)
         
         if pixel_rule:
-            sql = "INSERT INTO facebook_adset_optimization_goal ( campaign_id, adset_id, adset_name, pixel_rule, pixel_id, custom_event_type, created_at ) VALUES ( %s, %s, %s, %s, %s, %s, %s )"
-            val = ( int(campaign_id), int(adset_id), adset_name, pixel_rule, int(pixel_id), custom_event_type, datetime.datetime.now()  )
-            my_cursor.execute(sql, val)
-            my_db.commit()  
-      
-            
-    my_cursor.close()
-    my_db.close()    
+            database_fb.insert(
+                "facebook_adset_optimization_goal",
+                {
+                    'campaign_id': int(campaign_id),
+                    'adset_id': int(adset_id),
+                    'adset_name': adset_name,
+                    'pixel_rule': pixel_rule,
+                    'pixel_id': int(pixel_id),
+                    'custom_event_type': custom_event_type,
+                    'created_at': datetime.datetime.now(),
+                }
+            )   
     
 
 
-# In[12]:
+# In[7]:
 
 
 def process_campaign_adset_optimization_goal(campaign_id):
@@ -141,54 +150,37 @@ def process_campaign_adset_optimization_goal(campaign_id):
     
 
 
-# In[21]:
+# In[8]:
 
 
 def get_conversion_id_by_rule(pixel_rule, campaign_id):
-    my_db = mysql_saver.connectDB(mysql_saver.DATABASE)
-    my_cursor = my_db.cursor()
-    sql = "SELECT conversion_id FROM facebook_custom_conversion where conversion_rule = %(conversion_rule)s and campaign_id = %(campaign_id)s"
-    val = {'conversion_rule': pixel_rule, 'campaign_id': str(campaign_id) }
-    my_cursor.execute(sql,val)
-    result = my_cursor.fetchall()
-    my_db.commit()
-    my_cursor.close()
-    my_db.close()
-
-    if len(result) > 0:
-        first_row_tupe = result[0]
-        conversion_id = first_row_tupe[0]
+    
+    db = database_controller.Database()
+    database_fb = database_controller.FB(db)
+    
+    df_rule = database_fb.retrieve("custom_conversion", campaign_id, by_request_time=False)
+    df_rule = df_rule[df_rule.conversion_rule == pixel_rule]['conversion_id']
+    if not df_rule.empty:
+        conversion_id = df_rule.iloc[0]
         print('[get_rule_by_adset_id] conversion_id:',conversion_id)
         return conversion_id
-            
-            
     return None
-      
-    
 
 
-# In[9]:
+# In[13]:
 
 
 def get_rule_by_adset_id(adset_id):
-    my_db = mysql_saver.connectDB(mysql_saver.DATABASE)
-    my_cursor = my_db.cursor()
-    sql = 'SELECT pixel_rule FROM facebook_adset_optimization_goal where adset_id = {}  order by `created_at` DESC'.format(adset_id)
-    my_cursor.execute(sql)
-    result = my_cursor.fetchall()
-    my_db.commit()
-    my_cursor.close()
-    my_db.close()
     
-    if len(result) > 0:
-        first_row_tupe = result[0]
-        pixel_rule = first_row_tupe[0]
+    db = database_controller.Database()
+    database_fb = database_controller.FB(db)
+    
+    df_optimize_goal = database_fb.retrieve("facebook_adset_optimization_goal", adset_id=adset_id,)['pixel_rule']
+    if not df_optimize_goal.empty:
+        pixel_rule = df_optimize_goal.tail(1).iloc[0]
         print('[get_rule_by_adset_id] pixel_rule:',pixel_rule)
         return pixel_rule
-            
     return None
-      
-    
 
 
 # In[10]:
@@ -250,9 +242,8 @@ def main():
 
 
 
-    
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
     
 
 

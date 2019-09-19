@@ -99,7 +99,7 @@ def get_performance_campaign_is_running(campaign_id=None):
     mydb = connectDB(DATABASE)
     request_time = datetime.datetime.now()
     if campaign_id is None:
-        df = pd.read_sql( "SELECT * FROM campaign_target WHERE ai_status" , con=mydb )
+        df = pd.read_sql( "SELECT * FROM campaign_target WHERE ai_status='active'" , con=mydb )
         df_performance_campaign_is_running = df[ (df['ai_stop_date']>=request_time.date())&(df['destination_type']=='CONVERSIONS') ]
     else:
         df_performance_campaign_is_running = pd.read_sql( 
@@ -142,21 +142,22 @@ def get_campaign_ai_brief( campaign_id ):
     mydb.close()
     return row
 
-def check_campaignid_target(account_id, campaign_id, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap):
+def check_campaignid_target(
+    account_id, campaign_id, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap, destination_max, is_smart_spending, is_target_suggest, is_lookalike, is_creative_opt):
     mydb = connectDB(DATABASE)
     df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
     mycursor = mydb.cursor()
     if df.empty:
-        sql = "INSERT INTO campaign_target ( customer_id, campaign_id, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap ) VALUES ( %s, %s, %s, %s, %s, %s, %s )"
-        val = ( account_id, campaign_id, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap )
+        sql = "INSERT INTO campaign_target ( customer_id, campaign_id, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap, destination_max, is_smart_spending, is_target_suggest, is_lookalike, is_creative_opt ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s )"
+        val = ( account_id, campaign_id, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap, destination_max, is_smart_spending, is_target_suggest, is_lookalike, is_creative_opt )
         mycursor.execute(sql, val)
         mydb.commit()
         mycursor.close()
         mydb.close()
         return False
     else:
-        sql = "UPDATE campaign_target SET destination=%s, destination_type=%s, ai_status=%s, ai_start_date=%s, ai_stop_date=%s, ai_spend_cap=%s WHERE campaign_id=%s"
-        val = ( destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap, campaign_id )
+        sql = "UPDATE campaign_target SET destination_max=%s, destination=%s, destination_type=%s, ai_status=%s, ai_start_date=%s, ai_stop_date=%s, ai_spend_cap=%s, is_smart_spending=%s, is_target_suggest=%s, is_lookalike=%s, is_creative_opt=%s WHERE campaign_id=%s"
+        val = ( destination_max, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap, is_smart_spending, is_target_suggest, is_lookalike, is_creative_opt, campaign_id )
         mycursor.execute(sql, val)
         mydb.commit()
         mycursor.close()
@@ -256,10 +257,10 @@ def get_current_init_bid(campaign_id):
     
 
 
-# In[5]:
+# In[1]:
 
 
-#!jupyter nbconvert --to script gdn_db.ipynb
+# !jupyter nbconvert --to script gdn_db.ipynb
 
 
 # In[ ]:

@@ -19,7 +19,8 @@ import facebook_business.adobjects.campaign as facebook_business_campaign
 import facebook_business.adobjects.adsinsights as facebook_business_adsinsights
 
 import facebook_datacollector as fb_collector
-import mysql_adactivity_save as mysql_saver
+import database_controller
+
 import adgeek_permission as permission
 
 IGNORE_ADSET_STR_LIST = ['AI', 'Copy', 'COPY', 'Lookalike', 'RT', 'Look-a-like']
@@ -80,66 +81,63 @@ def get_suggest_interets_by_keyword(interest_id, interest_name):
     
     suggest_id_list = []
     suggest_id_name_mapping = {}
+    suggest_id_size_mapping = {}
     search_target_result_list = search_target_keyword(interest_name)
-#     print('search_target_result_list',search_target_result_list)
+    print('[get_suggest_interets_by_keyword] search_target_result_list',search_target_result_list)
 
     for search_target_result in search_target_result_list:
         if search_target_result.get('id') not in suggest_id_list:
             suggest_id_list.append(search_target_result.get('id'))
             suggest_id_name_mapping[search_target_result.get('id')] = search_target_result.get('name')
+            suggest_id_size_mapping[search_target_result.get('id')] = search_target_result.get('audience_size')
 #     print('[get_suggest_interets_by_keyword] suggest_id_list:' , suggest_id_list)
-#     print('[get_suggest_interets_by_keyword] suggest_id_name_mapping:' , suggest_id_name_mapping)
-    return suggest_id_list, suggest_id_name_mapping
+    print('[get_suggest_interets_by_keyword] suggest_id_name_mapping:' , suggest_id_name_mapping)
+    return suggest_id_list, suggest_id_name_mapping, suggest_id_size_mapping
     
-def save_suggestion_by_adset(account_id, campaign_id, adset_id, suggest_id_set, suggest_id_name_mapping):
-    my_db = mysql_saver.connectDB(mysql_saver.DATABASE)
-    my_cursor = my_db.cursor()
+def save_suggestion_by_adset(account_id, campaign_id, adset_id, suggest_id_set, suggest_id_name_mapping, suggest_id_size_mapping):
+    db = database_controller.Database()
+    database_fb = database_controller.FB(db)
     for suggest_id in suggest_id_set:
         suggest_name = suggest_id_name_mapping.get(suggest_id)
-#         print('[save_suggestion_by_existed_keyword]', account_id, campaign_id, adset_id, suggest_id , suggest_name)
-        sql = "INSERT IGNORE INTO campaign_target_suggestion ( account_id, campaign_id, source_adset_id, suggest_id, suggest_name ) VALUES ( %s, %s, %s, %s, %s )"
-        val = ( int(account_id), int(campaign_id), int(adset_id), int(suggest_id), suggest_name)
-        my_cursor.execute(sql, val)
-        my_db.commit()    
-    my_cursor.close()
-    my_db.close()
+        audience_size = suggest_id_size_mapping.get(suggest_id)
+        
+        database_fb.insert_ignore(
+            "campaign_target_suggestion",
+            {
+                'account_id': int(account_id),
+                'campaign_id': int(campaign_id),
+                'source_adset_id': int(adset_id),
+                'suggest_id': int(suggest_id),
+                'suggest_name': suggest_name,
+                'audience_size': int(audience_size),
+            }
+        )
 
 def get_queryed_adset_list(campaign_id):
-    my_db = mysql_saver.connectDB(mysql_saver.DATABASE)
-    my_cursor = my_db.cursor()
-    sql = 'SELECT distinct source_adset_id FROM campaign_target_suggestion where campaign_id = {}'.format(campaign_id)
-    my_cursor.execute(sql)
-    result = my_cursor.fetchall()
-    my_db.commit()
-    my_cursor.close()
-    my_db.close()
-
-    query_adset_list = []
-    if len(result) > 0:
-        for row in result:
-            query_adset_list.append(row[0])
-    return query_adset_list
+    db = database_controller.Database()
+    database_fb = database_controller.FB(db)
+    df_source_adset_id = database_fb.retrieve("campaign_target_suggestion", campaign_id, by_request_time=False)
+    if not df_source_adset_id.empty:
+        return df_source_adset_id['source_adset_id'].unique().tolist()
+    else:
+        return []
     
 def get_saved_suggestion_interests(campaign_id):
-    my_db = mysql_saver.connectDB(mysql_saver.DATABASE)
-    my_cursor = my_db.cursor()
-    sql = 'SELECT suggest_id, suggest_name FROM campaign_target_suggestion where campaign_id = {}'.format(campaign_id)
-    my_cursor.execute(sql)
-    results = my_cursor.fetchall()
-    my_db.commit()
-    my_cursor.close()
-    my_db.close()
+    db = database_controller.Database()
+    database_fb = database_controller.FB(db)
+    df = database_fb.retrieve("campaign_target_suggestion", campaign_id, by_request_time=False)
+    df = df[['suggest_id', 'suggest_name', 'audience_size']]
     
     saved_suggest_id_name_dic = {}
-    if len(results) > 0:
-        for row in results:
-            saved_suggest_id_name_dic[row[0]] = row[1]
-        
-        return saved_suggest_id_name_dic
+    saved_suggest_id_size_dic = {}
+    if df.empty:
+        for (idx, row,) in df.iterrows():
+            row['suggest_id'], row['suggest_name'], row['audience_size']
+            saved_suggest_id_name_dic[row['suggest_id']] = row['suggest_name']
+            saved_suggest_id_size_dic[row['suggest_id']] = int(row['audience_size'])
     else:
         print('[get_saved_suggestion_interests] no saved suggestions')
-        return None
-    
+        return None, None    
     
 def process_campaign_suggestion(campaign_id):
     print('[process_campaign_suggestion] campaign_id:', campaign_id)
@@ -183,12 +181,12 @@ def process_campaign_suggestion(campaign_id):
             for this_adset_interest_id_name in this_adset_interest_id_name_list:
                 interest_id = this_adset_interest_id_name.get('id')
                 interest_name = this_adset_interest_id_name.get('name')
-                suggest_id_list, suggest_id_name_mapping = get_suggest_interets_by_keyword(interest_id, interest_name)
+                suggest_id_list, suggest_id_name_mapping, suggest_id_size_mapping = get_suggest_interets_by_keyword(interest_id, interest_name)
                 
                 # save suggest interests for this adset into database
                 this_suggest_set = set(suggest_id_list)
                 print('[process_campaign_suggestion] this_suggest_set:', this_suggest_set)
-                save_suggestion_by_adset(account_id, campaign_id, adset_id, this_suggest_set, suggest_id_name_mapping)
+                save_suggestion_by_adset(account_id, campaign_id, adset_id, this_suggest_set, suggest_id_name_mapping, suggest_id_size_mapping)
                 
                 
             print('===========')
@@ -197,21 +195,23 @@ def process_campaign_suggestion(campaign_id):
 
 
 def save_suggestion_for_all_campaign():
-    campaign_list =  mysql_saver.get_campaign_target().campaign_id.unique().tolist()
+    db = database_controller.Database()
+    database_fb = database_controller.FB(db)
+    campaign_list = database_fb.get_running_campaign().to_dict('records')
     print('[save_suggestion_for_all_campaign] current running campaign:', len(campaign_list), campaign_list )
     
-    for campaign_id in campaign_list:
-        print('[save_suggestion_for_all_campaign] campaign_id:', campaign_id)
-        process_campaign_suggestion(campaign_id)
+    for campaign in campaign_list:
+        print('[save_suggestion_for_all_campaign] campaign_id:', campaign.get("campaign_id"))
+        process_campaign_suggestion(campaign.get("campaign_id"))
 
 def get_suggestion_not_used(campaign_id):
     # need to process each time because it may has new added adset
     process_campaign_suggestion(campaign_id)
     
-    saved_suggest_id_name_dic = get_saved_suggestion_interests(campaign_id)
+    saved_suggest_id_name_dic, saved_suggest_id_size_dic = get_saved_suggestion_interests(campaign_id)
     if not saved_suggest_id_name_dic:
         print('[get_suggestion_not_used] saved_suggest_id_name_dic None')
-        return
+        return None, None
     
     print('[get_suggestion_not_used] saved_suggest_id_name_dic total len:', len(saved_suggest_id_name_dic))
     print(saved_suggest_id_name_dic)
@@ -224,18 +224,28 @@ def get_suggestion_not_used(campaign_id):
             del saved_suggest_id_name_dic[interest_id]
     
     print('[get_suggestion_not_used] saved_suggest_id_name_dic not use, len:', len(saved_suggest_id_name_dic))
-    return saved_suggest_id_name_dic
+    return saved_suggest_id_name_dic, saved_suggest_id_size_dic
     
 def main():
     # only save suggestion once for each campaign
-#     save_suggestion_for_all_campaign()
-    get_suggestion_not_used(23843467729120098)
+    import adgeek_permission as permission
+    a_id = 639776839853221
+    c_id = 23843685426300680
+    permission.init_facebook_api(a_id)
+    saved_suggest_id_name_dic, saved_suggest_id_size_dic  = get_suggestion_not_used(c_id)
+    print('[make_suggest_adset] saved_suggest_id_name_dic', saved_suggest_id_name_dic, 'saved_suggest_id_size_dic', saved_suggest_id_size_dic)
     
-#     process_campaign_suggestion(23843467729120098)
+    
     
         
 if __name__ == "__main__":
     main()
+
+
+# In[2]:
+
+
+#!jupyter nbconvert --to script facebook_campaign_suggestion.ipynb
 
 
 # In[ ]:

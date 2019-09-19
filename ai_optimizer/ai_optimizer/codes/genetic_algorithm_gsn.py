@@ -14,6 +14,7 @@ import pandas as pd
 import gsn_datacollector
 import gsn_db
 from googleads import adwords
+import adgeek_permission as permission
 
 # In[2]:
 
@@ -39,22 +40,18 @@ SCORE_COLUMN_INDEX = {
     'AUDIENCE': ['campaign_id', 'audience', 'criterion_id', 'score'],
     'AGE_RANGE': ['campaign_id', 'age_range', 'criterion_id', 'score'],
     'DISPLAY_KEYWORD': ['campaign_id', 'keyword', 'keyword_id', 'score'],
-    'KEYWORDS': ['campaign_id', 'keyword', 'keyword_id', 'score'],
+    'KEYWORDS': ['campaign_id', 'adgroup_id', 'keyword', 'keyword_id', 'score'],
 }
 
 
 # In[ ]:
-
-
-AUTH_FILE_PATH = '/home/tim_su/ai_optimizer/opt/ai_optimizer/googleads.yaml'
-adwords_client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
 
 def retrive_all_criteria_insights(campaign_id=None):
     if campaign_id:
         df = gsn_db.get_campaign(campaign_id)
         customer_id = df['customer_id'].iloc[0]
         destination_type = df['destination_type'].iloc[0]
-        adwords_client.SetClientCustomerId(customer_id)
+        adwords_client = permission.init_google_api(customer_id)
         camp = gsn_datacollector.Campaign(customer_id, campaign_id)
         for criteria in CRITERIA_LIST:
             camp.get_performance_insights( performance_type=criteria, date_preset='LAST_14_DAYS' )
@@ -66,7 +63,7 @@ def retrive_all_criteria_insights(campaign_id=None):
         print('[campaign_id]: ', campaign_id)
         customer_id = df_camp['customer_id'][df_camp.campaign_id==campaign_id].iloc[0]
         destination_type = df_camp['destination_type'][df_camp.campaign_id==campaign_id].iloc[0]
-        adwords_client.SetClientCustomerId(customer_id)
+        adwords_clientadwords_client = permission.init_google_api(customer_id)
         camp = gsn_datacollector.Campaign(customer_id, campaign_id)
         for criteria in CRITERIA_LIST:
             camp.get_performance_insights( performance_type=criteria, date_preset='LAST_14_DAYS' )
@@ -111,7 +108,7 @@ def get_criteria_score( campaign_id=None, criteria=None, insights_dict=None):
                 df_final = df[ SCORE_COLUMN_INDEX[criteria] ]
                 gsn_db.into_table(df_final, table=criteria.lower()+"_score")   
     mydb.close()
-    return 
+    return df_final
 
 
 # In[ ]:
@@ -438,8 +435,15 @@ if __name__ == "__main__":
         customer_id = df_camp['customer_id'][df_camp.campaign_id==campaign_id].iloc[0]
         destination_type = df_camp['destination_type'][df_camp.campaign_id==campaign_id].iloc[0]
         camp = gsn_datacollector.Campaign(customer_id, campaign_id)
-        df_insights = camp.get_performance_insights(date_preset='YESTERDAY', performance_type='CAMPAIGN')
+        df_insights = camp.get_performance_insights(
+            date_preset='YESTERDAY', performance_type='CAMPAIGN'
+        )
+        df_keywords_insights = camp.get_performance_insights(
+            date_preset=gsn_datacollector.DatePreset.lifetime, performance_type='KEYWORDS'
+        )
         insights_dict = df_insights.to_dict(orient='records')[0]
+        keyword_insights_dict_list = df_keywords_insights.to_dict(orient='records')
+        
         insights_dict['period'] = df_camp['period'][df_camp.campaign_id==campaign_id].iloc[0]
         insights_dict['destination'] = df_camp['destination'][df_camp.campaign_id==campaign_id].iloc[0]
         insights_dict['destination_type'] = destination_type
@@ -465,7 +469,6 @@ if __name__ == "__main__":
         gsn_db.check_optimal_weight(campaign_id, df_final)
         for criteria in CRITERIA_LIST:
             get_criteria_score( campaign_id=campaign_id, criteria=criteria, insights_dict=insights_dict )
-            break
         print('optimal_weight:', optimal)
         print(datetime.datetime.now()-starttime)
     print(datetime.datetime.now()-starttime)
@@ -473,22 +476,10 @@ if __name__ == "__main__":
     gc.collect()
 
 
-# In[3]:
-
-
-#!jupyter nbconvert --to script genetic_algorithm_gsn.ipynb
-
-
-# In[4]:
-
-
-np.append(optimal, [0.9])
-
-
 # In[ ]:
 
 
-
+#!jupyter nbconvert --to script genetic_algorithm_gsn.ipynb
 
 
 # In[ ]:

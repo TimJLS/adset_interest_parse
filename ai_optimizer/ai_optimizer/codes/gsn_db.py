@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[7]:
 
 
 import mysql.connector
@@ -63,10 +63,10 @@ def get_campaign(campaign_id=None):
     mydb = connectDB(DATABASE)
     request_time = datetime.datetime.now()
     if campaign_id is None:
-        df = pd.read_sql( "SELECT * FROM campaign_target", con=mydb )
+        df = pd.read_sql( "SELECT * FROM campaign_target WHERE ai_status='active'", con=mydb )
         df_is_running = df[df.ai_stop_date >= request_time.date()]
     else:
-        df_is_running = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
+        df_is_running = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}' AND 'ai_status'='active'".format(campaign_id), con=mydb )
     mydb.close()
     return df_is_running
 
@@ -130,21 +130,22 @@ def get_campaigns_not_optimized():
 
 
 
-def check_campaignid_target(account_id, campaign_id, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap):
+def check_campaignid_target(
+    account_id, campaign_id, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap, destination_max, is_smart_spending, is_target_suggest, is_lookalike, is_creative_opt):
     mydb = connectDB(DATABASE)
     df = pd.read_sql( "SELECT * FROM campaign_target WHERE campaign_id='{}'".format(campaign_id), con=mydb )
     mycursor = mydb.cursor()
     if df.empty:
-        sql = "INSERT INTO campaign_target ( customer_id, campaign_id, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap ) VALUES ( %s, %s, %s, %s, %s, %s, %s )"
-        val = ( account_id, campaign_id, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap )
+        sql = "INSERT INTO campaign_target ( customer_id, campaign_id, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap, destination_max, is_smart_spending, is_target_suggest, is_lookalike, is_creative_opt ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s )"
+        val = ( account_id, campaign_id, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap, destination_max, is_smart_spending, is_target_suggest, is_lookalike, is_creative_opt )
         mycursor.execute(sql, val)
         mydb.commit()
         mycursor.close()
         mydb.close()
         return False
     else:
-        sql = "UPDATE campaign_target SET destination=%s, destination_type=%s, ai_status=%s, ai_start_date=%s, ai_stop_date=%s, ai_spend_cap=%s WHERE campaign_id=%s"
-        val = ( destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap, campaign_id )
+        sql = "UPDATE campaign_target SET destination_max=%s, destination=%s, destination_type=%s, ai_status=%s, ai_start_date=%s, ai_stop_date=%s, ai_spend_cap=%s, is_smart_spending=%s, is_target_suggest=%s, is_lookalike=%s, is_creative_opt=%s WHERE campaign_id=%s"
+        val = ( destination_max, destination, destination_type, ai_status, ai_start_date, ai_stop_date, ai_spend_cap, is_smart_spending, is_target_suggest, is_lookalike, is_creative_opt, campaign_id )
         mycursor.execute(sql, val)
         mydb.commit()
         mycursor.close()
@@ -278,7 +279,7 @@ def get_campaign_ai_brief( campaign_id ):
     return row
 
 
-# In[3]:
+# In[1]:
 
 
 #!jupyter nbconvert --to script gsn_db.ipynb

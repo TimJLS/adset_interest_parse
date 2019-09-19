@@ -311,7 +311,7 @@ class Accounts(object):
         return current_account
 
 
-# In[5]:
+# In[21]:
 
 
 class Campaigns(object):
@@ -365,8 +365,8 @@ class Campaigns(object):
             current_campaign = insights[0]
             if current_campaign.get(Field.impressions):
                 spend = int( float( current_campaign.get( Field.spend ) ) )
-                
-            if current_campaign.get( TARGET_FIELD[Field.thruplay_actions] ) and self.charge_type=='THRUPLAY':
+            print(self.charge_type=='THRUPLAY' or self.charge_type=='VIDEO_VIEWS')
+            if current_campaign.get( TARGET_FIELD[Field.thruplay_actions] ) and (self.charge_type=='THRUPLAY' or self.charge_type=='VIDEO_VIEWS'):
                 actions_list = current_campaign.get( TARGET_FIELD[Field.thruplay_actions] )
                 for act in actions_list:
                     if act["action_type"] == CAMPAIGN_OBJECTIVE_FIELD[ self.charge_type ]:
@@ -644,7 +644,7 @@ class AdSets(object):
         return self.adset_info
     
     def currency_handle( self ):
-        if self.currency != 'TWD':
+        if self.currency == 'USD':
             self.adset_insights['spend'] = int(self.adset_insights['spend']) * 100
     
     def update(self, bid_amount):
@@ -732,7 +732,7 @@ if __name__ == "__main__":
     gc.collect()
 
 
-# In[12]:
+# In[14]:
 
 
 # !jupyter nbconvert --to script facebook_datacollector.ipynb

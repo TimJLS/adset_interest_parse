@@ -207,15 +207,22 @@ if __name__ == '__main__':
     for index, row in performance_campaign.iterrows():
         account_id = row['account_id']
         campaign_id = row['campaign_id']
+        is_creative_opt = bool(row['is_creative_opt'])
         permission.init_facebook_api(account_id)
-
-        collector_campaign = data_collector.Campaigns(campaign_id, database_fb)
-        active_adsets_list = collector_campaign.get_adsets_active()
-        print('campaign:', campaign_id, ' active_adsets_list:', active_adsets_list)
-        process_active_adsets(collector_campaign, active_adsets_list)
+        if is_creative_opt:
+            collector_campaign = data_collector.Campaigns(campaign_id, database_fb)
+            active_adsets_list = collector_campaign.get_adsets_active()
+            print('campaign:', campaign_id, ' active_adsets_list:', active_adsets_list)
+            process_active_adsets(collector_campaign, active_adsets_list)
         print('===========next campaign===========')
     print('===========finish all campaign===========')
  
+
+
+# In[8]:
+
+
+# !jupyter nbconvert --to script facebook_creative_controller.ipynb
 
 
 # In[ ]:

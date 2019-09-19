@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[21]:
 
 
 import json
@@ -20,7 +20,7 @@ from facebook_business.api import FacebookAdsApi
 import facebook_business.adobjects.campaign as facebook_business_campaign
 
 from bid_operator import revert_bid_amount
-import mysql_adactivity_save
+import database_controller
 from facebook_datacollector import Campaigns
 from facebook_datacollector import DatePreset
 from facebook_adapter import FacebookCampaignAdapter
@@ -39,8 +39,13 @@ ACTION_BOUNDARY = 0.8
 ACTION_DICT = {'bid': AdSet.Field.bid_amount,
                'age': AdSet.Field.targeting, 'interest': AdSet.Field.targeting}
 
-BRANDING_CAMPAIGN_LIST = ['LINK_CLICKS', 'ALL_CLICKS','VIDEO_VIEWS', 'VIDEO_VIEW', 'REACH', 'POST_ENGAGEMENT', 'PAGE_LIKES', 'LANDING_PAGE_VIEW','IMPRESSIONS']
-PERFORMANCE_CAMPAIGN_LIST = ['CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART']
+BRANDING_CAMPAIGN_LIST = [
+    'THRUPLAY', 'LINK_CLICKS', 'ALL_CLICKS', 'VIDEO_VIEWS', 'REACH', 'POST_ENGAGEMENT', 'PAGE_LIKES', 'LANDING_PAGE_VIEW']
+PERFORMANCE_CAMPAIGN_LIST = [
+    'PURCHASE', 'MESSAGES', 'SEARCH', 'INITIATE_CHECKOUT', 'LEAD_WEBSITE', 'PURCHASES', 'ADD_TO_WISHLIST', 'VIEW_CONTENT', 'ADD_PAYMENT_INFO', 'COMPLETE_REGISTRATION', 'CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART']
+CUSTOM_CONVERSION_CAMPAIGN_LIST = [
+    'CUSTOM', 'CONVERSIONS'
+]
 
 ADSET_MAX_COUNT_CPA = 5
 ADSET_MIN_COUNT = 3
@@ -76,27 +81,15 @@ def update_daily_min_spend_target(adset_id):
     adset.remote_update()
 
     
-def get_sorted_adset(campaign):
-    mydb = mysql_adactivity_save.connectDB(DATABASE)
-
-    df = pd.read_sql( "select * from adset_score where campaign_id=%s" % (campaign), con=mydb)
-    adset_list = []
-
-    if len(df) > 0:
-        df_today = df[df.request_time.dt.date == DATE].sort_values( by=['score'], ascending=False)
-        print('[get_sorted_adset] df_today' , df_today )
-        
-        if len(df_today) > 0:
-            adset_list = df_today['adset_id'].unique().tolist()
-        else:
-            print('[get_sorted_adset] Error, no adset score today')    
-    else:  
+def get_sorted_adset(campaign_id,):
+    df = database_fb.retrieve('score', campaign_id)
+    if df.empty:
         print('[get_sorted_adset] Error, no adset score')
-
-    print('[get_sorted_adset]  adset_list:', adset_list)
-    mydb.close()
-    return adset_list
-
+        return []
+    else:
+        df_today = df.sort_values( by=['score'], ascending=False)
+        print('[get_sorted_adset] df_today' , df_today )
+        return df_today['adset_id'].unique().tolist()
 
 def split_adset_list(adset_list):
     import math
@@ -116,34 +109,35 @@ def is_contain_lookalike_string(adset_name):
 
 def modify_opt_result_db(campaign_id, is_optimized):
     #get date
-    opt_date = datetime.datetime.now()
-    #insert to table date and Ture for is_opt
-    sql = "update campaign_target set is_optimized = '{}', optimized_date = '{}' where campaign_id = {}".format(is_optimized, opt_date, campaign_id)
-    mydb = mysql_adactivity_save.connectDB(DATABASE)
-    mycursor = mydb.cursor()
-    mycursor.execute(sql)
-    mydb.commit()
-    mydb.close()
+    opt_date = datetime.date.today()
+    database_fb.update("campaign_target", {"is_optimized": is_optimized, "optimized_date": opt_date }, campaign_id=campaign_id)
 
 def optimize_performance_campaign(campaign_id):
     
     print('[optimize_performance_campaign] campaign ',campaign_id)
-    df = mysql_adactivity_save.get_campaign_target(campaign_id)
-    
+    df = database_fb.get_one_campaign(campaign_id)
+    is_smart_spending = bool(df['is_smart_spending'].iloc[0])
+    is_target_suggest = bool(df['is_target_suggest'].iloc[0])
+    is_lookalike = bool(df['is_lookalike'].iloc[0])
+    current_flight = ( datetime.date.today()-df['ai_start_date'].iloc[0] ).days
+    period = df['period'].iloc[0]
+    flight_process = current_flight / period
     charge_type = df['charge_type'].iloc[0]
     daily_charge = df['daily_charge'].iloc[0]
     campaign_daily_budget = df['daily_budget'].iloc[0]
     campaign_instance = Campaigns(campaign_id, charge_type)
-
-    day_dict = campaign_instance.generate_campaign_info(date_preset=DatePreset.yesterday)
-
+    
+    day_dict = campaign_instance.generate_info(date_preset=DatePreset.yesterday)
+    
     # this lifetime means ai_start_date and ai_stop_date; 
-    lifetime_dict = campaign_instance.generate_campaign_info(date_preset=DatePreset.lifetime)
+    lifetime_dict = campaign_instance.generate_info(date_preset=DatePreset.lifetime)
+    day_dict['target'] = day_dict.pop('action')
+    lifetime_dict['target'] = lifetime_dict.pop('action')
     lifetime_target = int( lifetime_dict['target'] )
     
     # good enough
     if lifetime_target > df['destination'].iloc[0]:
-        modify_opt_result_db(campaign_id, False)
+        modify_opt_result_db(campaign_id, "False")
         print('[optimize_performance_campaign] lifetime good enough')
         return    
 
@@ -152,11 +146,8 @@ def optimize_performance_campaign(campaign_id):
     if 'target' in day_dict:
         target = int(day_dict['target'])
     
-    fb_adapter = FacebookCampaignAdapter(campaign_id)
-    campaign_days_left = fb_adapter.campaign_days_left
-    achieving_rate = target / daily_charge
-    print('[optimize_performance_campaign] achieving rate', achieving_rate, ' target', target, ' daily_charge', daily_charge)
-    
+    achieving_rate = lifetime_target / (df['destination'].iloc[0] * flight_process)
+    print('[achieving rate]', achieving_rate, ' current_target', lifetime_target, ' destined_target', (df['destination'].iloc[0] * flight_process))
 
     if achieving_rate > ACTION_BOUNDARY and achieving_rate < 1:
         print('[optimize_performance_campaign] 0.8 < achieving_rate < 1')
@@ -170,12 +161,12 @@ def optimize_performance_campaign(campaign_id):
         if campaign_daily_budget and yesterday_spend and (yesterday_spend <= campaign_daily_budget * 0.8):
             print('[optimize_performance_campaign] yesterday_spend not enough:', yesterday_spend)            
             if not IS_DEBUG:
-                mysql_adactivity_save.adjust_init_bid(campaign_id)
+                database_fb.update_init_bid(campaign_id, update_ratio=1.1)
         else:
             print('[optimize_performance_campaign] yesterday_spend is enough, no need to up bidding')
     else: # good enough, not to do anything
         print('[optimize_performance_campaign] good enough, not to do anything')
-        modify_opt_result_db(campaign_id , False)
+        modify_opt_result_db(campaign_id , "False")
         return
 
     #not to generate suggestion for CPA campaign if adset count > ADSET_MAX_COUNT_CPA
@@ -190,18 +181,19 @@ def optimize_performance_campaign(campaign_id):
             #create one suggestion adset for CPA campaigin
             print('create one suggestion asset for CPA campaigin')        
             adset_id = adsets_active_list[0]
-            new_adset_id = adset_controller.make_performance_suggest_adset(adset_id, campaign_id)
-            if new_adset_id:
-                ai_logger.save_adset_behavior(new_adset_id, ai_logger.BehaviorType.CREATE)
+            if is_target_suggest:
+                new_adset_id = adset_controller.make_performance_suggest_adset(campaign_id, adset_id)
+                if new_adset_id:
+                    ai_logger.save_adset_behavior(new_adset_id, ai_logger.BehaviorType.CREATE)
                 
             #create one lookalike adset for CPA campaigin
-            print('create one lookalike asset for CPA campaigin')  
-            new_adset_id = adset_controller.make_performance_lookalike_adset(campaign_id, adsets_active_list)
-            if new_adset_id:
-                ai_logger.save_adset_behavior(new_adset_id, ai_logger.BehaviorType.CREATE)
-                
+            print('create one lookalike asset for CPA campaigin')
+            if is_lookalike:
+                new_adset_id = adset_controller.make_performance_lookalike_adset(campaign_id, adsets_active_list)
+                if new_adset_id:
+                    ai_logger.save_adset_behavior(new_adset_id, ai_logger.BehaviorType.CREATE)
             
-            modify_opt_result_db(campaign_id, True)
+            modify_opt_result_db(campaign_id, "True")
             return
 
     #performance not to copy adset, just close adset
@@ -228,27 +220,32 @@ def optimize_performance_campaign(campaign_id):
             update_status(adset_id, status=AdSet.Status.paused)
     
     # optimize finish
-    modify_opt_result_db(campaign_id, True)
+    modify_opt_result_db(campaign_id, "True")
     
 def optimize_branding_campaign(campaign_id):
-
     print('[optimize_branding_campaign] campaign ',campaign_id)
-    df = mysql_adactivity_save.get_campaign_target(campaign_id)
-
+    df = database_fb.get_one_campaign(campaign_id)
     # charge_type attribute of first row
+    is_smart_spending = bool(df['is_smart_spending'].iloc[0])
+    is_target_suggest = bool(df['is_target_suggest'].iloc[0])
+    is_lookalike = bool(df['is_lookalike'].iloc[0])
+    current_flight = ( datetime.date.today()-df['ai_start_date'].iloc[0] ).days
+    period = df['period'].iloc[0]
+    flight_process = current_flight / period
     charge_type = df['charge_type'].iloc[0]
     daily_charge = df['daily_charge'].iloc[0]
     campaign_daily_budget = df['daily_budget'].iloc[0]
     campaign_instance = Campaigns(campaign_id, charge_type)
     
-    day_dict = campaign_instance.generate_campaign_info(date_preset=DatePreset.yesterday)
+    day_dict = campaign_instance.generate_info(date_preset=DatePreset.yesterday)
     # this lifetime means ai_start_date and ai_stop_date; 
-    lifetime_dict = campaign_instance.generate_campaign_info(date_preset=DatePreset.lifetime)
-    
+    lifetime_dict = campaign_instance.generate_info(date_preset=DatePreset.lifetime)
+    day_dict['target'] = day_dict.pop('action')
+    lifetime_dict['target'] = lifetime_dict.pop('action')
     lifetime_target = int( lifetime_dict['target'] )
     if lifetime_target > df['destination'].iloc[0]:
         print('[optimize_branding_campaign] good enough, not to do anything')        
-        modify_opt_result_db(campaign_id, False)
+        modify_opt_result_db(campaign_id, "False")
         return    
     
     #compute achieving_rate
@@ -256,11 +253,9 @@ def optimize_branding_campaign(campaign_id):
     if 'target' in day_dict:
         target = int(day_dict['target'])
     
-    fb_adapter = FacebookCampaignAdapter(campaign_id)
-    campaign_days_left = fb_adapter.campaign_days_left
-    achieving_rate = target / daily_charge
-    print('[achieving rate]', achieving_rate, ' target', target, ' daily_charge', daily_charge)
-    
+    achieving_rate = lifetime_target / (df['destination'].iloc[0] * flight_process)
+    print('[achieving rate]', achieving_rate, ' current_target', lifetime_target, ' destined_target', (df['destination'].iloc[0] * flight_process))
+
     if achieving_rate > ACTION_BOUNDARY and achieving_rate < 1:
         print('[optimize_branding_campaign] 0.8 < achieving_rate < 1')
     elif achieving_rate < ACTION_BOUNDARY:
@@ -273,19 +268,19 @@ def optimize_branding_campaign(campaign_id):
         if campaign_daily_budget and yesterday_spend and (yesterday_spend <= campaign_daily_budget * 0.8):
             print('[optimize_branding_campaign] yesterday_spend not enough:', yesterday_spend)            
             if not IS_DEBUG:
-                mysql_adactivity_save.adjust_init_bid(campaign_id)
+                database_fb.update_init_bid(campaign_id, update_ratio=1.1)
         else:
             print('[optimize_branding_campaign] yesterday_spend is enough, no need to up bidding')
     else: # good enough, not to do anything
         print('[optimize_branding_campaign] good enough, not to do anything')
-        modify_opt_result_db(campaign_id , False)
+        modify_opt_result_db(campaign_id , "False")
         return
 
     # current going adset is less than ADSET_MIN_COUNT, not to close any adset
     adsets_active_list = campaign_instance.get_adsets_active()
     print('[optimize_branding_campaign] adsets_active_list:', adsets_active_list)
     
-    adset_list = get_sorted_adset(campaign_id)
+    adset_list = get_sorted_adset(campaign_id,)
     adset_action_list = []
     for adset in adset_list:
         if str(adset) in adsets_active_list:
@@ -311,6 +306,7 @@ def optimize_branding_campaign(campaign_id):
     actions_list = list()
         
     #get adset bid for this campaign
+    fb_adapter = FacebookCampaignAdapter( campaign_id, database_fb )
     fb_adapter.retrieve_campaign_attribute()
     
     for adset_id in adset_for_copy_list:
@@ -361,28 +357,35 @@ def optimize_branding_campaign(campaign_id):
                 actions['age'][0] = str(current_adset_min) + '-' + str(current_adset_max)
                 adset_min = current_adset_max
                 actions_copy = deepcopy(actions)
-                copy_result_new_adset_id = adset_controller.copy_branding_adset(adset_id, actions_copy, origin_adset_params)
+                copy_result_new_adset_id = adset_controller.copy_branding_adset(campaign_id, adset_id, actions_copy, origin_adset_params)
                 if copy_result_new_adset_id:
                     ai_logger.save_adset_behavior(copy_result_new_adset_id, ai_logger.BehaviorType.COPY)
                 
-    modify_opt_result_db(campaign_id, True)    
+    modify_opt_result_db(campaign_id, "True")    
     
     
 def optimize_campaign(campaign_id):
     print('[optimize_campaign] campaign_id', campaign_id)
-    df = mysql_adactivity_save.get_campaign_target(campaign_id)
+    df = database_fb.get_one_campaign(campaign_id)
     charge_type = df['charge_type'].iloc[0]
+    account_id = df['account_id'].iloc[0]
+    permission.init_facebook_api(account_id)
     
-    print('[optimize_campaign] charge_type', charge_type)
-    if charge_type in PERFORMANCE_CAMPAIGN_LIST:
-        optimize_performance_campaign(campaign_id)
-    elif charge_type in BRANDING_CAMPAIGN_LIST:
-        optimize_branding_campaign(campaign_id)
-    else:
-        print('[optimize_campaign] error, not optimize')
+    campaign_name , campaign_fb_status = get_campaign_name_status(campaign_id)
+    print(campaign_id, campaign_fb_status, campaign_name)
+    if campaign_fb_status == 'ACTIVE':
+        print('[optimize_campaign] charge_type', charge_type)
+        if charge_type in PERFORMANCE_CAMPAIGN_LIST:
+            optimize_performance_campaign(campaign_id)
+        elif charge_type in BRANDING_CAMPAIGN_LIST:
+            optimize_branding_campaign(campaign_id)
+        elif charge_type in CUSTOM_CONVERSION_CAMPAIGN_LIST:
+            optimize_performance_campaign(campaign_id)
+        else:
+            print('[optimize_campaign] error, not optimize')
 
 
-# In[2]:
+# In[16]:
 
 
 def get_campaign_name_status(campaign_id):
@@ -390,34 +393,33 @@ def get_campaign_name_status(campaign_id):
     return this_campaign.get('name'), this_campaign.get('status')
 
 
-# In[6]:
+# In[17]:
 
 
 if __name__ == '__main__':
     current_time = datetime.datetime.now()
+    global database_fb
+    db = database_controller.Database()
+    database_fb = database_controller.FB(db)
     print('[facebook_externals] current_time:', current_time)
-    campaign_not_opted_list = mysql_adactivity_save.get_campaigns_not_optimized().to_dict('records')
+    campaign_not_opted_list = database_fb.get_not_opted_campaign().to_dict('records')
     
     print('df_not_opted len:', len(campaign_not_opted_list))
-
+    print(campaign_not_opted_list)
     for campaign in campaign_not_opted_list:
         account_id = campaign.get("account_id")
-        campaign_id = campaign.get("campaign_id")
+        campaign_id = campaign.get("campaign_id")        
         destination = campaign.get("destination")
         charge_type = campaign.get("charge_type")
         ai_start_date = campaign.get("ai_start_date")
         ai_stop_date = campaign.get("ai_stop_date")
         custom_conversion_id = campaign.get("custom_conversion_id")
-        permission.init_facebook_api(account_id)
 
-        campaign_name , campaign_fb_status = get_campaign_name_status(campaign_id)
-        print(campaign_id, campaign_fb_status, campaign_name)
-        if campaign_fb_status == 'ACTIVE':
-            optimize_campaign(campaign_id)
+        optimize_campaign(campaign_id)
         print('==========next campaign========')
     print(datetime.datetime.now().date(), '==================!!facebook_externals.py finish!!=======================')
     
-#     optimize_campaign(23843457813880014)
+#     optimize_campaign(23843642051100463)
 
 
 # In[4]:
@@ -433,6 +435,31 @@ if __name__ == '__main__':
 # campaign_id = 23843467729120098
 # adset_id = 23843641398470098
 # optimize_campaign(campaign_id)
+
+
+# In[12]:
+
+
+# !jupyter nbconvert --to script facebook_externals.ipynb
+
+
+# In[7]:
+
+
+# global database_fb
+# database_fb = database_controller.FB( database_controller.Database() )
+# modify_opt_result_db(6130308870943, "False")
+
+
+# In[23]:
+
+
+# global database_fb
+# db = database_controller.Database()
+# database_fb = database_controller.FB(db)
+# permission.init_facebook_api(341659359840575)
+# optimize_campaign(23843651750180386)
+# database_fb.dispose()
 
 
 # In[ ]:

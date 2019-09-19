@@ -20,7 +20,7 @@ import facebook_business.adobjects.campaign as facebook_business_campaign
 import facebook_business.adobjects.ad as facebook_business_ad
 
 from bid_operator import revert_bid_amount
-import mysql_adactivity_save
+import database_controller
 import adgeek_permission as permission
 
 from facebook_datacollector import Campaigns
@@ -30,7 +30,8 @@ import facebook_currency_handler as fb_currency_handler
 import facebook_lookalike_audience as lookalike_audience
 import facebook_campaign_suggestion as campaign_suggestion
 
-# my_access_token = 'EAANoD9I4obMBACygIE9jqmlaWeOW6tBma0oS6JbRpLgAvOYXpVi2XcXuasuwbBgqmaZBj5cP8MHE5WY2l9tAoi549eGZCP61mKr9BA8rZA6kxEW4ovX3KlbbrRGgt4RZC8MAi1UG0l0ZBUd0UBAhIPhzkZBi46ncuyCwkYPB7a6voVBZBTbEZAwH3azZA3Ph6g7aCOfxZCdDOp4AZDZD'
+PICK_DEFAULT_COUNT = 3
+PICK_DEFAULT_AUDIENCE_SIZE = 100000
 ADSET_COPY_STRING = ' - Copy'
 AI_ADSET_PREFIX = '_AI_'
 IS_DEBUG = False #debug mode will not modify anything
@@ -105,7 +106,7 @@ def retrieve_origin_adset_params(origin_adset_id):
 def get_ad_id_list(adset_id):
     ad_id_list = list()
     adset = AdSet(adset_id)
-    ads = adset.get_ads(fields=[AdSet.Field.id])
+    ads = adset.get_ads(fields=['id'])
     for ad in ads:
         ad_id_list.append(ad['id'])
     return ad_id_list
@@ -118,23 +119,17 @@ def get_account_id_by_adset(adset_id):
 
 def get_suggestion_target_by_adset(adset_id):
     account_id = get_account_id_by_adset(adset_id)
+    db = database_controller.Database()
+    database_fb = database_controller.FB(db)
     
-    mydb = mysql_adactivity_save.connectDB(DATABASE)
-    mycursor = mydb.cursor()
-    ### select
-    sql = "SELECT suggestion_id, suggestion_name   FROM account_target_suggestion WHERE account_id={}".format(account_id)
-    mycursor.execute(sql)
-    target_suggestions = mycursor.fetchall()
-#     for suggestions in target_suggestions:
-#         print(suggestions)
-
-    mydb.commit()
-    mydb.close()
-    print('')
-    if len(target_suggestions) > 0:
-        pick_index = random.randint(0, len(target_suggestions)-1)
-        print('[get_suggestion_target_by_adset] pick:',target_suggestions[pick_index])
-        return target_suggestions[pick_index]
+    df_target_suggestion = database_fb.retrieve("account_target_suggestion", account_id=account_id, by_request_time=False)[['suggestion_id', 'suggestion_name']]
+    database_fb.dispose()
+    if not df_target_suggestion.empty:
+        target_suggestion_list = df_target_suggestion.to_dict('records')
+        pick_index = random.randint(0, len(target_suggestion_list)-1)
+        print('[get_suggestion_target_by_adset] pick:',target_suggestion_list[pick_index])
+        target_suggestions = target_suggestion_list[pick_index]
+        return (target_suggestions['suggestion_id'], target_suggestions['suggestion_name'])
     else:
         return None,None
 
@@ -144,28 +139,34 @@ def get_suggestion_target_by_adset(adset_id):
 
 
 
-def make_performance_suggest_adset(original_adset_id, campaign_id): 
+def make_performance_suggest_adset(campaign_id, original_adset_id): 
     
-    saved_suggest_id_name_dic = campaign_suggestion.get_suggestion_not_used(campaign_id)
-    print('[make_suggest_adset] saved_suggest_id_name_dic', saved_suggest_id_name_dic)
+    saved_suggest_id_name_dic, saved_suggest_id_size_dic = campaign_suggestion.get_suggestion_not_used(campaign_id)
+    print('[make_suggest_adset] saved_suggest_id_name_dic', saved_suggest_id_name_dic, 'saved_suggest_id_size_dic', saved_suggest_id_size_dic)
     
     if not saved_suggest_id_name_dic:
         print('[make_suggest_adset] saved_suggest_id_name_dic not exist')
         return
         
-    suggest_id_list = []
+    suggest_group_list = []    
     suggest_name_list = []
-    for saved_suggest_id in saved_suggest_id_name_dic:
-        suggest_id_list.append(saved_suggest_id)
+    # at least 3 suggention and more than 10000 audience size
+    pick_count = 0
+    pick_total_audience_size = 0
+    for suggest_id in saved_suggest_id_name_dic:
+        pick_count += 1
+        pick_total_audience_size += saved_suggest_id_size_dic.get(suggest_id)
         
-    #ramdom choose the first 3 interest    
-    random.shuffle(suggest_id_list)
-    PICK_COUNT = 3
-    suggest_id_list = suggest_id_list[:PICK_COUNT]
-    for suggest_id in suggest_id_list:
-        suggest_name_list.append(saved_suggest_id_name_dic.get(suggest_id))
+        suggest_name = saved_suggest_id_name_dic[suggest_id]
+        suggest_name_list.append(suggest_name)
+        this_dic = {"id": suggest_id, "name": suggest_name}
+        
+        suggest_group_list.append(this_dic)
+        
+        if pick_total_audience_size >= PICK_DEFAULT_AUDIENCE_SIZE and pick_count >= PICK_DEFAULT_COUNT:
+            break
     
-    print('[make_suggest_adset] ramdom choose:', suggest_id_list, suggest_name_list)
+    print('[make_suggest_adset] suggest_group_list:', suggest_group_list, ' pick_total_audience_size:', pick_total_audience_size)
     
     new_adset_params = retrieve_origin_adset_params(original_adset_id)
     print('[make_suggest_adset] new_adset_params', new_adset_params)
@@ -176,11 +177,6 @@ def make_performance_suggest_adset(original_adset_id, campaign_id):
 
     suggestion_full_name =  '__'.join(suggest_name_list)
     new_adset_params[AdSet.Field.name] = "AI__" + str(datetime.datetime.now().date()) + '_' + suggestion_full_name
-
-    suggest_group_list = []
-    for i in range(len(suggest_id_list)):
-        this_dic = {"id": suggest_id_list[i], "name": suggest_name_list[i]}
-        suggest_group_list.append(this_dic)
     
     if new_adset_params[AdSet.Field.targeting].get("custom_audiences"): 
         print('[make_suggest_adset] remove custom_audiences when add suggestion adset')
@@ -198,7 +194,7 @@ def make_performance_suggest_adset(original_adset_id, campaign_id):
 
     print('[make_suggest_adset] new_adset_params after process',new_adset_params)
     new_adset_params[AdSet.Field.id] = None
-    new_adset_id = copy_adset_new_target(new_adset_params, original_adset_id)
+    new_adset_id = copy_adset_new_target(campaign_id, new_adset_params, original_adset_id)
     return new_adset_id
 
 
@@ -229,7 +225,7 @@ def make_performance_suggest_adset(original_adset_id, campaign_id):
 #     print('[make_suggest_adset] new_adset_params',new_adset_params)
 #     original_adset_id = new_adset_params[AdSet.Field.id]
 #     new_adset_params[AdSet.Field.id] = None
-#     new_adset_id = copy_adset_new_target(new_adset_params, original_adset_id)
+#     new_adset_id = copy_adset_new_target(campaign_id, new_adset_params, original_adset_id)
 #     return new_adset_id
 
 
@@ -245,10 +241,13 @@ def ad_name_remove_copy_string(adset_id):
         this_ad.remote_update(
             params={'name': remove_copy_name, }
         )
-    
 
-def assign_copied_ad_to_new_adset(new_adset_id=None, ad_id=None):
-    url = "https://graph.facebook.com/v3.2/{}/copies".format(ad_id)
+def assign_copied_ad_to_new_adset(campaign_id, new_adset_id=None, ad_id=None):
+    #need permission first
+    account_id = get_account_id_by_adset(new_adset_id)
+    my_access_token = permission.get_access_token_by_account(account_id)
+    url = permission.FACEBOOK_API_VERSION_URL + str(ad_id) + '/copies'
+    
     querystring = {
         "adset_id": "{}".format(new_adset_id),
         "status_option": "INHERITED_FROM_SOURCE"}
@@ -259,17 +258,17 @@ def assign_copied_ad_to_new_adset(new_adset_id=None, ad_id=None):
     return response.text
 
 
-def copy_adset_new_target(new_adset_params, original_adset_id):
+def copy_adset_new_target(campaign_id, new_adset_params, original_adset_id):
     new_adset_id = -1
     try:
         new_adset_id = make_adset(new_adset_params)
-        print('[copy_adset_new_target] make_adset success, original_adset_id', original_adset_id, ' new_adset_id', new_adset_id)
+        print('[copy_adset_new_target] make_adset success, campaign_id:' ,campaign_id, ' original_adset_id', original_adset_id, ' new_adset_id', new_adset_id)
         time.sleep(10)
         ad_id_list = get_ad_id_list(original_adset_id)
         print('ad_id_list', ad_id_list)
 
         for ad_id in ad_id_list:
-            result_message = assign_copied_ad_to_new_adset(new_adset_id=new_adset_id, ad_id=ad_id)
+            result_message = assign_copied_ad_to_new_adset(campaign_id, new_adset_id=new_adset_id, ad_id=ad_id)
             print('[copy_adset_new_target] result_message', result_message)
             if 'copied_ad_id' in result_message:
                 copied_ad_id = json.loads(result_message).get('copied_ad_id')
@@ -285,10 +284,11 @@ def copy_adset_new_target(new_adset_params, original_adset_id):
 
 
 
-def copy_branding_adset(adset_id, actions, adset_params=None):
-    
+def copy_branding_adset(campaign_id, adset_id, actions, adset_params=None):
+    print('[copy_branding_adset] adset_params', adset_params)
     new_adset_params = adset_params
     origin_adset_name = adset_params[AdSet.Field.name]
+    original_adset_id = adset_id
     new_adset_params[AdSet.Field.id] = None
     
     # Generate new adset name
@@ -318,12 +318,12 @@ def copy_branding_adset(adset_id, actions, adset_params=None):
 #             new_adset_params[AdSet.Field.targeting]["flexible_spec"] = {
 #                     "interests": [actions[action]]}
     
-    new_adset_id = copy_adset_new_target(new_adset_params, original_adset_id)
+    new_adset_id = copy_adset_new_target(campaign_id, new_adset_params, original_adset_id)
     return new_adset_id
             
 
 
-# In[6]:
+# In[16]:
 
 
 def make_performance_lookalike_adset(campaign_id, adsets_active_list):
@@ -337,7 +337,6 @@ def make_performance_lookalike_adset(campaign_id, adsets_active_list):
 
     lookalike_audience_dict = lookalike_audience.get_lookalike_audience_id(campaign_id)
     print('[make_performance_lookalike_adset] lookalike_audience_dict:', lookalike_audience_dict)
-    
     if not lookalike_audience_dict:
         print('[make_lookalike_adset]: lookalike_audience_dict None')
         return
@@ -353,9 +352,33 @@ def make_performance_lookalike_adset(campaign_id, adsets_active_list):
     print('==================')
     print('new_adset_params:', new_adset_params)
     
-    new_adset_id = copy_adset_new_target(new_adset_params, original_adset_id)
+    new_adset_id = copy_adset_new_target(campaign_id, new_adset_params, original_adset_id)
     if new_adset_id:
-        lookalike_audience.modify_result_db(campaign_id, lookalike_audience_id, True)
+        lookalike_audience.modify_result_db(campaign_id, lookalike_audience_id, "True")
     return new_adset_id
     
+
+
+# In[7]:
+
+
+#test case
+# import adgeek_permission as permission
+# account_id = 10155657593726278
+# campaign_id = 23842880697850266
+# original_adset_id = 23843708355320266
+# permission.init_facebook_api(account_id)
+# make_performance_suggest_adset(campaign_id, original_adset_id)
+
+
+# In[19]:
+
+
+#!jupyter nbconvert --to script facebook_adset_controller.ipynb
+
+
+# In[ ]:
+
+
+
 

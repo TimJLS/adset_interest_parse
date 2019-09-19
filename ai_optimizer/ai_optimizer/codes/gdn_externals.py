@@ -14,8 +14,6 @@ import pandas as pd
 import copy
 import math
 IS_DEBUG = False
-AUTH_FILE_PATH = '/home/tim_su/ai_optimizer/opt/ai_optimizer/googleads.yaml'
-adwords_client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
 DATABASE = "dev_gdn"
 DATE = datetime.datetime.now().date()
 DATETIME = datetime.datetime.now()
@@ -111,15 +109,16 @@ def make_adgroup_criterion_by_score(campaign_id, new_ad_group_id,):
 
     for criteria in Index.score.keys():
         # select score by campaign level
-        df = gdn_db.get_table(campaign_id=campaign_id,
-                              table=Index.score[criteria]+"_score")
+        df = gdn_db.get_table(campaign_id=campaign_id, table=Index.score[criteria]+"_score")
         df['request_time'] = pd.to_datetime(df['request_time'])
         df = df[ df.request_time.dt.date == (datetime.datetime.now().date()) ]
         if criteria == 'AUDIENCE' and not df.empty:
             df['audience_type'] = df.audience.str.split('::', expand=True)[0]
             df['audience'] = df.audience.str.split('::', expand=True)[1]
             df = df[~df.audience_type.isin(['boomuserlist'])]
+            df = df[~df.audience_type.isin(['custominmarket'])]
         if not df.empty:
+            df = df[df.adgroup_id == new_ad_group_id]
             df = df.sort_values(by=['score'], ascending=False).drop_duplicates(
                 [ Index.criteria_column[criteria] ] ).reset_index(drop=True)
             half = math.ceil( len(df)/2 )
@@ -186,11 +185,11 @@ def handle_initial_bids(campaign_id, spend, budget, daily_target, original_cpa):
 
 def make_basic_criterion(native_ad_group, mutant_ad_group):
     biddable, negative = native_ad_group.basic_criterions.retrieve()
-    try:
-        mutant_ad_group.basic_criterions.update(biddable, is_delivering=True, is_included=True)
-    except Exception as e:
-        print('[make_basic_adgroup_criterion]: biddable basic criterion update failed.')
-        print(e)
+#     try:
+    mutant_ad_group.basic_criterions.update(biddable, is_delivering=True, is_included=True)
+#     except Exception as e:
+#         print('[make_basic_adgroup_criterion]: biddable basic criterion update failed.')
+#         print(e)
     try:
         mutant_ad_group.basic_criterions.update(negative, is_delivering=False, is_included=False)
     except Exception as e:
@@ -201,7 +200,7 @@ def make_basic_criterion(native_ad_group, mutant_ad_group):
 # In[7]:
 
 
-def make_user_interest_criterion(sevice_container, campaign_id, native_ad_group, mutant_ad_group=None):
+def make_user_interest_criterion(service_container, campaign_id, native_ad_group, mutant_ad_group=None):
     native_id = native_ad_group.ad_group_id
     if mutant_ad_group: 
         mutant_id = mutant_ad_group.ad_group_id
@@ -210,25 +209,27 @@ def make_user_interest_criterion(sevice_container, campaign_id, native_ad_group,
     # Criterion by Score
     print('[mutant_id] ', mutant_id)
     biddable_criterions, negative_criterions = make_adgroup_criterion_by_score( campaign_id, mutant_id )
+    biddable_criterions = [ biddable_criterion for biddable_criterion in biddable_criterions if biddable_criterion.get("xsi_type") == 'CriterionUserInterest' ]
+    negative_criterions = [ negative_criterion for negative_criterion in negative_criterions if negative_criterion.get("xsi_type") == 'CriterionUserInterest' ]
     print('[biddable_criterions]: ', biddable_criterions)
     print('[negative_criterions]: ', negative_criterions)
     
     ad_group = controller.AdGroup(service_container, ad_group_id=mutant_id)
     for biddable_criterion in biddable_criterions:
-        try:
-            ad_group.user_interest_criterions.update([biddable_criterion], is_delivering=True, is_included=True)
-            audience_pair = {
-                'db_type': 'dev_gdn',
-                'campaign_id': campaign_id,
-                'adgroup_id': mutant_id,
-                'criterion_id': biddable_criterion['id'],
-                'criterion_type': 'audience'
-            }
-            logger.save_adgroup_behavior(BehaviorType.OPEN, **audience_pair)
-        except Exception as e:
-            print('[make_adgroup_with_criterion]: update biddable user_interest criterion failed. criterion id: ', biddable_criterion['id'])
-            print(e)
-            pass
+#         try:
+        ad_group.user_interest_criterions.update([biddable_criterion], is_delivering=True, is_included=True)
+        audience_pair = {
+            'db_type': 'dev_gdn',
+            'campaign_id': campaign_id,
+            'adgroup_id': mutant_id,
+            'criterion_id': biddable_criterion['id'],
+            'criterion_type': 'audience'
+        }
+        logger.save_adgroup_behavior(BehaviorType.OPEN, **audience_pair)
+#         except Exception as e:
+#             print('!!!!!!!!!!![make_adgroup_with_criterion]: update biddable user_interest criterion failed. criterion id: ', biddable_criterion['id'])
+#             print(e)
+#             pass
     for negative_criterion in negative_criterions:
         try:
             ad_group.user_interest_criterions.update([negative_criterion], is_delivering=False, is_included=True)
@@ -241,13 +242,14 @@ def make_user_interest_criterion(sevice_container, campaign_id, native_ad_group,
             }
             logger.save_adgroup_behavior(BehaviorType.CLOSE, **audience_pair)
         except Exception as e:
-            print('[make_adgroup_with_criterion]: update negative user_interest criterion failed. criterion id: ', biddable_criterion['id'])
+            print('!!!!!!!!!!![make_adgroup_with_criterion]: update negative user_interest criterion failed. criterion id: ', negative_criterion['id'])
             print(e)
             pass
     # Assign Ad Params
 
     native_ad_list = native_ad_group.get_ads()
-
+    if native_id == mutant_id:
+        return
     for native_ad in native_ad_list:
         try:
             result = native_ad.assign(mutant_id)
@@ -263,21 +265,21 @@ def make_user_interest_criterion(sevice_container, campaign_id, native_ad_group,
 def make_user_list_criterion(campaign_id, ad_group):
     optimized_list_dict_list, all_converters_dict_list = custom_audience.get_campaign_custom_audience(campaign_id)
     ad_group_id_list = []
-    for criterion in optimized_list_dict_list:
+    for user_list in optimized_list_dict_list:
         try:
-            ad_group.user_list_criterions.make(criterion_id=criterion['criterion_id'])
-            custom_audience.modify_result_db(campaign_id, criterion['criterion_id'], ad_group.ad_group_id)
+            ad_group.user_list_criterions.make(user_list_id=user_list['criterion_id'])
+            custom_audience.modify_result_db(campaign_id, user_list['criterion_id'], ad_group.ad_group_id)
         except Exception as e:
-            print('[make_user_list_criterion]: update optimized_list criterion failed. user_list id ', criterion['criterion_id'])
+            print('!!!!!!!!!!![make_user_list_criterion]: update optimized_list criterion failed. user_list id ', user_list['criterion_id'])
             pass
 
-    for criterion in all_converters_dict_list:
-        try:
-            ad_group.user_list_criterions.make(criterion_id=criterion['criterion_id'])
-            custom_audience.modify_result_db(campaign_id, criterion['criterion_id'], ad_group.ad_group_id)
-        except Exception as e:
-            print('[make_user_list_criterion]: update all_converters criterion failed. user_list id ', criterion['criterion_id'])
-            pass
+    for user_list in all_converters_dict_list:
+#         try:
+        ad_group.user_list_criterions.make(user_list_id=user_list['criterion_id'])
+        custom_audience.modify_result_db(campaign_id, user_list['criterion_id'], ad_group.ad_group_id)
+#         except Exception as e:
+#             print('!!!!!!!!!!![make_user_list_criterion]: update all_converters criterion failed. user_list id ', criterion['criterion_id'])
+#             pass
     
 
 
@@ -293,34 +295,30 @@ def optimize_performance_campaign():
         campaign_id = performance_campaign_dict['campaign_id']
         destination_type = performance_campaign_dict['destination_type']
         daily_target = performance_campaign_dict['daily_target']
-        
+        is_lookalike = bool(performance_campaign_dict['is_lookalike'])
         destination = performance_campaign_dict['destination']
         ai_spend_cap = performance_campaign_dict['ai_spend_cap']
         original_cpa = ai_spend_cap/destination
         print('[optimize_branding_campaign] campaign_id:' , campaign_id)
         print('[optimize_branding_campaign] original_cpa:' , original_cpa)
         
-        adwords_client.SetClientCustomerId( customer_id )
-        service_container = container.AdGroupServiceContainer( customer_id )
+        service_container = controller.AdGroupServiceContainer( customer_id )
         
         objective = 'conversions'
         # Init datacollector Campaign
         collector_campaign = collector.Campaign(customer_id, campaign_id, destination_type)
-        day_dict = collector_campaign.get_campaign_insights(
-            adwords_client, date_preset=collector.DatePreset.yesterday)
-        lifetime_dict = collector_campaign.get_campaign_insights(
-            adwords_client, date_preset=collector.DatePreset.lifetime)
+        day_dict = collector_campaign.get_campaign_insights(date_preset=collector.DatePreset.yesterday)
+        lifetime_dict = collector_campaign.get_campaign_insights(date_preset=collector.DatePreset.lifetime)
         # Adjust initial bids
         handle_initial_bids(campaign_id, day_dict['spend'], day_dict['daily_budget'], daily_target, original_cpa)
         
         target = int( day_dict[objective] )
-        achieving_rate = target / daily_target
+        achieving_rate = (target / daily_target) if daily_target != 0 else 0
         print('[optimize_performance_campaign][achieving rate]', achieving_rate, '[target]', target, '[daily_target]', daily_target)
         # Init param retriever Retrieve
         controller_campaign = controller.Campaign(service_container, campaign_id)
         controller_campaign.generate_ad_group_id_type_list()
         native_ad_group_id_list = controller_campaign.native_ad_group_id_list
-        native_ad_group_id = controller_campaign.native_ad_group_id_list[0]
         
         if is_assessed(campaign_id):
             print('[optimize_branding_campaign]: campaign is assessed.')
@@ -328,9 +326,9 @@ def optimize_performance_campaign():
             for native_id in native_ad_group_id_list:
                 native_ad_group = controller.AdGroup(service_container, ad_group_id=native_id)
                 make_user_interest_criterion(
-                    service_container, campaign_id,
-                    ad_group=native_ad_group,)
-                make_user_list_criterion(campaign_id, native_ad_group)
+                    service_container, campaign_id, native_ad_group,)
+                if is_lookalike:
+                    make_user_list_criterion(campaign_id, native_ad_group)
             modify_opt_result_db(campaign_id , True)
 
         else:
@@ -351,56 +349,55 @@ def optimize_branding_campaign():
         campaign_id = branding_campaign_dict['campaign_id']
         destination_type = branding_campaign_dict['destination_type']
         daily_target = branding_campaign_dict['daily_target']
-        
+        is_lookalike = bool(branding_campaign_dict['is_lookalike'])
         destination = branding_campaign_dict['destination']
         ai_spend_cap = branding_campaign_dict['ai_spend_cap']
         original_cpc = ai_spend_cap/destination
         print('[optimize_branding_campaign] campaign_id', campaign_id)
         print('[optimize_branding_campaign] original_cpc:' , original_cpc)
 
-        adwords_client.SetClientCustomerId( customer_id )
         service_container = controller.AdGroupServiceContainer( customer_id )
         
         objective = 'clicks'
         # Init datacollector Campaign
         collector_campaign = collector.Campaign(customer_id, campaign_id, destination_type)
-        day_dict = collector_campaign.get_campaign_insights(adwords_client, date_preset=collector.DatePreset.yesterday)
+        day_dict = collector_campaign.get_campaign_insights(date_preset=collector.DatePreset.yesterday)
         print('[optimize_branding_campaign] day_dict', day_dict)
-        lifetime_dict = collector_campaign.get_campaign_insights(adwords_client, date_preset=collector.DatePreset.lifetime)
+        lifetime_dict = collector_campaign.get_campaign_insights(date_preset=collector.DatePreset.lifetime)
         print('[optimize_branding_campaign] lifetime_dict', lifetime_dict)
         
         # Adjust initial bids
         handle_initial_bids(campaign_id, day_dict['spend'], day_dict['daily_budget'], daily_target, original_cpc)
         target = int( day_dict[objective] )
-        achieving_rate = target / daily_target
+        achieving_rate = (target / daily_target) if daily_target != 0 else 0
         print('[optimize_branding_campaign][achieving rate]', achieving_rate, '[target]', target, '[daily_target]', daily_target)
         # Init param retriever Retrieve
         controller_campaign = controller.Campaign(service_container, campaign_id)
         controller_campaign.generate_ad_group_id_type_list()
         native_ad_group_id_list = controller_campaign.native_ad_group_id_list
-        native_ad_group_id = controller_campaign.native_ad_group_id_list[0]
+        mutate_ad_group_id_list = controller_campaign.mutate_ad_group_id_list
 
         if achieving_rate < 1 and achieving_rate >= 0:
-            update = Update(customer_id)
             # Pause all on-line mutant
-            for ad_group_id in retriever.mutant_ad_group_id_list:
+            for ad_group_id in mutate_ad_group_id_list:
                 ad_group = controller.AdGroup(service_container, ad_group_id=ad_group_id)
-                ad_group.param.update_status(status=controller.Status.enable)
+                ad_group.param.update_status(status=controller.Status.pause)
             if is_assessed(campaign_id):
                 print('[optimize_branding_campaign]: campaign is assessed.')
-                native_ad_group = controller.AdGroup(service_container, ad_group_id=native_ad_group_id)
-                # Make empty mutant ad group
-                mutant_ad_group = make_empty_ad_group(service_container, campaign_id, native_ad_group)
-                
-                make_basic_criterion( native_ad_group = native_ad_group, mutant_ad_group = mutant_ad_group )
-                # Assign criterion to native ad group
-                make_user_interest_criterion(
-                    service_container, campaign_id,
-                    native_ad_group = native_ad_group,
-                    mutant_ad_group = mutant_ad_group
-                )
-                make_user_list_criterion(campaign_id, mutant_ad_group)
-                
+                for native_ad_group_id in native_ad_group_id_list:
+                    native_ad_group = controller.AdGroup(service_container, ad_group_id=native_ad_group_id)
+                    # Make empty mutant ad group
+    #                 mutant_ad_group = make_empty_ad_group(service_container, campaign_id, native_ad_group)
+    #                 make_basic_criterion( native_ad_group = native_ad_group, mutant_ad_group = mutant_ad_group )
+                    # Assign criterion to native ad group
+                    make_user_interest_criterion(
+                        service_container, campaign_id,
+                        native_ad_group = native_ad_group,
+                        mutant_ad_group = native_ad_group
+                    )
+                    if is_lookalike:
+                        make_user_list_criterion(campaign_id, native_ad_group)
+                        
                 modify_opt_result_db(campaign_id , True)
             else:
                 print('[optimize_branding_campaign] campaign is not assessed. campaign_id: ', campaign_id)
@@ -423,17 +420,29 @@ if __name__=="__main__":
     print(datetime.datetime.now() - start_time)
 
 
-# In[12]:
+# In[19]:
 
 
-#!jupyter nbconvert --to script gdn_externals.ipynb
+# !jupyter nbconvert --to script gdn_externals.ipynb
 
 
-# In[ ]:
+# In[13]:
 
 
 # customer_id = 6714857152
 # campaign_id = 2053556135
+
+
+# In[14]:
+
+
+# optimize_performance_campaign()
+
+
+# In[15]:
+
+
+# optimize_branding_campaign()
 
 
 # In[ ]:
