@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Nate Dashboard</title>
+        <title>TestTest</title>
         <style>
             body {
              
@@ -12,18 +12,32 @@
                 text-align: right;
             }
             
+            tr:nth-child(even) { 
+                background-color: #e6ffff; 
+            } 
             
+            .small_wording{
+                font-size: 12px;
+            }
         </style>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function(){
+                var d = new Date();
+                document.getElementById("mytime").innerHTML = d;
+            });
+        </script>
     </head>
     <body>
+        <center><h3 id="mytime"></h3></center>
         
         <!------------ FB branding------------->
-        <!------------ FB branding------------->       
-        <h3>FB branding</h3>
+        <!------------ FB branding------------->         
+        <h3>FB branding: {{budget_dic.fb_branding}}</h3>
         <table>
         <tr>
             <td>campaign_id</td>
-            <td>目標類別</td>
+            <td >目標類別</td>
             <td style="background-color:DeepPink;">表定走期</td>
             <td style="background-color:DeepPink;">走了幾天</td>
             <td style="background-color:Yellow;">表定 KPI</td>
@@ -32,18 +46,22 @@
             <td style="background-color:GreenYellow;">目前成果數</td>
             <td style="background-color:GreenYellow;">至今應有成果數</td>
             <td style="background-color:Cyan;">表定總預算</td>
-            <td style="background-color:Cyan;">目前花費</td>
-            <td style="background-color:Cyan;">目前應有花費</td>
+            <td style="background-color:Cyan;">表定日預算</td>
+            <td style="background-color:#d9b3ff;">目前花費</td>
+            <td style="background-color:#d9b3ff;">目前應有花費</td>
             <td>AI 開始日</td>
             <td>AI 結束日</td>
             <td>活動名稱</td>
+            <td>帳號名稱</td>
+            <td>token name</td>
+            <td>currency</td>
         </tr>
             
             
         {% for campaign in campaign_fb_branding_list %}      
             <tr>
                 <td>{{campaign.campaign_id}}</td>
-                <td>{{campaign.charge_type}}</td>             
+                <td class="small_wording">{{campaign.charge_type}}</td>             
                 <td>{{campaign.ai_period}}</td>
                 <td>{{campaign.ai_running_days}}</td>
                 
@@ -66,6 +84,7 @@
                
                 
                 <td>{{campaign.ai_spend_cap}}</td>
+                <td>{{campaign.ai_daily_budget}}</td>
                 <td>{{campaign.current_total_spend}}</td>
                 <td>{{campaign.spend_until_today}}</td>
                 
@@ -75,8 +94,11 @@
                 {% else %}
                     <td>{{campaign.ai_stop_date}}</td>
                 {% endif %}
-                <td style="font-size:small;">{{campaign.name}}</td>
                 
+                <td class="small_wording">{{campaign.name}}</td>
+                <td class="small_wording">{{campaign.account_name}}</td>
+                <td class="small_wording">{{campaign.token_name}}</td>
+                <td class="small_wording">{{campaign.currency}}</td>
             </tr>            
         {% endfor %}    
         </table> 
@@ -85,11 +107,11 @@
         
         <!------------ FB performance------------->
         <!------------ FB performance------------->
-        <h3>FB performance</h3>
+        <h3>FB performance: {{budget_dic.fb_performance}}</h3>
         <table>
         <tr>
             <td>campaign_id</td>
-            <td>目標類別</td>
+            <td >目標類別</td>
             <td style="background-color:DeepPink;">表定走期</td>
             <td style="background-color:DeepPink;">走了幾天</td>
             <td style="background-color:Yellow;">表定 KPI</td>
@@ -98,18 +120,22 @@
             <td style="background-color:GreenYellow;">目前成果數</td>
             <td style="background-color:GreenYellow;">至今應有成果數</td>
             <td style="background-color:Cyan;">表定總預算</td>
-            <td style="background-color:Cyan;">目前花費</td>
-            <td style="background-color:Cyan;">目前應有花費</td>
+            <td style="background-color:Cyan;">表定日預算</td>
+            <td style="background-color:#d9b3ff;">目前花費</td>
+            <td style="background-color:#d9b3ff;">目前應有花費</td>
             <td>AI 開始日</td>
             <td>AI 結束日</td>
             <td>活動名稱</td>
+            <td>帳號名稱</td>
+            <td>token name</td>
+            <td>currency</td>            
         </tr>
             
             
         {% for campaign in campaign_fb_performance_list %}      
             <tr>
                 <td>{{campaign.campaign_id}}</td>
-                <td>{{campaign.charge_type}}</td>             
+                <td class="small_wording">{{campaign.charge_type}}</td>             
                 <td>{{campaign.ai_period}}</td>
                 <td>{{campaign.ai_running_days}}</td>
                 
@@ -132,6 +158,7 @@
                
                 
                 <td>{{campaign.ai_spend_cap}}</td>
+                <td>{{campaign.ai_daily_budget}}</td>
                 <td>{{campaign.current_total_spend}}</td>
                 <td>{{campaign.spend_until_today}}</td>
                 
@@ -141,8 +168,10 @@
                 {% else %}
                     <td>{{campaign.ai_stop_date}}</td>
                 {% endif %}
-                <td style="font-size:small;">{{campaign.name}}</td>
-                
+                <td class="small_wording">{{campaign.name}}</td>
+                <td class="small_wording">{{campaign.account_name}}</td>
+                <td class="small_wording">{{campaign.token_name}}</td>
+                <td class="small_wording">{{campaign.currency}}</td>
             </tr>            
         {% endfor %}    
         </table> 
@@ -150,7 +179,7 @@
         
         <!------------ GDN ------------->
         <!------------ GDN ------------->
-        <h3>GDN</h3>
+        <h3>GDN: {{budget_dic.gdn}}</h3>
         <table>
         <tr>
             <td>campaign_id</td>
@@ -163,18 +192,21 @@
             <td style="background-color:GreenYellow;">目前成果數</td>
             <td style="background-color:GreenYellow;">至今應有成果數</td>
             <td style="background-color:Cyan;">表定總預算</td>
-            <td style="background-color:Cyan;">目前花費</td>
-            <td style="background-color:Cyan;">目前應有花費</td>
+            <td style="background-color:Cyan;">表定日預算</td>
+            <td style="background-color:#d9b3ff;">目前花費</td>
+            <td style="background-color:#d9b3ff;">目前應有花費</td>
             <td>AI 開始日</td>
             <td>AI 結束日</td>
             <td>活動名稱</td>
+            <td>帳號名稱</td>
+            <td>token name</td>
         </tr>
             
             
         {% for campaign in campaign_gdn_list %}      
             <tr>
                 <td>{{campaign.campaign_id}}</td>
-                <td>{{campaign.charge_type}}</td>             
+                <td class="small_wording">{{campaign.charge_type}}</td>             
                 <td>{{campaign.ai_period}}</td>
                 <td>{{campaign.ai_running_days}}</td>
                 
@@ -197,6 +229,7 @@
                
                 
                 <td>{{campaign.ai_spend_cap}}</td>
+                <td>{{campaign.ai_daily_budget}}</td>
                 <td>{{campaign.current_total_spend}}</td>
                 <td>{{campaign.spend_until_today}}</td>
                 
@@ -206,7 +239,9 @@
                 {% else %}
                     <td>{{campaign.ai_stop_date}}</td>
                 {% endif %}
-                <td style="font-size:small;">{{campaign.name}}</td>
+                <td class="small_wording">{{campaign.name}}</td>
+                <td class="small_wording">{{campaign.customer_id}}</td>
+                <td class="small_wording">{{campaign.token_name}}</td>
                 
             </tr>            
         {% endfor %}    
@@ -215,7 +250,7 @@
         
         <!------------ GSN ------------->
         <!------------ GSN ------------->
-        <h3>GSN</h3>
+        <h3>GSN: {{budget_dic.gsn}}</h3>
         <table>
         <tr>
             <td>campaign_id</td>
@@ -228,18 +263,21 @@
             <td style="background-color:GreenYellow;">目前成果數</td>
             <td style="background-color:GreenYellow;">至今應有成果數</td>
             <td style="background-color:Cyan;">表定總預算</td>
-            <td style="background-color:Cyan;">目前花費</td>
-            <td style="background-color:Cyan;">目前應有花費</td>
+            <td style="background-color:Cyan;">表定日預算</td>
+            <td style="background-color:#d9b3ff;">目前花費</td>
+            <td style="background-color:#d9b3ff;">目前應有花費</td>
             <td>AI 開始日</td>
             <td>AI 結束日</td>
             <td>活動名稱</td>
+            <td>帳號名稱</td>
+            <td>token name</td>
         </tr>
             
             
         {% for campaign in campaign_gsn_list %}      
             <tr>
                 <td>{{campaign.campaign_id}}</td>
-                <td>{{campaign.charge_type}}</td>             
+                <td class="small_wording">{{campaign.charge_type}}</td>             
                 <td>{{campaign.ai_period}}</td>
                 <td>{{campaign.ai_running_days}}</td>
                 
@@ -262,6 +300,7 @@
                
                 
                 <td>{{campaign.ai_spend_cap}}</td>
+                <td>{{campaign.ai_daily_budget}}</td>
                 <td>{{campaign.current_total_spend}}</td>
                 <td>{{campaign.spend_until_today}}</td>
                 
@@ -271,7 +310,9 @@
                 {% else %}
                     <td>{{campaign.ai_stop_date}}</td>
                 {% endif %}
-                <td style="font-size:small;">{{campaign.name}}</td>
+                <td class="small_wording">{{campaign.name}}</td>
+                <td class="small_wording">{{campaign.customer_id}}</td>
+                <td class="small_wording">{{campaign.token_name}}</td>
                 
             </tr>            
         {% endfor %}    

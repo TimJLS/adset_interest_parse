@@ -13,24 +13,30 @@
 # Output of the crontab jobs (including errors) is sent through
 # email to the user the crontab file belongs to (unless redirected).
 # 
-# For example, you can run a backup of all your user accounts
-# at 5 a.m every week with:
-# 0 5 * * 1 tar -zcf /var/backups/home.tgz /home/
-# 
-# For more information see the manual pages of crontab(5) and cron(8)
-# 
-# m h  dom mon dow   command
-5-59/10 * * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/facebook_datacollector.py
-5-59/10 * * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/index_collector_conversion_facebook.py
-#5-59/10 * * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/index_collector_leadgen_facebook.py
-5-59/10 * * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/facebook_adapter.py
-#5-59/10 * * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/gdn_datacollector.py
-#5-59/10 * * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/gdn_adapter.py
+*/10 * * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/i_love_retrieve_predict_data.py >>  /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/retrieve_predict_data.log
+*/10 * * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/i_love_predictive_bids.py >>  /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/predict_bids.log
 
+# Data Collectors
+5-59/15 * * * * sh /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/data_collectors.sh
 
-#5 0 * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/genetic_algorithm_leadgen_facebook.py >> /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/facebook_leadgen_genetic_algorithm.log
-5 0 * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/genetic_algorithm_conversion_facebook.py >> /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/facebook_conversion_genetic_algorithm.log
-5 0 * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/genetic_algorithm.py >> /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/genetic_algorithm.log
-30 0 * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/facebook_externals.py >> /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/facebook_externals.log
-5 0 * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/genetic_algorithm_gdn.py >> /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/genetic_algorithm_gdn.log
-30 0 * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/gdn_externals.py >> /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/gdn_externals.log
+# Adapters
+5-59/15 * * * * sh /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/adapters.sh
+
+# Genetic Algorithms
+10 0 * * * sh /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/genetic_algorithms.sh
+
+# Externals , start at 1:00 am
+0 1 * * * sh /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/externals.sh
+
+# facebook smart spending, start at 12:01 am
+1 0  * * * sh /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/facebook_smart_spending.sh
+
+#get adset data
+#10 * * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/facebook_adset_handler.py
+
+00 */2 * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/handle_device_proportion.py >> /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/handle_device_proportion.log
+
+00 00 * * * python3 ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/facebook_lookalike_audience.py >> /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/facebook_lookalike_audience.log
+
+#add custom audience (provider by google) in each adgroup
+#00 00 * * * python3 ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/gdn_custom_audience.py >>  /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/gdn_custom_audience.log

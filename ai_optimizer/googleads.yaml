@@ -3,7 +3,7 @@ adwords:
   #############################################################################
   # Required Fields                                                           #
   #############################################################################
-  developer_token: sPvAdwdXUdTo3Tj-GBNXSw
+  developer_token: OteLlPsJQdjV9ph_NzdODg
   #############################################################################
   # Optional Fields                                                           #
   #############################################################################
@@ -19,9 +19,9 @@ adwords:
   #############################################################################
   # The following values configure the client for the installed application
   # flow.
-  client_id: 507652461060-gm5fo5rvhdqbs83qtfcv895fgm5il54b.apps.googleusercontent.com
-  client_secret: A1CL2INNPC31OTEZ5iLCLAtX
-  refresh_token: 1/uZGwJyHCT2xZCbfmot-YM4Y8UMP-dVhDDFxcmHEdztOq1hPUpGtJn7K2botXb3s4
+  client_id: 664346892453-n9vq0h8lppobp10jfq3tv8f1vkembs0q.apps.googleusercontent.com
+  client_secret: JJxPNzva1axzUulKVUoi-6Du
+  refresh_token: 1/GivVAd32lIfd7nel6Ll7hHHCdgm44cAiy7aVl4JUvG4
   # The following values configure the client for the service account flow.
   # path_to_private_key_file: INSERT_PATH_TO_JSON_KEY_FILE_HERE
   # delegated_account: INSERT_DOMAIN_WIDE_DELEGATION_ACCOUNT
