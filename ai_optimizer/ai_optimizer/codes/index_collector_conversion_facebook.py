@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[7]:
+# In[1]:
 
 
 from pathlib import Path
@@ -661,7 +661,7 @@ def main(campaign_id=None, destination=None):
     gc.collect()
 
 
-# In[3]:
+# In[2]:
 
 
 if __name__ == "__main__":
@@ -669,7 +669,7 @@ if __name__ == "__main__":
     main()
 
 
-# In[5]:
+# In[ ]:
 
 
 #!jupyter nbconvert --to script index_collector_conversion_facebook.ipynb

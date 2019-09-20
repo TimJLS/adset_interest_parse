@@ -1,2 +1,2 @@
-Customer ID,Campaign ID,Ad group type,Ad group ID,Ad group state,Max. CPM,Max. CPV,Default max. CPC,Target CPA,Bid Strategy Type,Cost,Avg. Cost,Impressions,Clicks,Conversions,Avg. CPC,Cost / conv.,CTR
-5922380045,1896291336,Display,69785365626,enabled, --, --,7000000, --,cpc,9153707030,6585401,984293,1390,0.00,6585401,0,0.14%
+Customer ID,Campaign ID,Ad group type,Ad group ID,Ad group state,Max. CPM,Max. CPV,Default max. CPC,Target CPA,Bid Strategy Type,Cost,Avg. Cost,Impressions,Clicks,Conversions,All conv.,Avg. CPC,Cost / conv.,Cost / all conv.,CTR,View-through conv.
+2042877296,6460877943,Display,77043580923,enabled, --, --,4000000, --,cpc,2918611307,2675171,101670,1091,24.00,24.00,2675171,121608804,121608804,1.07%,0

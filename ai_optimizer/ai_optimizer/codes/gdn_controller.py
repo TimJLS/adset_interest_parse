@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[2]:
 
 
 import datetime
@@ -12,8 +12,7 @@ import copy
 import math
 import datetime
 from enum import Enum
-AUTH_FILE_PATH = '/home/tim_su/ai_optimizer/opt/ai_optimizer/googleads.yaml'
-adwords_client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
+import adgeek_permission as permission
 
 
 # In[2]:
@@ -91,7 +90,7 @@ class CampaignServiceContainer(object):
 
     def __init__(self, customer_id):
         self.customer_id = customer_id
-        adwords_client.SetClientCustomerId(self.customer_id)
+        self.adwords_client = permission.init_google_api(self.customer_id)
         self.service_campaign = adwords_client.GetService('CampaignService', version='v201809')
         self.operator_container = OperatorContainer()
         self.ad_group = AdGroup
@@ -138,7 +137,7 @@ class AdGroupServiceContainer(object):
     def __init__(self, customer_id=None):
         if customer_id:
             self.customer_id = customer_id
-            adwords_client.SetClientCustomerId(self.customer_id)
+            self.adwords_client = permission.init_google_api(self.customer_id)
         self.service_ad_group = adwords_client.GetService('AdGroupService', version='v201809')
         self.service_criterion = adwords_client.GetService('AdGroupCriterionService', version='v201809')
         self.service_ad = adwords_client.GetService('AdGroupAdService', version='v201809')
@@ -412,6 +411,12 @@ class UserListCriterion(Criterion):
 # campaign_service = CampaignServiceContainer(customer_id=6714857152)
 # campaign = Campaign(group_service, campaign_id=2053556135)
 # campaign.get_ad_groups()
+
+
+# In[3]:
+
+
+#!jupyter nbconvert --to script gdn_controller.ipynb
 
 
 # In[ ]:

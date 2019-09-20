@@ -325,7 +325,7 @@ def data_collect( ioid, total_clicks ):
 # In[18]:
 
 
-get_ipython().run_cell_magic('time', '', 'df_io = data_collect(ioid, 100000)')
+get_ipython().run_cell_magic(u'time', u'', u'df_io = data_collect(ioid, 100000)')
 
 
 # In[16]:
@@ -380,7 +380,7 @@ ioid = 1605818538
 # In[44]:
 
 
-get_ipython().run_cell_magic('time', '', 'mydb = amobee_db.connectDB(\'Amobee\')\nmycursor = mydb.cursor()\nmycursor.execute( "SELECT default_price FROM default_price WHERE ioid=%s ORDER BY request_time DESC LIMIT 1" % (ioid) )\ndefault = mycursor.fetchone()\n# default = str(default[0][0], encoding=\'utf-8\')')
+get_ipython().run_cell_magic(u'time', u'', u'mydb = amobee_db.connectDB(\'Amobee\')\nmycursor = mydb.cursor()\nmycursor.execute( "SELECT default_price FROM default_price WHERE ioid=%s ORDER BY request_time DESC LIMIT 1" % (ioid) )\ndefault = mycursor.fetchone()\n# default = str(default[0][0], encoding=\'utf-8\')')
 
 
 # In[50]:

@@ -223,37 +223,38 @@ class ObjectiveFunc(object):
             "dev_facebook_test")
 
     def fitness_function(optimal_weight, df):
+#         print('[fitness_func]')
+#         print(df.to_dict('records'))
         df = df.drop(['charge_type'], axis=1)
-        m1 = df['fb_pixel_lead'] / df['leadgen.other']
+        m1 = pd.Series(0, index=[0])#df['fb_pixel_lead'] / df['leadgen.other']
         m2 = df['leadgen.other'] / df['fb_pixel_view_content']
         m3 = df['fb_pixel_view_content'] / df['landing_page_view']
         m4 = df['landing_page_view'] / df['link_click']
         m5 = df['link_click'] / df['impressions']
         m_spend = (df['daily_budget'] - df['spend']) / df['daily_budget']
-        m_bid = (df['campaign_bid'] - df['cost_per_fb_pixel_lead']) / df['campaign_bid']
-
-        status = np.array([m1, m2, m3, m4, m5, m_spend, m_bid])
+        m_bid = (df['campaign_bid'] - df['cost_per_leadgen.other']) / df['campaign_bid']
+        status = np.array([ m1, m2, m3, m4, m5, m_spend, m_bid])
         status = np.nan_to_num(status)
-        r = np.log( np.dot(optimal_weight, status) )
+        r = np.dot(optimal_weight, status)
         return r
 
     def adset_fitness(optimal_weight, df):
         df = df.fillna(0)
 
-        m1 = df['fb_pixel_lead'] / df['leadgen.other']
+        m1 = pd.Series(0, index=[0])#df['fb_pixel_lead'] / df['leadgen.other']
         m2 = df['leadgen.other'] / df['fb_pixel_view_content']
         m3 = df['fb_pixel_view_content'] / df['landing_page_view']
         m4 = df['landing_page_view'] / df['link_click']
         m5 = df['link_click'] / df['impressions']
         m_spend = (df['daily_budget'] - df['spend']) / df['daily_budget']
-        m_bid = (df['bid_amount'] - df['cost_per_fb_pixel_lead']) / df['bid_amount']
+        m_bid = (df['bid_amount'] - df['cost_per_leadgen.other']) / df['bid_amount']
         
-        status = np.array([m1, m2, m3, m4, m5, m_spend, m_bid])
+        status = np.array([ m1, m2, m3, m4, m5, m_spend, m_bid])
         status = np.nan_to_num(status)
         for idx, j in enumerate(status[:,0]):
             if np.isinf(j) or np.isneginf(j):
                 status[idx,0] = -100
-        r = np.log( np.dot(optimal_weight, status) )
+        r = np.dot(optimal_weight, status)
         if math.isinf(r[0,0]):
             r[0,0] = -10
         return r
@@ -316,6 +317,7 @@ def ga_optimal_weight(campaign_id, df_weight):
         index_collector_leadgen_facebook.insertion("adset_score", df_final)
 
 
+
 # In[2]:
 
 
@@ -344,8 +346,7 @@ if __name__ == "__main__":
             print('[score inf]')
             score = -100
         print('[campaign score] ', score)
-        weight_columns = ['w1', 'w2', 'w3', 'w4',
-                          'w5', 'w_spend', 'w_bid']
+        weight_columns = ['w1', 'w2', 'w3', 'w4', 'w5', 'w_spend', 'w_bid']
         df_weight = pd.DataFrame(
             data=[optimal], columns=weight_columns, index=[0])
 
