@@ -14,7 +14,7 @@ pymysql.install_as_MySQLdb()
 import MySQLdb
 
 DATABASE="dev_gdn"
-HOST = "aws-prod-ai-private.adgeek.cc"
+HOST = "aws-dev-ai-private.adgeek.cc"
 USER = "app"
 PASSWORD = "adgeek1234"
 
@@ -257,7 +257,7 @@ def get_current_init_bid(campaign_id):
     
 
 
-# In[1]:
+# In[2]:
 
 
 # !jupyter nbconvert --to script gdn_db.ipynb

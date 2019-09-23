@@ -80,14 +80,23 @@ class OperatorContainer():
             'operand': None
         }
         self.operations = []
+        self.selector_budget = [{
+            'fields': 'Amount',
+            'predicates': [{
+                'field': 'CampaignId',
+                'operator': 'EQUALS',
+                'values': None
+            }]
+        }]
 
 
-# In[8]:
+# In[1]:
 
 
 class CampaignServiceContainer(object):
 
     def __init__(self, customer_id):
+        self.customer_id = customer_id
         self.adwords_client = permission.init_google_api(account_id=self.customer_id)
         self.service_campaign = self.adwords_client.GetService('CampaignService', version='v201809')
         self.operator_container = OperatorContainer()
@@ -129,6 +138,17 @@ class Campaign(object):
             self.get_ad_groups()
         self.keywords = [ keywords.retrieve() for ad_group in self.ad_groups for keywords in ad_group.get_keywords() ]
         return self.keywords
+    
+    def get_budget(self,):
+        self.operator_container.selector_budget[0]['predicates'][0]['values'] = self.campaign_id
+        ad_params = self.service_container.service_campaign.get(self.operator_container.selector_budget)
+        if 'entries' in ad_params:
+    #         print('ad_params', ad_params)
+            for ad_dic in ad_params['entries']:
+                if 'budget' in ad_dic and 'amount' in ad_dic['budget'] and 'microAmount' in ad_dic['budget']['amount']:
+                    microAmount = ad_dic['budget']['amount']['microAmount']
+                    self.amount = microAmount/ 1000000
+                    return self.amount
 
 
 # In[9]:
@@ -522,7 +542,7 @@ class Creative(object):
             return result
 
 
-# In[ ]:
+# In[2]:
 
 
 # !jupyter nbconvert --to script google_adwords_controller.ipynb

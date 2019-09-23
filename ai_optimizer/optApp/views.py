@@ -135,6 +135,7 @@ def opt_api(request):
             
             elif media == 'GDN' and account_id:
                 brief_dict['account_id'] = account_id
+                print('============HERE===========')
                 if not gdn_db.check_campaignid_target(**brief_dict):
                     return JsonResponse( {}, safe=False )
                 else:
