@@ -197,7 +197,7 @@ def process_active_adsets(collector_campaign, active_adsets_list):
         print('==')
 
 
-# In[4]:
+# In[14]:
 
 
 if __name__ == '__main__':
@@ -207,7 +207,7 @@ if __name__ == '__main__':
     for index, row in performance_campaign.iterrows():
         account_id = row['account_id']
         campaign_id = row['campaign_id']
-        is_creative_opt = bool(row['is_creative_opt'])
+        is_creative_opt = eval(row['is_creative_opt'])
         permission.init_facebook_api(account_id)
         if is_creative_opt:
             collector_campaign = data_collector.Campaigns(campaign_id, database_fb)
@@ -219,7 +219,7 @@ if __name__ == '__main__':
  
 
 
-# In[8]:
+# In[13]:
 
 
 # !jupyter nbconvert --to script facebook_creative_controller.ipynb
