@@ -59,19 +59,18 @@ class Campaign_FB():
             self.destination = campaign.get('destination')
             self.destination_max = campaign.get('destination_max')
             self.ai_spend_cap = campaign.get('ai_spend_cap')
-            self.current_target_count = campaign.get('target')
-            self.left_target_count = campaign.get('target_left')
-            self.current_total_spend = campaign.get('spend')
+            self.current_target_count = campaign.get('target', 0)
+            self.left_target_count = campaign.get('target_left', 0)
+            self.current_total_spend = campaign.get('spend', 0)
             self.ai_start_date = campaign.get('ai_start_date')
             self.ai_stop_date = campaign.get('ai_stop_date')
         else:
             print('[get_campaign_status] error, len ==0')
-
+            
     def compute(self):
 #         if currency == 'USD':
 #             self.ai_spend_cap = self.ai_spend_cap / 100
-
-        if not self.current_total_spend:
+        if self.current_total_spend is None:
             self.current_total_spend = 0
         if self.left_target_count is None:
             self.left_target_count = 0    

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[17]:
 
 
 from pathlib import Path
@@ -32,7 +32,7 @@ import database_controller
 from bid_operator import *
 
 
-# In[13]:
+# In[2]:
 
 
 
@@ -311,7 +311,7 @@ class Accounts(object):
         return current_account
 
 
-# In[21]:
+# In[11]:
 
 
 class Campaigns(object):
@@ -365,7 +365,6 @@ class Campaigns(object):
             current_campaign = insights[0]
             if current_campaign.get(Field.impressions):
                 spend = int( float( current_campaign.get( Field.spend ) ) )
-            print(self.charge_type=='THRUPLAY' or self.charge_type=='VIDEO_VIEWS')
             if current_campaign.get( TARGET_FIELD[Field.thruplay_actions] ) and (self.charge_type=='THRUPLAY' or self.charge_type=='VIDEO_VIEWS'):
                 actions_list = current_campaign.get( TARGET_FIELD[Field.thruplay_actions] )
                 for act in actions_list:
@@ -723,7 +722,7 @@ def main():
     print(datetime.datetime.now()-start_time)
 
 
-# In[9]:
+# In[ ]:
 
 
 if __name__ == "__main__":
@@ -732,7 +731,7 @@ if __name__ == "__main__":
     gc.collect()
 
 
-# In[14]:
+# In[24]:
 
 
 # !jupyter nbconvert --to script facebook_datacollector.ipynb

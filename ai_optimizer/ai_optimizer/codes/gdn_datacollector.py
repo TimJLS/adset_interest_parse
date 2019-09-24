@@ -252,7 +252,7 @@ class Campaign(object):
 
 
 class AdGroup(Campaign):
-    def __init__(self, customer_id, campaign_id, destination_type, adgroup_id):
+    def __init__(self, customer_id, campaign_id, adgroup_id, destination_type=None):
         super().__init__(customer_id, campaign_id, destination_type)
         self.customer_id = customer_id
         self.campaign_id = campaign_id
@@ -418,7 +418,7 @@ if __name__=='__main__':
 #     df_campaign = data_collect(camp.customer_id, camp.campaign_id, 10000, camp.destination_type)
 
 
-# In[ ]:
+# In[1]:
 
 
 # !jupyter nbconvert --to script gdn_datacollector.ipynb
