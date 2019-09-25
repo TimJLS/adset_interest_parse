@@ -67,16 +67,7 @@ class Campaign_FB():
         else:
             print('[get_campaign_status] error, len ==0')
             
-    def compute(self):
-#         if currency == 'USD':
-#             self.ai_spend_cap = self.ai_spend_cap / 100
-        if self.current_total_spend is None:
-            self.current_total_spend = 0
-        if self.left_target_count is None:
-            self.left_target_count = 0    
-        if self.current_target_count is None:
-            self.current_target_count = 0    
-            
+    def compute(self):            
         self.ai_period = (self.ai_stop_date - self.ai_start_date ).days + 1
         today = datetime.date.today()
         self.ai_left_days = (self.ai_stop_date - today ).days + 1
