@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[5]:
+# In[1]:
 
 
 import gsn_db
@@ -14,15 +14,21 @@ from enum import Enum
 import adgeek_permission as permission
 
 
-# In[6]:
+# In[2]:
 
 
 class Status(object):
     enable = 'ENABLED'
     pause = 'PAUSED'
+    
+class Device(object):
+    Desktop = 30000
+    HighEndMobile = 30001
+    ConnectedTv = 30004
+    Tablet = 30002
 
 
-# In[7]:
+# In[3]:
 
 
 class OperatorContainer():
@@ -63,6 +69,14 @@ class OperatorContainer():
                 'values':'ENABLED'
             }]
         }]
+        self.selector_bid_modifier = {
+            'fields': None,
+            'predicates': [{
+                'field': 'AdGroupId',
+                'operator': 'EQUALS',
+                'values': [None]
+            }]
+        }
         self.criterion = {
             'id':None, 
             'xsi_type':None,
@@ -90,7 +104,7 @@ class OperatorContainer():
         }]
 
 
-# In[1]:
+# In[4]:
 
 
 class CampaignServiceContainer(object):
@@ -151,7 +165,7 @@ class Campaign(object):
                     return self.amount
 
 
-# In[9]:
+# In[5]:
 
 
 class AdGroupServiceContainer(object):
@@ -162,6 +176,7 @@ class AdGroupServiceContainer(object):
         self.service_ad_group = self.adwords_client.GetService('AdGroupService', version='v201809')
         self.service_criterion = self.adwords_client.GetService('AdGroupCriterionService', version='v201809')
         self.service_ad = self.adwords_client.GetService('AdGroupAdService', version='v201809')
+        self.service_bid_modifier = self.adwords_client.GetService( 'AdGroupBidModifierService', version='v201809')
         self.operator_container = OperatorContainer()
         self.ad_group = AdGroup
         
@@ -212,6 +227,7 @@ class AdGroup(object):
         self.basic_criterions = self.create_basic_criterions()
         self.user_interest_criterions = self.create_user_interest_criterions()
         self.user_list_criterions = self.create_user_list_criterions()
+        self.bid_modifier = self.create_bid_modifier()
     
     def create_keyword(self,):
         return Keyword
@@ -233,6 +249,9 @@ class AdGroup(object):
     
     def create_user_list_criterions(self,):
         return UserListCriterion(self)
+    
+    def create_bid_modifier(self,):
+        return BidModifier(self)
     
     def get_keywords(self,):
         self.operator_container.selector[0]['fields'] = Keyword.fields
@@ -258,7 +277,7 @@ class AdGroup(object):
         return
 
 
-# In[10]:
+# In[7]:
 
 
 class Keyword(object):
@@ -323,7 +342,7 @@ class Keyword(object):
         return result
 
 
-# In[11]:
+# In[8]:
 
 
 class Param(object):
@@ -370,7 +389,7 @@ class Param(object):
         return result
 
 
-# In[122]:
+# In[9]:
 
 
 class Criterion(object):
@@ -500,7 +519,7 @@ class UserListCriterion(Criterion):
         return result
 
 
-# In[40]:
+# In[10]:
 
 
 class Creative(object):
@@ -542,13 +561,49 @@ class Creative(object):
             return result
 
 
-# In[2]:
+# In[6]:
+
+
+class BidModifier(object):
+    fields = ['CampaignId', 'AdGroupId', 'BidModifier', 'Id', 'PlatformName']
+    def __init__(self, AdGroup):
+        self.ad_group = AdGroup
+        self.operation_container = OperatorContainer()
+        
+    def retrieve(self,):
+        self.operation_container.selector_bid_modifier['fields'] = self.fields
+        self.operation_container.selector_bid_modifier['predicates'][0]['values'][0] = self.ad_group.ad_group_id
+        resp = self.ad_group.service_container.service_bid_modifier.get(self.operation_container.selector_bid_modifier)
+        return resp['entries']
+    
+    def update(self, bid_modifier_dict):
+        self.operation_container.operand.pop('id', None)
+        for device in bid_modifier_dict:
+            device_id = Device.__dict__.get(device)
+            bid_modifier_ratio = bid_modifier_dict[device]
+            self.operation_container.criterion['xsi_type'] = 'Platform'
+            self.operation_container.criterion['id'] = device_id
+            
+            self.operation_container.operand['adGroupId'] = self.ad_group.ad_group_id
+            self.operation_container.operand['criterion'] = self.operation_container.criterion
+            self.operation_container.operand['bidModifier'] = bid_modifier_ratio
+            
+            self.operation_container.operation['operator'] = 'ADD'
+            self.operation_container.operation['operand'] = self.operation_container.operand
+            
+            self.operation_container.operations.append(copy.deepcopy(self.operation_container.operation))
+        resp = self.ad_group.service_container.service_bid_modifier.mutate(self.operation_container.operations)
+        self.operation_container.operations = []
+        return resp
+
+
+# In[15]:
 
 
 # !jupyter nbconvert --to script google_adwords_controller.ipynb
 
 
-# In[14]:
+# In[12]:
 
 
 # service_container = AdGroupServiceContainer(customer_id=3165812026)

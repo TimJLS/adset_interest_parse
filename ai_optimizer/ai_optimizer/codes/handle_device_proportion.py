@@ -13,7 +13,9 @@ import math
 import datetime
 from copy import deepcopy
 import gdn_db
-import gdn_datacollector as datacollector
+import gdn_datacollector as collector
+import adgeek_permission as permission
+import google_adwords_controller as controller
 AUTH_FILE_PATH = '/home/tim_su/ai_optimizer/opt/ai_optimizer/googleads.yaml'
 adwords_client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
 DEVICE_BALANCE_PROPORTION = 0.5
@@ -27,7 +29,10 @@ DEVICE_CRITERION = {
     'Tablet': 30002,
 }
 
+
 # In[2]:
+
+
 def assign_bid_modifier(adwords_client, ad_group_id, **bid_modifier_dict,):
     
     for device in bid_modifier_dict:
@@ -53,6 +58,10 @@ def assign_bid_modifier(adwords_client, ad_group_id, **bid_modifier_dict,):
 #         print('[resp]: ', resp)
     return resp
 
+
+# In[3]:
+
+
 def retrieve_bid_modifier(client, ad_group_id):
     ad_group_bid_modifier_service = adwords_client.GetService(
         'AdGroupBidModifierService', version='v201809')
@@ -71,11 +80,11 @@ def retrieve_bid_modifier(client, ad_group_id):
     return resp['entries']
 
 
-# In[3]:
+# In[4]:
 
 
-def bid_modifier_adjust(ad_group_id, device_target, direction):
-    resps = retrieve_bid_modifier(adwords_client, ad_group_id)
+def bid_modifier_adjust(controller_ad_group, device_target, direction):
+    resps = controller_ad_group.bid_modifier.retrieve()
     bid_modifier_dict = dict()
     # Retrieve bid modifier
     for resp in resps:
@@ -96,24 +105,25 @@ def bid_modifier_adjust(ad_group_id, device_target, direction):
                     bid_modifier_dict[device] -= 0.1 
        
     # Update back
-#     print('[ad_group_id]: ', ad_group_id)
-#     print('[bid_modifier_dict]: ', bid_modifier_dict)
-    resp = assign_bid_modifier(adwords_client, ad_group_id, **bid_modifier_dict)
+    print('[ad_group_id]: ', controller_ad_group.ad_group_id)
+    print('[bid_modifier_dict]: ', bid_modifier_dict)
+    resp = controller_ad_group.bid_modifier.update(bid_modifier_dict)
     return resp
 
 
-# In[15]:
+# In[5]:
+
 
 def get_campaign_budget(adwords_client, campaign_id):
     adword_service = adwords_client.GetService('CampaignService', version='v201809')
     selector = [{
-            'fields': 'Amount',
-            'predicates': [{
-                        'field': 'CampaignId',
-                        'operator': 'EQUALS',
-                        'values': campaign_id
-                    }]
+        'fields': 'Amount',
+        'predicates': [{
+            'field': 'CampaignId',
+            'operator': 'EQUALS',
+            'values': campaign_id
         }]
+    }]
 
     ad_params = adword_service.get(selector)
     if 'entries' in ad_params:
@@ -123,32 +133,39 @@ def get_campaign_budget(adwords_client, campaign_id):
                 microAmount = ad_dic['budget']['amount']['microAmount']
                 amount = microAmount/ 1000000
                 return amount
-            
+
+
+# In[6]:
+
+
 def main():
-    df_performance_campaign = gdn_db.get_performance_campaign_is_running()
-    for campaign_id in df_performance_campaign['campaign_id'].tolist():
+    performance_campaign_list = gdn_db.get_performance_campaign_is_running().to_dict('records')
+#     print(performance_campaign_list)
+    for campaign in performance_campaign_list:
+        customer_id = campaign.get('customer_id')
+        campaign_id = campaign.get('campaign_id')
+        adwords_client = permission.init_google_api(customer_id)
         print('[current time]: ', datetime.datetime.now())
         print('[campaign_id]: ', campaign_id)
-        customer_id = df_performance_campaign['customer_id'][df_performance_campaign.campaign_id==campaign_id].iloc[0]
-        adwords_client.SetClientCustomerId(customer_id)
-        camp = datacollector.Campaign(customer_id=customer_id, campaign_id=campaign_id, destination_type='CONVERSIONS')
-        ad_group_id_list = camp.get_adgroup_id_list()
-        
-        daily_budget = get_campaign_budget(adwords_client, campaign_id)
+        # initiate services
+        campaign_service_container = controller.CampaignServiceContainer( customer_id )
+        ad_group_service_container = controller.AdGroupServiceContainer( customer_id )
+        collector_campaign = collector.Campaign(customer_id, campaign_id)
+        controller_campaign = controller.Campaign(campaign_service_container, campaign_id)
+        daily_budget = controller_campaign.get_budget()
         if not daily_budget:
-            print('camp.ai_spend_cap:', camp.ai_spend_cap, 'ai_period:', camp.ai_period)
-            daily_budget =  camp.ai_spend_cap / int(camp.ai_period)
-            
-        daily_budget_per_group = daily_budget / len(ad_group_id_list)
-        print('[main] ad_group_id_list count:', len(ad_group_id_list))
+            print('camp.ai_spend_cap:', collector_campaign.ai_spend_cap, 'ai_period:', collector_campaign.ai_period)
+            daily_budget =  collector_campaign.ai_spend_cap / int(collector_campaign.ai_period)
+        controller_campaign = controller.Campaign(ad_group_service_container, campaign_id)
+        ad_groups = controller_campaign.get_ad_groups()
+        daily_budget_per_group = daily_budget / len(ad_groups)
+        print('[main] ad_group_id_list count:', len(ad_groups))
         print('[main] daily_budget_per_group:', daily_budget_per_group)
-        
-        for ad_group_id in ad_group_id_list:
-            print('[ad_group_id]: ', ad_group_id)
-            ad_group = datacollector.AdGroup(
-                customer_id=customer_id, campaign_id=campaign_id, adgroup_id=ad_group_id, destination_type='CONVERSIONS')
+        for controller_ad_group in ad_groups:
+            print('[ad_group_id]: ', controller_ad_group.ad_group_id)
+            collector_ad_group = collector.AdGroup( customer_id, campaign_id, controller_ad_group.ad_group_id )
             # Retrieve hourly seperated report
-            hourly_insights = ad_group.get_adgroup_insights(adwords_client, date_preset='TODAY', by_hour=True)
+            hourly_insights = collector_ad_group.get_adgroup_insights(date_preset='TODAY', by_hour=True)
             df_hourly_insights = pd.DataFrame(hourly_insights).sort_values(by=['hour_of_day']).reset_index(drop=True)  
             # Check last time interval spend is normal or not
             current_hour = datetime.datetime.now().hour
@@ -159,66 +176,68 @@ def main():
             #handle money spend spend too slow 
             print('[main] current_hour:', current_hour, ' last_interval_spend:', last_interval_spend)
             print('[main] adgroup_today_spend:',adgroup_today_spend, ' adgroup_now_should_spend:' , adgroup_now_should_spend)
-            if adgroup_today_spend < adgroup_now_should_spend * 0.8:
-                print('spend too slow , up device price')
-                bid_modifier_adjust(ad_group_id, 'Desktop', 'up')
-                bid_modifier_adjust(ad_group_id, 'HighEndMobile', 'up')
-                bid_modifier_adjust(ad_group_id, 'Tablet', 'up')
-            elif  adgroup_today_spend > adgroup_now_should_spend * 1.05:
-                print('spend too quick , down device price')
-                bid_modifier_adjust(ad_group_id, 'Desktop', 'down')
-                bid_modifier_adjust(ad_group_id, 'HighEndMobile', 'down')
-                bid_modifier_adjust(ad_group_id, 'Tablet', 'down')
-                
             
-            if last_interval_spend <= MINIMUM_SPEND:
-                print('last time interval spend too low, no adjustment')
-                return
+#             if last_interval_spend <= MINIMUM_SPEND:
+#                 print('last time interval spend too low, no adjustment')
+#                 return
             # Retrieve device seperated report
-            device_insights = ad_group.get_adgroup_insights(adwords_client, date_preset='TODAY', by_device=True)
-            df_device_insights = pd.DataFrame(device_insights)
-        
-            df_mobile = df_device_insights[['device', 'spend']].sort_values(by=['spend'], ascending=False)[df_device_insights['device'].str.contains("Mobile")].reset_index(drop=True)
-            df_desktop = df_device_insights[['device', 'spend']].sort_values(by=['spend'], ascending=False)[df_device_insights['device'].str.contains("Computers")].reset_index(drop=True)
-            df_tablets = df_device_insights[['device', 'spend']].sort_values(by=['spend'], ascending=False)[df_device_insights['device'].str.contains("Tablets")].reset_index(drop=True)
-            
+            lifetime_insights = collector_ad_group.get_adgroup_insights(date_preset='ALL_TIME', by_device=True)
+            df_lifetime_insights = pd.DataFrame(lifetime_insights)
+            df_lifetime_insights.loc[
+                (df_lifetime_insights['conversions'] == 0)&(df_lifetime_insights['device'].str.contains("Mobile|Computers")), 'conversions'] = 1
+            df_lifetime_insights = df_lifetime_insights[['device', 'spend', 'conversions']]
+
             # Check whether to adjust bid modifier
-            all_device_spend = df_device_insights['spend'].sum()
+            all_device_target = df_lifetime_insights['conversions'].sum()
+            all_device_spend = df_lifetime_insights['spend'].sum()
+            mobile_target = df_lifetime_insights['conversions'][df_lifetime_insights['device'].str.contains("Mobile|Tablets")].sum()
+            desktop_target = df_lifetime_insights['conversions'][df_lifetime_insights['device'].str.contains("Computers")].sum()
+            mobile_spend = df_lifetime_insights['spend'][df_lifetime_insights['device'].str.contains("Mobile|Tablets")].sum()
+            desktop_spend = df_lifetime_insights['spend'][df_lifetime_insights['device'].str.contains("Computers")].sum()
+            
             with np.errstate(divide='ignore', invalid='ignore'):
-                desktop_spend_ratio = np.true_divide(df_desktop['spend'].iloc[0], all_device_spend)
-                mobile_spend_ratio = np.true_divide(df_mobile['spend'].iloc[0], all_device_spend)
-                tablets_spend_ratio = np.true_divide(df_tablets['spend'].iloc[0], all_device_spend)
+                desktop_conversion_ratio = np.true_divide(desktop_target, all_device_target)
+                mobile_conversion_ratio = np.true_divide(mobile_target, all_device_target)
                 
+                desktop_spend_ratio = np.true_divide(desktop_spend, all_device_spend)
+                mobile_spend_ratio = np.true_divide(mobile_spend, all_device_spend)
+                
+                desktop_conversion_ratio = np.nan_to_num(desktop_conversion_ratio)
+                mobile_conversion_ratio = np.nan_to_num(mobile_conversion_ratio)
+
                 desktop_spend_ratio = np.nan_to_num(desktop_spend_ratio)
                 mobile_spend_ratio = np.nan_to_num(mobile_spend_ratio)
-                tablets_spend_ratio = np.nan_to_num(tablets_spend_ratio)
+
+                spend_ratio = np.true_divide(desktop_spend_ratio, mobile_spend_ratio)
+                conversion_ratio = np.true_divide(desktop_conversion_ratio, mobile_spend_ratio)
+
+            print('desktop_conversion_ratio:', desktop_conversion_ratio,' mobile_conversion_ratio:', mobile_conversion_ratio)
+            print('desktop_spend_ratio:', desktop_spend_ratio,' mobile_spend_ratio:', mobile_spend_ratio)
+            print('spend_ratio', spend_ratio, ' converison_ratio', conversion_ratio)
             
-            print('desktop_spend_ratio:', desktop_spend_ratio,' mobile_spend_ratio:', mobile_spend_ratio,' tablets_spend_ratio: ', tablets_spend_ratio)
-            
-            
-            if desktop_spend_ratio < (tablets_spend_ratio + mobile_spend_ratio):
-                print('desktop spend ratio low, direction up')
-                bid_modifier_adjust(ad_group_id, 'Desktop', 'up')
-                bid_modifier_adjust(ad_group_id, 'HighEndMobile', 'down')
-                bid_modifier_adjust(ad_group_id, 'Tablet', 'down')
+            if spend_ratio > conversion_ratio:
+                # desktop spend does not keep up
+                print('adjust desktop modifier')
+                bid_modifier_adjust(controller_ad_group, 'Desktop', 'up')
+                bid_modifier_adjust(controller_ad_group, 'HighEndMobile', 'down')
+                bid_modifier_adjust(controller_ad_group, 'Tablet', 'down')
                 
-            elif desktop_spend_ratio > (tablets_spend_ratio + mobile_spend_ratio):
-                print('desktop spend ratio high, direction down')
-                bid_modifier_adjust(ad_group_id, 'Desktop', 'down')
-                bid_modifier_adjust(ad_group_id, 'HighEndMobile', 'up')
-                bid_modifier_adjust(ad_group_id, 'Tablet', 'up')
+            elif spend_ratio < conversion_ratio:
+                # mobile spend does not keep up
+                print('adjust mobile modifier')
+                bid_modifier_adjust(controller_ad_group, 'Desktop', 'down')
+                bid_modifier_adjust(controller_ad_group, 'HighEndMobile', 'up')
+                bid_modifier_adjust(controller_ad_group, 'Tablet', 'up')
 
-                
 
-
-# In[2]:
+# In[8]:
 
 
 if __name__=='__main__':
     main()
 
 
-# In[3]:
+# In[9]:
 
 
 #!jupyter nbconvert --to script handle_device_proportion.ipynb
