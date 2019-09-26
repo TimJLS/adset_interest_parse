@@ -16,7 +16,7 @@ from datetime import date,timedelta
 TABLE_NAME_CREATIVE_LOG = 'adset_creative_log'
 IMPRESSION_THRESHOLD = 500
 CHECK_DIFF_DAY = 7
-IS_DEBUG = True
+IS_DEBUG = False
 
 
 # In[2]:
@@ -190,6 +190,7 @@ def process_active_adsets(collector_campaign, active_adsets_list):
     print('[process_active_adsets] active_adsets_list:', active_adsets_list)
     
     for adset_id in active_adsets_list:
+        adset_id = int(adset_id)
         if is_need_to_process(collector_campaign.campaign_id, adset_id):
             process_creative_for_adset(collector_campaign, adset_id)
         else:
@@ -219,7 +220,7 @@ if __name__ == '__main__':
  
 
 
-# In[13]:
+# In[15]:
 
 
 # !jupyter nbconvert --to script facebook_creative_controller.ipynb
