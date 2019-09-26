@@ -211,36 +211,36 @@ def main():
                 spend_ratio = np.true_divide(desktop_spend_ratio, mobile_spend_ratio)
                 conversion_ratio = np.true_divide(desktop_conversion_ratio, mobile_spend_ratio)
 
-            print('desktop_conversion_ratio:', desktop_conversion_ratio,' mobile_conversion_ratio:', mobile_conversion_ratio)
-            print('desktop_spend_ratio:', desktop_spend_ratio,' mobile_spend_ratio:', mobile_spend_ratio)
-            print('spend_ratio', spend_ratio, ' converison_ratio', conversion_ratio)
+            print('[main] desktop_conversion_ratio:', desktop_conversion_ratio,' mobile_conversion_ratio:', mobile_conversion_ratio)
+            print('[main] desktop_spend_ratio:', desktop_spend_ratio,' mobile_spend_ratio:', mobile_spend_ratio)
+            print('[main] spend_ratio', spend_ratio, ' converison_ratio', conversion_ratio)
             
-            if spend_ratio > conversion_ratio:
+            if spend_ratio < conversion_ratio:
                 # desktop spend does not keep up
-                print('adjust desktop modifier')
+                print('[main] Make desktop spend more')
                 bid_modifier_adjust(controller_ad_group, 'Desktop', 'up')
                 bid_modifier_adjust(controller_ad_group, 'HighEndMobile', 'down')
                 bid_modifier_adjust(controller_ad_group, 'Tablet', 'down')
                 
-            elif spend_ratio < conversion_ratio:
+            elif spend_ratio > conversion_ratio:
                 # mobile spend does not keep up
-                print('adjust mobile modifier')
+                print('[main] Make mobile spend more')
                 bid_modifier_adjust(controller_ad_group, 'Desktop', 'down')
                 bid_modifier_adjust(controller_ad_group, 'HighEndMobile', 'up')
                 bid_modifier_adjust(controller_ad_group, 'Tablet', 'up')
 
 
-# In[8]:
+# In[7]:
 
 
 if __name__=='__main__':
     main()
 
 
-# In[9]:
+# In[8]:
 
 
-#!jupyter nbconvert --to script handle_device_proportion.ipynb
+# !jupyter nbconvert --to script handle_device_proportion.ipynb
 
 
 # In[ ]:
