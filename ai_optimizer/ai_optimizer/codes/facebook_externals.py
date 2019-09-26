@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[21]:
+# In[1]:
 
 
 import json
@@ -116,9 +116,9 @@ def optimize_performance_campaign(campaign_id):
     
     print('[optimize_performance_campaign] campaign ',campaign_id)
     df = database_fb.get_one_campaign(campaign_id)
-    is_smart_spending = bool(df['is_smart_spending'].iloc[0])
-    is_target_suggest = bool(df['is_target_suggest'].iloc[0])
-    is_lookalike = bool(df['is_lookalike'].iloc[0])
+    is_smart_spending = eval(df['is_smart_spending'].iloc[0])
+    is_target_suggest = eval(df['is_target_suggest'].iloc[0])
+    is_lookalike = eval(df['is_lookalike'].iloc[0])
     current_flight = ( datetime.date.today()-df['ai_start_date'].iloc[0] ).days
     period = df['period'].iloc[0]
     flight_process = current_flight / period
@@ -226,9 +226,9 @@ def optimize_branding_campaign(campaign_id):
     print('[optimize_branding_campaign] campaign ',campaign_id)
     df = database_fb.get_one_campaign(campaign_id)
     # charge_type attribute of first row
-    is_smart_spending = bool(df['is_smart_spending'].iloc[0])
-    is_target_suggest = bool(df['is_target_suggest'].iloc[0])
-    is_lookalike = bool(df['is_lookalike'].iloc[0])
+    is_smart_spending = eval(df['is_smart_spending'].iloc[0])
+    is_target_suggest = eval(df['is_target_suggest'].iloc[0])
+    is_lookalike = eval(df['is_lookalike'].iloc[0])
     current_flight = ( datetime.date.today()-df['ai_start_date'].iloc[0] ).days
     period = df['period'].iloc[0]
     flight_process = current_flight / period
@@ -385,7 +385,7 @@ def optimize_campaign(campaign_id):
             print('[optimize_campaign] error, not optimize')
 
 
-# In[16]:
+# In[2]:
 
 
 def get_campaign_name_status(campaign_id):
@@ -393,7 +393,7 @@ def get_campaign_name_status(campaign_id):
     return this_campaign.get('name'), this_campaign.get('status')
 
 
-# In[17]:
+# In[3]:
 
 
 if __name__ == '__main__':
@@ -437,7 +437,7 @@ if __name__ == '__main__':
 # optimize_campaign(campaign_id)
 
 
-# In[12]:
+# In[6]:
 
 
 # !jupyter nbconvert --to script facebook_externals.ipynb
@@ -451,7 +451,7 @@ if __name__ == '__main__':
 # modify_opt_result_db(6130308870943, "False")
 
 
-# In[23]:
+# In[8]:
 
 
 # global database_fb
