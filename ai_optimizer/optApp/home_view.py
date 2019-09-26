@@ -70,12 +70,12 @@ class Campaign_FB():
     def compute(self):
 #         if currency == 'USD':
 #             self.ai_spend_cap = self.ai_spend_cap / 100
-        if self.current_total_spend is None:
-            self.current_total_spend = 0
-        if self.left_target_count is None:
-            self.left_target_count = 0    
-        if self.current_target_count is None:
-            self.current_target_count = 0    
+#         if self.current_total_spend is None:
+#             self.current_total_spend = 0
+#         if self.left_target_count is None:
+#             self.left_target_count = 0    
+#         if self.current_target_count is None:
+#             self.current_target_count = 0    
             
         self.ai_period = (self.ai_stop_date - self.ai_start_date ).days + 1
         today = datetime.date.today()
@@ -242,7 +242,9 @@ class Campaign_GSN():
             
     
 def get_fb_branding_campaign():    
-    df_branding = mysql_saver.get_running_branding_campaign()
+    db = db_controller.Database()
+    database_fb = db_controller.FB(db)
+    df_branding = database_fb.get_branding_campaign()
     campaign_list = []
     for index, row in df_branding.iterrows():
         campaign_id = row['campaign_id']
@@ -252,9 +254,12 @@ def get_fb_branding_campaign():
     return campaign_list
 
 def get_fb_performance_campaign():    
-    df_branding = mysql_saver.get_running_performance_campaign()
+    db = db_controller.Database()
+    database_fb = db_controller.FB(db)
+    df_performance = database_fb.get_performance_campaign()
+    
     campaign_list = []
-    for index, row in df_branding.iterrows():
+    for index, row in df_performance.iterrows():
         campaign_id = row['campaign_id']
         account_id = row['account_id']
         c = Campaign_FB(campaign_id, account_id)
