@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[12]:
 
 
 import json
@@ -370,12 +370,13 @@ def make_performance_lookalike_adset(campaign_id, adsets_active_list):
 # make_performance_suggest_adset(campaign_id, original_adset_id)
 
 
-# In[8]:
+# In[13]:
 
 
 
 
 def is_adset_should_close(adset_id, setting_CPA):
+    print('[is_adset_should_close] adset_id:', adset_id, ' setting_CPA:', setting_CPA)
     my_adset = fb_datacollector.AdSets(adset_id)
     my_adset_insight_dic = my_adset.get_adset_insights()
 #     print(my_adset_insight_dic)
@@ -387,19 +388,19 @@ def is_adset_should_close(adset_id, setting_CPA):
     if adset_result_count == 0 and adset_spending < setting_CPA:
         print('[is_adset_should_close] still open, let spend a lot')
         return False
-    elif adset_cost_per_result <= CPA:
+    elif adset_cost_per_result <= setting_CPA:
         print('[is_adset_should_close] still open')
         return False
     else:
-        print('[is_adset_should_close] close')
+        print('[is_adset_should_close] need close')
         return True
     
 
 
-# In[9]:
+# In[14]:
 
 
-# !jupyter nbconvert --to script facebook_adset_controller.ipynb
+#  !jupyter nbconvert --to script facebook_adset_controller.ipynb
 
 
 # In[ ]:
