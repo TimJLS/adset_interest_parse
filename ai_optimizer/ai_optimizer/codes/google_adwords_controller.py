@@ -621,13 +621,13 @@ class BidModifier(object):
         return resp
 
 
-# In[14]:
+# In[46]:
 
 
 # !jupyter nbconvert --to script google_adwords_controller.ipynb
 
 
-# In[35]:
+# In[47]:
 
 
 # service_container = AdGroupServiceContainer(customer_id=8845038097)
@@ -642,4 +642,10 @@ class BidModifier(object):
 # optimized_list_dict_list
 
 # all_converters_dict_list
+
+
+# In[ ]:
+
+
+
 

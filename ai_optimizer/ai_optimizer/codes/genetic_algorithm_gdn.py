@@ -20,7 +20,6 @@ import adgeek_permission as permission
 # In[2]:
 
 
-
 sizepop, vardim, MAXGEN, params = 1000, 7, 15, [0.9, 0.5, 0.5]
 # sizepop, vardim, MAXGEN, params = 1000, 3, 10, [0.9, 0.5, 0.5]
 ASSESSMENT_PERIOD = 14
@@ -34,7 +33,7 @@ TARGET_INDEX = {
     'cpa': 'conversions',
     'Target CPA': 'cpa_bid',
 }
-CRITERIA_LIST = ['ADGROUP', 'URL', 'CRITERIA', 'AGE_RANGE', 'DISPLAY_KEYWORD', 'AUDIENCE']
+CRITERIA_LIST = ['ADGROUP', 'URL', 'CRITERIA', 'AGE_RANGE', 'DISPLAY_KEYWORD', 'AUDIENCE', 'DISPLAY_TOPICS']
 
 SCORE_COLUMN_INDEX = {
     'ADGROUP': ['campaign_id', 'adgroup_id', 'score'],
@@ -44,11 +43,11 @@ SCORE_COLUMN_INDEX = {
     'AGE_RANGE': ['campaign_id', 'adgroup_id', 'age_range', 'criterion_id', 'score'],
     'DISPLAY_KEYWORD': ['campaign_id', 'adgroup_id', 'keyword', 'keyword_id', 'score'],
     'KEYWORDS': ['campaign_id', 'adgroup_id', 'keyword', 'keyword_id', 'score'],
+    'DISPLAY_TOPICS': ['campaign_id', 'adgroup_id', 'topics', 'criterion_id', 'vertical_id', 'score'],
 }
 
 
 # In[3]:
-
 
 
 def retrive_all_criteria_insights(campaign_id=None):
@@ -111,7 +110,7 @@ def get_criteria_score( campaign_id=None, criteria=None, insights_dict=None):
                 r = ObjectiveFunc.adgroup_fitness(df_weight, df)
                 df['score'] = r
                 df_final = df[ SCORE_COLUMN_INDEX[criteria] ]
-                gdn_db.into_table(df_final, table=criteria.lower()+"_score") 
+                gdn_db.into_table(df_final, table=criteria.lower()+"_score")
     mydb.close()
     return 
 
@@ -449,7 +448,7 @@ def main():
 
         df_final = pd.DataFrame({'campaign_id':campaign_id, 'score':score}, columns=['campaign_id', 'score'], index=[0])
         df_final = pd.concat( [df_score, df_final], axis=1, sort=True, ignore_index=False)
-        print(df_final)
+        print(df_final.to_dict('records'))
         gdn_db.check_optimal_weight(campaign_id, df_final)
         for criteria in CRITERIA_LIST:
             get_criteria_score( campaign_id=campaign_id, criteria=criteria, insights_dict=insights_dict )
@@ -468,7 +467,7 @@ if __name__ == "__main__":
     main()
 
 
-# In[8]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script genetic_algorithm_gdn.ipynb

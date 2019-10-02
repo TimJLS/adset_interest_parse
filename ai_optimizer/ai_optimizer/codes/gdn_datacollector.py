@@ -404,7 +404,7 @@ def data_collect(customer_id, campaign_id, destination, destination_type, ai_sta
     ad_group_list = controller_campaign.get_ad_groups()
     for ad_group in ad_group_list:
         adgroup_id = ad_group.ad_group_id
-        adgroup = AdGroup(camp.customer_id,camp.campaign_id,camp.destination_type, adgroup_id)
+        adgroup = AdGroup(camp.customer_id,camp.campaign_id, adgroup_id,camp.destination_type)
         adgroup_today_insights = adgroup.get_adgroup_insights(date_preset=DatePreset.today)
         df_adgroup = pd.DataFrame(adgroup_today_insights)
         gdn_db.into_table(df_adgroup, table="adgroup_insights")
@@ -445,7 +445,7 @@ if __name__=='__main__':
 #     df_campaign = data_collect(camp.customer_id, camp.campaign_id, 10000, camp.destination_type)
 
 
-# In[12]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script gdn_datacollector.ipynb
