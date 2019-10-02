@@ -135,6 +135,13 @@ def optimize_performance_campaign(campaign_id):
     lifetime_dict['target'] = lifetime_dict.pop('action')
     lifetime_target = int( lifetime_dict['target'] )
     
+    #get setting of destination and spending
+    ai_setting_spend_cap = int(df['ai_spend_cap'])
+    ai_setting_destination_count = int(df['destination'])
+    ai_setting_cost_per_result = ai_setting_spend_cap/ai_setting_destination_count
+    print('[optimize_performance_campaign] ai_setting_destination_count:' ,ai_setting_destination_count, ' ai_setting_spend_cap:', ai_setting_spend_cap, ' ai_setting_cost_per_result:',ai_setting_cost_per_result)
+    
+    
     # good enough
     if lifetime_target > df['destination'].iloc[0]:
         modify_opt_result_db(campaign_id, "False")
@@ -217,7 +224,8 @@ def optimize_performance_campaign(campaign_id):
         origin_adset_params = adset_controller.retrieve_origin_adset_params(adset_id)
         origin_name = origin_adset_params[AdSet.Field.name]
         if not is_contain_rt_string(origin_name):
-            update_status(adset_id, status=AdSet.Status.paused)
+            if adset_controller.is_adset_should_close(int(adset_id), ai_setting_cost_per_result):
+                update_status(adset_id, status=AdSet.Status.paused)
     
     # optimize finish
     modify_opt_result_db(campaign_id, "True")
@@ -236,6 +244,12 @@ def optimize_branding_campaign(campaign_id):
     daily_charge = df['daily_charge'].iloc[0]
     campaign_daily_budget = df['daily_budget'].iloc[0]
     campaign_instance = Campaigns(campaign_id, charge_type)
+    
+    #get setting of destination and spending
+    ai_setting_spend_cap = int(df['ai_spend_cap'])
+    ai_setting_destination_count = int(df['destination'])
+    ai_setting_cost_per_result = ai_setting_spend_cap/ai_setting_destination_count
+    print('[optimize_branding_campaign] ai_setting_destination_count:' ,ai_setting_destination_count, ' ai_setting_spend_cap:', ai_setting_spend_cap, ' ai_setting_cost_per_result:',ai_setting_cost_per_result)
     
     day_dict = campaign_instance.generate_info(date_preset=DatePreset.yesterday)
     # this lifetime means ai_start_date and ai_stop_date; 
@@ -299,7 +313,8 @@ def optimize_branding_campaign(campaign_id):
         origin_adset_params = adset_controller.retrieve_origin_adset_params(adset_id)
         origin_name = origin_adset_params[AdSet.Field.name]
         if not is_contain_rt_string(origin_name):
-            update_status(adset_id, status=AdSet.Status.paused)
+            if adset_controller.is_adset_should_close(int(adset_id), ai_setting_cost_per_result):
+                update_status(adset_id, status=AdSet.Status.paused)
     
     # get ready to duplicate
     actions = {'bid': None, 'age': list(), 'interest': None}
@@ -437,7 +452,7 @@ if __name__ == '__main__':
 # optimize_campaign(campaign_id)
 
 
-# In[6]:
+# In[3]:
 
 
 # !jupyter nbconvert --to script facebook_externals.ipynb

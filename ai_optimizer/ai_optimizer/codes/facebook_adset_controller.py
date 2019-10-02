@@ -29,6 +29,7 @@ from facebook_adapter import FacebookCampaignAdapter
 import facebook_currency_handler as fb_currency_handler
 import facebook_lookalike_audience as lookalike_audience
 import facebook_campaign_suggestion as campaign_suggestion
+import facebook_datacollector as fb_datacollector
 
 PICK_DEFAULT_COUNT = 3
 PICK_DEFAULT_AUDIENCE_SIZE = 100000
@@ -36,9 +37,11 @@ ADSET_COPY_STRING = ' - Copy'
 AI_ADSET_PREFIX = '_AI_'
 IS_DEBUG = False #debug mode will not modify anything
 
-ACTION_DICT = {'bid': AdSet.Field.bid_amount,
-               'age': AdSet.Field.targeting, 'interest': AdSet.Field.targeting}
-
+ACTION_DICT = {
+    'bid': AdSet.Field.bid_amount,
+    'age': AdSet.Field.targeting, 
+    'interest': AdSet.Field.targeting
+}
 
 FIELDS = [
     AdSet.Field.id,
@@ -90,7 +93,6 @@ FIELDS = [
 # In[2]:
 
 
-
 def make_adset(adset_params):
     account_id = adset_params[AdSet.Field.account_id]
     new_adset = AdSet(parent_id='act_{}'.format(account_id))
@@ -110,7 +112,6 @@ def get_ad_id_list(adset_id):
     for ad in ads:
         ad_id_list.append(ad['id'])
     return ad_id_list
-
 
 def get_account_id_by_adset(adset_id):
     this_adsets = AdSet( adset_id ).remote_read(fields=["account_id"])
@@ -135,8 +136,6 @@ def get_suggestion_target_by_adset(adset_id):
 
 
 # In[3]:
-
-
 
 
 def make_performance_suggest_adset(campaign_id, original_adset_id): 
@@ -323,7 +322,7 @@ def copy_branding_adset(campaign_id, adset_id, actions, adset_params=None):
             
 
 
-# In[16]:
+# In[6]:
 
 
 def make_performance_lookalike_adset(campaign_id, adsets_active_list):
@@ -371,10 +370,36 @@ def make_performance_lookalike_adset(campaign_id, adsets_active_list):
 # make_performance_suggest_adset(campaign_id, original_adset_id)
 
 
-# In[19]:
+# In[8]:
 
 
-#!jupyter nbconvert --to script facebook_adset_controller.ipynb
+
+
+def is_adset_should_close(adset_id, setting_CPA):
+    my_adset = fb_datacollector.AdSets(adset_id)
+    my_adset_insight_dic = my_adset.get_adset_insights()
+#     print(my_adset_insight_dic)
+    adset_result_count = my_adset_insight_dic.get('action')
+    adset_spending = int(my_adset_insight_dic.get('spend'))
+    adset_cost_per_result = (adset_spending/adset_result_count) if adset_result_count > 0 else 0
+    print('[is_adset_should_close] adset_result_count:', adset_result_count, ' adset_spending:', adset_spending, ' adset_cost_per_result:', adset_cost_per_result)
+
+    if adset_result_count == 0 and adset_spending < setting_CPA:
+        print('[is_adset_should_close] still open, let spend a lot')
+        return False
+    elif adset_cost_per_result <= CPA:
+        print('[is_adset_should_close] still open')
+        return False
+    else:
+        print('[is_adset_should_close] close')
+        return True
+    
+
+
+# In[9]:
+
+
+# !jupyter nbconvert --to script facebook_adset_controller.ipynb
 
 
 # In[ ]:
