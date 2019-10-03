@@ -165,7 +165,7 @@ class Campaign(object):
                     return self.amount
 
 
-# In[5]:
+# In[29]:
 
 
 class AdGroupServiceContainer(object):
@@ -225,6 +225,7 @@ class AdGroup(object):
         self.param = self.create_param()
         self.criterions = self.create_criterions()
         self.basic_criterions = self.create_basic_criterions()
+        self.user_vertical_criterions = self.create_vertical_criterions()
         self.user_interest_criterions = self.create_user_interest_criterions()
         self.user_list_criterions = self.create_user_list_criterions()
         self.bid_modifier = self.create_bid_modifier()
@@ -243,6 +244,9 @@ class AdGroup(object):
     
     def create_basic_criterions(self,):
         return BasicCriterion(self)
+    
+    def create_vertical_criterions(self,):
+        return UserVerticalCriterion(self)
     
     def create_user_interest_criterions(self,):
         return UserInterestCriterion(self)
@@ -277,7 +281,7 @@ class AdGroup(object):
         return
 
 
-# In[7]:
+# In[45]:
 
 
 class Keyword(object):
@@ -306,7 +310,7 @@ class Keyword(object):
                 'ad_group_id': self.ad_group.ad_group_id, 'keyword_id': self.keyword_id, 'text': self.text, 'match_type': self.match_type,
                 'status': self.status, 'first_page_cpc': self.first_page_cpc, 'first_position_cpc': self.first_position_cpc
             }
-            return self#.keyword_dict
+            return self
         
     def update_status(self, status):
         self.operator_container.criterion['id'] = self.keyword_id
@@ -342,7 +346,7 @@ class Keyword(object):
         return result
 
 
-# In[8]:
+# In[39]:
 
 
 class Param(object):
@@ -389,7 +393,7 @@ class Param(object):
         return result
 
 
-# In[9]:
+# In[40]:
 
 
 class Criterion(object):
@@ -446,6 +450,9 @@ class Criterion(object):
             return result
 
 
+# In[21]:
+
+
 class BasicCriterion(Criterion):
     def __init__(self, AdGroup):
         super().__init__(AdGroup)
@@ -473,13 +480,30 @@ class BasicCriterion(Criterion):
             result = self.ad_group.service_container.service_criterion.mutate(self.operation_container.operations)
             self.operation_container.operations=[]
             return result
-        
+
+
+# In[32]:
+
 
 class UserInterestCriterion(Criterion):
     def __init__(self, AdGroup):
         super().__init__(AdGroup)
         self.operation_container.criterion['xsi_type'] = 'CriterionUserInterest'
         self.criterion_type = 'USER_INTEREST'
+
+
+# In[16]:
+
+
+class UserVerticalCriterion(Criterion):
+    def __init__(self, AdGroup):
+        super().__init__(AdGroup)
+        self.operation_container.criterion['xsi_type'] = 'Vertical'
+        self.criterion_type = 'VERTICAL'
+
+
+# In[23]:
+
 
 class UserListCriterion(Criterion):
     def __init__(self, AdGroup):
@@ -519,7 +543,7 @@ class UserListCriterion(Criterion):
         return result
 
 
-# In[10]:
+# In[24]:
 
 
 class Creative(object):
@@ -561,7 +585,7 @@ class Creative(object):
             return result
 
 
-# In[6]:
+# In[25]:
 
 
 class BidModifier(object):
@@ -597,20 +621,20 @@ class BidModifier(object):
         return resp
 
 
-# In[15]:
+# In[46]:
 
 
 # !jupyter nbconvert --to script google_adwords_controller.ipynb
 
 
-# In[12]:
+# In[47]:
 
 
-# service_container = AdGroupServiceContainer(customer_id=3165812026)
+# service_container = AdGroupServiceContainer(customer_id=8845038097)
 
-# ad_group = AdGroup(service_container, 76633831865)
+# ad_group = AdGroup(service_container, 77398403505)
 
-# ad_group.user_list_criterions.retrieve()
+# keywords = ad_group.get_keywords()
 
 # import gdn_custom_audience as custom_audience
 # optimized_list_dict_list, all_converters_dict_list = custom_audience.get_campaign_custom_audience(6451753179)

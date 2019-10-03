@@ -15,6 +15,11 @@ from bid_operator import reverse_bid_amount
 import adgeek_permission as permission
 import gdn_db
 import google_adwords_controller as controller
+
+
+# In[2]:
+
+
 CAMPAIGN_OBJECTIVE_FIELD = {
     'LINK_CLICKS': 'clicks',
     'CONVERSIONS':'conversions',
@@ -37,6 +42,10 @@ BIDDING_INDEX = {
     'Target CPA': 'cpa_bid',
 }
 
+
+# In[3]:
+
+
 class ReportField:
     # URL
     URL_LIST = [
@@ -50,7 +59,10 @@ class ReportField:
     BIDDABLE_LIST = [
         'ExternalCustomerId', 'CampaignId', 'AdGroupId', 'Criteria', 'Id', 'AdGroupStatus', 'CpmBid', 'CpcBid', 'BiddingStrategyType', 
         'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'AverageCpc', 'CostPerConversion', 'CostPerAllConversion', 'Ctr', 'ViewThroughConversions']
-    # ADGROUP
+    # DISPLAY_TOPICS
+    TOPICS_LIST = [
+        'ExternalCustomerId', 'CampaignId', 'AdGroupId', 'Criteria', 'Id', 'VerticalId', 'AdGroupStatus', 'CpmBid', 'CpcBid', 'BiddingStrategyType', 
+        'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'AverageCpc', 'CostPerConversion', 'CostPerAllConversion', 'Ctr', 'ViewThroughConversions']    # ADGROUP
     ADGROUP_LIST = [
         'ExternalCustomerId', 'CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus', 'CpmBid', 'CpvBid', 'CpcBid', 'TargetCpa',
         'BiddingStrategyType', 'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'AverageCpc', 'CostPerConversion', 'CostPerAllConversion', 'Ctr', 'ViewThroughConversions']
@@ -62,7 +74,7 @@ class ReportField:
     
     NON_NUMERIC_LIST = [
         'Criterion serving status', 'Ad group type', 'Ad group state', 'Bid Strategy Type', 'Keyword', 'Age Range', 'Audience',
-        'Keyword / Placement', 'Criteria Display Name']
+        'Keyword / Placement', 'Criteria Display Name', 'Topic']
     NUMERIC_LIST = [
         'First page CPC', 'Max. CPM', 'Max. CPV', 'Max. CPC', 'Default max. CPC', 'Target CPA', 'Cost', 'Avg. Cost', 'Avg. CPC',
         'Cost / conv.', 'Cost / all conv.', 'ViewThroughConversions']
@@ -73,8 +85,14 @@ class ReportField:
         'AUDIENCE': BIDDABLE_LIST,
         'AGE_RANGE': BIDDABLE_LIST,
         'DISPLAY_KEYWORD': BIDDABLE_LIST,
+        'DISPLAY_TOPICS': TOPICS_LIST,
         'KEYWORDS': KEYWORDS_LIST,
     }
+
+
+# In[4]:
+
+
 class ReportColumn:
     ADGROUP_LIST  = [
         'customer_id', 'campaign_id', 'channel_type', 'adgroup_id', 'status', 'cpm_bid', 'cpv_bid', 'cpc_bid', 'cpa_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr', 'view_conversions']
@@ -86,6 +104,8 @@ class ReportColumn:
         'customer_id', 'campaign_id', 'adgroup_id', 'audience', 'criterion_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr', 'view_conversions']
     AGE_RANGE_LIST = [
         'customer_id', 'campaign_id', 'adgroup_id', 'age_range', 'criterion_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr', 'view_conversions']
+    TOPICS_LIST = [
+        'customer_id', 'campaign_id', 'adgroup_id', 'topics', 'criterion_id', 'vertical_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr', 'view_conversions']
     BIDDABLE_LIST = [
         'customer_id', 'campaign_id', 'adgroup_id', 'keyword', 'keyword_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr', 'view_conversions']
     KEYWORDS_LIST = [
@@ -98,10 +118,12 @@ class ReportColumn:
         'AUDIENCE': AUDIENCE_LIST,
         'AGE_RANGE': AGE_RANGE_LIST,
         'DISPLAY_KEYWORD': BIDDABLE_LIST,
+        'DISPLAY_TOPICS': TOPICS_LIST,
         'KEYWORDS': KEYWORDS_LIST,
     }
 
-# In[1]:
+
+# In[5]:
 
 
 class Field:
@@ -121,12 +143,20 @@ class Field:
     adgroup_id = 'adgroup_id'
     campaign_id = 'campaign_id'
     clicks = 'clicks'
-    
+
+
+# In[6]:
+
+
 class DatePreset:
     today = 'TODAY'
     yesterday = 'YESTERDAY'
     lifetime = 'ALL_TIME'
     last_14_days = 'LAST_14_DAYS'
+
+
+# In[7]:
+
 
 class Campaign(object):
     def __init__(self, customer_id, campaign_id, destination_type=None):
@@ -244,11 +274,8 @@ class Campaign(object):
             gdn_db.into_table( df, performance_type.lower()+'_insights' )
             return df
 
-# In[10]:
 
-
-
-# In[2]:
+# In[8]:
 
 
 class AdGroup(Campaign):
@@ -345,7 +372,7 @@ class AdGroup(Campaign):
         return self.insights_dict
 
 
-# In[3]:
+# In[9]:
 
 
 def data_collect(customer_id, campaign_id, destination, destination_type, ai_start_date, ai_stop_date):
@@ -377,7 +404,7 @@ def data_collect(customer_id, campaign_id, destination, destination_type, ai_sta
     ad_group_list = controller_campaign.get_ad_groups()
     for ad_group in ad_group_list:
         adgroup_id = ad_group.ad_group_id
-        adgroup = AdGroup(camp.customer_id,camp.campaign_id,camp.destination_type, adgroup_id)
+        adgroup = AdGroup(camp.customer_id,camp.campaign_id, adgroup_id,camp.destination_type)
         adgroup_today_insights = adgroup.get_adgroup_insights(date_preset=DatePreset.today)
         df_adgroup = pd.DataFrame(adgroup_today_insights)
         gdn_db.into_table(df_adgroup, table="adgroup_insights")
@@ -388,7 +415,7 @@ def data_collect(customer_id, campaign_id, destination, destination_type, ai_sta
         gdn_db.check_initial_bid(adgroup_id, df_adgroup[[Field.campaign_id, Field.adgroup_id, Field.bid_amount]])
 
 
-# In[4]:
+# In[10]:
 
 
 def main():
@@ -410,7 +437,7 @@ def main():
     print(datetime.datetime.now()-start_time)
 
 
-# In[5]:
+# In[11]:
 
 
 if __name__=='__main__':
@@ -418,13 +445,13 @@ if __name__=='__main__':
 #     df_campaign = data_collect(camp.customer_id, camp.campaign_id, 10000, camp.destination_type)
 
 
-# In[1]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script gdn_datacollector.ipynb
 
 
-# In[7]:
+# In[13]:
 
 
 # CUSTOMER_ID = 2042877296

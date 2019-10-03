@@ -139,8 +139,8 @@ def get_campaign_budget(adwords_client, campaign_id):
 
 
 def main():
-    performance_campaign_list = gdn_db.get_performance_campaign_is_running().to_dict('records')
-#     print(performance_campaign_list)
+    performance_campaign_list = gdn_db.get_campaign_is_device_pro_rata().to_dict('records')
+    print(performance_campaign_list)
     for campaign in performance_campaign_list:
         customer_id = campaign.get('customer_id')
         campaign_id = campaign.get('campaign_id')
@@ -177,9 +177,9 @@ def main():
             print('[main] current_hour:', current_hour, ' last_interval_spend:', last_interval_spend)
             print('[main] adgroup_today_spend:',adgroup_today_spend, ' adgroup_now_should_spend:' , adgroup_now_should_spend)
             
-#             if last_interval_spend <= MINIMUM_SPEND:
-#                 print('last time interval spend too low, no adjustment')
-#                 return
+            if last_interval_spend <= MINIMUM_SPEND:
+                print('last time interval spend too low, no adjustment')
+                return
             # Retrieve device seperated report
             lifetime_insights = collector_ad_group.get_adgroup_insights(date_preset='ALL_TIME', by_device=True)
             df_lifetime_insights = pd.DataFrame(lifetime_insights)
