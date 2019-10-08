@@ -352,7 +352,15 @@
   },
   {
    "cell_type": "code",
+<<<<<<< HEAD
    "execution_count": null,
+=======
+<<<<<<< HEAD
+   "execution_count": null,
+=======
+   "execution_count": 13,
+>>>>>>> develop
+>>>>>>> master
    "metadata": {},
    "outputs": [],
    "source": [
@@ -373,7 +381,15 @@
   },
   {
    "cell_type": "code",
+<<<<<<< HEAD
    "execution_count": null,
+=======
+<<<<<<< HEAD
+   "execution_count": null,
+=======
+   "execution_count": 14,
+>>>>>>> develop
+>>>>>>> master
    "metadata": {},
    "outputs": [],
    "source": [
@@ -394,7 +410,15 @@
   },
   {
    "cell_type": "code",
+<<<<<<< HEAD
    "execution_count": null,
+=======
+<<<<<<< HEAD
+   "execution_count": null,
+=======
+   "execution_count": 15,
+>>>>>>> develop
+>>>>>>> master
    "metadata": {},
    "outputs": [],
    "source": [
@@ -429,7 +453,15 @@
   },
   {
    "cell_type": "code",
+<<<<<<< HEAD
    "execution_count": null,
+=======
+<<<<<<< HEAD
+   "execution_count": null,
+=======
+   "execution_count": 16,
+>>>>>>> develop
+>>>>>>> master
    "metadata": {},
    "outputs": [],
    "source": [
@@ -454,7 +486,15 @@
   },
   {
    "cell_type": "code",
+<<<<<<< HEAD
    "execution_count": null,
+=======
+<<<<<<< HEAD
+   "execution_count": null,
+=======
+   "execution_count": 17,
+>>>>>>> develop
+>>>>>>> master
    "metadata": {},
    "outputs": [],
    "source": [
@@ -469,7 +509,15 @@
   },
   {
    "cell_type": "code",
+<<<<<<< HEAD
    "execution_count": null,
+=======
+<<<<<<< HEAD
+   "execution_count": null,
+=======
+   "execution_count": 18,
+>>>>>>> develop
+>>>>>>> master
    "metadata": {},
    "outputs": [],
    "source": [
@@ -480,7 +528,15 @@
   },
   {
    "cell_type": "code",
+<<<<<<< HEAD
    "execution_count": null,
+=======
+<<<<<<< HEAD
+   "execution_count": null,
+=======
+   "execution_count": 19,
+>>>>>>> develop
+>>>>>>> master
    "metadata": {},
    "outputs": [],
    "source": [
@@ -495,13 +551,20 @@
     "        permission.init_facebook_api(account_id)\n",
     "        \n",
     "        print('[save_pixel_id_for_all_campaign] conversion campaign_id:', campaign_id)\n",
-    "        save_pixel_id_for_one_campaign(campaign_id)\n",
-    "    "
+    "        save_pixel_id_for_one_campaign(campaign_id)"
    ]
   },
   {
    "cell_type": "code",
+<<<<<<< HEAD
    "execution_count": null,
+=======
+<<<<<<< HEAD
+   "execution_count": null,
+=======
+   "execution_count": 20,
+>>>>>>> develop
+>>>>>>> master
    "metadata": {},
    "outputs": [],
    "source": [
@@ -523,7 +586,15 @@
   },
   {
    "cell_type": "code",
+<<<<<<< HEAD
    "execution_count": null,
+=======
+<<<<<<< HEAD
+   "execution_count": null,
+=======
+   "execution_count": 21,
+>>>>>>> develop
+>>>>>>> master
    "metadata": {},
    "outputs": [],
    "source": [
@@ -534,7 +605,15 @@
   },
   {
    "cell_type": "code",
+<<<<<<< HEAD
    "execution_count": null,
+=======
+<<<<<<< HEAD
+   "execution_count": null,
+=======
+   "execution_count": 24,
+>>>>>>> develop
+>>>>>>> master
    "metadata": {},
    "outputs": [],
    "source": [
@@ -544,7 +623,16 @@
   },
   {
    "cell_type": "code",
+<<<<<<< HEAD
    "execution_count": 1,
+=======
+<<<<<<< HEAD
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+=======
+   "execution_count": 25,
+>>>>>>> master
    "metadata": {},
    "outputs": [
     {
@@ -556,16 +644,10 @@
      ]
     }
    ],
+>>>>>>> develop
    "source": [
     "# !jupyter nbconvert --to script facebook_lookalike_audience.ipynb"
    ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": []
   }
  ],
  "metadata": {
@@ -617,5 +699,5 @@
   }
  },
  "nbformat": 4,
- "nbformat_minor": 4
+ "nbformat_minor": 2
 }

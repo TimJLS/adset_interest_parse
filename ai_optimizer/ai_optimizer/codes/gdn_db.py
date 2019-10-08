@@ -14,7 +14,7 @@ pymysql.install_as_MySQLdb()
 import MySQLdb
 
 DATABASE="dev_gdn"
-HOST = "aws-dev-ai-private.adgeek.cc"
+HOST = "aws-prod-ai-private.adgeek.cc"
 USER = "app"
 PASSWORD = "adgeek1234"
 

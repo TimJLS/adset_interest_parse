@@ -68,22 +68,13 @@ class Campaign_FB():
             print('[get_campaign_status] error, len ==0')
             
     def compute(self):
-#         if currency == 'USD':
-#             self.ai_spend_cap = self.ai_spend_cap / 100
-#         if self.current_total_spend is None:
-#             self.current_total_spend = 0
-#         if self.left_target_count is None:
-#             self.left_target_count = 0    
-#         if self.current_target_count is None:
-#             self.current_target_count = 0    
-            
         self.ai_period = (self.ai_stop_date - self.ai_start_date ).days + 1
         today = datetime.date.today()
         self.ai_left_days = (self.ai_stop_date - today ).days + 1
         self.ai_running_days = (today - self.ai_start_date ).days + 1
 
         self.ai_daily_budget = round(self.ai_spend_cap / self.ai_period, 2)
-        self.left_money_can_spend = self.ai_spend_cap - self.current_total_spend
+        self.left_money_can_spend = self.ai_spend_cap - self.current_total_spend        
         self.left_money_can_spend_per_day = self.left_money_can_spend / self.ai_left_days
         self.max_cpc_for_future = self.left_money_can_spend / self.left_target_count if self.left_target_count>0 else self.left_money_can_spend
         self.kpi_cpc = round(self.ai_spend_cap / self.destination, 2)

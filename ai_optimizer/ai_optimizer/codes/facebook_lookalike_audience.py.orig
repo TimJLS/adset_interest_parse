@@ -354,7 +354,15 @@ def is_operation_status_normal(campaign_id):
     return df_operation.empty
 
 
+<<<<<<< HEAD
 # In[ ]:
+=======
+<<<<<<< HEAD
+# In[13]:
+=======
+# In[15]:
+>>>>>>> 9d00ebbdcedbfed6cee913fd16ed3e9bcc22e9ed
+>>>>>>> master
 
 
 def retrieve_custom_audience_spec(campaign_id):
@@ -408,7 +416,15 @@ def update_audience_attribute(audience_id, retention_days, operation_status, app
     return
 
 
+<<<<<<< HEAD
 # In[ ]:
+=======
+<<<<<<< HEAD
+# In[14]:
+=======
+# In[17]:
+>>>>>>> 9d00ebbdcedbfed6cee913fd16ed3e9bcc22e9ed
+>>>>>>> master
 
 
 def process_campaign_custom_audience(campaign_id):
@@ -420,7 +436,15 @@ def process_campaign_custom_audience(campaign_id):
         create_campaign_custom_audience_by_pixel(campaign_id)
 
 
+<<<<<<< HEAD
 # In[ ]:
+=======
+<<<<<<< HEAD
+# In[15]:
+=======
+# In[18]:
+>>>>>>> 9d00ebbdcedbfed6cee913fd16ed3e9bcc22e9ed
+>>>>>>> master
 
 
 def save_pixel_id_for_one_campaign(campaign_id):
@@ -428,7 +452,15 @@ def save_pixel_id_for_one_campaign(campaign_id):
     process_campaign_custom_audience(campaign_id)
 
 
+<<<<<<< HEAD
 # In[ ]:
+=======
+<<<<<<< HEAD
+# In[16]:
+=======
+# In[19]:
+>>>>>>> 9d00ebbdcedbfed6cee913fd16ed3e9bcc22e9ed
+>>>>>>> master
 
 
 def save_pixel_id_for_all_campaign():

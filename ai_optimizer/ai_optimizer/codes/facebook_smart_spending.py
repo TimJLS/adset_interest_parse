@@ -320,9 +320,10 @@ def process_branding_campaign():
 #         if campaign_id != 23843628364880022:
 #             continue
 
-        if not bool(campaign.get('is_smart_spending')):
-            continue
-        if campaign_fb_status == 'ACTIVE':
+        is_smart_spending = (campaign.get('is_smart_spending') == 'True')
+        is_active = (campaign_fb_status == 'ACTIVE')
+        print('[process_branding_campaign] is_smart_spending:',is_smart_spending, ' is_active:',is_active)
+        if is_smart_spending and is_active:
             smart_spending_branding(campaign_id)
     
     print('-------',datetime.datetime.now().date(), '-------all finish-------')
@@ -348,9 +349,11 @@ def process_performance_campaign():
         
 #         if campaign_id != 23843569311660559:
 #             continue
-        if not bool(campaign.get('is_smart_spending')):
-            continue
-        if campaign_fb_status == 'ACTIVE':
+        
+        is_smart_spending = (campaign.get('is_smart_spending') == 'True')
+        is_active = (campaign_fb_status == 'ACTIVE')
+        print('[process_performance_campaign] is_smart_spending:',is_smart_spending, ' is_active:',is_active)
+        if is_smart_spending and is_active:
             smart_spending_performance(campaign_id)
     
     print('-------',datetime.datetime.now().date(), '-------all finish-------')
