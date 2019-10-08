@@ -446,17 +446,6 @@ def save_pixel_id_for_all_campaign():
     
 
 
-<<<<<<< HEAD
-# In[ ]:
-=======
-<<<<<<< HEAD
-# In[17]:
-=======
-# In[20]:
->>>>>>> 9d00ebbdcedbfed6cee913fd16ed3e9bcc22e9ed
->>>>>>> master
-
-
 def update_all_custom_audience():
     db = database_controller.Database()
     database_fb = database_controller.FB(db)
@@ -487,16 +476,6 @@ def main():
 if __name__ == "__main__":
     main()
 
-
-<<<<<<< HEAD
-# In[ ]:
-=======
-<<<<<<< HEAD
-# In[20]:
-=======
-# In[23]:
->>>>>>> 9d00ebbdcedbfed6cee913fd16ed3e9bcc22e9ed
->>>>>>> master
 
 
 # !jupyter nbconvert --to script facebook_lookalike_audience.ipynb
