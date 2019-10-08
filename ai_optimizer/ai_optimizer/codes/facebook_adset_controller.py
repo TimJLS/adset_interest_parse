@@ -380,8 +380,8 @@ def is_adset_should_close(adset_id, setting_CPA):
     my_adset = fb_datacollector.AdSets(adset_id)
     my_adset_insight_dic = my_adset.get_adset_insights()
 #     print(my_adset_insight_dic)
-    adset_result_count = my_adset_insight_dic.get('action')
-    adset_spending = int(my_adset_insight_dic.get('spend'))
+    adset_result_count = my_adset_insight_dic.get('action', 0)
+    adset_spending = int(my_adset_insight_dic.get('spend', 0))
     adset_cost_per_result = (adset_spending/adset_result_count) if adset_result_count > 0 else 0
     print('[is_adset_should_close] adset_result_count:', adset_result_count, ' adset_spending:', adset_spending, ' adset_cost_per_result:', adset_cost_per_result)
 
