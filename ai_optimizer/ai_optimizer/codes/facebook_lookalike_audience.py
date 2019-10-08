@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 import facebook_business.adobjects.adset as facebook_business_adset
@@ -22,7 +22,7 @@ import time
 CONVERSION_BEHAVIOR_LIST = ['Purchase', 'AddToCart', 'ViewContent']
 
 
-# In[2]:
+# In[ ]:
 
 
 def get_lookalike_not_used(campaign_id):
@@ -39,7 +39,7 @@ def get_lookalike_not_used(campaign_id):
     return df_not_processed_lookalike
 
 
-# In[3]:
+# In[ ]:
 
 
 def modify_result_db(campaign_id, lookalike_audience_id, is_lookalike_in_adset):
@@ -61,7 +61,7 @@ def modify_result_db(campaign_id, lookalike_audience_id, is_lookalike_in_adset):
     database_fb.dispose()
 
 
-# In[4]:
+# In[ ]:
 
 
 def get_custom_audience_id(campaign_id):
@@ -82,7 +82,7 @@ def get_custom_audience_id(campaign_id):
     return custom_audience_dict
 
 
-# In[5]:
+# In[ ]:
 
 
 def get_lookalike_audience_id(campaign_id):
@@ -106,7 +106,7 @@ def get_lookalike_audience_id(campaign_id):
     return lookalike_audience_dict
 
 
-# In[6]:
+# In[ ]:
 
 
 def is_lookalike_created(campaign_id):
@@ -119,7 +119,7 @@ def is_lookalike_created(campaign_id):
     return not df.empty
 
 
-# In[7]:
+# In[ ]:
 
 
 def create_lookalike_custom_audience(account_id, campaign_id, behavior_type, audience_id):
@@ -159,7 +159,7 @@ def create_lookalike_custom_audience(account_id, campaign_id, behavior_type, aud
     return
 
 
-# In[8]:
+# In[ ]:
 
 
 def create_campaign_custom_audience_by_pixel(campaign_id):
@@ -243,7 +243,7 @@ def create_campaign_custom_audience_by_pixel(campaign_id):
     return
 
 
-# In[9]:
+# In[ ]:
 
 
 def get_not_processed_lookalike_df(campaign_id):
@@ -256,7 +256,7 @@ def get_not_processed_lookalike_df(campaign_id):
     return df_saved_pixel_id
 
 
-# In[10]:
+# In[ ]:
 
 
 def get_processed_lookalike_df(campaign_id):
@@ -270,7 +270,7 @@ def get_processed_lookalike_df(campaign_id):
     return df_saved_pixel_id
 
 
-# In[11]:
+# In[ ]:
 
 
 def save_campaign_pixel_id(campaign_id):
@@ -304,7 +304,7 @@ def save_campaign_pixel_id(campaign_id):
     return
 
 
-# In[12]:
+# In[ ]:
 
 
 def is_custom_audience_created(campaign_id):
@@ -318,7 +318,7 @@ def is_custom_audience_created(campaign_id):
     return len(df_pixel_id.index) == len(CONVERSION_BEHAVIOR_LIST)
 
 
-# In[13]:
+# In[ ]:
 
 
 def is_lookalike_audience_created(campaign_id):
@@ -336,7 +336,7 @@ def is_lookalike_audience_created(campaign_id):
     return len(df_lookalike.index) == len(CONVERSION_BEHAVIOR_LIST)
 
 
-# In[14]:
+# In[ ]:
 
 
 def is_operation_status_normal(campaign_id):
@@ -354,7 +354,7 @@ def is_operation_status_normal(campaign_id):
     return df_operation.empty
 
 
-# In[15]:
+# In[ ]:
 
 
 def retrieve_custom_audience_spec(campaign_id):
@@ -386,7 +386,7 @@ def retrieve_custom_audience_spec(campaign_id):
     return audience_attribute_list
 
 
-# In[16]:
+# In[ ]:
 
 
 def update_audience_attribute(audience_id, retention_days, operation_status, approximate_count, data_source):
@@ -408,7 +408,7 @@ def update_audience_attribute(audience_id, retention_days, operation_status, app
     return
 
 
-# In[17]:
+# In[ ]:
 
 
 def process_campaign_custom_audience(campaign_id):
@@ -420,7 +420,7 @@ def process_campaign_custom_audience(campaign_id):
         create_campaign_custom_audience_by_pixel(campaign_id)
 
 
-# In[18]:
+# In[ ]:
 
 
 def save_pixel_id_for_one_campaign(campaign_id):
@@ -428,7 +428,7 @@ def save_pixel_id_for_one_campaign(campaign_id):
     process_campaign_custom_audience(campaign_id)
 
 
-# In[19]:
+# In[ ]:
 
 
 def save_pixel_id_for_all_campaign():
@@ -446,7 +446,7 @@ def save_pixel_id_for_all_campaign():
     
 
 
-# In[20]:
+# In[ ]:
 
 
 def update_all_custom_audience():
@@ -465,7 +465,7 @@ def update_all_custom_audience():
             update_audience_attribute(**audience_attribute)
 
 
-# In[21]:
+# In[ ]:
 
 
 def main():
@@ -473,14 +473,14 @@ def main():
     update_all_custom_audience()
 
 
-# In[24]:
+# In[ ]:
 
 
 if __name__ == "__main__":
     main()
 
 
-# In[23]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script facebook_lookalike_audience.ipynb
