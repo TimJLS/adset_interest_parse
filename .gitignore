@@ -1,3 +1,5 @@
 *.pyc
 *checkpoint.ipynb
 *.log
+ai_optimizer/ai_optimizer/__pycache__/
+ai_optimizer/ai_optimizer/codes/__pycache__/
