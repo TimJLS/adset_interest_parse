@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[4]:
 
 
 import gdn_datacollector as collector
@@ -23,29 +23,32 @@ import google_adwords_controller as controller
 import gdn_custom_audience as custom_audience
 
 
-# In[2]:
+# In[5]:
 
 
 class Index:
     criteria_column = {
         'URL': 'url_display_name',
         'AUDIENCE': 'criterion_id',
-#         'AGE_RANGE': 'criterion_id',
-        'DISPLAY_KEYWORD': 'keyword_id',}
+        'DISPLAY_KEYWORD': 'keyword_id',
+        'DISPLAY_TOPICS': 'criterion_id',
+    }
     criteria_type = {   
         'URL': 'Placement',
         'AUDIENCE': 'CriterionUserInterest',
-#         'AGE_RANGE': 'AgeRange',
-        'DISPLAY_KEYWORD': 'Keyword',}
+        'DISPLAY_KEYWORD': 'Keyword',
+        'DISPLAY_TOPICS': 'Vertical',
+    }
     score = {  
         'URL': 'url',
         'CRITERIA': 'criteria',
         'AUDIENCE': 'audience',
-#         'AGE_RANGE': 'age_range',
-        'DISPLAY_KEYWORD': 'display_keyword',}
+        'DISPLAY_KEYWORD': 'display_keyword',
+        'DISPLAY_TOPICS': 'topics',
+    }
 
 
-# In[3]:
+# In[6]:
 
 
 def modify_opt_result_db(campaign_id, is_optimized):
@@ -64,7 +67,10 @@ def modify_opt_result_db(campaign_id, is_optimized):
         mydb.close()
 
 
-def make_criterion(new_ad_group_id, df,criteria):
+# In[39]:
+
+
+def make_criterion(new_ad_group_id, df, criteria):
     sub_criterions = []
     # make criterion stucture in order to upadate back to gdn platform
     criterion = {
@@ -83,12 +89,13 @@ def make_criterion(new_ad_group_id, df,criteria):
                 criterion['url'] = df['url_display_name'].iloc[i]
                 
             elif Index.criteria_type[criteria] == 'Keyword':
+                criterion['id'] = criterion_id
                 criterion['matchType'] = 'BROAD'
                 criterion['text'] = df['keyword'].iloc[i]
                 
             elif Index.criteria_type[criteria] == 'CriterionUserInterest':
-                criterion['userInterestId'] = df['audience'].iloc[i]
                 criterion['id'] = criterion_id
+                criterion['userInterestId'] = df['audience'].iloc[i]
                 
             elif Index.criteria_type[criteria] == 'CriterionUserList':
                 criterion['id'] = criterion_id
@@ -98,37 +105,104 @@ def make_criterion(new_ad_group_id, df,criteria):
                 criterion['id'] = criterion_id
                 criterion['customAffinityId'] = df['audience'].iloc[i]
                 
+            elif Index.criteria_type[criteria] == 'Vertical':
+                criterion['id'] = criterion_id
+                criterion['verticalId'] = df['vertical_id'].iloc[i]
+                
             sub_criterions.append(copy.deepcopy(criterion))
     return sub_criterions
 
-def make_adgroup_criterion_by_score(campaign_id, new_ad_group_id,):
+
+# In[21]:
+
+
+def make_audience_criterion_by_score(campaign_id, new_ad_group_id,):
     biddable_criterions = []
     negative_criterions = []
     biddable_sub_criterion = []
     negative_sub_criterion = []
+    # select score by campaign level
+    df = gdn_db.get_table(campaign_id=campaign_id, table="audience_score")
 
-    for criteria in Index.score.keys():
-        # select score by campaign level
-        df = gdn_db.get_table(campaign_id=campaign_id, table=Index.score[criteria]+"_score")
-        df['request_time'] = pd.to_datetime(df['request_time'])
-        df = df[ df.request_time.dt.date == (datetime.datetime.now().date()) ]
-        if criteria == 'AUDIENCE' and not df.empty:
-            df['audience_type'] = df.audience.str.split('::', expand=True)[0]
-            df['audience'] = df.audience.str.split('::', expand=True)[1]
-            df = df[~df.audience_type.isin(['boomuserlist'])]
-            df = df[~df.audience_type.isin(['custominmarket'])]
-        if not df.empty:
-            df = df[df.adgroup_id == new_ad_group_id]
-            df = df.sort_values(by=['score'], ascending=False).drop_duplicates(
-                [ Index.criteria_column[criteria] ] ).reset_index(drop=True)
-            half = math.ceil( len(df)/2 )
-            biddable_df = df.iloc[:half]
-            negative_df = df.iloc[half:]
-            biddable_sub_criterion = make_criterion(new_ad_group_id, biddable_df,criteria)
-            negative_sub_criterion = make_criterion(new_ad_group_id, negative_df,criteria)
+    df['request_time'] = pd.to_datetime(df['request_time'])
+    df = df[ df.request_time.dt.date == (datetime.datetime.now().date()) ]
+    if not df.empty:
+        df['audience_type'] = df.audience.str.split('::', expand=True)[0]
+        df['audience'] = df.audience.str.split('::', expand=True)[1]
+        df = df[~df.audience_type.isin(['boomuserlist'])]
+        df = df[~df.audience_type.isin(['custominmarket'])]
+
+        df = df[df.adgroup_id == new_ad_group_id]
+        df = df.sort_values(by=['score'], ascending=False).drop_duplicates(
+            [ Index.criteria_column[criteria] ] ).reset_index(drop=True)
+        half = math.ceil( len(df)/2 )
+        biddable_df = df.iloc[:half]
+        negative_df = df.iloc[half:]
+        biddable_sub_criterion = make_criterion(new_ad_group_id, biddable_df,criteria)
+        negative_sub_criterion = make_criterion(new_ad_group_id, negative_df,criteria)
         biddable_criterions += biddable_sub_criterion
         negative_criterions += negative_sub_criterion
     return biddable_criterions, negative_criterions
+
+
+# In[22]:
+
+
+def make_topic_criterion_by_score(campaign_id, new_ad_group_id,):
+    criteria = 'DISPLAY_TOPICS'
+    biddable_criterions = []
+    negative_criterions = []
+    biddable_sub_criterion = []
+    negative_sub_criterion = []
+    # select score by campaign level
+    df = gdn_db.get_table(campaign_id=campaign_id, table="display_topics_score")
+
+    df['request_time'] = pd.to_datetime(df['request_time'])
+    df = df[ df.request_time.dt.date == (datetime.datetime.now().date()) ]
+    if not df.empty:
+
+        df = df[df.adgroup_id == new_ad_group_id]
+        df = df.sort_values(by=['score'], ascending=False).drop_duplicates(
+            [ Index.criteria_column[criteria] ] ).reset_index(drop=True)
+        half = math.ceil( len(df)/2 )
+        biddable_df = df.iloc[:half]
+        negative_df = df.iloc[half:]
+        biddable_sub_criterion = make_criterion(new_ad_group_id, biddable_df,criteria)
+        negative_sub_criterion = make_criterion(new_ad_group_id, negative_df,criteria)
+        biddable_criterions += biddable_sub_criterion
+        negative_criterions += negative_sub_criterion
+    return biddable_criterions, negative_criterions
+
+
+# In[35]:
+
+
+def make_keyword_criterion_by_score(campaign_id, new_ad_group_id):
+    criteria = 'DISPLAY_KEYWORD'
+    biddable_criterions = []
+    negative_criterions = []
+    biddable_sub_criterion = []
+    negative_sub_criterion = []
+    # select score by campaign level
+    df = gdn_db.get_table(campaign_id=campaign_id, table="display_keyword_score")
+    df['request_time'] = pd.to_datetime(df['request_time'])
+    df = df[ df.request_time.dt.date == (datetime.datetime.now().date()) ]
+    if not df.empty:
+        df = df[df.adgroup_id == new_ad_group_id]
+        df = df.sort_values(by=['score'], ascending=False).drop_duplicates(
+            [ Index.criteria_column[criteria] ] ).reset_index(drop=True)
+        half = math.ceil( len(df)/2 )
+        biddable_df = df.iloc[:half]
+        negative_df = df.iloc[half:]
+        biddable_sub_criterion = make_criterion(new_ad_group_id, biddable_df,criteria)
+        negative_sub_criterion = make_criterion(new_ad_group_id, negative_df,criteria)
+        biddable_criterions += biddable_sub_criterion
+        negative_criterions += negative_sub_criterion
+    return biddable_criterions, negative_criterions
+
+
+# In[3]:
+
 
 def make_empty_ad_group(service_container, campaign_id, ad_group):
     
@@ -208,7 +282,7 @@ def make_user_interest_criterion(service_container, campaign_id, native_ad_group
         mutant_id = native_ad_group.ad_group_id
     # Criterion by Score
     print('[mutant_id] ', mutant_id)
-    biddable_criterions, negative_criterions = make_adgroup_criterion_by_score( campaign_id, mutant_id )
+    biddable_criterions, negative_criterions = make_audience_criterion_by_score( campaign_id, mutant_id )
     biddable_criterions = [ biddable_criterion for biddable_criterion in biddable_criterions if biddable_criterion.get("xsi_type") == 'CriterionUserInterest' ]
     negative_criterions = [ negative_criterion for negative_criterion in negative_criterions if negative_criterion.get("xsi_type") == 'CriterionUserInterest' ]
     print('[biddable_criterions]: ', biddable_criterions)
@@ -256,6 +330,74 @@ def make_user_interest_criterion(service_container, campaign_id, native_ad_group
         except Exception as e:
             print('[assign ad to ad_group]: action assign failed., ', e)
             pass
+    return
+
+
+# In[1]:
+
+
+def make_display_keyword_criterion(campaign_id, controller_ad_group):
+    biddable_criterions, negative_criterions = make_display_keyword_criterion( campaign_id, controller_ad_group.ad_group_id )
+    biddable_criterions = [ biddable_criterion for biddable_criterion in biddable_criterions if biddable_criterion.get("xsi_type") == 'CriterionUserInterest' ]
+    negative_criterions = [ negative_criterion for negative_criterion in negative_criterions if negative_criterion.get("xsi_type") == 'CriterionUserInterest' ]
+    print('[biddable_criterions]: ', biddable_criterions)
+    print('[negative_criterions]: ', negative_criterions)
+    keywords = controller_ad_group.get_keywords()
+    keywords = [keyword.retrieve() for keyword in keywords]
+    biddable_keywords = [keyword.update_status('ENABLED') for keyword in keywords if keyword.keyword_dict['keyword_id'] in [biddable_criterion['id'] for biddable_criterion in biddable_criterions]]
+    negative_keywords = [keyword.update_status('PAUSED') for keyword in keywords if keyword.keyword_dict['keyword_id'] in [negative_criterion['id'] for negative_criterion in negative_criterions]]
+    for biddable_keyword in biddable_keywords:
+        audience_pair = {
+            'db_type': 'dev_gdn',
+            'campaign_id': campaign_id,
+            'adgroup_id': controller_ad_group.ad_group_id,
+            'criterion_id': biddable_keyword.keyword_dict['id'],
+            'criterion_type': 'display_keyword'
+        }
+        logger.save_adgroup_behavior(BehaviorType.OPEN, **audience_pair)
+    for negative_keyword in negative_keywords:
+        audience_pair = {
+            'db_type': 'dev_gdn',
+            'campaign_id': campaign_id,
+            'adgroup_id': controller_ad_group.ad_group_id,
+            'criterion_id': negative_keyword.keyword_dict['id'],
+            'criterion_type': 'display_keyword'
+        }
+        logger.save_adgroup_behavior(BehaviorType.OPEN, **audience_pair)
+    return
+
+
+# In[ ]:
+
+
+def make_display_topics_criterion(campaign_id, controller_ad_group):
+    biddable_criterions, negative_criterions = make_topic_criterion_by_score( campaign_id, controller_ad_group.ad_group_id )
+    biddable_criterions = [ biddable_criterion for biddable_criterion in biddable_criterions if biddable_criterion.get("xsi_type") == 'CriterionUserInterest' ]
+    negative_criterions = [ negative_criterion for negative_criterion in negative_criterions if negative_criterion.get("xsi_type") == 'CriterionUserInterest' ]
+    print('[biddable_criterions]: ', biddable_criterions)
+    print('[negative_criterions]: ', negative_criterions)
+    for biddable_criterion in biddable_criterions:
+#         try:
+        ad_group.user_vertical_criterions.update([biddable_criterion], is_delivering=True, is_included=True)
+        audience_pair = {
+            'db_type': 'dev_gdn',
+            'campaign_id': campaign_id,
+            'adgroup_id': controller_ad_group.ad_group_id,
+            'criterion_id': biddable_criterion['id'],
+            'criterion_type': 'display_topics'
+        }
+        logger.save_adgroup_behavior(BehaviorType.OPEN, **audience_pair)
+    for negative_criterion in negative_criterions:
+#         try:
+        ad_group.user_vertical_criterions.update([negative_criterion], is_delivering=False, is_included=True)
+        audience_pair = {
+            'db_type': 'dev_gdn',
+            'campaign_id': campaign_id,
+            'adgroup_id': controller_ad_group.ad_group_id,
+            'criterion_id': negative_criterion['id'],
+            'criterion_type': 'display_topics'
+        }
+        logger.save_adgroup_behavior(BehaviorType.CLOSE, **audience_pair)
     return
 
 
@@ -330,7 +472,6 @@ def optimize_performance_campaign():
                 if is_lookalike:
                     make_user_list_criterion(campaign_id, native_ad_group)
             modify_opt_result_db(campaign_id , True)
-
         else:
             print('[optimize_branding_campaign] campaign is not assessed. campaign_id: ', campaign_id)
             modify_opt_result_db(campaign_id , False)
@@ -420,7 +561,7 @@ if __name__=="__main__":
     print(datetime.datetime.now() - start_time)
 
 
-# In[19]:
+# In[2]:
 
 
 # !jupyter nbconvert --to script gdn_externals.ipynb
@@ -445,8 +586,9 @@ if __name__=="__main__":
 # optimize_branding_campaign()
 
 
-# In[ ]:
+# In[41]:
 
 
-
+# pos, neg = make_keyword_criterion_by_score(6491023637, 77398403505)
+# make_topic_criterion_by_score(2080506438, 78846749233)
 

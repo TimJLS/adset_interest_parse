@@ -178,12 +178,14 @@ def is_need_to_process(campaign_id, adset_id):
     
     if adset_id not in adset_id_list:
         #first time check , insert new adset 
+        print('[is_need_to_process] upsert adset_id:', adset_id)
         database_fb.upsert(TABLE_NAME_CREATIVE_LOG, {'campaign_id':campaign_id, 'adset_id':adset_id, 'process_date': date.today()})
         return False
     else:
         df_date = df[df['adset_id'] == adset_id ]
         last_process_date = df_date.process_date.iloc[0]
         diff_days = ( date.today() - last_process_date).days
+        print('[is_need_to_process] check diff day:', diff_days, ' adset_id:', adset_id)
         return diff_days >= CHECK_DIFF_DAY
 
 def process_active_adsets(collector_campaign, active_adsets_list):
@@ -198,7 +200,7 @@ def process_active_adsets(collector_campaign, active_adsets_list):
         print('==')
 
 
-# In[14]:
+# In[4]:
 
 
 if __name__ == '__main__':
@@ -209,8 +211,8 @@ if __name__ == '__main__':
         account_id = row['account_id']
         campaign_id = row['campaign_id']
         is_creative_opt = eval(row['is_creative_opt'])
-        permission.init_facebook_api(account_id)
         if is_creative_opt:
+            permission.init_facebook_api(account_id)
             collector_campaign = data_collector.Campaigns(campaign_id, database_fb)
             active_adsets_list = collector_campaign.get_adsets_active()
             print('campaign:', campaign_id, ' active_adsets_list:', active_adsets_list)
@@ -220,7 +222,7 @@ if __name__ == '__main__':
  
 
 
-# In[15]:
+# In[5]:
 
 
 # !jupyter nbconvert --to script facebook_creative_controller.ipynb
