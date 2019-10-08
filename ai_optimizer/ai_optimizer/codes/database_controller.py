@@ -51,7 +51,7 @@ class DevDatabase(Database):
     host = "aws-dev-ai-private.adgeek.cc"
 
 
-# In[6]:
+# In[13]:
 
 
 class CRUDController(object):
@@ -87,6 +87,8 @@ class CRUDController(object):
             'table_init_bid': "adgroup_initial_bid",
             'table_insights': "adgroup_insights",
             'score': "adgroup_score",
+            'audience_score': "audience_score",
+            'display_topics_score': "display_topics_score",
             'optimal_weight': "optimal_weight",
         },
         'gsn': {
@@ -213,12 +215,33 @@ class CRUDController(object):
                 ), con=self.conn
             )
         
+    def get_unprocessed_custom_campaign(self):
+        with self.engine.connect() as self.conn:
+            tbl = Table("campaign_target", self.metadata, autoload=True)
+            return pd.read_sql(
+                sql.select(['*'], from_obj=tbl).where(
+                    sql.and_(
+                        tbl.c.destination_type.in_(self.CUSTOM_CAMPAIGN_LIST),
+                        tbl.c.custom_conversion_id == None,
+                        sql.func.date(tbl.c.ai_stop_date) >= '{:%Y/%m/%d}'.format(self.dt),
+                        sql.func.date(tbl.c.ai_start_date) <= '{:%Y/%m/%d}'.format(self.dt),
+                        tbl.c.ai_status == 'active',
+                    )
+                ), con=self.conn
+            )
+        
     def get_brief(self, campaign_id):
         with self.engine.connect() as self.conn:
             tbl = Table("campaign_target", self.metadata, autoload=True)
             query_list = [tbl.c.ai_spend_cap, tbl.c.ai_start_date, tbl.c.ai_stop_date, tbl.c.destination_type,]
             if self.media == 'facebook':
                 query_list = query_list.append(tbl.c.custom_conversion_id)
+            print(sql.select(query_list, from_obj=tbl).where(
+                    sql.and_(
+                        tbl.c.ai_status == 'active',
+                        tbl.c.campaign_id == campaign_id,
+                    )
+                ))
             df = pd.read_sql(
                 sql.select(query_list, from_obj=tbl).where(
                     sql.and_(
@@ -320,21 +343,24 @@ class CRUDController(object):
             if campaign_id:
                 stmt = sql.update(tbl).where( tbl.c.campaign_id==campaign_id ).values( **values_dict )
             elif adset_id:
-                stmt = sql.update(tbl).where( tbl.c.adset_id==adset_id ).values( **values_dict )
+                stmt = sql.update(tbl).where( self.metrics_converter[self.media]['adset_id']==adset_id ).values( **values_dict )
             elif audience_id:
                 stmt = sql.update(tbl).where( tbl.c.audience_id==audience_id ).values( **values_dict )
             else:
                 return self.engine.dispose()
             self.conn.execute( stmt, )
             
-    def update_init_bid(self, campaign_id, update_ratio=1.1):
+    def update_init_bid(self, campaign_id=None, update_ratio=1.1, adset_id=None):
         with self.engine.connect() as self.conn:
             tbl = Table(self.metrics_converter[self.media]['table_init_bid'], self.metadata, autoload=True)
-            query = sql.select([tbl.c.adset_id, tbl.c.bid_amount], from_obj=tbl).where(
-                    sql.and_(
-                        self.metrics_converter[self.media]['campaign_id'] == campaign_id,
-                    )
-                )
+            if campaign_id:
+                stmt = self.metrics_converter[self.media]['campaign_id'] == campaign_id
+            elif adset_id:
+                stmt = self.metrics_converter[self.media]['adset_id'] == adset_id
+            else:
+                return self.engine.dispose()
+            query_list = [self.metrics_converter[self.media]['adset_id'], tbl.c.bid_amount]
+            query = sql.select(query_list, from_obj=tbl).where( sql.and_( stmt ) )
             results = self.conn.execute( query ).fetchall()
             for (adset_id, bid_amount) in results:
                 bid_amount = bid_amount * update_ratio
@@ -342,7 +368,7 @@ class CRUDController(object):
 #             return results
 
 
-# In[7]:
+# In[14]:
 
 
 class FB(CRUDController):
@@ -362,7 +388,7 @@ class FB(CRUDController):
         self.media = 'facebook'
 
 
-# In[8]:
+# In[15]:
 
 
 class GDN(CRUDController):
@@ -383,7 +409,7 @@ class GDN(CRUDController):
         self.media = 'gdn'
 
 
-# In[15]:
+# In[16]:
 
 
 class GSN(CRUDController):
@@ -404,7 +430,7 @@ class GSN(CRUDController):
         self.media = 'gsn'
 
 
-# In[12]:
+# In[17]:
 
 
 # !jupyter nbconvert --to script database_controller.ipynb
