@@ -1,3 +1,5 @@
 *.pyc
 *checkpoint.ipynb
 *.log
+*-checkpoint.py
+ai_optimizer/ai_optimizer/codes/.ipynb_checkpoints/
