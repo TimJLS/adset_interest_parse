@@ -317,6 +317,10 @@ def is_custom_audience_created(campaign_id):
     database_fb.dispose()
     return len(df_pixel_id.index) == len(CONVERSION_BEHAVIOR_LIST)
 
+
+# In[13]:
+
+
 def is_lookalike_audience_created(campaign_id):
     
     db = database_controller.Database()
@@ -330,6 +334,10 @@ def is_lookalike_audience_created(campaign_id):
         return False
     df_lookalike = df_pixel_id[df_pixel_id.is_created=='True']
     return len(df_lookalike.index) == len(CONVERSION_BEHAVIOR_LIST)
+
+
+# In[14]:
+
 
 def is_operation_status_normal(campaign_id):
     
@@ -346,7 +354,11 @@ def is_operation_status_normal(campaign_id):
     return df_operation.empty
 
 
+<<<<<<< HEAD
 # In[13]:
+=======
+# In[15]:
+>>>>>>> 9d00ebbdcedbfed6cee913fd16ed3e9bcc22e9ed
 
 
 def retrieve_custom_audience_spec(campaign_id):
@@ -377,6 +389,10 @@ def retrieve_custom_audience_spec(campaign_id):
                 audience_attribute_list.append(audience_attribute)
     return audience_attribute_list
 
+
+# In[16]:
+
+
 def update_audience_attribute(audience_id, retention_days, operation_status, approximate_count, data_source):
     
     db = database_controller.Database()
@@ -396,7 +412,11 @@ def update_audience_attribute(audience_id, retention_days, operation_status, app
     return
 
 
+<<<<<<< HEAD
 # In[14]:
+=======
+# In[17]:
+>>>>>>> 9d00ebbdcedbfed6cee913fd16ed3e9bcc22e9ed
 
 
 def process_campaign_custom_audience(campaign_id):
@@ -408,7 +428,11 @@ def process_campaign_custom_audience(campaign_id):
         create_campaign_custom_audience_by_pixel(campaign_id)
 
 
+<<<<<<< HEAD
 # In[15]:
+=======
+# In[18]:
+>>>>>>> 9d00ebbdcedbfed6cee913fd16ed3e9bcc22e9ed
 
 
 def save_pixel_id_for_one_campaign(campaign_id):
@@ -416,7 +440,11 @@ def save_pixel_id_for_one_campaign(campaign_id):
     process_campaign_custom_audience(campaign_id)
 
 
+<<<<<<< HEAD
 # In[16]:
+=======
+# In[19]:
+>>>>>>> 9d00ebbdcedbfed6cee913fd16ed3e9bcc22e9ed
 
 
 def save_pixel_id_for_all_campaign():
@@ -434,7 +462,11 @@ def save_pixel_id_for_all_campaign():
     
 
 
+<<<<<<< HEAD
 # In[17]:
+=======
+# In[20]:
+>>>>>>> 9d00ebbdcedbfed6cee913fd16ed3e9bcc22e9ed
 
 
 def update_all_custom_audience():
@@ -453,7 +485,7 @@ def update_all_custom_audience():
             update_audience_attribute(**audience_attribute)
 
 
-# In[18]:
+# In[21]:
 
 
 def main():
@@ -461,14 +493,18 @@ def main():
     update_all_custom_audience()
 
 
-# In[19]:
+# In[24]:
 
 
 if __name__ == "__main__":
     main()
 
 
+<<<<<<< HEAD
 # In[20]:
+=======
+# In[23]:
+>>>>>>> 9d00ebbdcedbfed6cee913fd16ed3e9bcc22e9ed
 
 
 # !jupyter nbconvert --to script facebook_lookalike_audience.ipynb
