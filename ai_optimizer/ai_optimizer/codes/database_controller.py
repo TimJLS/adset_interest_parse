@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[11]:
+# In[3]:
 
 
 import mysql.connector
@@ -18,26 +18,51 @@ pymysql.install_as_MySQLdb()
 import MySQLdb
 
 
-# In[12]:
+# In[4]:
 
 
 class Database(object):
+    """Database Connection Class
+    This class is an object for Production Database Connection
+
+    Attributes:
+        host: database url.
+        user: username.
+        password: password
+    """
     host = "aws-prod-ai-private.adgeek.cc"
     user = "app"
     password = "adgeek1234"
 
 
-# In[19]:
+# In[5]:
 
 
 class DevDatabase(Database):
+    """Database Connection Class
+    This class is an object for Develop Database Connection
+
+    Attributes:
+        host: database url.
+        engine: 
+        user: username.
+        password: password
+    """
     host = "aws-dev-ai-private.adgeek.cc"
 
 
-# In[14]:
+# In[6]:
 
 
 class CRUDController(object):
+    """A Class interact with database connection.
+    This class controll interactions and manipulate connected db connections.
+
+    Attributes:
+        database: database url.
+        user: username.
+        password: password.
+    """
     dt = datetime.date.today()
     metrics_converter = {
         'facebook': {
@@ -191,9 +216,11 @@ class CRUDController(object):
     def get_brief(self, campaign_id):
         with self.engine.connect() as self.conn:
             tbl = Table("campaign_target", self.metadata, autoload=True)
+            query_list = [tbl.c.ai_spend_cap, tbl.c.ai_start_date, tbl.c.ai_stop_date, tbl.c.destination_type,]
+            if self.media == 'facebook':
+                query_list = query_list.append(tbl.c.custom_conversion_id)
             df = pd.read_sql(
-                sql.select([
-                    tbl.c.ai_spend_cap, tbl.c.ai_start_date, tbl.c.ai_stop_date, tbl.c.destination_type, tbl.c.custom_conversion_id], from_obj=tbl).where(
+                sql.select(query_list, from_obj=tbl).where(
                     sql.and_(
                         tbl.c.ai_status == 'active',
                         tbl.c.campaign_id == campaign_id,
@@ -256,6 +283,7 @@ class CRUDController(object):
                 return pd.read_sql( stmt, con=self.conn,)
             else:
                 self.engine.dispose()
+                
     def retrieve_all(self, table_name, ):
         with self.engine.connect() as self.conn:
             tbl = Table(table_name, self.metadata, autoload=True)
@@ -314,7 +342,7 @@ class CRUDController(object):
 #             return results
 
 
-# In[15]:
+# In[7]:
 
 
 class FB(CRUDController):
@@ -334,7 +362,7 @@ class FB(CRUDController):
         self.media = 'facebook'
 
 
-# In[5]:
+# In[8]:
 
 
 class GDN(CRUDController):
@@ -355,7 +383,7 @@ class GDN(CRUDController):
         self.media = 'gdn'
 
 
-# In[6]:
+# In[15]:
 
 
 class GSN(CRUDController):
@@ -371,9 +399,12 @@ class GSN(CRUDController):
         print('mysql://{user}:{password}@{host}/{database}'.format(
                 user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database
         ))
+        self.metadata = MetaData(bind=self.engine)
+        self.table_init_bid = 'adgroup_initial_bid'
+        self.media = 'gsn'
 
 
-# In[ ]:
+# In[12]:
 
 
 # !jupyter nbconvert --to script database_controller.ipynb
