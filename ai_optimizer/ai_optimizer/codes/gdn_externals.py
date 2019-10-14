@@ -9,7 +9,6 @@ import gdn_gsn_ai_behavior_log as logger
 from gdn_gsn_ai_behavior_log import BehaviorType
 import datetime
 import database_controller
-import gdn_db
 from googleads import adwords
 import pandas as pd
 import copy

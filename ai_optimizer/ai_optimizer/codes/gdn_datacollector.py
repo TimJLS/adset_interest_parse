@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 import uuid
@@ -14,11 +14,10 @@ import datetime
 from bid_operator import reverse_bid_amount
 import adgeek_permission as permission
 import database_controller
-import gdn_db
 import google_adwords_controller as controller
 
 
-# In[2]:
+# In[ ]:
 
 
 CAMPAIGN_OBJECTIVE_FIELD = {
@@ -43,7 +42,7 @@ BIDDING_INDEX = {
 }
 
 
-# In[3]:
+# In[ ]:
 
 
 class ReportField:
@@ -90,7 +89,7 @@ class ReportField:
     }
 
 
-# In[4]:
+# In[ ]:
 
 
 class ReportColumn:
@@ -123,7 +122,7 @@ class ReportColumn:
     }
 
 
-# In[5]:
+# In[ ]:
 
 
 class Field:
@@ -145,7 +144,7 @@ class Field:
     clicks = 'clicks'
 
 
-# In[6]:
+# In[ ]:
 
 
 class DatePreset:
@@ -155,20 +154,20 @@ class DatePreset:
     last_14_days = 'LAST_14_DAYS'
 
 
-# In[7]:
+# In[ ]:
 
 
 # database_gdn = database_controller.GDN( database_controller.Database() )
 # database_gdn.get_running_campaign()
 
 
-# In[8]:
+# In[ ]:
 
 
 # database_gdn.get_brief(1755842283)
 
 
-# In[9]:
+# In[ ]:
 
 
 class Campaign(object):
@@ -289,7 +288,7 @@ class Campaign(object):
             return df
 
 
-# In[10]:
+# In[ ]:
 
 
 class AdGroup(Campaign):
@@ -313,11 +312,11 @@ class AdGroup(Campaign):
         self.report_metrics = [
             'ExternalCustomerId','CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus', 'CpmBid','CpvBid', 'CpcBid',
             'TargetCpa', 'BiddingStrategyType','Cost', 'AverageCost','Impressions', 'Clicks','Conversions', 'AllConversions', 'AverageCpc',
-            'CostPerConversion', 'CostPerAllConversion', 'Ctr',]
+            'CostPerConversion', 'CostPerAllConversion', 'Ctr', 'ViewThroughConversions']
         self.db_column_name_list = [
             'customer_id', 'campaign_id', 'channel_type', 'adgroup_id', 'status', 'cpm_bid', 'cpv_bid', 'cpc_bid', 'cpa_bid',
             'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions',
-            'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr' ]
+            'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr', 'view_conversions' ]
         if by_device:
             self.report_metrics.append('Device')
             self.db_column_name_list.append('device')
@@ -388,7 +387,7 @@ class AdGroup(Campaign):
         return self.insights_dict
 
 
-# In[16]:
+# In[ ]:
 
 
 def data_collect(database_gdn, campaign):
@@ -438,7 +437,7 @@ def data_collect(database_gdn, campaign):
             database_gdn.insert_ignore("adgroup_initial_bid", { key : adgroup_today_insights[0][key] for key in [ Field.campaign_id, Field.adgroup_id, Field.bid_amount ] })
 
 
-# In[17]:
+# In[ ]:
 
 
 def main():
@@ -455,7 +454,7 @@ def main():
     print(datetime.datetime.now()-start_time)
 
 
-# In[18]:
+# In[ ]:
 
 
 if __name__=='__main__':
@@ -463,13 +462,13 @@ if __name__=='__main__':
 #     df_campaign = data_collect(camp.customer_id, camp.campaign_id, 10000, camp.destination_type)
 
 
-# In[14]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script gdn_datacollector.ipynb
 
 
-# In[15]:
+# In[ ]:
 
 
 # CUSTOMER_ID = 2042877296

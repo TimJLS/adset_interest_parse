@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[3]:
+# In[ ]:
 
 
 import mysql.connector
@@ -18,7 +18,7 @@ pymysql.install_as_MySQLdb()
 import MySQLdb
 
 
-# In[4]:
+# In[ ]:
 
 
 class Database(object):
@@ -35,7 +35,7 @@ class Database(object):
     password = "adgeek1234"
 
 
-# In[5]:
+# In[ ]:
 
 
 class DevDatabase(Database):
@@ -51,7 +51,7 @@ class DevDatabase(Database):
     host = "aws-dev-ai-private.adgeek.cc"
 
 
-# In[13]:
+# In[ ]:
 
 
 class CRUDController(object):
@@ -84,20 +84,27 @@ class CRUDController(object):
         'gdn': {
             'campaign_id': sql.column("campaign_id"),
             'adset_id': sql.column("adgroup_id"),
+            'campaign_target': "campaign_target",
             'table_init_bid': "adgroup_initial_bid",
             'table_insights': "adgroup_insights",
             'score': "adgroup_score",
             'audience_score': "audience_score",
             'display_topics_score': "display_topics_score",
+            'display_keyword_insights': "display_keyword_insights",
+            'display_topics_insights': "display_topics_insights",
+            'audience_insights': "audience_insights",
             'optimal_weight': "optimal_weight",
+            'ai_behavior_log': "ai_behavior_log",
         },
         'gsn': {
             'campaign_id': sql.column("campaign_id"),
             'adset_id': sql.column("adgroup_id"),
+            'campaign_target': "campaign_target",
             'table_init_bid': "adgroup_initial_bid",
             'table_insights': "keywords_insights",
             'score': "adgroup_score",
             'optimal_weight': "optimal_weight",
+            'ai_behavior_log': "ai_behavior_log",
         }
     }
     BRANDING_CAMPAIGN_LIST = [
@@ -236,12 +243,6 @@ class CRUDController(object):
             query_list = [tbl.c.ai_spend_cap, tbl.c.ai_start_date, tbl.c.ai_stop_date, tbl.c.destination_type,]
             if self.media == 'facebook':
                 query_list = query_list.append(tbl.c.custom_conversion_id)
-            print(sql.select(query_list, from_obj=tbl).where(
-                    sql.and_(
-                        tbl.c.ai_status == 'active',
-                        tbl.c.campaign_id == campaign_id,
-                    )
-                ))
             df = pd.read_sql(
                 sql.select(query_list, from_obj=tbl).where(
                     sql.and_(
@@ -265,11 +266,12 @@ class CRUDController(object):
             for (result, ) in results:
                 return result
     
-    def get_last_bid(self, adset_id):
+    def get_last_bid(self, adset_id, platform='facebook'):
 #         adset_id = self.metrics_converter[self.media]['adset_id']
         with self.engine.connect() as self.conn:
             tbl = Table(self.metrics_converter[self.media]['table_insights'], self.metadata, autoload=True)
-            query = sql.select([tbl.c.bid_amount], from_obj=tbl).where(
+            col = tbl.c.bid_amount if self.media == 'facebook' else tbl.c.cpc_bid
+            query = sql.select([col], from_obj=tbl).where(
                     sql.and_(
                         self.metrics_converter[self.media]['adset_id'] == adset_id,
                     )
@@ -368,7 +370,7 @@ class CRUDController(object):
 #             return results
 
 
-# In[14]:
+# In[ ]:
 
 
 class FB(CRUDController):
@@ -388,7 +390,7 @@ class FB(CRUDController):
         self.media = 'facebook'
 
 
-# In[15]:
+# In[ ]:
 
 
 class GDN(CRUDController):
@@ -409,7 +411,7 @@ class GDN(CRUDController):
         self.media = 'gdn'
 
 
-# In[16]:
+# In[ ]:
 
 
 class GSN(CRUDController):
@@ -430,10 +432,23 @@ class GSN(CRUDController):
         self.media = 'gsn'
 
 
-# In[17]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script database_controller.ipynb
+
+
+# In[ ]:
+
+
+# database_gdn = GDN(Database())
+
+# database_gdn.get_performance_campaign()
+# database_gdn.get_branding_campaign()
+# database_gdn.get_brief(campaign_id=6493816228)
+
+
+# database_gdn.update_init_bid(adset_id=77067721159, update_ratio=)
 
 
 # In[ ]:

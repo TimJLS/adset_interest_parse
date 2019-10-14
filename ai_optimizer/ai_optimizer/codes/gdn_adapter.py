@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 import datetime
 import pandas as pd
 import numpy as np
-import gdn_db
 import gdn_datacollector
 import google_adwords_controller as controller
+import database_controller
 import gdn_gsn_ai_behavior_log as logger
 from gdn_gsn_ai_behavior_log import BehaviorType
 import bid_operator
@@ -46,7 +46,6 @@ DESTINATION_INDEX = {
 }
 class CampaignAdapter(object):
     def __init__(self, campaign_id):
-        self.mydb = gdn_db.connectDB( DATADASE )
         self.limit = 9000
         self.hour_per_day = 24
         self.campaign_id = campaign_id
@@ -56,23 +55,23 @@ class CampaignAdapter(object):
         self.last_bid_dict = dict()
         
     def _get_df(self):
-        campaign_sql = "SELECT * FROM campaign_target WHERE campaign_id={}".format( self.campaign_id )
-        adgroup_sql = "select * from adgroup_insights WHERE campaign_id = {} AND DATE(request_time) = '{}'".format( self.campaign_id, self.request_time.date() )
-        self.df_camp = pd.read_sql( campaign_sql, con=self.mydb )
-        self.df_adgroup = pd.read_sql( adgroup_sql, con=self.mydb )
+        self.df_camp = database_gdn.retrieve("campaign_target", campaign_id=self.campaign_id, by_request_time=False)
+        # here cost 5 seconds
+        self.df_adgroup = database_gdn.retrieve("table_insights", campaign_id=self.campaign_id)
         return
     
     def _get_bid(self):
-        df_init_bid = pd.read_sql( "SELECT * FROM adgroup_initial_bid WHERE campaign_id={} ;".format( self.campaign_id ), con=self.mydb )
         self.get_adgroup_list()
-        bid_amount_type = BIDDING_INDEX[ self.df_adgroup['bidding_type'].iloc[0] ]
         for adgroup in self.adgroup_list:
-            if len(self.df_adgroup[self.df_adgroup.adgroup_id==adgroup]) != 0:
-                init_bid = df_init_bid[BID_AMOUNT][df_init_bid.adgroup_id==adgroup].head(1).iloc[0].astype(dtype=object)
-                last_bid = self.df_adgroup[ bid_amount_type ][self.df_adgroup.adgroup_id==adgroup].tail(1).iloc[0].astype(dtype=object)
+            try:
+                init_bid = database_gdn.get_init_bid(adgroup)
                 self.init_bid_dict.update({ adgroup: init_bid })
+                # last bid costs time the most
+                last_bid = database_gdn.get_last_bid(adgroup)
                 self.last_bid_dict.update({ adgroup: last_bid })
-        return
+            except Exception as e:
+                print('[facebook_adapter.get_bid]: lack init_bid or last_bid. ', e)
+                pass
     
     def get_periods_left(self):
         self.periods_left = 0
@@ -108,11 +107,8 @@ class CampaignAdapter(object):
         return self.campaign_progress
     
     def get_adgroup_list(self):
-        adgroup_list_sql = "select DISTINCT adgroup_id from (select * from adgroup_insights WHERE campaign_id = {} and status='enabled' order by request_time) as a group by adgroup_id".format( self.campaign_id )
-        self.mycursor = self.mydb.cursor()
-        self.mycursor.execute( adgroup_list_sql )
-        default = self.mycursor.fetchall()
-        self.adgroup_list = [ i[0] for i in default ]
+        self.df_ad = database_gdn.retrieve('table_insights', self.campaign_id).to_dict('records')
+        self.adgroup_list = [adgroup['adgroup_id'] for adgroup in self.df_ad if adgroup['status']=='enabled']
         return self.adgroup_list
     
     def retrieve_campaign_attribute(self):
@@ -125,12 +121,11 @@ class CampaignAdapter(object):
         self.get_campaign_target()
         self.get_campaign_day_target()
         self.get_campaign_progress()
-        self.mydb.close()
+        database_gdn.dispose()
         return
 
 class AdGroupAdapter(CampaignAdapter):
     def __init__(self, adgroup_id, camp):
-        self.mydb = gdn_db.connectDB( DATADASE )
         self.adgroup_id = adgroup_id
         self.camp = camp
 
@@ -152,7 +147,6 @@ class AdGroupAdapter(CampaignAdapter):
         return
     
     def get_campaign_id(self):
-        print(self.df_adgroup[ CAMPAIGN_ID ].iloc[0].astype(dtype=object))
         self.campaign_id = self.df_adgroup[ CAMPAIGN_ID ].iloc[0].astype(dtype=object)
         return self.campaign_id
     
@@ -195,7 +189,6 @@ class AdGroupAdapter(CampaignAdapter):
         self.get_bid()
         self.get_adgroup_time_target()
         self.get_adgroup_progress()
-        self.mydb.close()
         return {
             ADGROUP_ID:self.adgroup_id,
             INIT_BID:self.init_bid,
@@ -217,56 +210,49 @@ class MyEncoder(json.JSONEncoder):
         
 def main():
     start_time = datetime.datetime.now()
-    campaign_dict_list = gdn_db.get_campaign().to_dict('records')
-    for campaign_dict in campaign_dict_list:
+    global database_gdn
+    db = database_controller.Database()
+    database_gdn = database_controller.GDN(db)
+    campaign_running_list = database_gdn.get_running_campaign().to_dict('records')
+    for campaign_dict in campaign_running_list:
         campaign_id = campaign_dict['campaign_id']
         destination_type = campaign_dict['destination_type']
         account_id = campaign_dict['customer_id']
         
-        result={ 'media': 'GDN', 'campaign_id': campaign_id, 'contents':[] }
         print('[campaign_id]: ', campaign_id)
         service_container = controller.AdGroupServiceContainer(account_id)
         adapter_campaign = CampaignAdapter( campaign_id )
         controller_campaign = controller.Campaign(service_container, campaign_id=campaign_id)
         controller_campaign.get_ad_groups()
+        # here waste the most time
         adapter_campaign.retrieve_campaign_attribute()
         adgroup_list = controller_campaign.ad_groups
-
         for controller_ad_group in adgroup_list:
             ad_group_id = controller_ad_group.ad_group_id
             adapter_ad_group = AdGroupAdapter( ad_group_id, adapter_campaign )
             status_dict = adapter_ad_group.retrieve_adgroup_attribute()
             print(status_dict)
-            media = result['media']
-            
-            bid_dict = bid_operator.adjust(media, **status_dict)
-
+            bid_dict = bid_operator.adjust('GDN', **status_dict)
             ad_group_pair = {
                 'db_type': 'dev_gdn', 'campaign_id': campaign_id, 'adgroup_id': ad_group_id,
                 'criterion_id': ad_group_id, 'criterion_type': 'adgroup'
             }
             logger.save_adgroup_behavior(
                 behavior_type=BehaviorType.ADJUST, behavior_misc=bid_dict['bid'], **ad_group_pair)
-            result['contents'].append(bid_dict)
             controller_ad_group.param.update_bid(bid_micro_amount=bid_dict['bid'])
-            print('[update_bid]: ad_group_id {}, bid is {}'.format(ad_group_id, bid_dict['bid']))
             del adapter_ad_group
             del controller_ad_group
-        mydict_json = json.dumps(result, cls=MyEncoder)
-        gdn_db.insert_result( campaign_id, mydict_json )
-        del adapter_campaign    
+#         mydict_json = json.dumps(result, cls=MyEncoder)
+#         gdn_db.insert_result( campaign_id, mydict_json )
+        del adapter_campaign 
+    database_gdn.dispose()
+    del database_gdn
     print(datetime.datetime.now()-start_time)
     return
     
 
 
-# In[2]:
-
-
-#adapter = CampaignAdapter(1985403837)
-
-
-# In[3]:
+# In[ ]:
 
 
 if __name__=='__main__':
@@ -275,10 +261,10 @@ if __name__=='__main__':
     gc.collect()
 
 
-# In[4]:
+# In[ ]:
 
 
-#!jupyter nbconvert --to script gdn_adapter.ipynb
+# !jupyter nbconvert --to script gdn_adapter.ipynb
 
 
 # In[ ]:
