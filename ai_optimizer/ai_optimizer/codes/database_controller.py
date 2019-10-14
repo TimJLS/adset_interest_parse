@@ -242,12 +242,11 @@ class CRUDController(object):
             tbl = Table("campaign_target", self.metadata, autoload=True)
             query_list = [tbl.c.ai_spend_cap, tbl.c.ai_start_date, tbl.c.ai_stop_date, tbl.c.destination_type,]
             if self.media == 'facebook':
-                query_list = query_list.append(tbl.c.custom_conversion_id)
+                query_list.append(tbl.c.custom_conversion_id)
             df = pd.read_sql(
                 sql.select(query_list, from_obj=tbl).where(
                     sql.and_(
                         tbl.c.ai_status == 'active',
-                        tbl.c.campaign_id == campaign_id,
                     )
                 ), con=self.conn,
             )
@@ -441,14 +440,14 @@ class GSN(CRUDController):
 # In[ ]:
 
 
-# database_gdn = GDN(Database())
+# database = FB(Database())
 
-# database_gdn.get_performance_campaign()
-# database_gdn.get_branding_campaign()
-# database_gdn.get_brief(campaign_id=6493816228)
+# database.get_performance_campaign()
+# database.get_branding_campaign()
+# database.get_brief(campaign_id=23843098840440451)
 
 
-# database_gdn.update_init_bid(adset_id=77067721159, update_ratio=)
+# database.update_init_bid(adset_id=77067721159, update_ratio=)
 
 
 # In[ ]:
