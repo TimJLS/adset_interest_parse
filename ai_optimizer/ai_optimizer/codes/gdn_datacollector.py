@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 import uuid
@@ -13,11 +13,11 @@ import math
 import datetime
 from bid_operator import reverse_bid_amount
 import adgeek_permission as permission
-import gdn_db
+import database_controller
 import google_adwords_controller as controller
 
 
-# In[2]:
+# In[ ]:
 
 
 CAMPAIGN_OBJECTIVE_FIELD = {
@@ -28,12 +28,11 @@ CAMPAIGN_OBJECTIVE_FIELD = {
 }
 
 CAMPAIGN_FIELDS = [
-    'ExternalCustomerId', 'CampaignId', 'AdvertisingChannelType', 'CampaignStatus', 'BiddingStrategyType', 'Amount', 'StartDate',
-    'EndDate', 'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'AverageCpc', 'CostPerConversion',
+    'ExternalCustomerId', 'CampaignId', 'AdvertisingChannelType', 'CampaignStatus', 'BiddingStrategyType', 'Amount', 'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'AverageCpc', 'CostPerConversion',
     'CostPerAllConversion', 'Ctr', 'ViewThroughConversions'
 ]
 DB_CAMPAIGN_COLUMN_NAME_LIST = [
-    'customer_id', 'campaign_id', 'channel_type', 'status', 'bidding_type', 'daily_budget', 'start_time', 'stop_time', 'spend',
+    'customer_id', 'campaign_id', 'channel_type', 'status', 'bidding_type', 'daily_budget', 'spend',
     'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion',
     'cost_per_all_conversion', 'ctr', 'view_conversions'
 ]
@@ -43,7 +42,7 @@ BIDDING_INDEX = {
 }
 
 
-# In[3]:
+# In[ ]:
 
 
 class ReportField:
@@ -90,7 +89,7 @@ class ReportField:
     }
 
 
-# In[4]:
+# In[ ]:
 
 
 class ReportColumn:
@@ -123,7 +122,7 @@ class ReportColumn:
     }
 
 
-# In[5]:
+# In[ ]:
 
 
 class Field:
@@ -145,7 +144,7 @@ class Field:
     clicks = 'clicks'
 
 
-# In[6]:
+# In[ ]:
 
 
 class DatePreset:
@@ -155,22 +154,36 @@ class DatePreset:
     last_14_days = 'LAST_14_DAYS'
 
 
-# In[7]:
+# In[ ]:
+
+
+# database_gdn = database_controller.GDN( database_controller.Database() )
+# database_gdn.get_running_campaign()
+
+
+# In[ ]:
+
+
+# database_gdn.get_brief(1755842283)
+
+
+# In[ ]:
 
 
 class Campaign(object):
-    def __init__(self, customer_id, campaign_id, destination_type=None):
+    def __init__(self, customer_id, campaign_id, destination_type=None, database_gdn=None):
         self.customer_id = customer_id
         self.campaign_id = campaign_id
         self.destination_type = destination_type
         self.client = permission.init_google_api(self.customer_id)
         self.report_downloader = self.client.GetReportDownloader(version='v201809')
-        brief_dict = gdn_db.get_campaign_ai_brief( self.campaign_id )
+        if database_gdn is None:
+            database_gdn = database_controller.GDN( database_controller.Database() )
+        brief_dict = database_gdn.get_brief( self.campaign_id )
         self.ai_start_date = brief_dict['ai_start_date'].strftime("%Y%m%d")
         self.ai_stop_date = brief_dict['ai_stop_date'].strftime("%Y%m%d")
         self.ai_spend_cap = brief_dict['ai_spend_cap']
         self.destination_type = brief_dict['destination_type']
-        self.ai_period = brief_dict['period']
     
     def get_campaign_insights(self, date_preset=None):
         # Create report definition.
@@ -214,7 +227,7 @@ class Campaign(object):
             ['CampaignStatus', 'AdvertisingChannelType', 'BiddingStrategyType', 'StartDate', 'EndDate'])].apply(pd.to_numeric, errors='coerce')
         df[df.columns.difference(['ExternalCustomerId', 'CampaignId', 'AdvertisingChannelType', 'CampaignStatus', 'BiddingStrategyType', 'StartDate', 'EndDate', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'Ctr', 'ViewThroughConversions'])] = df[df.columns.difference(
             ['ExternalCustomerId', 'CampaignId', 'CampaignStatus', 'AdvertisingChannelType', 'BiddingStrategyType', 'StartDate', 'EndDate', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'Ctr', 'ViewThroughConversions'])].div(1000000)
-        df[['StartDate','EndDate']] = df[['StartDate','EndDate']].apply( pd.to_datetime, errors='coerce' )
+#         df[['StartDate','EndDate']] = df[['StartDate','EndDate']].apply( pd.to_datetime, errors='coerce' )
         df.rename( columns=dict( zip(df.columns, DB_CAMPAIGN_COLUMN_NAME_LIST) ), inplace=True )
         self.insights_dict = df.to_dict(orient='records')[0]
         return self.insights_dict
@@ -271,22 +284,24 @@ class Campaign(object):
             df[df.columns.intersection( ReportField.NUMERIC_LIST )] = df[df.columns.intersection( ReportField.NUMERIC_LIST )].div(1000000)
             df.columns = columns
             df.sort_values(by=['impressions'], ascending=False).reset_index(drop=True)
-            gdn_db.into_table( df, performance_type.lower()+'_insights' )
+            database_gdn.upsert( performance_type.lower()+'_insights', df.to_dict('records')[0] )
             return df
 
 
-# In[8]:
+# In[ ]:
 
 
 class AdGroup(Campaign):
-    def __init__(self, customer_id, campaign_id, adgroup_id, destination_type=None):
-        super().__init__(customer_id, campaign_id, destination_type)
+    def __init__(self, customer_id, campaign_id, adgroup_id, destination_type=None, database_gdn=None):
+        super().__init__(customer_id, campaign_id, destination_type, database_gdn)
         self.customer_id = customer_id
         self.campaign_id = campaign_id
         self.adgroup_id = adgroup_id
         self.client = permission.init_google_api(self.customer_id)
         self.report_downloader = self.client.GetReportDownloader(version='v201809')
-        brief_dict = gdn_db.get_campaign_ai_brief( self.campaign_id )
+        if database_gdn is None:
+            database_gdn = database_controller.GDN( database_controller.Database() )
+        brief_dict = database_gdn.get_brief( self.campaign_id )
         self.ai_start_date = brief_dict['ai_start_date'].strftime("%Y%m%d")
         self.ai_stop_date = brief_dict['ai_stop_date'].strftime("%Y%m%d")
         self.ai_spend_cap = brief_dict['ai_spend_cap']
@@ -297,11 +312,11 @@ class AdGroup(Campaign):
         self.report_metrics = [
             'ExternalCustomerId','CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus', 'CpmBid','CpvBid', 'CpcBid',
             'TargetCpa', 'BiddingStrategyType','Cost', 'AverageCost','Impressions', 'Clicks','Conversions', 'AllConversions', 'AverageCpc',
-            'CostPerConversion', 'CostPerAllConversion', 'Ctr',]
+            'CostPerConversion', 'CostPerAllConversion', 'Ctr', 'ViewThroughConversions']
         self.db_column_name_list = [
             'customer_id', 'campaign_id', 'channel_type', 'adgroup_id', 'status', 'cpm_bid', 'cpv_bid', 'cpc_bid', 'cpa_bid',
             'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions',
-            'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr' ]
+            'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr', 'view_conversions' ]
         if by_device:
             self.report_metrics.append('Device')
             self.db_column_name_list.append('device')
@@ -372,12 +387,20 @@ class AdGroup(Campaign):
         return self.insights_dict
 
 
-# In[9]:
+# In[ ]:
 
 
-def data_collect(customer_id, campaign_id, destination, destination_type, ai_start_date, ai_stop_date):
+def data_collect(database_gdn, campaign):
+    
+    customer_id = campaign.get("customer_id")
+    campaign_id = campaign.get("campaign_id")
+    destination = campaign.get("destination")
+    destination_type = campaign.get("destination_type")
+    ai_start_date = campaign.get("ai_start_date")
+    ai_stop_date = campaign.get("ai_stop_date")
+    
     service_container = controller.AdGroupServiceContainer(customer_id=customer_id)
-    camp = Campaign(customer_id, campaign_id, destination_type)
+    camp = Campaign(customer_id, campaign_id, destination_type, database_gdn)
     controller_campaign = controller.Campaign(service_container=service_container, campaign_id=campaign_id)
     ###
     campaign_lifetime_insights = camp.get_campaign_insights( date_preset=DatePreset.lifetime )
@@ -390,7 +413,6 @@ def data_collect(customer_id, campaign_id, destination, destination_type, ai_sta
         period_left = 1
     target = campaign_lifetime_insights[ CAMPAIGN_OBJECTIVE_FIELD[ destination_type ] ]
     target_left = int(destination) - campaign_lifetime_insights[ CAMPAIGN_OBJECTIVE_FIELD[ destination_type ] ]
-#     try:
     daily_target = target_left / period_left
         
     addition_value_list = [period, period_left, target, target_left, daily_target, destination, destination_type]
@@ -399,45 +421,40 @@ def data_collect(customer_id, campaign_id, destination, destination_type, ai_sta
         **campaign_lifetime_insights,
         **addition_dict,
     }
-    df_campaign = pd.DataFrame(campaign_dict, index=[0])
-    gdn_db.update_table(df_campaign, table="campaign_target")
+    database_gdn.upsert("campaign_target", campaign_dict)
     ad_group_list = controller_campaign.get_ad_groups()
     for ad_group in ad_group_list:
         adgroup_id = ad_group.ad_group_id
         adgroup = AdGroup(camp.customer_id,camp.campaign_id, adgroup_id,camp.destination_type)
         adgroup_today_insights = adgroup.get_adgroup_insights(date_preset=DatePreset.today)
-        df_adgroup = pd.DataFrame(adgroup_today_insights)
-        gdn_db.into_table(df_adgroup, table="adgroup_insights")
-        bidding_type = adgroup_today_insights[0]['bidding_type']
-        bid_amount_column = BIDDING_INDEX[ bidding_type ]
-        df_adgroup['bid_amount'] = df_adgroup[bid_amount_column]
-        df_adgroup['bid_amount'] = math.ceil(reverse_bid_amount(df_adgroup[bid_amount_column]))
-        gdn_db.check_initial_bid(adgroup_id, df_adgroup[[Field.campaign_id, Field.adgroup_id, Field.bid_amount]])
+        if adgroup_today_insights:
+            df_adgroup = pd.DataFrame(adgroup_today_insights)
+            database_gdn.insert("adgroup_insights", df_adgroup.fillna(0).to_dict('records')[0])
+            bidding_type = adgroup_today_insights[0]['bidding_type']
+            bid_amount_column = BIDDING_INDEX[ bidding_type ]
+            adgroup_today_insights[0]['bid_amount'] = adgroup_today_insights[0][bid_amount_column]
+            adgroup_today_insights[0]['bid_amount'] = math.ceil(reverse_bid_amount(adgroup_today_insights[0][bid_amount_column]))
+            database_gdn.insert_ignore("adgroup_initial_bid", { key : adgroup_today_insights[0][key] for key in [ Field.campaign_id, Field.adgroup_id, Field.bid_amount ] })
 
 
-# In[10]:
+# In[ ]:
 
 
 def main():
     start_time = datetime.datetime.now()
-    df_camp = gdn_db.get_campaign_is_running()
-    print(df_camp['campaign_id'].unique())
-    for campaign_id in df_camp['campaign_id'].unique():
-        print('[campaign_id]: ', campaign_id)
-        customer_id = df_camp['customer_id'][df_camp.campaign_id==campaign_id].iloc[0]
-        destination = df_camp['destination'][df_camp.campaign_id==campaign_id].iloc[0]
-        destination_type = df_camp['destination_type'][df_camp.campaign_id==campaign_id].iloc[0]
-        ai_start_date = df_camp['ai_start_date'][df_camp.campaign_id==campaign_id].iloc[0]
-        ai_stop_date = df_camp['ai_stop_date'][df_camp.campaign_id==campaign_id].iloc[0]
+    db = database_controller.Database()
+    database_gdn = database_controller.GDN(db)
+    campaign_running_list = database_gdn.get_running_campaign().to_dict('records')
+    print([campaign['campaign_id'] for campaign in campaign_running_list])
+    for campaign in campaign_running_list:
+        print('[campaign_id]: ', campaign.get('campaign_id'))
         
-#         adwords_client = permission.init_google_api(customer_id)
-        
-        data_collect( customer_id, int(campaign_id), destination, destination_type, ai_start_date, ai_stop_date )
+        data_collect( database_gdn, campaign )
 
     print(datetime.datetime.now()-start_time)
 
 
-# In[11]:
+# In[ ]:
 
 
 if __name__=='__main__':
@@ -451,7 +468,7 @@ if __name__=='__main__':
 # !jupyter nbconvert --to script gdn_datacollector.ipynb
 
 
-# In[13]:
+# In[ ]:
 
 
 # CUSTOMER_ID = 2042877296

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[ ]:
 
 
 from pathlib import Path
@@ -17,9 +17,9 @@ pymysql.install_as_MySQLdb()
 import MySQLdb
 AUTH_FILE_PATH = '/home/tim_su/ai_optimizer/opt/ai_optimizer/googleads.yaml'
 adwords_client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
+import database_controller
 
-import gdn_db as gdn_saver
-import gsn_db as gsn_saver
+database_gdn = database_controller.GDN( database_controller.Database() )
 
 class BehaviorType:
     COPY = 'copy'
@@ -29,7 +29,7 @@ class BehaviorType:
     OPEN = 'open'
 
 
-# In[8]:
+# In[ ]:
 
 
 def get_adgroup_name_bidding(db_type, campaign_id, adgroup_id, criterion_id, criterion_type):
@@ -58,13 +58,12 @@ def get_adgroup_name_bidding(db_type, campaign_id, adgroup_id, criterion_id, cri
         field = 'AdGroupId'
         service = 'AdGroupService'
 #         sql = "SELECT DISTINCT customer_id FROM {} WHERE {}={}".format(table, campaign, campaign_id)
-    engine = create_engine( 'mysql://{}:{}@{}/{}'.format(gdn_saver.USER, gdn_saver.PASSWORD, gdn_saver.HOST, db_type) )
+#     engine = create_engine( 'mysql://{}:{}@{}/{}'.format(gdn_saver.USER, gdn_saver.PASSWORD, gdn_saver.HOST, db_type) )
     sql = "SELECT DISTINCT customer_id FROM campaign_target WHERE campaign_id={}".format(campaign_id)
-    with engine.connect() as conn, conn.begin():
+    with database_gdn.engine.connect() as conn, conn.begin():
         df = pd.read_sql(sql, con=conn)
-        engine.dispose()
+        database_gdn.engine.dispose()
         customer_id = df.customer_id.iloc[0]
-        print(customer_id)
     adwords_client.SetClientCustomerId(customer_id)
 
     selector= [{
@@ -96,7 +95,7 @@ def get_adgroup_name_bidding(db_type, campaign_id, adgroup_id, criterion_id, cri
     return name, bid_amount/pow(10, 6)
 
 
-# In[33]:
+# In[ ]:
 
 
 def save_adgroup_behavior(behavior_type, db_type, campaign_id, adgroup_id, criterion_id, criterion_type, behavior_misc = '' ):
@@ -113,18 +112,13 @@ def save_adgroup_behavior(behavior_type, db_type, campaign_id, adgroup_id, crite
             return
         behavior_misc = str(criterion_bid) + ':' + str(behavior_misc)
 
-    my_db = gdn_saver.connectDB( db_type )
-    my_cursor = my_db.cursor()
-    sql = "INSERT INTO ai_behavior_log ( campaign_id, adgroup_id, criterion_id, display_name, criterion_type, behavior, behavior_misc, created_at ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s )"
-    val = ( int(campaign_id), int(adgroup_id), criterion_id, display_name, criterion_type, behavior_type, behavior_misc, int(created_at) )
-    my_cursor.execute(sql, val)
-    my_db.commit()
-    my_cursor.close()
-    my_db.close()
+    column = ["campaign_id", "adgroup_id", "criterion_id", "display_name", "criterion_type", "behavior", "behavior_misc", "created_at"]
+    values = [ int(campaign_id), int(adgroup_id), criterion_id, display_name, criterion_type, behavior_type, behavior_misc, int(created_at) ]
+    database_gdn.insert("ai_behavior_log", dict(zip(column, values)))
     
 
 
-# In[19]:
+# In[ ]:
 
 
 if __name__ == "__main__":
@@ -138,8 +132,14 @@ if __name__ == "__main__":
 #     print(adset_name , adset_bid )"
 
 
-# In[27]:
+# In[ ]:
 
 
-#!jupyter nbconvert --to script gdn_gsn_ai_behavior_log.ipynb
+# !jupyter nbconvert --to script gdn_gsn_ai_behavior_log.ipynb
+
+
+# In[ ]:
+
+
+
 
