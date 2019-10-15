@@ -232,8 +232,7 @@ class Campaign_GSN():
         self.spend_speed_ratio = (self.current_total_spend / self.spend_until_today) if self.spend_until_today != 0 else 0
             
     
-def get_fb_branding_campaign():    
-    db = db_controller.Database()
+def get_fb_branding_campaign(db):
     database_fb = db_controller.FB(db)
     df_branding = database_fb.get_branding_campaign()
     campaign_list = []
@@ -244,8 +243,7 @@ def get_fb_branding_campaign():
         campaign_list.append(c)    
     return campaign_list
 
-def get_fb_performance_campaign():    
-    db = db_controller.Database()
+def get_fb_performance_campaign(db):
     database_fb = db_controller.FB(db)
     df_performance = database_fb.get_performance_campaign()
     
@@ -257,8 +255,9 @@ def get_fb_performance_campaign():
         campaign_list.append(c)    
     return campaign_list
 
-def get_gdn_campaign():    
-    df_branding = gdn_db.get_campaign_is_running()
+def get_gdn_campaign(db):
+    database_gdn = db_controller.GDN(db)
+    df_branding = database_gdn.get_running_campaign()
     campaign_list = []
     for index, row in df_branding.iterrows():
         account_id = row['customer_id']
@@ -287,9 +286,10 @@ def compute_total_budget(campaign_list):
 def home_page(request):
 #     return HttpResponse("Hello World!")
     
-    campaign_fb_branding_list = get_fb_branding_campaign()
-    campaign_fb_performance_list = get_fb_performance_campaign()
-    campaign_gdn_list = get_gdn_campaign()
+    db = db_controller.Database()
+    campaign_fb_branding_list = get_fb_branding_campaign(db)
+    campaign_fb_performance_list = get_fb_performance_campaign(db)
+    campaign_gdn_list = get_gdn_campaign(db)
     campaign_gsn_list = get_gsn_campaign()
     
     budget_dic = {}
