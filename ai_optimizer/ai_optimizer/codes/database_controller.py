@@ -247,6 +247,7 @@ class CRUDController(object):
                 sql.select(query_list, from_obj=tbl).where(
                     sql.and_(
                         tbl.c.ai_status == 'active',
+                        tbl.c.campaign_id == campaign_id,
                     )
                 ), con=self.conn,
             )
