@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 from googleads import adwords
@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import math
 import datetime
-import gsn_db
+import database_controller
 import google_adwords_controller as controller
 import gdn_datacollector as datacollector
 import bid_operator
@@ -75,12 +75,14 @@ class Campaign(object):
         'downloadFormat': 'CSV',
         'selector': selector
     }
-    def __init__(self, customer_id, campaign_id):
+    def __init__(self, customer_id, campaign_id, database=None):
         self.customer_id = customer_id
         self.client = permission.init_google_api(self.customer_id)
         self.campaign_id = campaign_id
         self.report_downloader = self.client.GetReportDownloader(version='v201809')
-        self.brief_dict = gsn_db.get_campaign_ai_brief(campaign_id=self.campaign_id)
+        if database is None:
+            database = database_controller.GSN( database_controller.Database() )
+        brief_dict = database.get_brief( self.campaign_id )
         self.ai_start_date = self.brief_dict['ai_start_date']
         self.ai_stop_date = self.brief_dict['ai_stop_date']
         self.ai_spend_cap = self.brief_dict['ai_spend_cap']
@@ -124,9 +126,11 @@ class Campaign(object):
             if df.empty:
                 return df
             if performance_type=='CAMPAIGN':
-                gsn_db.update_table(df, table="campaign_target")
+                database.upsert( "campaign_target", df.to_dict('records')[0] )
             else:
-                gsn_db.into_table( df, performance_type.lower()+'_insights' )
+                value_dict_list = df.to_dict('records')
+                for val in value_dict_list:
+                    database_gdn.upsert( performance_type.lower()+'_insights', val )
             return df
         
     def get_keyword_insights(self, date_preset=None):
@@ -180,14 +184,16 @@ class Campaign(object):
 
 
 class KeywordGroup(object):
-    def __init__(self, customer_id, campaign_id, keyword_id):
+    def __init__(self, customer_id, campaign_id, keyword_id, database=None):
         self.customer_id = customer_id
         self.campaign_id = campaign_id
         self.keyword_id = keyword_id
         self.client = permission.init_google_api(self.customer_id)
         self.report_downloader = self.client.GetReportDownloader(version='v201809')
         self.ad_group_criterion_service = self.client.GetService('AdGroupCriterionService', version='v201809')
-        brief_dict = gsn_db.get_campaign_ai_brief( self.campaign_id )
+        if database is None:
+            database = database_controller.GSN( database_controller.Database() )
+        brief_dict = database.get_brief( self.campaign_id )
         self.ai_start_date = brief_dict['ai_start_date'].strftime("%Y%m%d")
         self.ai_stop_date = brief_dict['ai_stop_date'].strftime("%Y%m%d")
         self.ai_spend_cap = brief_dict['ai_spend_cap']
@@ -257,8 +263,14 @@ class KeywordGroup(object):
 # In[5]:
 
 
-def data_collect(customer_id, campaign_id):
-    camp = Campaign(customer_id, campaign_id)
+def data_collect(database, campaign):
+    customer_id = campaign.get("customer_id")
+    campaign_id = campaign.get("campaign_id")
+    destination = campaign.get("destination")
+    destination_type = campaign.get("destination_type")
+    ai_start_date = campaign.get("ai_start_date")
+    ai_stop_date = campaign.get("ai_stop_date")
+    camp = Campaign(customer_id, campaign_id, database=database)
     ###
     campaign_lifetime_insights = camp.get_performance_insights( date_preset=datacollector.DatePreset.lifetime, performance_type='CAMPAIGN' )
     if campaign_lifetime_insights.empty:
@@ -281,18 +293,18 @@ def data_collect(customer_id, campaign_id):
         **campaign_lifetime_insights.to_dict('records')[0],
         **addition_dict,
     }
-    df_campaign = pd.DataFrame(campaign_dict, index=[0])
     print(campaign_lifetime_insights.to_dict('records')[0])
-    gsn_db.update_table(df_campaign, table="campaign_target")
+    database.upsert( "campaign_target", campaign_dict )
     keyword_insights_dict = camp.get_keyword_insights(date_preset='TODAY')
     for keyword_insights in keyword_insights_dict:
         df_keyword_group = pd.DataFrame(keyword_insights, index=[0])
-        gsn_db.into_table(df_keyword_group, table="keywords_insights")
+        database.insert( "campaign_target", keyword_insights )
         bidding_type = keyword_insights['bidding_type']
         bid_amount_column = datacollector.BIDDING_INDEX[ bidding_type ]
         df_keyword_group['bid_amount'] = df_keyword_group[bid_amount_column]
         df_keyword_group['bid_amount'] = math.ceil(bid_operator.reverse_bid_amount(df_keyword_group[bid_amount_column].iloc[0]))
-        gsn_db.check_initial_bid(keyword_insights['keyword_id'], df_keyword_group[['campaign_id', 'adgroup_id', 'keyword_id', 'bid_amount']])
+        database.insert_ignore("adgroup_initial_bid", { key : keyword_insights[key] for key in ['campaign_id', 'adgroup_id', 'keyword_id', 'bid_amount'] })
+    database.dispose()
     return
 
 
@@ -301,15 +313,18 @@ def data_collect(customer_id, campaign_id):
 
 def main():
     start_time = datetime.datetime.now()
-    df_camp = gsn_db.get_campaign_is_running()
-    print(df_camp['campaign_id'].unique())
-    for campaign_id in df_camp['campaign_id'].unique():
-        customer_id = df_camp['customer_id'][df_camp.campaign_id==campaign_id].iloc[0]
-        data_collect(customer_id=customer_id, campaign_id=campaign_id)
+    db = database_controller.Database()
+    database_gdn = database_controller.GSN(db)
+    campaign_running_list = database_gdn.get_running_campaign().to_dict('records')
+    print([campaign['campaign_id'] for campaign in campaign_running_list])
+    for campaign in campaign_running_list:
+        print('[campaign_id]: ', campaign.get('campaign_id'))
+        
+        data_collect(database, campaign)
     print(datetime.datetime.now()-start_time)
 
 
-# In[2]:
+# In[ ]:
 
 
 if __name__=='__main__':
@@ -317,7 +332,7 @@ if __name__=='__main__':
 #     data_collect(customer_id=CUSTOMER_ID, campaign_id=CAMPAIGN_ID)
 
 
-# In[6]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script gsn_datacollector.ipynb

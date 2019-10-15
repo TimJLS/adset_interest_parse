@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
-import gsn_db
+import database_controller
 import gsn_datacollector
 import google_adwords_controller as controller
 import gdn_gsn_ai_behavior_log as logger
@@ -18,7 +18,7 @@ import json
 import math
 
 
-# In[2]:
+# In[ ]:
 
 
 DATABASE = "dev_gsn"
@@ -34,7 +34,7 @@ DESTINATION_INDEX = {
 }
 
 
-# In[3]:
+# In[ ]:
 
 
 class Field:
@@ -53,12 +53,11 @@ class Field:
     period = 'period'
 
 
-# In[4]:
+# In[ ]:
 
 
 class CampaignAdapter(object):
     def __init__(self, campaign_id):
-        self.mydb = gsn_db.connectDB( DATABASE )
         self.hour_per_day = 24
         self.campaign_id = campaign_id
         self.request_time = datetime.datetime.now()
@@ -67,33 +66,28 @@ class CampaignAdapter(object):
         self.last_bid_dict = dict()
         
     def _get_df(self):
-        campaign_sql = "SELECT * FROM campaign_target WHERE campaign_id={}".format( self.campaign_id )
-        keyword_sql = "select * from keywords_insights WHERE campaign_id = {} AND DATE(request_time) = '{}'".format( self.campaign_id, self.request_time.date() )
-        self.df_camp = pd.read_sql( campaign_sql, con=self.mydb )
-        self.df_keyword = pd.read_sql( keyword_sql, con=self.mydb )
+        self.df_camp = database_gsn.retrieve("campaign_target", campaign_id=self.campaign_id, by_request_time=False)
+        # here cost 5 seconds
+        self.df_keyword = database_gsn.retrieve("table_insights", campaign_id=self.campaign_id)
         return
     
     def get_keyword_id_list(self):
-        keyword_id_list_sql = "select DISTINCT keyword_id from (select * from keywords_insights WHERE campaign_id = {} and status='enabled' order by request_time) as a group by keyword_id".format( self.campaign_id )
-        self.mycursor = self.mydb.cursor()
-        self.mycursor.execute( keyword_id_list_sql )
-        default = self.mycursor.fetchall()
-        self.keyword_id_list = [ i[0] for i in default ]
+        self.df_ad = database_gsn.retrieve('table_insights', self.campaign_id).to_dict('records')
+        self.keyword_id_list = [keyword['keyword_id'] for keyword in self.df_ad if keyword['status']=='enabled']
         return self.keyword_id_list
     
     def _get_bid(self):
-        df_init_bid = pd.read_sql( "SELECT * FROM adgroup_initial_bid WHERE campaign_id={} ;".format( self.campaign_id ), con=self.mydb )
-        if df_init_bid.empty:
-            return
         self.get_keyword_id_list()
-        bid_amount_type = BIDDING_INDEX[ self.df_keyword['bidding_type'].iloc[0] ]
-        for keyword_id in self.keyword_id_list:
-            if len(self.df_keyword[self.df_keyword.keyword_id==keyword_id]) != 0:
-                init_bid = df_init_bid[Field.bid_amount][df_init_bid.keyword_id==keyword_id].head(1).iloc[0].astype(dtype=object)
-                last_bid = self.df_keyword[ bid_amount_type ][self.df_keyword.keyword_id==keyword_id].tail(1).iloc[0].astype(dtype=object)
-                self.init_bid_dict.update({ keyword_id: init_bid })
-                self.last_bid_dict.update({ keyword_id: last_bid })
-        return
+        for keyword in self.keyword_id_list:
+            try:
+                init_bid = database_gsn.get_init_bid(keyword)
+                self.init_bid_dict.update({ keyword: init_bid })
+                # last bid costs time the most
+                last_bid = database_gsn.get_last_bid(keyword)
+                self.last_bid_dict.update({ keyword: last_bid })
+            except Exception as e:
+                print('[facebook_adapter.get_bid]: lack init_bid or last_bid. ', e)
+                pass
         
     def get_periods_left(self):
         self.periods_left = ( self.df_camp[ Field.ai_stop_date ].iloc[0] - self.request_time.date() ).days + 1
@@ -130,16 +124,15 @@ class CampaignAdapter(object):
         self.get_campaign_target()
         self.get_campaign_day_target()
         self.get_campaign_progress()
-        self.mydb.close()
+        database_gsn.dispose()
         return
 
 
-# In[5]:
+# In[ ]:
 
 
 class KeywordGroupAdapter(object):
     def __init__(self, keyword_id, ad_group_id, camp):
-        self.mydb = gsn_db.connectDB( DATABASE )
         self.keyword_id = keyword_id
         self.ad_group_id = ad_group_id
         self.camp = camp
@@ -167,7 +160,6 @@ class KeywordGroupAdapter(object):
     def get_bid(self):
         self.init_bid = self.camp.init_bid_dict.get(self.keyword_id)
         self.last_bid = self.camp.last_bid_dict.get(self.keyword_id)
-        return
     
     def get_keyword_time_target(self):
         self.keyword_time_target = self.keyword_day_target * self.camp.time_progress
@@ -185,7 +177,7 @@ class KeywordGroupAdapter(object):
         self.get_bid()
         self.get_keyword_time_target()
         self.get_keyword_progress()
-        self.mydb.close()
+        database_gsn.dispose()
         return {
             Field.keyword_id:self.keyword_id,
             Field.init_bid:self.init_bid,
@@ -195,7 +187,7 @@ class KeywordGroupAdapter(object):
         }
 
 
-# In[9]:
+# In[ ]:
 
 
 
@@ -212,14 +204,14 @@ class MyEncoder(json.JSONEncoder):
         
 def main():
     start_time = datetime.datetime.now()
-    campaign_dict_list = gsn_db.get_campaign().to_dict('records')
-    for campaign_dict in campaign_dict_list:
+    global database_gsn
+    db = database_controller.Database()
+    database_gsn = database_controller.GSN(db)
+    campaign_running_list = database_gsn.get_running_campaign().to_dict('records')
+    for campaign_dict in campaign_running_list:
         campaign_id = campaign_dict['campaign_id']
         destination_type = campaign_dict['destination_type']
         account_id = campaign_dict['customer_id']
-        
-
-        result={ 'media': 'GSN', 'campaign_id': campaign_id, 'contents':[] }
         print('[campaign_id]: ', campaign_id)
         service_container = controller.AdGroupServiceContainer(account_id)
         adapter_campaign = CampaignAdapter( campaign_id )
@@ -227,17 +219,13 @@ def main():
         controller_campaign.get_ad_groups()
         adapter_campaign.retrieve_campaign_attribute()
         adgroup_list = controller_campaign.ad_groups
-        
-        
         controller_campaign.get_keywords()
         for controller_keyword in controller_campaign.keywords:
             print('[keyword_id]: ', controller_keyword.keyword_id)
-
             adapter_keyword = KeywordGroupAdapter( 
                 controller_keyword.keyword_id, controller_keyword.ad_group.ad_group_id, adapter_campaign )
             status_dict = adapter_keyword.retrieve_keyword_attribute()
-            media = result['media']
-            bid_dict = bid_operator.adjust(media, **status_dict)
+            bid_dict = bid_operator.adjust('GSN', **status_dict)
 
             ad_group_pair = {
                 'db_type': 'dev_gsn', 'campaign_id': campaign_id, 'adgroup_id': controller_keyword.ad_group.ad_group_id,
@@ -247,26 +235,23 @@ def main():
                 behavior_type=BehaviorType.ADJUST, behavior_misc=bid_dict['bid'], **ad_group_pair)
             controller_keyword.update_bid(bid_micro_amount=bid_dict['bid'])
             print('[update_bid]: keyword_id {}, bid is {}'.format(controller_keyword.keyword_id, bid_dict['bid']))
-            result['contents'].append(bid_dict)
             del adapter_keyword
-        
-        mydict_json = json.dumps(result, cls=MyEncoder)
-        gsn_db.insert_result( campaign_id, mydict_json )
         del adapter_campaign
         del controller_campaign
-    
+    database_gsn.dispose()
+    del database_gsn
     print(datetime.datetime.now()-start_time)
     return
 
 
-# In[10]:
+# In[ ]:
 
 
 if __name__=='__main__':
     main()
 
 
-# In[8]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script gsn_adapter.ipynb
