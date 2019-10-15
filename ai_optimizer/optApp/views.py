@@ -101,14 +101,14 @@ def opt_api(request):
             if media == 'Facebook':
                 mydict = dict()
                 permission.init_facebook_api(int(account_id))
-                
+                print('===')
                 custom_conversion_id = custom_conversion_handler.get_conversion_id_by_compaign(campaign_id)
                 brief_dict['account_id'] = account_id
                 brief_dict['custom_conversion_id'] = custom_conversion_id.item() if custom_conversion_id else None
                 brief_dict['charge_type'] = brief_dict['destination_type']
                 database_fb.upsert("campaign_target", brief_dict)
                 campaign = Campaigns( int(campaign_id) )
-                campaign_dict = campaign.generate_info()
+                campaign_dict = campaign.generate_info(date_preset='lifetime')
                 campaign_dict['target'] = int( campaign_dict.pop('action') )
                 campaign_dict.pop('desire')
                 campaign_dict.pop('interest')
