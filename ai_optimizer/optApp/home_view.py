@@ -55,7 +55,7 @@ class Campaign_FB():
         one_campaign_list = self.database_fb.get_one_campaign(self.campaign_id).to_dict('records')
         if len(one_campaign_list) != 0:
             campaign = one_campaign_list[0]
-            self.charge_type = campaign.get('charge_type')
+            self.charge_type = campaign.get('destination_type')
             self.destination = campaign.get('destination')
             self.destination_max = campaign.get('destination_max')
             self.ai_spend_cap = campaign.get('ai_spend_cap')
@@ -94,6 +94,8 @@ class Campaign_FB():
 
 class Campaign_GDN():
     def __init__(self, campaign_id, account_id):
+        db = db_controller.Database()
+        self.database_gdn = db_controller.GDN(db)
         self.adwords_client = permission.init_google_api(account_id)
         self.token_name = permission.get_access_name_by_account(account_id)
         self.campaign_id = campaign_id
@@ -102,7 +104,6 @@ class Campaign_GDN():
         self.compute()
         self.ai_start_date = self.ai_start_date.strftime("%Y/%m/%d")
         self.ai_stop_date = self.ai_stop_date.strftime("%Y/%m/%d")
-
 
     def get_campaign_name(self):
         self.adwords_client.SetClientCustomerId(self.customer_id)
@@ -123,15 +124,23 @@ class Campaign_GDN():
 
 
     def get_campaign_status(self):
-        my_db = gdn_db.connectDB(gdn_db.DATABASE)
-        my_cursor = my_db.cursor()
-        sql = 'SELECT customer_id, destination_type, destination, ai_spend_cap, target, target_left, spend , ai_start_date, ai_stop_date FROM campaign_target where campaign_id = {}'.format(self.campaign_id)
-        my_cursor.execute(sql)
-        self.customer_id , self.charge_type, self.destination, self.ai_spend_cap, self.current_target_count, self.left_target_count, self.current_total_spend, self.ai_start_date, self.ai_stop_date  = my_cursor.fetchone()
+        one_campaign_list = self.database_gdn.get_one_campaign(self.campaign_id).to_dict('records')
+        if len(one_campaign_list) != 0:
+            campaign = one_campaign_list[0]
+            self.charge_type = campaign.get('destination_type')
+            self.destination = campaign.get('destination')
+            self.destination_max = campaign.get('destination_max')
+            self.ai_spend_cap = campaign.get('ai_spend_cap')
+            self.current_target_count = campaign.get('target', 0)
+            self.left_target_count = campaign.get('target_left', 0)
+            self.current_total_spend = campaign.get('spend', 0)
+            self.ai_start_date = campaign.get('ai_start_date')
+            self.ai_stop_date = campaign.get('ai_stop_date')
+            self.customer_id = campaign.get('customer_id')
+        else:
+            print('[get_campaign_status] error, len ==0')
         
-        my_db.commit()
-        my_db.close()
-
+        
     def compute(self):
 #         if currency == 'USD':
 #             self.ai_spend_cap = self.ai_spend_cap / 100
@@ -164,6 +173,8 @@ class Campaign_GDN():
 
 class Campaign_GSN():
     def __init__(self, campaign_id, account_id):
+        db = db_controller.Database()
+        self.database_gsn = db_controller.GSN(db)
         self.adwords_client = permission.init_google_api(account_id)       
         self.token_name = permission.get_access_name_by_account(account_id)
         self.campaign_id = campaign_id
@@ -172,7 +183,6 @@ class Campaign_GSN():
         self.compute()
         self.ai_start_date = self.ai_start_date.strftime("%Y/%m/%d")
         self.ai_stop_date = self.ai_stop_date.strftime("%Y/%m/%d")
-
 
     def get_campaign_name(self):
         self.adwords_client.SetClientCustomerId(self.customer_id)
@@ -192,14 +202,21 @@ class Campaign_GSN():
                 self.name = ad_dic['name']
 
     def get_campaign_status(self):
-        my_db = gsn_db.connectDB(gsn_db.DATABASE)
-        my_cursor = my_db.cursor()
-        sql = 'SELECT customer_id, destination_type, destination, ai_spend_cap, target, target_left, spend , ai_start_date, ai_stop_date FROM campaign_target where campaign_id = {}'.format(self.campaign_id)
-        my_cursor.execute(sql)
-        self.customer_id, self.charge_type, self.destination, self.ai_spend_cap, self.current_target_count, self.left_target_count, self.current_total_spend, self.ai_start_date, self.ai_stop_date  = my_cursor.fetchone()
-        
-        my_db.commit()
-        my_db.close()
+        one_campaign_list = self.database_gsn.get_one_campaign(self.campaign_id).to_dict('records')
+        if len(one_campaign_list) != 0:
+            campaign = one_campaign_list[0]
+            self.charge_type = campaign.get('destination_type')
+            self.destination = campaign.get('destination')
+            self.destination_max = campaign.get('destination_max')
+            self.ai_spend_cap = campaign.get('ai_spend_cap')
+            self.current_target_count = campaign.get('target', 0)
+            self.left_target_count = campaign.get('target_left', 0)
+            self.current_total_spend = campaign.get('spend', 0)
+            self.ai_start_date = campaign.get('ai_start_date')
+            self.ai_stop_date = campaign.get('ai_stop_date')
+            self.customer_id = campaign.get('customer_id')
+        else:
+            print('[get_campaign_status] error, len ==0')
 
     def compute(self):
 #         if currency == 'USD':
