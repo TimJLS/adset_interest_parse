@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 
@@ -21,18 +21,16 @@ import facebook_datacollector as fb_collector
 import database_controller
 
 
-# In[2]:
-
+# In[ ]:
 
 
 def get_account_id_by_campaign(campaign_id):
     this_campaign = facebook_business_campaign.Campaign( campaign_id ).remote_read(fields=["account_id"])
     account_id = this_campaign.get('account_id')
     return account_id
-    
 
 
-# In[3]:
+# In[ ]:
 
 
 def save_account_custom_conversions_intodb(account_id, campaign_id, customconversions_id_list):
@@ -61,7 +59,7 @@ def save_account_custom_conversions_intodb(account_id, campaign_id, customconver
         )
 
 
-# In[4]:
+# In[ ]:
 
 
 def get_account_custom_conversions(account_id, campaign_id):
@@ -83,7 +81,7 @@ def get_account_custom_conversions(account_id, campaign_id):
     
 
 
-# In[5]:
+# In[ ]:
 
 
 def process_account_custom_conversion(campaign_id):
@@ -96,7 +94,7 @@ def process_account_custom_conversion(campaign_id):
     
 
 
-# In[6]:
+# In[ ]:
 
 
 def save_adset_optimization_goal_intodb(campaign_id, adset_id_list):
@@ -135,7 +133,7 @@ def save_adset_optimization_goal_intodb(campaign_id, adset_id_list):
     
 
 
-# In[7]:
+# In[ ]:
 
 
 def process_campaign_adset_optimization_goal(campaign_id):
@@ -150,7 +148,7 @@ def process_campaign_adset_optimization_goal(campaign_id):
     
 
 
-# In[8]:
+# In[ ]:
 
 
 def get_conversion_id_by_rule(pixel_rule, campaign_id):
@@ -167,7 +165,7 @@ def get_conversion_id_by_rule(pixel_rule, campaign_id):
     return None
 
 
-# In[13]:
+# In[ ]:
 
 
 def get_rule_by_adset_id(adset_id):
@@ -183,7 +181,7 @@ def get_rule_by_adset_id(adset_id):
     return None
 
 
-# In[10]:
+# In[ ]:
 
 
 def get_campaign_custom_goal_id(campaign_id):
@@ -195,24 +193,15 @@ def get_campaign_custom_goal_id(campaign_id):
         adset_id_list.append( int(adset_id.get('id')))
     
     for adset_id in adset_id_list:
-#         print('----')
         pixel_rule = get_rule_by_adset_id(adset_id)
         if pixel_rule:
             conversion_id = get_conversion_id_by_rule(pixel_rule, campaign_id)
-#             print('conversion_id:', conversion_id)
-#             print('pixel_rule:', pixel_rule)
             if conversion_id:
                 return conversion_id
-#         print('===')
-            
     return None
-    
-            
-        
-    
 
 
-# In[11]:
+# In[ ]:
 
 
 def get_conversion_id_by_compaign(campaign_id):
@@ -228,23 +217,24 @@ def get_conversion_id_by_compaign(campaign_id):
     return conversion_id
 
 
-# In[12]:
+# In[ ]:
 
 
 def main():
-    campaign_id = 23843417575950621
-    conversion_id = get_conversion_id_by_compaign(campaign_id)
-    print('main', conversion_id)
-    
+    database_fb = database_controller.FB( database_controller.Database )
+    campaign_list = database_fb.get_custom_performance_campaign().to_dict('records')
+    campaign_list = [ campaign['campaign_id'] for campaign in campaign_list if not campaign['custom_conversion_id'] ]
+    for campaign_id in campaign_list:
+        conversion_id = get_conversion_id_by_compaign(campaign_id)
+        database_fb.upsert("campaign_target", {'campaign_id': campaign_id, 'custom_conversion_id': conversion_id})
+    database_fb.dispose()
 
 
-# In[13]:
+# In[ ]:
 
 
-
-# if __name__ == "__main__":
-#     main()
-    
+if __name__ == "__main__":
+    main()
 
 
 # In[ ]:
