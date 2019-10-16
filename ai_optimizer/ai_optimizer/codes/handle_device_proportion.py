@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 import uuid
@@ -12,7 +12,7 @@ import numpy as np
 import math
 import datetime
 from copy import deepcopy
-import gdn_db
+import database_controller
 import gdn_datacollector as collector
 import adgeek_permission as permission
 import google_adwords_controller as controller
@@ -30,7 +30,7 @@ DEVICE_CRITERION = {
 }
 
 
-# In[2]:
+# In[ ]:
 
 
 def assign_bid_modifier(adwords_client, ad_group_id, **bid_modifier_dict,):
@@ -59,7 +59,7 @@ def assign_bid_modifier(adwords_client, ad_group_id, **bid_modifier_dict,):
     return resp
 
 
-# In[3]:
+# In[ ]:
 
 
 def retrieve_bid_modifier(client, ad_group_id):
@@ -80,7 +80,7 @@ def retrieve_bid_modifier(client, ad_group_id):
     return resp['entries']
 
 
-# In[4]:
+# In[ ]:
 
 
 def bid_modifier_adjust(controller_ad_group, device_target, direction):
@@ -111,7 +111,7 @@ def bid_modifier_adjust(controller_ad_group, device_target, direction):
     return resp
 
 
-# In[5]:
+# In[ ]:
 
 
 def get_campaign_budget(adwords_client, campaign_id):
@@ -135,11 +135,14 @@ def get_campaign_budget(adwords_client, campaign_id):
                 return amount
 
 
-# In[6]:
+# In[ ]:
 
 
 def main():
-    performance_campaign_list = gdn_db.get_campaign_is_device_pro_rata().to_dict('records')
+    db = database_controller.Database
+    database_gdn = database_controller.GDN( db )
+    performance_campaign_list = database_gdn.get_running_campaign().to_dict('records')
+    performance_campaign_list = [ campaign for campaign in performance_campaign_list if eval(campaign['is_device_pro_rata']) ]
     print(performance_campaign_list)
     for campaign in performance_campaign_list:
         customer_id = campaign.get('customer_id')
@@ -230,21 +233,15 @@ def main():
                 bid_modifier_adjust(controller_ad_group, 'Tablet', 'up')
 
 
-# In[7]:
+# In[ ]:
 
 
 if __name__=='__main__':
     main()
 
 
-# In[8]:
-
-
-# !jupyter nbconvert --to script handle_device_proportion.ipynb
-
-
 # In[ ]:
 
 
-
+# !jupyter nbconvert --to script handle_device_proportion.ipynb
 
