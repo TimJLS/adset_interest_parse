@@ -249,57 +249,6 @@ class GAIndividual(object):
 # In[ ]:
 
 
-def generate_optimal_weight(campaign_id, destination_type):
-    global chromosome
-    print('[campaign_id]:', campaign_id )
-    print('[current time]: ', datetime.datetime.now() )
-    start_time = datetime.datetime.now()
-    
-    campaign = Campaign(campaign_id)
-    chromosome = ObjectChromosome(campaign.condition)
-
-    bound = np.tile([[0], [1]], vardim)
-    ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
-    result_optimal_weight = ga.solve()
-    
-    optimal_campaign = CampaignOptimalWeight(campaign_id, destination_type, result_optimal_weight)
-    
-    score = np.dot(optimal_campaign.matrix, chromosome.matrix)
-    print('==========SCORE========')
-    print(score)
-
-    score_columns=['w_action', 'w_desire', 'w_interest', 'w_awareness', 'w_discovery', 'w_spend', 'w_bid']
-    df_score = pd.DataFrame(data=[optimal_campaign.matrix], columns=score_columns, index=[0])
-    df_score['campaign_id'], df_score['score'] = campaign_id, score
-    database_gdn.upsert("optimal_weight", df_score.to_dict('records')[0])
-
-    assess_ad_group(campaign, optimal_campaign)
-
-    print('[optimal_weight]:', optimal_campaign.matrix)
-    print('[operation time]: ', datetime.datetime.now()-start_time)
-
-
-# In[ ]:
-
-
-def assess_ad_group(campaign_object, campaign_optimal_object):
-    for ad_group in campaign_object.ad_groups:
-        
-        chromosome_ad_group = ObjectChromosome(ad_group.condition)
-        
-        score = np.dot(campaign_optimal_object.matrix, chromosome_ad_group.matrix)
-        
-        print('=====[adgroup_id]=====', ad_group.ad_group_id, '==========[score]', score)
-
-        database_gdn.insert(
-            "adgroup_score", 
-            {'campaign_id':campaign_object.campaign_id, 'adgroup_id':ad_group.ad_group_id, 'score':score.item()}
-        )
-
-
-# In[ ]:
-
-
 class Campaign(object):
     __condition_field = ["action", "desire", "interest", "awareness", "attention", "impressions", "destination_daily_spend",
                        "destination_daily_target", "cost_per_action", "spend", "daily_spend", "daily_target", "KPI", "destination_type"]
@@ -424,6 +373,9 @@ class Audience(object):
         self.campaign = campaign
         self.destination_type = campaign.destination_type
         self.condition = condition
+        self.ad_group_id = condition.get('adgroup_id')
+        self.criterion_id = condition.get('criterion_id')
+        self.audience = condition.get('audience')
         self.__create_condition()
         self.__create_fitness()
     
@@ -456,6 +408,9 @@ class DisplayKeyword(object):
         self.campaign = campaign
         self.destination_type = campaign.destination_type
         self.condition = condition
+        self.ad_group_id = condition.get('adgroup_id')
+        self.keyword_id = condition.get('keyword_id')
+        self.keyword = condition.get('keyword')
         self.__create_condition()
         self.__create_fitness()
     
@@ -488,6 +443,10 @@ class DisplayTopic(object):
         self.campaign = campaign
         self.destination_type = campaign.destination_type
         self.condition = condition
+        self.ad_group_id = condition.get('adgroup_id')
+        self.criterion_id = condition.get('criterion_id')
+        self.vertical_id = condition.get('vertical_id')
+        self.topics = condition.get('topics')
         self.__create_condition()
         self.__create_fitness()
     
@@ -508,52 +467,6 @@ class DisplayTopic(object):
         
     def __create_fitness(self):
         self.fitness = ObjectChromosome(self.condition)
-
-
-# In[ ]:
-
-
-def retrive_all_criteria_insights():
-    campaign_list = database_gdn.get_running_campaign().to_dict('records')
-    # retrive all criteria insights
-    for campaign in campaign_list:
-        print('[campaign_id]: ', campaign['campaign_id'])
-        customer_id = campaign['customer_id']
-        destination_type = campaign['destination_type']
-        adwords_client = permission.init_google_api(customer_id)
-        camp = gdn_datacollector.Campaign(customer_id, campaign_id, database_gdn=database_gdn)
-        for criteria in CRITERIA_LIST:
-            camp.get_performance_insights( performance_type=criteria, date_preset='LAST_14_DAYS' )
-
-def get_criteria_score( campaign_id=None, criteria=None, insights_dict=None):
-    df = database_gdn.retrieve(criteria.lower()+"_insights", campaign_id=campaign_id)
-    # Get optimal_weight from db
-    df_weight = database_gdn.retrieve("optimal_weight", campaign_id=campaign_id)
-
-    if not df.empty:
-        if criteria != "URL" and criteria != "CRITERIA":
-            df['daily_budget'] = insights_dict['daily_budget']
-            df['bid_amount'] = df[ BIDDING_INDEX[ df['bidding_type'].iloc[0] ] ]
-            df['target'] = df[ TARGET_INDEX[ df['bidding_type'].iloc[0] ] ]
-            daily_destination = (insights_dict['destination']/insights_dict['period'])
-            df['daily_destination'] = daily_destination
-            df['conv_rate'] = (insights_dict['all_conversions']+insights_dict['conversions'])/insights_dict['clicks'] if insights_dict['clicks']!=0 else 1
-            if insights_dict['destination_type']=='LINK_CLICKS':
-                df['all_conversions'] = 1 if insights_dict['all_conversions']>0 else 0
-                df['view_conversions'] = 1 if insights_dict['view_conversions']>0 else 0
-                df['conversions'] = 1 if insights_dict['conversions']>0 else 0
-            elif insights_dict['destination_type']=='CONVERSIONS':
-                df['cost_per_target'] = insights_dict['cost_per_conversion']
-                df['all_conversions'] = 1 if insights_dict['all_conversions']>0 else -100
-                df['view_conversions'] = 1 if insights_dict['view_conversions']>0 else -100
-                df['conversions'] = 1 if insights_dict['conversions']>0 else -100
-
-            for index, row in df.iterrows():
-                df = pd.DataFrame(data=[row], columns=df.columns, index=[0])
-                r = ObjectiveFunc.adgroup_fitness(df_weight, df)
-                df['score'] = r
-                df_final = df[ SCORE_COLUMN_INDEX[criteria] ]
-                database_gdn.insert_ignore("adgroup_initial_bid", df_final.to_dict('records'))
 
 
 # In[ ]:
@@ -674,12 +587,141 @@ class ObjectChromosome(Chromosome):
 # In[ ]:
 
 
+def generate_optimal_weight(campaign_id, destination_type):
+    global chromosome
+    print('[campaign_id]:', campaign_id )
+    print('[current time]: ', datetime.datetime.now() )
+    start_time = datetime.datetime.now()
+    
+    campaign = Campaign(campaign_id)
+    chromosome = ObjectChromosome(campaign.condition)
+
+    bound = np.tile([[0], [1]], vardim)
+    ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
+    result_optimal_weight = ga.solve()
+    
+    optimal_campaign = CampaignOptimalWeight(campaign_id, destination_type, result_optimal_weight)
+    
+    score = np.dot(optimal_campaign.matrix, chromosome.matrix)
+    print('==========SCORE========')
+    print(score)
+
+    score_columns=['w_action', 'w_desire', 'w_interest', 'w_awareness', 'w_discovery', 'w_spend', 'w_bid']
+    df_score = pd.DataFrame(data=[optimal_campaign.matrix], columns=score_columns, index=[0])
+    df_score['campaign_id'], df_score['score'] = campaign_id, score
+    database_gdn.upsert("optimal_weight", df_score.to_dict('records')[0])
+
+    assess_ad_group(campaign, optimal_campaign)
+    assess_audience(campaign, optimal_campaign)
+    assess_display_keywords(campaign, optimal_campaign)
+    assess_display_topics(campaign, optimal_campaign)
+    print('[optimal_weight]:', optimal_campaign.matrix)
+    print('[operation time]: ', datetime.datetime.now()-start_time)
+
+
+# In[ ]:
+
+
+def assess_ad_group(campaign_object, campaign_optimal_object):
+    for ad_group in campaign_object.ad_groups:
+        
+        chromosome_ad_group = ObjectChromosome(ad_group.condition)
+        
+        score = np.dot(campaign_optimal_object.matrix, chromosome_ad_group.matrix)
+        
+        print('=====[adgroup_id]=====', ad_group.ad_group_id, '==========[score]', score)
+
+        database_gdn.insert(
+            "adgroup_score", 
+            {'campaign_id':campaign_object.campaign_id, 'adgroup_id':ad_group.ad_group_id, 'score':score.item()}
+        )
+
+
+# In[ ]:
+
+
+def assess_audience(campaign_object, campaign_optimal_object):
+    for audience in campaign_object.audiences:
+        
+        chromosome_audience = ObjectChromosome(audience.condition)
+        
+        score = np.dot(campaign_optimal_object.matrix, chromosome_audience.matrix)
+        
+        print('=====[criterion_id]=====', audience.criterion_id, '==========[score]', score)
+
+        database_gdn.insert(
+            "audience_score", 
+            {'campaign_id':campaign_object.campaign_id, 'adgroup_id':audience.ad_group_id,
+             'criterion_id':audience.criterion_id, 'audience':audience.audience, 'score':score.item()}
+        )
+
+
+# In[ ]:
+
+
+def assess_display_keywords(campaign_object, campaign_optimal_object):
+    for display_keyword in campaign_object.display_keywords:
+        
+        chromosome_display_keyword = ObjectChromosome(display_keyword.condition)
+        
+        score = np.dot(campaign_optimal_object.matrix, chromosome_display_keyword.matrix)
+        
+        print('=====[keyword_id]=====', display_keyword.keyword_id, '==========[score]', score)
+
+        database_gdn.insert(
+            "display_keyword_score", 
+            {'campaign_id':campaign_object.campaign_id, 'adgroup_id':display_keyword.ad_group_id,
+             'keyword_id':display_keyword.keyword_id, 'keyword':display_keyword.keyword, 'score':score.item()}
+        )
+
+
+# In[ ]:
+
+
+def assess_display_topics(campaign_object, campaign_optimal_object):
+    for display_topic in campaign_object.display_topics:
+        
+        chromosome_display_topic = ObjectChromosome(display_topic.condition)
+        
+        score = np.dot(campaign_optimal_object.matrix, chromosome_display_topic.matrix)
+        
+        print('=====[vertical_id]=====', display_topic.vertical_id, '==========[score]', score)
+
+        database_gdn.insert(
+            "display_topics_score", 
+            {'campaign_id':campaign_object.campaign_id, 'adgroup_id':display_topic.ad_group_id,
+             'criterion_id': display_topic.criterion_id, 'vertical_id':display_topic.vertical_id, 
+             'topics':display_topic.topics, 'score':score.item()}
+        )
+
+
+# In[ ]:
+
+
+def retrive_all_criteria_insights():
+    campaign_list = database_gdn.get_running_campaign().to_dict('records')
+    # retrive all criteria insights
+    for campaign in campaign_list:
+        print('[campaign_id]: ', campaign['campaign_id'])
+        customer_id = campaign['customer_id']
+        campaign_id = campaign['campaign_id']
+        destination_type = campaign['destination_type']
+        adwords_client = permission.init_google_api(customer_id)
+        camp = collector.Campaign(customer_id, campaign_id, database_gdn=database_gdn)
+        for criteria in CRITERIA_LIST:
+            camp.get_performance_insights( performance_type=criteria, date_preset='LAST_14_DAYS' )
+
+
+# In[ ]:
+
+
 def main():
     starttime = datetime.datetime.now()
     print('[start time]: ', starttime)
     global database_gdn
     db = database_controller.Database()
     database_gdn = database_controller.GDN(db)
+    retrive_all_criteria_insights()
     campaign_list = database_gdn.get_branding_campaign().to_dict('records')
     print([campaign['campaign_id'] for campaign in campaign_list])
     for campaign in campaign_list:
@@ -714,7 +756,7 @@ if __name__ == "__main__":
 # In[ ]:
 
 
-
+# !jupyter nbconvert --to script genetic_algorithm_gdn.ipynb
 
 
 # In[ ]:

@@ -157,29 +157,17 @@ class DatePreset:
 # In[ ]:
 
 
-# database_gdn = database_controller.GDN( database_controller.Database() )
-# database_gdn.get_running_campaign()
-
-
-# In[ ]:
-
-
-# database_gdn.get_brief(1755842283)
-
-
-# In[ ]:
-
-
 class Campaign(object):
     def __init__(self, customer_id, campaign_id, destination_type=None, database_gdn=None):
         self.customer_id = customer_id
         self.campaign_id = campaign_id
+        self.database_gdn = database_gdn
         self.destination_type = destination_type
         self.client = permission.init_google_api(self.customer_id)
         self.report_downloader = self.client.GetReportDownloader(version='v201809')
-        if database_gdn is None:
-            database_gdn = database_controller.GDN( database_controller.Database() )
-        brief_dict = database_gdn.get_brief( self.campaign_id )
+        if self.database_gdn is None:
+            self.database_gdn = database_controller.GDN( database_controller.Database() )
+        brief_dict = self.database_gdn.get_brief( self.campaign_id )
         self.ai_start_date = brief_dict['ai_start_date'].strftime("%Y%m%d")
         self.ai_stop_date = brief_dict['ai_stop_date'].strftime("%Y%m%d")
         self.ai_spend_cap = brief_dict['ai_spend_cap']
@@ -284,7 +272,10 @@ class Campaign(object):
             df[df.columns.intersection( ReportField.NUMERIC_LIST )] = df[df.columns.intersection( ReportField.NUMERIC_LIST )].div(1000000)
             df.columns = columns
             df.sort_values(by=['impressions'], ascending=False).reset_index(drop=True)
-            database_gdn.upsert( performance_type.lower()+'_insights', df.to_dict('records')[0] )
+            df = df.where((pd.notnull(df)), None)
+            value_dict_list = df.to_dict('records')
+            for val in value_dict_list:
+                self.database_gdn.upsert( performance_type.lower()+'_insights', val )
             return df
 
 
@@ -296,12 +287,13 @@ class AdGroup(Campaign):
         super().__init__(customer_id, campaign_id, destination_type, database_gdn)
         self.customer_id = customer_id
         self.campaign_id = campaign_id
+        self.database_gdn = database_gdn
         self.adgroup_id = adgroup_id
         self.client = permission.init_google_api(self.customer_id)
         self.report_downloader = self.client.GetReportDownloader(version='v201809')
-        if database_gdn is None:
-            database_gdn = database_controller.GDN( database_controller.Database() )
-        brief_dict = database_gdn.get_brief( self.campaign_id )
+        if self.database_gdn is None:
+            self.database_gdn = database_controller.GDN( database_controller.Database() )
+        brief_dict = self.database_gdn.get_brief( self.campaign_id )
         self.ai_start_date = brief_dict['ai_start_date'].strftime("%Y%m%d")
         self.ai_stop_date = brief_dict['ai_stop_date'].strftime("%Y%m%d")
         self.ai_spend_cap = brief_dict['ai_spend_cap']
@@ -435,6 +427,7 @@ def data_collect(database_gdn, campaign):
             adgroup_today_insights[0]['bid_amount'] = adgroup_today_insights[0][bid_amount_column]
             adgroup_today_insights[0]['bid_amount'] = math.ceil(reverse_bid_amount(adgroup_today_insights[0][bid_amount_column]))
             database_gdn.insert_ignore("adgroup_initial_bid", { key : adgroup_today_insights[0][key] for key in [ Field.campaign_id, Field.adgroup_id, Field.bid_amount ] })
+    database_gdn.dispose()
 
 
 # In[ ]:
