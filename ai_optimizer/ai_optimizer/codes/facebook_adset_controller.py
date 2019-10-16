@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[12]:
+# In[ ]:
 
 
 import json
@@ -90,7 +90,7 @@ FIELDS = [
 ]
 
 
-# In[2]:
+# In[ ]:
 
 
 def make_adset(adset_params):
@@ -135,7 +135,7 @@ def get_suggestion_target_by_adset(adset_id):
         return None,None
 
 
-# In[3]:
+# In[ ]:
 
 
 def make_performance_suggest_adset(campaign_id, original_adset_id): 
@@ -228,7 +228,7 @@ def make_performance_suggest_adset(campaign_id, original_adset_id):
 #     return new_adset_id
 
 
-# In[4]:
+# In[ ]:
 
 
 def ad_name_remove_copy_string(adset_id):
@@ -237,9 +237,11 @@ def ad_name_remove_copy_string(adset_id):
     index = this_ad_name.find(ADSET_COPY_STRING)
     if index > -1:
         remove_copy_name = this_ad_name[:index]
-        this_ad.remote_update(
-            params={'name': remove_copy_name, }
-        )
+        try:
+            this_ad.remote_update( params={'name': remove_copy_name, } )
+        except Exception as e:
+            print('[ad name change failed]: ', e)
+            pass
 
 def assign_copied_ad_to_new_adset(campaign_id, new_adset_id=None, ad_id=None):
     #need permission first
@@ -279,7 +281,7 @@ def copy_adset_new_target(campaign_id, new_adset_params, original_adset_id):
         print('[copy_adset_new_target] this adset is not existed anymore, error:', error)
 
 
-# In[5]:
+# In[ ]:
 
 
 
@@ -322,7 +324,7 @@ def copy_branding_adset(campaign_id, adset_id, actions, adset_params=None):
             
 
 
-# In[6]:
+# In[ ]:
 
 
 def make_performance_lookalike_adset(campaign_id, adsets_active_list):
@@ -358,7 +360,7 @@ def make_performance_lookalike_adset(campaign_id, adsets_active_list):
     
 
 
-# In[7]:
+# In[ ]:
 
 
 #test case
@@ -370,7 +372,7 @@ def make_performance_lookalike_adset(campaign_id, adsets_active_list):
 # make_performance_suggest_adset(campaign_id, original_adset_id)
 
 
-# In[13]:
+# In[ ]:
 
 
 
@@ -397,7 +399,7 @@ def is_adset_should_close(adset_id, setting_CPA):
     
 
 
-# In[15]:
+# In[ ]:
 
 
 #  !jupyter nbconvert --to script facebook_adset_controller.ipynb
