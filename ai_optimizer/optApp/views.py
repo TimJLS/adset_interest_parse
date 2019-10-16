@@ -18,8 +18,6 @@ import pandas as pd
 from sklearn.externals import joblib
 from ai_optimizer.codes import mysql_adactivity_save
 from ai_optimizer.codes import database_controller
-from ai_optimizer.codes import gdn_db
-from ai_optimizer.codes import gsn_db
 from ai_optimizer.codes import gdn_datacollector
 from ai_optimizer.codes import gsn_datacollector
 from facebook_business.api import FacebookAdsApi
@@ -101,10 +99,11 @@ def opt_api(request):
             if media == 'Facebook':
                 mydict = dict()
                 permission.init_facebook_api(int(account_id))
-                print('===')
-                custom_conversion_id = custom_conversion_handler.get_conversion_id_by_compaign(campaign_id)
+                
+#                 custom_conversion_id = custom_conversion_handler.get_conversion_id_by_compaign(campaign_id)
+                
                 brief_dict['account_id'] = account_id
-                brief_dict['custom_conversion_id'] = custom_conversion_id.item() if custom_conversion_id else None
+#                 brief_dict['custom_conversion_id'] = custom_conversion_id.item() if custom_conversion_id else None
                 brief_dict['charge_type'] = brief_dict['destination_type']
                 database_fb.upsert("campaign_target", brief_dict)
                 campaign = Campaigns( int(campaign_id) )
@@ -131,24 +130,17 @@ def opt_api(request):
                 }
                 print('[campaign_dict] ', campaign_dict)
                 database_fb.upsert("campaign_target", campaign_dict)
-                return JsonResponse( {}, safe=False )
             
             elif media == 'GDN' and account_id:
-                brief_dict['account_id'] = account_id
-                print('============HERE===========')
-                if not gdn_db.check_campaignid_target(**brief_dict):
-                    return JsonResponse( {}, safe=False )
-                else:
-                    mydict = gdn_db.get_result( campaign_id ) #new version
-                    return JsonResponse( json.loads(mydict), safe=False )
-                
+                brief_dict['customer_id'] = account_id
+                database_gdn = database_controller.GDN(database_controller.Database)
+                database_gdn.upsert("campaign_target", brief_dict)
+
             elif media == 'GSN' and account_id:
-                brief_dict['account_id'] = account_id
-                if not gsn_db.check_campaignid_target(**brief_dict):
-                    return JsonResponse( {}, safe=False )
-                else:
-                    mydict = gdn_db.get_result( campaign_id ) #new version
-                    return JsonResponse( json.loads(mydict), safe=False )                
+                brief_dict['customer_id'] = account_id
+                database_gdn = database_controller.GSN(database_controller.Database)
+                database_gdn.upsert("campaign_target", brief_dict)
+                
             return JsonResponse( {}, safe=False )
     else:
         return JsonResponse( {}, safe=False )
