@@ -75,7 +75,7 @@ class Campaign_FB():
 
         self.ai_daily_budget = round(self.ai_spend_cap / self.ai_period, 2)
         self.left_money_can_spend = self.ai_spend_cap - self.current_total_spend        
-        self.left_money_can_spend_per_day = self.left_money_can_spend / self.ai_left_days
+        self.left_money_can_spend_per_day = self.left_money_can_spend / self.ai_left_days if self.ai_left_days>0 else 1
         self.max_cpc_for_future = self.left_money_can_spend / self.left_target_count if self.left_target_count>0 else self.left_money_can_spend
         self.kpi_cpc = round(self.ai_spend_cap / self.destination, 2)
         self.current_cpc =  round(self.current_total_spend / self.current_target_count, 2) if self.current_target_count !=0 else 0
