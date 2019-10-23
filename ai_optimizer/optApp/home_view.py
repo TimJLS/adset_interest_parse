@@ -1,5 +1,5 @@
 from django.shortcuts import render
-
+from django.views.decorators.cache import cache_page
 # Create your views here.
 from django.http import HttpResponse
 from django.http import JsonResponse
@@ -298,7 +298,9 @@ def compute_total_budget(campaign_list):
     for campaign in campaign_list:
         total_budget += campaign.ai_spend_cap
     return total_budget
-    
+
+ 
+@cache_page(60 * 10) # 秒数，这里指缓存 15 分钟，不直接写900是为了提高可读性    
 @csrf_exempt
 def home_page(request):
 #     return HttpResponse("Hello World!")
