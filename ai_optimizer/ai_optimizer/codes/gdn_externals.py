@@ -28,23 +28,23 @@ import gdn_custom_audience as custom_audience
 
 class Index:
     criteria_column = {
-        'URL': 'url_display_name',
+#         'URL': 'url_display_name',
         'AUDIENCE': 'criterion_id',
         'DISPLAY_KEYWORD': 'keyword_id',
         'DISPLAY_TOPICS': 'criterion_id',
     }
     criteria_type = {   
-        'URL': 'Placement',
+#         'URL': 'Placement',
         'AUDIENCE': 'CriterionUserInterest',
         'DISPLAY_KEYWORD': 'Keyword',
         'DISPLAY_TOPICS': 'Vertical',
     }
     score = {  
-        'URL': 'url',
-        'CRITERIA': 'criteria',
+#         'URL': 'url',
+#         'CRITERIA': 'criteria',
         'AUDIENCE': 'audience',
         'DISPLAY_KEYWORD': 'display_keyword',
-        'DISPLAY_TOPICS': 'topics',
+        'DISPLAY_TOPICS': 'display_topics',
     }
 
 
@@ -124,12 +124,12 @@ def make_audience_criterion_by_score(campaign_id, new_ad_group_id,):
 
         df = df[df.adgroup_id == new_ad_group_id]
         df = df.sort_values(by=['score'], ascending=False).drop_duplicates(
-            [ Index.criteria_column[criteria] ] ).reset_index(drop=True)
+            [ 'criterion_id' ] ).reset_index(drop=True)
         half = math.ceil( len(df)/2 )
         biddable_df = df.iloc[:half]
         negative_df = df.iloc[half:]
-        biddable_sub_criterion = make_criterion(new_ad_group_id, biddable_df,criteria)
-        negative_sub_criterion = make_criterion(new_ad_group_id, negative_df,criteria)
+        biddable_sub_criterion = make_criterion(new_ad_group_id, biddable_df, 'AUDIENCE')
+        negative_sub_criterion = make_criterion(new_ad_group_id, negative_df, 'AUDIENCE')
         biddable_criterions += biddable_sub_criterion
         negative_criterions += negative_sub_criterion
     return biddable_criterions, negative_criterions
@@ -153,12 +153,12 @@ def make_topic_criterion_by_score(campaign_id, new_ad_group_id,):
 
         df = df[df.adgroup_id == new_ad_group_id]
         df = df.sort_values(by=['score'], ascending=False).drop_duplicates(
-            [ Index.criteria_column[criteria] ] ).reset_index(drop=True)
+            [ 'criterion_id' ] ).reset_index(drop=True)
         half = math.ceil( len(df)/2 )
         biddable_df = df.iloc[:half]
         negative_df = df.iloc[half:]
-        biddable_sub_criterion = make_criterion(new_ad_group_id, biddable_df,criteria)
-        negative_sub_criterion = make_criterion(new_ad_group_id, negative_df,criteria)
+        biddable_sub_criterion = make_criterion(new_ad_group_id, biddable_df, 'DISPLAY_TOPICS')
+        negative_sub_criterion = make_criterion(new_ad_group_id, negative_df, 'DISPLAY_TOPICS')
         biddable_criterions += biddable_sub_criterion
         negative_criterions += negative_sub_criterion
     return biddable_criterions, negative_criterions
@@ -179,13 +179,12 @@ def make_keyword_criterion_by_score(campaign_id, new_ad_group_id):
     df = df[ df.request_time.dt.date == (datetime.datetime.now().date()) ]
     if not df.empty:
         df = df[df.adgroup_id == new_ad_group_id]
-        df = df.sort_values(by=['score'], ascending=False).drop_duplicates(
-            [ Index.criteria_column[criteria] ] ).reset_index(drop=True)
+        df = df.sort_values(by=['score'], ascending=False).reset_index(drop=True)
         half = math.ceil( len(df)/2 )
         biddable_df = df.iloc[:half]
         negative_df = df.iloc[half:]
-        biddable_sub_criterion = make_criterion(new_ad_group_id, biddable_df,criteria)
-        negative_sub_criterion = make_criterion(new_ad_group_id, negative_df,criteria)
+        biddable_sub_criterion = make_criterion(new_ad_group_id, biddable_df, 'DISPLAY_KEYWORD')
+        negative_sub_criterion = make_criterion(new_ad_group_id, negative_df, 'DISPLAY_KEYWORD')
         biddable_criterions += biddable_sub_criterion
         negative_criterions += negative_sub_criterion
     return biddable_criterions, negative_criterions
@@ -427,12 +426,12 @@ def optimize_performance_campaign():
         campaign_id = performance_campaign_dict['campaign_id']
         destination_type = performance_campaign_dict['destination_type']
         daily_target = performance_campaign_dict['daily_target']
-        is_lookalike = bool(performance_campaign_dict['is_lookalike'])
+        is_lookalike = eval(performance_campaign_dict['is_lookalike'])
         destination = performance_campaign_dict['destination']
         ai_spend_cap = performance_campaign_dict['ai_spend_cap']
         original_cpa = ai_spend_cap/destination
-        print('[optimize_branding_campaign] campaign_id:' , campaign_id)
-        print('[optimize_branding_campaign] original_cpa:' , original_cpa)
+        print('[optimize_performance_campaign] campaign_id:' , campaign_id)
+        print('[optimize_performance_campaign] original_cpa:' , original_cpa)
         
         service_container = controller.AdGroupServiceContainer( customer_id )
         
@@ -482,7 +481,7 @@ def optimize_branding_campaign():
         campaign_id = branding_campaign_dict['campaign_id']
         destination_type = branding_campaign_dict['destination_type']
         daily_target = branding_campaign_dict['daily_target']
-        is_lookalike = bool(branding_campaign_dict['is_lookalike'])
+        is_lookalike = eval(branding_campaign_dict['is_lookalike'])
         destination = branding_campaign_dict['destination']
         ai_spend_cap = branding_campaign_dict['ai_spend_cap']
         original_cpc = ai_spend_cap/destination

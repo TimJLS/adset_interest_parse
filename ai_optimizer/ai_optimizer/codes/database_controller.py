@@ -89,6 +89,7 @@ class CRUDController(object):
             'table_insights': "adgroup_insights",
             'score': "adgroup_score",
             'audience_score': "audience_score",
+            'display_keyword_score': "display_keyword_score",
             'display_topics_score': "display_topics_score",
             'display_keyword_insights': "display_keyword_insights",
             'display_topics_insights': "display_topics_insights",
@@ -99,6 +100,7 @@ class CRUDController(object):
         'gsn': {
             'campaign_id': sql.column("campaign_id"),
             'adset_id': sql.column("adgroup_id"),
+            'keyword_id': sql.column("keyword_id"),
             'campaign_target': "campaign_target",
             'table_init_bid': "adgroup_initial_bid",
             'table_insights': "keywords_insights",
@@ -352,17 +354,22 @@ class CRUDController(object):
                 return self.engine.dispose()
             self.conn.execute( stmt, )
             
-    def update_init_bid(self, campaign_id=None, update_ratio=1.1, adset_id=None):
+    def update_init_bid(self, campaign_id=None, update_ratio=1.1, adset_id=None, keyword_id=None):
         with self.engine.connect() as self.conn:
             tbl = Table(self.metrics_converter[self.media]['table_init_bid'], self.metadata, autoload=True)
             if campaign_id:
-                stmt = self.metrics_converter[self.media]['campaign_id'] == campaign_id
+                stmt = [self.metrics_converter[self.media]['campaign_id'] == campaign_id]
+            elif adset_id and keyword_id:
+                stmt = [
+                    self.metrics_converter[self.media]['adset_id'] == adset_id,
+                    self.metrics_converter[self.media]['keyword_id'] == keyword_id,
+                ]
             elif adset_id:
-                stmt = self.metrics_converter[self.media]['adset_id'] == adset_id
+                stmt = [self.metrics_converter[self.media]['adset_id'] == adset_id]
             else:
                 return self.engine.dispose()
             query_list = [self.metrics_converter[self.media]['adset_id'], tbl.c.bid_amount]
-            query = sql.select(query_list, from_obj=tbl).where( sql.and_( stmt ) )
+            query = sql.select(query_list, from_obj=tbl).where( sql.and_( *stmt ) )
             results = self.conn.execute( query ).fetchall()
             for (adset_id, bid_amount) in results:
                 bid_amount = bid_amount * update_ratio
