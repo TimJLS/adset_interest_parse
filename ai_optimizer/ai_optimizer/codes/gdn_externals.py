@@ -120,7 +120,7 @@ def make_audience_criterion_by_score(campaign_id, new_ad_group_id,):
         df['audience_type'] = df.audience.str.split('::', expand=True)[0]
         df['audience'] = df.audience.str.split('::', expand=True)[1]
         df = df[~df.audience_type.isin(['boomuserlist'])]
-        df = df[~df.audience_type.isin(['custominmarket'])]
+#         df = df[~df.audience_type.isin(['custominmarket'])]
 
         df = df[df.adgroup_id == new_ad_group_id]
         df = df.sort_values(by=['score'], ascending=False).drop_duplicates(
