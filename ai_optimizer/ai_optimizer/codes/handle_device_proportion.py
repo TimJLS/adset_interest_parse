@@ -182,7 +182,7 @@ def main():
             
             if last_interval_spend <= MINIMUM_SPEND:
                 print('last time interval spend too low, no adjustment')
-                return
+                continue
             # Retrieve device seperated report
             lifetime_insights = collector_ad_group.get_adgroup_insights(date_preset='ALL_TIME', by_device=True)
             df_lifetime_insights = pd.DataFrame(lifetime_insights)
@@ -244,4 +244,10 @@ if __name__=='__main__':
 
 
 # !jupyter nbconvert --to script handle_device_proportion.ipynb
+
+
+# In[ ]:
+
+
+
 
