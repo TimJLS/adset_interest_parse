@@ -19,6 +19,7 @@ import facebook_business.adobjects.customconversion as facebook_business_customc
 
 import facebook_datacollector as fb_collector
 import database_controller
+import adgeek_permission as permission
 
 
 # In[ ]:
@@ -63,18 +64,18 @@ def save_account_custom_conversions_intodb(account_id, campaign_id, customconver
 
 
 def get_account_custom_conversions(account_id, campaign_id):
-    account_id_act = 'act_' + str(account_id)
-    this_account = facebook_business_adaccount.AdAccount(account_id_act)
-    customconversions_result = this_account.remote_read(fields=["customconversions"])
-#     print('[process_account_custom_conversion] customconversions_result:', customconversions_result)
+    import adgeek_permission
+    import json
+    import requests
+    token = adgeek_permission.init_facebook_api(account_id)
+    url = "https://graph.facebook.com/v3.3/act_{}/customconversions?fields=name&limit=1000".format(account_id)
+    headers = {"Authorization":"OAuth {}".format(token)}
+    r = requests.get(url, headers=headers)
+    data = json.loads(r.text)['data']
+    if bool(data):
+        customconversions_id_list = [ custom_conversion['id'] for custom_conversion in data ]
     
-    customconversions_id_list = []
-    if customconversions_result and customconversions_result.get('customconversions'):
-        for result in customconversions_result.get('customconversions').get('data'):
-            customconversions_id_list.append( int(result.get('id')))
-#     print('[process_account_custom_conversion] customconversions_id_list:', customconversions_id_list)
-    
-    save_account_custom_conversions_intodb(account_id, campaign_id, customconversions_id_list)
+        save_account_custom_conversions_intodb(account_id, campaign_id, customconversions_id_list)
       
     
     
@@ -159,7 +160,7 @@ def get_conversion_id_by_rule(pixel_rule, campaign_id):
     df_rule = database_fb.retrieve("custom_conversion", campaign_id, by_request_time=False)
     df_rule = df_rule[df_rule.conversion_rule == pixel_rule]['conversion_id']
     if not df_rule.empty:
-        conversion_id = df_rule.iloc[0]
+        conversion_id = df_rule.iloc[0].astype(object)
         print('[get_rule_by_adset_id] conversion_id:',conversion_id)
         return conversion_id
     return None
@@ -222,11 +223,12 @@ def get_conversion_id_by_compaign(campaign_id):
 
 def main():
     database_fb = database_controller.FB( database_controller.Database )
-    campaign_list = database_fb.get_custom_performance_campaign().to_dict('records')
-    campaign_list = [ campaign['campaign_id'] for campaign in campaign_list if not campaign['custom_conversion_id'] ]
-    for campaign_id in campaign_list:
-        conversion_id = get_conversion_id_by_compaign(campaign_id)
-        database_fb.upsert("campaign_target", {'campaign_id': campaign_id, 'custom_conversion_id': conversion_id})
+    campaign_list = database_fb.get_custom_performance_campaign(unstaged=True).to_dict('records')
+    campaign_list = [ campaign for campaign in campaign_list if not campaign['custom_conversion_id'] ]
+    for campaign in campaign_list:
+        permission.init_facebook_api(campaign['account_id'])
+        conversion_id = get_conversion_id_by_compaign(campaign['campaign_id'])
+        database_fb.upsert("campaign_target", {'campaign_id': campaign['campaign_id'], 'custom_conversion_id': conversion_id})
     database_fb.dispose()
 
 
@@ -235,6 +237,12 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# In[ ]:
+
+
+# !jupyter nbconvert --to script facebook_custom_conversion_handler.ipynb
 
 
 # In[ ]:

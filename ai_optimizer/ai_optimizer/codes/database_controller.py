@@ -178,18 +178,22 @@ class CRUDController(object):
                 ), con=self.conn
             )
         
-    def get_custom_performance_campaign(self,):
+    def get_custom_performance_campaign(self, unstaged=False):
         with self.engine.connect() as self.conn:
             tbl = Table("campaign_target", self.metadata, autoload=True)
+            stmt = [
+                tbl.c.destination_type.in_(self.CUSTOM_CAMPAIGN_LIST),
+                sql.func.date(tbl.c.ai_stop_date) >= '{:%Y/%m/%d}'.format(self.dt),
+                sql.func.date(tbl.c.ai_start_date) <= '{:%Y/%m/%d}'.format(self.dt),
+                tbl.c.ai_status == 'active',
+            ]
+            if unstaged:
+                stmt.append(tbl.c.custom_conversion_id == None)
+            else:
+                stmt.append(tbl.c.custom_conversion_id != None)
             return pd.read_sql(
                 sql.select(['*'], from_obj=tbl).where(
-                    sql.and_(
-                        tbl.c.destination_type.in_(self.CUSTOM_CAMPAIGN_LIST),
-                        tbl.c.custom_conversion_id != None,
-                        sql.func.date(tbl.c.ai_stop_date) >= '{:%Y/%m/%d}'.format(self.dt),
-                        sql.func.date(tbl.c.ai_start_date) <= '{:%Y/%m/%d}'.format(self.dt),
-                        tbl.c.ai_status == 'active',
-                    )
+                    sql.and_( *stmt )
                 ), con=self.conn
             )
         

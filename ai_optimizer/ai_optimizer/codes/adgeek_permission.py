@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 ###FB
@@ -23,7 +23,7 @@ def init_facebook_api(account_id = None):
         session = FacebookSession()
 #         FacebookAdsApi(session, api_version="latest")
         FacebookAdsApi(session, api_version="3.3").init(ADGEEK_FACEBOOK_API_ID, ADGEEK_FACEBOOK_APP_SECRET, ADGEEK_FACEBOOK_ACCESS_TOKEN)
-        return
+        return ADGEEK_FACEBOOK_ACCESS_TOKEN
     
     try:
         query_id = get_queryid_by_accountid(account_id)
@@ -35,13 +35,13 @@ def init_facebook_api(account_id = None):
 #         FacebookAdsApi(session, api_version="latest")
         
         FacebookAdsApi(session, api_version="3.3").init(credential_id, credential_secret, credential_token)
-
+        return credential_token
     except:
         print('[init_facebook_api] error')
         session = FacebookSession()
 #         FacebookAdsApi(session, api_version="latest")
         FacebookAdsApi(session, api_version="3.3").init(ADGEEK_FACEBOOK_API_ID, ADGEEK_FACEBOOK_APP_SECRET, ADGEEK_FACEBOOK_ACCESS_TOKEN)
-
+        return ADGEEK_FACEBOOK_ACCESS_TOKEN
 ##############################################################################
 
 ###GOOGLE
@@ -72,7 +72,7 @@ def init_google_api(account_id = None):
         return adgeek_adwords_client
 
 
-# In[2]:
+# In[ ]:
 
 
 import requests
@@ -119,7 +119,7 @@ def get_media_token_by_queryid(query_id):
         
 
 
-# In[3]:
+# In[ ]:
 
 
 def get_access_token_by_account(account_id):
@@ -136,7 +136,7 @@ def get_access_name_by_account(account_id):
     
 
 
-# In[4]:
+# In[ ]:
 
 
 if __name__=='__main__':
