@@ -26,6 +26,10 @@ import gdn_custom_audience as custom_audience
 # In[ ]:
 
 
+audience_index = {
+    'CriterionUserInterest':'audience',
+    'CriterionCustomIntent':'audience_custom',
+}
 class Index:
     criteria_column = {
 #         'URL': 'url_display_name',
@@ -83,21 +87,29 @@ def make_criterion(new_ad_group_id, df, criteria):
                 criterion['matchType'] = 'BROAD'
                 criterion['text'] = df['keyword'].iloc[i]
                 
-            elif Index.criteria_type[criteria] == 'CriterionUserInterest':
-                criterion['id'] = criterion_id
-                criterion['userInterestId'] = df['audience'].iloc[i]
-                
-            elif Index.criteria_type[criteria] == 'CriterionUserList':
-                criterion['id'] = criterion_id
-                criterion['userListId'] = df['audience'].iloc[i]
-                
-            elif Index.criteria_type[criteria] == 'CriterionCustomAffinity':
-                criterion['id'] = criterion_id
-                criterion['customAffinityId'] = df['audience'].iloc[i]
-                
             elif Index.criteria_type[criteria] == 'Vertical':
                 criterion['id'] = criterion_id
                 criterion['verticalId'] = df['vertical_id'].iloc[i]
+                
+            if criteria == 'AUDIENCE':
+                
+                if df['audience_type'].iloc[i] == 'uservertical':
+                    criterion['id'] = criterion_id
+                    criterion['userInterestId'] = df['audience'].iloc[i]
+                
+                elif df['audience_type'].iloc[i] == 'custominmarket':
+                    criterion['xsi_type'] = 'CriterionCustomIntent'
+                    criterion['id'] = criterion_id
+                    criterion['customIntentId'] = df['audience'].iloc[i]
+                
+#             elif Index.criteria_type[criteria] == 'CriterionUserList':
+#                 criterion['id'] = criterion_id
+#                 criterion['userListId'] = df['audience'].iloc[i]
+                
+#             elif Index.criteria_type[criteria] == 'CriterionCustomAffinity':
+#                 criterion['id'] = criterion_id
+#                 criterion['customAffinityId'] = df['audience'].iloc[i]
+
                 
             sub_criterions.append(copy.deepcopy(criterion))
     return sub_criterions
@@ -264,6 +276,7 @@ def make_basic_criterion(native_ad_group, mutant_ad_group):
 
 
 def make_user_interest_criterion(service_container, campaign_id, native_ad_group, mutant_ad_group=None):
+
     native_id = native_ad_group.ad_group_id
     if mutant_ad_group: 
         mutant_id = mutant_ad_group.ad_group_id
@@ -272,8 +285,8 @@ def make_user_interest_criterion(service_container, campaign_id, native_ad_group
     # Criterion by Score
     print('[mutant_id] ', mutant_id)
     biddable_criterions, negative_criterions = make_audience_criterion_by_score( campaign_id, mutant_id )
-    biddable_criterions = [ biddable_criterion for biddable_criterion in biddable_criterions if biddable_criterion.get("xsi_type") == 'CriterionUserInterest' ]
-    negative_criterions = [ negative_criterion for negative_criterion in negative_criterions if negative_criterion.get("xsi_type") == 'CriterionUserInterest' ]
+    biddable_criterions = [ biddable_criterion for biddable_criterion in biddable_criterions ]
+    negative_criterions = [ negative_criterion for negative_criterion in negative_criterions ]
     print('[biddable_criterions]: ', biddable_criterions)
     print('[negative_criterions]: ', negative_criterions)
     
@@ -286,7 +299,7 @@ def make_user_interest_criterion(service_container, campaign_id, native_ad_group
             'campaign_id': campaign_id,
             'adgroup_id': mutant_id,
             'criterion_id': biddable_criterion['id'],
-            'criterion_type': 'audience'
+            'criterion_type': audience_index[biddable_criterion['xsi_type']]
         }
         logger.save_adgroup_behavior(BehaviorType.OPEN, **audience_pair)
 #         except Exception as e:
@@ -301,9 +314,9 @@ def make_user_interest_criterion(service_container, campaign_id, native_ad_group
                 'campaign_id': campaign_id,
                 'adgroup_id': mutant_id,
                 'criterion_id': negative_criterion['id'],
-                'criterion_type': 'audience'
+                'criterion_type': audience_index[biddable_criterion['xsi_type']]
             }
-            logger.save_adgroup_behavior(BehaviorType.CLOSE, **audience_pair)
+#             logger.save_adgroup_behavior(BehaviorType.CLOSE, **audience_pair)
         except Exception as e:
             print('!!!!!!!!!!![make_adgroup_with_criterion]: update negative user_interest criterion failed. criterion id: ', negative_criterion['id'])
             print(e)
@@ -454,7 +467,7 @@ def optimize_performance_campaign():
 
         
         if is_assessed(campaign_id):
-            print('[optimize_branding_campaign]: campaign is assessed.')
+            print('[optimize_performance_campaign]: campaign is assessed.')
             # Assign criterion to native ad group
             for native_id in native_ad_group_id_list:
                 native_ad_group = controller.AdGroup(service_container, ad_group_id=native_id)
@@ -464,7 +477,7 @@ def optimize_performance_campaign():
                     make_user_list_criterion(campaign_id, native_ad_group)
             modify_opt_result_db(campaign_id , True)
         else:
-            print('[optimize_branding_campaign] campaign is not assessed. campaign_id: ', campaign_id)
+            print('[optimize_performance_campaign] campaign is not assessed. campaign_id: ', campaign_id)
             modify_opt_result_db(campaign_id , False)
 
 

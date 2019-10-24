@@ -35,7 +35,7 @@ class BehaviorType:
 def get_adgroup_name_bidding(db_type, campaign_id, adgroup_id, criterion_id, criterion_type):
     ADGROUP_SERVICE_FIELDS = ['AdGroupId', 'Name', 'CpcBid', 'CampaignId']
     ADGROUP_CRITERION_SERVICE_FIELDS = ['AdGroupId', 'CpcBid', 'CriteriaType', 'UserInterestId', 'UserInterestName', 'UserListId', 'LabelIds']
-    if criterion_type == 'audience':
+    if criterion_type in ['audience', 'audience_custom']:
 #         table = 'audience_insights'
 #         criterion = 'criterion_id'
 #         adgroup = 'adgroup_id'
@@ -86,6 +86,11 @@ def get_adgroup_name_bidding(db_type, campaign_id, adgroup_id, criterion_id, cri
         criterion = [ entry['criterion'] for i, entry in enumerate(entries) if entry['criterion']['type']=='USER_INTEREST' and entry['adGroupId']==adgroup_id ]
         bid_amount = [ entry['biddingStrategyConfiguration']['bids'][0]['bid']['microAmount'] for i, entry in enumerate(entries) if entry['criterion']['type']=='USER_INTEREST' and entry['adGroupId']==adgroup_id ][0]
         name = [ entry['criterion']['userInterestName'] for i, entry in enumerate(entries) if entry['criterion']['type']=='USER_INTEREST' and entry['adGroupId']==adgroup_id ][0]
+    
+    elif criterion_type == 'audience_custom':
+        criterion = [ entry['criterion'] for i, entry in enumerate(entries) if entry['criterion']['type']=='CUSTOM_INTENT' and entry['adGroupId']==adgroup_id ]
+        bid_amount = [ entry['biddingStrategyConfiguration']['bids'][0]['bid']['microAmount'] for i, entry in enumerate(entries) if entry['criterion']['type']=='CUSTOM_INTENT' and entry['adGroupId']==adgroup_id ][0]
+        name = [ entry['criterion']['customIntentId'] for i, entry in enumerate(entries) if entry['criterion']['type']=='CUSTOM_INTENT' and entry['adGroupId']==adgroup_id ][0]
     
     elif criterion_type == 'adgroup':
         criterion = None
