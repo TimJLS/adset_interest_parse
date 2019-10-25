@@ -82,7 +82,7 @@ class Campaign(object):
         self.report_downloader = self.client.GetReportDownloader(version='v201809')
         if database is None:
             database = database_controller.GSN( database_controller.Database() )
-        brief_dict = database.get_brief( self.campaign_id )
+        self.brief_dict = database.get_brief( self.campaign_id )
         self.ai_start_date = self.brief_dict['ai_start_date']
         self.ai_stop_date = self.brief_dict['ai_stop_date']
         self.ai_spend_cap = self.brief_dict['ai_spend_cap']
@@ -91,7 +91,7 @@ class Campaign(object):
         
         self.ad_group_criterion_service = self.client.GetService('AdGroupCriterionService', version='v201809')
 
-    def get_performance_insights(self, date_preset=None, performance_type='KEYWORDS'):
+    def get_performance_insights(self, database, date_preset=None, performance_type='KEYWORDS'):
         fields = datacollector.ReportField.INDEX[performance_type] if performance_type!='CAMPAIGN' else CAMPAIGN_FIELDS
         columns = datacollector.ReportColumn.INDEX[performance_type] if performance_type!='CAMPAIGN' else DB_CAMPAIGN_COLUMN_NAME_LIST
         
@@ -176,7 +176,7 @@ class Campaign(object):
         df[df.columns.difference( ['TopImpressionPercentage','Id','Criteria','SystemServingStatus', 'HourOfDay','Device','ExternalCustomerId','CampaignId','AdGroupType','AdGroupId','AdGroupStatus','BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'] )] = df[df.columns.difference(
             ['TopImpressionPercentage','Id','Criteria','SystemServingStatus','HourOfDay','Device','ExternalCustomerId','CampaignId','AdGroupType','AdGroupId','AdGroupStatus','BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'])].div(1000000)
         df.rename( columns=dict( zip(df.columns, self.db_column_name_list) ), inplace=True )
-        self.insights_dict = df.reset_index(drop=True).to_dict(orient='records')
+        self.insights_dict = df.reset_index(drop=True).fillna(0).to_dict(orient='records')
         return self.insights_dict
 
 
@@ -256,7 +256,7 @@ class KeywordGroup(object):
         df[df.columns.difference( ['TopImpressionPercentage','Id','Criteria','SystemServingStatus', 'HourOfDay','Device','ExternalCustomerId','CampaignId','AdGroupType','AdGroupId','AdGroupStatus','BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'] )] = df[df.columns.difference(
             ['TopImpressionPercentage','Id','Criteria','SystemServingStatus','HourOfDay','Device','ExternalCustomerId','CampaignId','AdGroupType','AdGroupId','AdGroupStatus','BiddingStrategyType','Impressions','Clicks', 'Conversions', 'Ctr'])].div(1000000)
         df.rename( columns=dict( zip(df.columns, self.db_column_name_list) ), inplace=True )
-        self.insights_dict = df.reset_index(drop=True).to_dict(orient='records')
+        self.insights_dict = df.reset_index(drop=True).fillna(0).to_dict(orient='records')
         return self.insights_dict
 
 
@@ -272,7 +272,7 @@ def data_collect(database, campaign):
     ai_stop_date = campaign.get("ai_stop_date")
     camp = Campaign(customer_id, campaign_id, database=database)
     ###
-    campaign_lifetime_insights = camp.get_performance_insights( date_preset=datacollector.DatePreset.lifetime, performance_type='CAMPAIGN' )
+    campaign_lifetime_insights = camp.get_performance_insights( database, date_preset=datacollector.DatePreset.lifetime, performance_type='CAMPAIGN' )
     if campaign_lifetime_insights.empty:
         return
 #     campaign_lifetime_insights = camp.get_campaign_insights( client=None, date_preset=datacollector.DatePreset.today )
@@ -282,8 +282,8 @@ def data_collect(database, campaign):
     period_left = ( camp.ai_stop_date-datetime.datetime.now().date() ).days + 1
     if period_left == 0:
         period_left = 1
-    target = campaign_lifetime_insights[ datacollector.CAMPAIGN_OBJECTIVE_FIELD[ camp.destination_type ] ]
-    target_left = int(camp.destination) - campaign_lifetime_insights[ datacollector.CAMPAIGN_OBJECTIVE_FIELD[ camp.destination_type ] ]
+    target = campaign_lifetime_insights[ datacollector.CAMPAIGN_OBJECTIVE_FIELD[ camp.destination_type ] ].iloc[0].astype(object)
+    target_left = int(camp.destination) - campaign_lifetime_insights[ datacollector.CAMPAIGN_OBJECTIVE_FIELD[ camp.destination_type ] ].iloc[0].astype(object)
 #     try:
     daily_target = target_left / period_left
         
@@ -294,15 +294,19 @@ def data_collect(database, campaign):
         **addition_dict,
     }
     print(campaign_lifetime_insights.to_dict('records')[0])
+    for key in campaign_dict.keys():
+        if key in ['serving_status', 'adgroup_id', 'cpm_bid', 'keyword_id', 'first_page_cpc', 'keyword', 'cpc_bid']:
+            campaign_dict.pop(key)
     database.upsert( "campaign_target", campaign_dict )
     keyword_insights_dict = camp.get_keyword_insights(date_preset='TODAY')
     for keyword_insights in keyword_insights_dict:
         df_keyword_group = pd.DataFrame(keyword_insights, index=[0])
-        database.insert( "campaign_target", keyword_insights )
+        database.insert( "keywords_insights", keyword_insights )
         bidding_type = keyword_insights['bidding_type']
         bid_amount_column = datacollector.BIDDING_INDEX[ bidding_type ]
         df_keyword_group['bid_amount'] = df_keyword_group[bid_amount_column]
         df_keyword_group['bid_amount'] = math.ceil(bid_operator.reverse_bid_amount(df_keyword_group[bid_amount_column].iloc[0]))
+        keyword_insights = df_keyword_group.to_dict('records')[0]
         database.insert_ignore("adgroup_initial_bid", { key : keyword_insights[key] for key in ['campaign_id', 'adgroup_id', 'keyword_id', 'bid_amount'] })
     database.dispose()
     return
@@ -320,7 +324,7 @@ def main():
     for campaign in campaign_running_list:
         print('[campaign_id]: ', campaign.get('campaign_id'))
         
-        data_collect(database, campaign)
+        data_collect(database_gdn, campaign)
     print(datetime.datetime.now()-start_time)
 
 
@@ -336,10 +340,4 @@ if __name__=='__main__':
 
 
 # !jupyter nbconvert --to script gsn_datacollector.ipynb
-
-
-# In[ ]:
-
-
-
 
