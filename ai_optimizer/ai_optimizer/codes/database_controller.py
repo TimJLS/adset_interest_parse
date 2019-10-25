@@ -259,29 +259,27 @@ class CRUDController(object):
             )
             return df.to_dict('rocords')[0] if not df.empty else {}
         
-    def get_init_bid(self, adset_id):
+    def get_init_bid(self, adset_id, keyword_id=None):
 #         adset_id = self.metrics_converter[self.media]['adset_id']
+        stmt = [self.metrics_converter[self.media]['adset_id'] == adset_id,]
+        if keyword_id:
+            stmt.append(self.metrics_converter[self.media]['keyword_id'] == keyword_id)
         with self.engine.connect() as self.conn:
             tbl = Table(self.metrics_converter[self.media]['table_init_bid'], self.metadata, autoload=True)
-            query = sql.select([tbl.c.bid_amount], from_obj=tbl).where(
-                    sql.and_(
-                        self.metrics_converter[self.media]['adset_id'] == adset_id,
-                    )
-                )
+            query = sql.select([tbl.c.bid_amount], from_obj=tbl).where( sql.and_( *stmt ) )
             results = self.conn.execute( query ).fetchall()
             for (result, ) in results:
                 return result
     
-    def get_last_bid(self, adset_id, platform='facebook'):
+    def get_last_bid(self, adset_id, platform='facebook', keyword_id=None):
 #         adset_id = self.metrics_converter[self.media]['adset_id']
+        stmt = [self.metrics_converter[self.media]['adset_id'] == adset_id,]
+        if keyword_id:
+            stmt.append(self.metrics_converter[self.media]['keyword_id'] == keyword_id)
         with self.engine.connect() as self.conn:
             tbl = Table(self.metrics_converter[self.media]['table_insights'], self.metadata, autoload=True)
             col = tbl.c.bid_amount if self.media == 'facebook' else tbl.c.cpc_bid
-            query = sql.select([col], from_obj=tbl).where(
-                    sql.and_(
-                        self.metrics_converter[self.media]['adset_id'] == adset_id,
-                    )
-                ).order_by(sql.desc(tbl.c.request_time)).limit(1)
+            query = sql.select([col], from_obj=tbl).where( sql.and_( *stmt ) ).order_by(sql.desc(tbl.c.request_time)).limit(1)
             results = self.conn.execute( query ).fetchall()
             for (result, ) in results:
                 return result

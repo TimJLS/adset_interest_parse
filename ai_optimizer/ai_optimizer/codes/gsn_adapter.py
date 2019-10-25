@@ -73,20 +73,22 @@ class CampaignAdapter(object):
     
     def get_keyword_id_list(self):
         self.df_ad = database_gsn.retrieve('table_insights', self.campaign_id).to_dict('records')
-        self.keyword_id_list = [keyword['keyword_id'] for keyword in self.df_ad if keyword['status']=='enabled']
+        self.keyword_id_list = [
+            {'ad_group_id': keyword['adgroup_id'], 'keyword_id': keyword['keyword_id']} for keyword in self.df_ad if keyword['status']=='enabled'
+        ]
         return self.keyword_id_list
     
     def _get_bid(self):
         self.get_keyword_id_list()
         for keyword in self.keyword_id_list:
             try:
-                init_bid = database_gsn.get_init_bid(keyword)
-                self.init_bid_dict.update({ keyword: init_bid })
+                init_bid = database_gsn.get_init_bid(adset_id=keyword['ad_group_id'], keyword_id=keyword['keyword_id'])
+                self.init_bid_dict.update({ keyword['keyword_id']: init_bid })
                 # last bid costs time the most
-                last_bid = database_gsn.get_last_bid(keyword)
-                self.last_bid_dict.update({ keyword: last_bid })
+                last_bid = database_gsn.get_last_bid(adset_id=keyword['ad_group_id'], keyword_id=keyword['keyword_id'], platform='gsn')
+                self.last_bid_dict.update({ keyword['keyword_id']: last_bid })
             except Exception as e:
-                print('[facebook_adapter.get_bid]: lack init_bid or last_bid. ', e)
+                print('[gsn_adapter.get_bid]: lack init_bid or last_bid. ', e)
                 pass
         
     def get_periods_left(self):

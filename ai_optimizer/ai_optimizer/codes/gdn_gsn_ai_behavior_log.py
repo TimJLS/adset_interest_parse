@@ -20,6 +20,7 @@ adwords_client = adwords.AdWordsClient.LoadFromStorage(AUTH_FILE_PATH)
 import database_controller
 
 database_gdn = database_controller.GDN( database_controller.Database() )
+database_gsn = database_controller.GSN( database_controller.Database() )
 
 class BehaviorType:
     COPY = 'copy'
@@ -32,7 +33,7 @@ class BehaviorType:
 # In[ ]:
 
 
-def get_adgroup_name_bidding(db_type, campaign_id, adgroup_id, criterion_id, criterion_type):
+def get_adgroup_name_bidding(database, campaign_id, adgroup_id, criterion_id, criterion_type):
     ADGROUP_SERVICE_FIELDS = ['AdGroupId', 'Name', 'CpcBid', 'CampaignId']
     ADGROUP_CRITERION_SERVICE_FIELDS = ['AdGroupId', 'CpcBid', 'CriteriaType', 'UserInterestId', 'UserInterestName', 'UserListId', 'LabelIds']
     if criterion_type in ['audience', 'audience_custom']:
@@ -60,9 +61,9 @@ def get_adgroup_name_bidding(db_type, campaign_id, adgroup_id, criterion_id, cri
 #         sql = "SELECT DISTINCT customer_id FROM {} WHERE {}={}".format(table, campaign, campaign_id)
 #     engine = create_engine( 'mysql://{}:{}@{}/{}'.format(gdn_saver.USER, gdn_saver.PASSWORD, gdn_saver.HOST, db_type) )
     sql = "SELECT DISTINCT customer_id FROM campaign_target WHERE campaign_id={}".format(campaign_id)
-    with database_gdn.engine.connect() as conn, conn.begin():
+    with database.engine.connect() as conn, conn.begin():
         df = pd.read_sql(sql, con=conn)
-        database_gdn.engine.dispose()
+        database.engine.dispose()
         customer_id = df.customer_id.iloc[0]
     adwords_client.SetClientCustomerId(customer_id)
 
@@ -109,7 +110,8 @@ def save_adgroup_behavior(behavior_type, db_type, campaign_id, adgroup_id, crite
     audience_pair = {'db_type': 'dev_gdn', 'adgroup_id': 71252991065, 'criterion_id': 164710527631, 'criterion_type': 'audience'}
     keywords_pair = {'db_type': 'dev_gsn', 'adgroup_id': 71353342785, 'criterion_id': 298175279711, 'criterion_type': 'keyword'}
     '''
-    display_name , criterion_bid = get_adgroup_name_bidding(db_type, campaign_id, adgroup_id, criterion_id, criterion_type)
+    database_index = {'dev_gdn': database_gdn, 'dev_gsn': database_gsn}
+    display_name , criterion_bid = get_adgroup_name_bidding(database_index[db_type], campaign_id, adgroup_id, criterion_id, criterion_type)
     created_at = int(time.time())
 
     if behavior_type == BehaviorType.ADJUST:
