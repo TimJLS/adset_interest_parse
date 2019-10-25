@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 import gsn_db
@@ -14,7 +14,7 @@ from enum import Enum
 import adgeek_permission as permission
 
 
-# In[2]:
+# In[ ]:
 
 
 class Status(object):
@@ -28,7 +28,7 @@ class Device(object):
     Tablet = 30002
 
 
-# In[3]:
+# In[ ]:
 
 
 class OperatorContainer():
@@ -104,7 +104,7 @@ class OperatorContainer():
         }]
 
 
-# In[4]:
+# In[ ]:
 
 
 class CampaignServiceContainer(object):
@@ -165,7 +165,7 @@ class Campaign(object):
                     return self.amount
 
 
-# In[29]:
+# In[ ]:
 
 
 class AdGroupServiceContainer(object):
@@ -261,11 +261,11 @@ class AdGroup(object):
         self.operator_container.selector[0]['fields'] = Keyword.fields
         self.operator_container.selector[0]['predicates'][0]['values'][0] = self.ad_group_id
         results = self.service_container.service_criterion.get(self.operator_container.selector)['entries']
-        keywords = [ Keyword(self, result['criterion']['id']) for result in results if result['criterionUse'] == 'BIDDABLE' and result['criterion']['type']=='KEYWORD' ]
+        self.keywords = [ Keyword(self, result['criterion']['id']) for result in results if result['criterionUse'] == 'BIDDABLE' and result['criterion']['type']=='KEYWORD' ]
 #         for result in results:
 #             keyword_id = result['criterion']['id']
 #             keyword = Keyword(self, keyword_id)
-        return keywords
+        return self.keywords
     
     def get_ads(self,):
         self.operator_container.selector[0]['fields'] = Creative.fields
@@ -281,7 +281,7 @@ class AdGroup(object):
         return
 
 
-# In[45]:
+# In[ ]:
 
 
 class Keyword(object):
@@ -323,7 +323,7 @@ class Keyword(object):
         self.operator_container.operation['operator'] = 'SET'
         self.operator_container.operations.append(self.operator_container.operation)
         result = self.ad_group.service_container.service_criterion.mutate(self.operator_container.operations)
-        return result
+        return self
 
     def update_bid(self, bid_micro_amount):
         self.operator_container.criterion['id'] = self.keyword_id
@@ -346,7 +346,7 @@ class Keyword(object):
         return result
 
 
-# In[39]:
+# In[ ]:
 
 
 class Param(object):
@@ -393,7 +393,7 @@ class Param(object):
         return result
 
 
-# In[40]:
+# In[ ]:
 
 
 class Criterion(object):
@@ -450,7 +450,7 @@ class Criterion(object):
             return result
 
 
-# In[21]:
+# In[ ]:
 
 
 class BasicCriterion(Criterion):
@@ -482,7 +482,7 @@ class BasicCriterion(Criterion):
             return result
 
 
-# In[32]:
+# In[ ]:
 
 
 class UserInterestCriterion(Criterion):
@@ -492,7 +492,7 @@ class UserInterestCriterion(Criterion):
         self.criterion_type = 'USER_INTEREST'
 
 
-# In[16]:
+# In[ ]:
 
 
 class UserVerticalCriterion(Criterion):
@@ -502,7 +502,7 @@ class UserVerticalCriterion(Criterion):
         self.criterion_type = 'VERTICAL'
 
 
-# In[23]:
+# In[ ]:
 
 
 class UserListCriterion(Criterion):
@@ -543,7 +543,7 @@ class UserListCriterion(Criterion):
         return result
 
 
-# In[24]:
+# In[ ]:
 
 
 class Creative(object):
@@ -585,7 +585,7 @@ class Creative(object):
             return result
 
 
-# In[25]:
+# In[ ]:
 
 
 class BidModifier(object):
@@ -621,18 +621,18 @@ class BidModifier(object):
         return resp
 
 
-# In[46]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script google_adwords_controller.ipynb
 
 
-# In[47]:
+# In[ ]:
 
 
-# service_container = AdGroupServiceContainer(customer_id=8845038097)
+# service_container = AdGroupServiceContainer(customer_id=3637290511)
 
-# ad_group = AdGroup(service_container, 77398403505)
+# ad_group = AdGroup(service_container, 79332219815)
 
 # keywords = ad_group.get_keywords()
 

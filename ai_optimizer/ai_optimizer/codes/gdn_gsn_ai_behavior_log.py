@@ -44,7 +44,7 @@ def get_adgroup_name_bidding(database, campaign_id, adgroup_id, criterion_id, cr
         field = 'Id'
         service = 'AdGroupCriterionService'
 #         sql = "SELECT DISTINCT customer_id FROM {} WHERE {}={} AND {}={}".format(table, adgroup, adgroup_id, criterion, criterion_id)
-    elif criterion_type == 'keyword':
+    elif criterion_type in ['keyword', 'display_keyword']:
 #         table = 'keywords_insights'
 #         criterion = 'keyword_id'
 #         adgroup = 'adgroup_id'
@@ -78,7 +78,7 @@ def get_adgroup_name_bidding(database, campaign_id, adgroup_id, criterion_id, cr
 #     service = adwords_client.GetService('AdGroupService', version='v201809')
     adwords_service = adwords_client.GetService(service, version='v201809')
     entries = adwords_service.get(selector)['entries']
-    if criterion_type == 'keyword':
+    if criterion_type in ['keyword', 'display_keyword']:
         criterion = [ entry['criterion'] for i, entry in enumerate(entries) if entry['criterion']['type']=='KEYWORD' and entry['adGroupId']==adgroup_id ]
         bid_amount = [ entry['biddingStrategyConfiguration']['bids'][0]['bid']['microAmount'] for i, entry in enumerate(entries) if entry['criterion']['type']=='KEYWORD' and entry['adGroupId']==adgroup_id ][0]
         name = [ entry['criterion']['text'] for i, entry in enumerate(entries) if entry['criterion']['type']=='KEYWORD' and entry['adGroupId']==adgroup_id ][0]

@@ -339,21 +339,27 @@ def make_user_interest_criterion(service_container, campaign_id, native_ad_group
 
 
 def make_display_keyword_criterion(campaign_id, controller_ad_group):
-    biddable_criterions, negative_criterions = make_display_keyword_criterion( campaign_id, controller_ad_group.ad_group_id )
-    biddable_criterions = [ biddable_criterion for biddable_criterion in biddable_criterions if biddable_criterion.get("xsi_type") == 'CriterionUserInterest' ]
-    negative_criterions = [ negative_criterion for negative_criterion in negative_criterions if negative_criterion.get("xsi_type") == 'CriterionUserInterest' ]
+    biddable_criterions, negative_criterions = make_keyword_criterion_by_score( campaign_id, controller_ad_group.ad_group_id )
+#     biddable_criterions = [ biddable_criterion for biddable_criterion in biddable_criterions if biddable_criterion.get("xsi_type") == 'CriterionUserInterest' ]
+#     negative_criterions = [ negative_criterion for negative_criterion in negative_criterions if negative_criterion.get("xsi_type") == 'CriterionUserInterest' ]
     print('[biddable_criterions]: ', biddable_criterions)
     print('[negative_criterions]: ', negative_criterions)
+    print('bid cri len: ', len(biddable_criterions))
+    print('neg cri len: ', len(negative_criterions))
     keywords = controller_ad_group.get_keywords()
     keywords = [keyword.retrieve() for keyword in keywords]
     biddable_keywords = [keyword.update_status('ENABLED') for keyword in keywords if keyword.keyword_dict['keyword_id'] in [biddable_criterion['id'] for biddable_criterion in biddable_criterions]]
     negative_keywords = [keyword.update_status('PAUSED') for keyword in keywords if keyword.keyword_dict['keyword_id'] in [negative_criterion['id'] for negative_criterion in negative_criterions]]
+
+#     print('===========HERE========')
+#     print(biddable_keywords)
+#     return
     for biddable_keyword in biddable_keywords:
         audience_pair = {
             'db_type': 'dev_gdn',
             'campaign_id': campaign_id,
             'adgroup_id': controller_ad_group.ad_group_id,
-            'criterion_id': biddable_keyword.keyword_dict['id'],
+            'criterion_id': biddable_keyword.keyword_dict['keyword_id'],
             'criterion_type': 'display_keyword'
         }
         logger.save_adgroup_behavior(BehaviorType.OPEN, **audience_pair)
@@ -362,7 +368,7 @@ def make_display_keyword_criterion(campaign_id, controller_ad_group):
             'db_type': 'dev_gdn',
             'campaign_id': campaign_id,
             'adgroup_id': controller_ad_group.ad_group_id,
-            'criterion_id': negative_keyword.keyword_dict['id'],
+            'criterion_id': negative_keyword.keyword_dict['keyword_id'],
             'criterion_type': 'display_keyword'
         }
         logger.save_adgroup_behavior(BehaviorType.OPEN, **audience_pair)
@@ -473,6 +479,8 @@ def optimize_performance_campaign():
                 native_ad_group = controller.AdGroup(service_container, ad_group_id=native_id)
                 make_user_interest_criterion(
                     service_container, campaign_id, native_ad_group,)
+                make_display_keyword_criterion(campaign_id, native_ad_group,)
+                make_display_topics_criterion(campaign_id, native_ad_group,)
                 if is_lookalike:
                     make_user_list_criterion(campaign_id, native_ad_group)
             modify_opt_result_db(campaign_id , True)
