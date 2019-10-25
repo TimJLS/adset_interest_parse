@@ -246,7 +246,7 @@ class CRUDController(object):
     def get_brief(self, campaign_id):
         with self.engine.connect() as self.conn:
             tbl = Table("campaign_target", self.metadata, autoload=True)
-            query_list = [tbl.c.ai_spend_cap, tbl.c.ai_start_date, tbl.c.ai_stop_date, tbl.c.destination_type,]
+            query_list = [tbl.c.ai_spend_cap, tbl.c.ai_start_date, tbl.c.ai_stop_date, tbl.c.destination_type, tbl.c.destination,]
             if self.media == 'facebook':
                 query_list.append(tbl.c.custom_conversion_id)
             df = pd.read_sql(
