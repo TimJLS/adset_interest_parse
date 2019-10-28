@@ -59,7 +59,7 @@ def optimize_performance_campaign():
         print('[optimize_branding_campaign] campaign_day_insights_dict', campaign_day_insights_dict_list)
         # Init param retriever Retrieve
         controller_campaign = controller.Campaign(service_container, campaign_id)
-        ad_group_list = controller_campaign.ad_groups()
+        ad_group_list = controller_campaign.get_ad_groups()
         if bool(campaign_day_insights_dict_list):
             campaign_day_insights_dict = campaign_day_insights_dict_list[0]
             campaign_day_insights_dict['original_cpa'] = original_cpa
@@ -67,7 +67,7 @@ def optimize_performance_campaign():
             campaign_day_insights_dict['achieving_rate'] = int( campaign_day_insights_dict[objective] ) / daily_target
             campaign_day_insights_dict['target'] = campaign_day_insights_dict[objective]
             print('[optimize_branding_campaign][achieving rate]', campaign_day_insights_dict['achieving_rate'], '[target]', campaign_day_insights_dict[objective], '[daily_target]', daily_target)
-            for ad_group.ad_group_id in ad_group_list:
+            for ad_group in ad_group_list:
                 handle_campaign_destination(ad_group.ad_group_id, daily_target, original_cpa)
             optimize_list = ['customer_id', 'campaign_id', 'spend', 'daily_budget', 'original_cpa', 'achieving_rate']
             campaign_status_dict = dict([(key, value) for key, value in campaign_day_insights_dict.items() if key in optimize_list])
@@ -105,10 +105,10 @@ def optimize_branding_campaign():
 
         # Init datacollector Campaign
         camp = datacollector.Campaign(customer_id, campaign_id)
-        campaign_day_insights_dict_list = camp.get_performance_insights(date_preset=datacollector.DatePreset.yesterday, performance_type='CAMPAIGN').to_dict('records')
+        campaign_day_insights_dict_list = camp.get_performance_insights(database=database_gsn, date_preset=datacollector.DatePreset.yesterday, performance_type='CAMPAIGN').to_dict('records')
         # Init param retriever Retrieve
         controller_campaign = controller.Campaign(service_container, campaign_id)
-        ad_group_list = controller_campaign.ad_groups()
+        ad_group_list = controller_campaign.get_ad_groups()
         print('[optimize_branding_campaign] campaign_day_insights_dict', campaign_day_insights_dict_list)
         if bool(campaign_day_insights_dict_list):
             campaign_day_insights_dict = campaign_day_insights_dict_list[0]
@@ -118,7 +118,7 @@ def optimize_branding_campaign():
             campaign_day_insights_dict['target'] = campaign_day_insights_dict[objective]
             print('[optimize_branding_campaign][achieving rate]', campaign_day_insights_dict['achieving_rate'], '[target]', campaign_day_insights_dict[objective], '[daily_target]', daily_target)
 
-            for ad_group.ad_group_id in ad_group_list:
+            for ad_group in ad_group_list:
                 handle_campaign_destination(ad_group.ad_group_id, daily_target, original_cpa)
 
             optimize_list = ['customer_id', 'campaign_id', 'spend', 'daily_budget', 'original_cpa', 'achieving_rate']
@@ -220,11 +220,12 @@ def handle_initial_bids(customer_id, campaign_id, spend, daily_budget, original_
 if __name__=="__main__":
     start_time = datetime.datetime.now()
     print('current time: ', start_time)
-    global database_fb
+    global database_gsn
     db = database_controller.Database()
     database_gsn = database_controller.GSN(db)
     optimize_performance_campaign()
     optimize_branding_campaign()
+    print('===============[gsn_externals]: main finish====================')
     print(datetime.datetime.now() - start_time)
 
 
