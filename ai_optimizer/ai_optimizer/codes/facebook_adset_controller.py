@@ -232,16 +232,17 @@ def make_performance_suggest_adset(campaign_id, original_adset_id):
 
 
 def ad_name_remove_copy_string(adset_id):
-    this_ad = facebook_business_ad.Ad(adset_id).remote_read(fields=["name"])
-    this_ad_name = this_ad.get('name')
-    index = this_ad_name.find(ADSET_COPY_STRING)
-    if index > -1:
-        remove_copy_name = this_ad_name[:index]
-        try:
-            this_ad.remote_update( params={'name': remove_copy_name, } )
-        except Exception as e:
-            print('[ad name change failed]: ', e)
-            pass
+    this_ad_list = AdSet(adset_id).get_ads(fields=["name"])
+    for this_ad in this_ad_list:
+        this_ad_name = this_ad.get('name')
+        index = this_ad_name.find(ADSET_COPY_STRING)
+        if index > -1:
+            remove_copy_name = this_ad_name[:index]
+            try:
+                this_ad.remote_update( params={'name': remove_copy_name, } )
+            except Exception as e:
+                print('[ad name change failed]: ', e)
+                pass
 
 def assign_copied_ad_to_new_adset(campaign_id, new_adset_id=None, ad_id=None):
     #need permission first
@@ -282,7 +283,6 @@ def copy_adset_new_target(campaign_id, new_adset_params, original_adset_id):
 
 
 # In[ ]:
-
 
 
 def copy_branding_adset(campaign_id, adset_id, actions, adset_params=None):
