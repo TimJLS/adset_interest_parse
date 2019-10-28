@@ -97,6 +97,10 @@ def make_criterion(new_ad_group_id, df, criteria):
                     criterion['id'] = criterion_id
                     criterion['userInterestId'] = df['audience'].iloc[i]
                 
+                elif df['audience_type'].iloc[i] == 'customaffinity':
+                    criterion['id'] = criterion_id
+                    criterion['customAffinityId'] = df['audience'].iloc[i]
+                
                 elif df['audience_type'].iloc[i] == 'custominmarket':
                     criterion['xsi_type'] = 'CriterionCustomIntent'
                     criterion['id'] = criterion_id
@@ -259,6 +263,7 @@ def handle_initial_bids(ad_group_id, spend, budget, daily_target, original_cpa):
 
 
 def make_basic_criterion(native_ad_group, mutant_ad_group):
+    print('=====[make_basic_criterion]=====')
     biddable, negative = native_ad_group.basic_criterions.retrieve()
 #     try:
     mutant_ad_group.basic_criterions.update(biddable, is_delivering=True, is_included=True)
@@ -276,7 +281,7 @@ def make_basic_criterion(native_ad_group, mutant_ad_group):
 
 
 def make_user_interest_criterion(service_container, campaign_id, native_ad_group, mutant_ad_group=None):
-
+    print('=====[make_user_interest_criterion]=====')
     native_id = native_ad_group.ad_group_id
     if mutant_ad_group: 
         mutant_id = mutant_ad_group.ad_group_id
@@ -287,8 +292,8 @@ def make_user_interest_criterion(service_container, campaign_id, native_ad_group
     biddable_criterions, negative_criterions = make_audience_criterion_by_score( campaign_id, mutant_id )
     biddable_criterions = [ biddable_criterion for biddable_criterion in biddable_criterions ]
     negative_criterions = [ negative_criterion for negative_criterion in negative_criterions ]
-    print('[biddable_criterions]: ', biddable_criterions)
-    print('[negative_criterions]: ', negative_criterions)
+    print('\t[biddable_criterions]: ', biddable_criterions)
+    print('\t[negative_criterions]: ', negative_criterions)
     
     ad_group = controller.AdGroup(service_container, ad_group_id=mutant_id)
     for biddable_criterion in biddable_criterions:
@@ -339,21 +344,17 @@ def make_user_interest_criterion(service_container, campaign_id, native_ad_group
 
 
 def make_display_keyword_criterion(campaign_id, controller_ad_group):
+    print('=====[make_display_keyword_criterion]=====')
     biddable_criterions, negative_criterions = make_keyword_criterion_by_score( campaign_id, controller_ad_group.ad_group_id )
 #     biddable_criterions = [ biddable_criterion for biddable_criterion in biddable_criterions if biddable_criterion.get("xsi_type") == 'CriterionUserInterest' ]
 #     negative_criterions = [ negative_criterion for negative_criterion in negative_criterions if negative_criterion.get("xsi_type") == 'CriterionUserInterest' ]
-    print('[biddable_criterions]: ', biddable_criterions)
-    print('[negative_criterions]: ', negative_criterions)
-    print('bid cri len: ', len(biddable_criterions))
-    print('neg cri len: ', len(negative_criterions))
+    print('\t[biddable_criterions]: ', biddable_criterions)
+    print('\t[negative_criterions]: ', negative_criterions)
     keywords = controller_ad_group.get_keywords()
     keywords = [keyword.retrieve() for keyword in keywords]
     biddable_keywords = [keyword.update_status('ENABLED') for keyword in keywords if keyword.keyword_dict['keyword_id'] in [biddable_criterion['id'] for biddable_criterion in biddable_criterions]]
     negative_keywords = [keyword.update_status('PAUSED') for keyword in keywords if keyword.keyword_dict['keyword_id'] in [negative_criterion['id'] for negative_criterion in negative_criterions]]
 
-#     print('===========HERE========')
-#     print(biddable_keywords)
-#     return
     for biddable_keyword in biddable_keywords:
         audience_pair = {
             'db_type': 'dev_gdn',
@@ -379,11 +380,12 @@ def make_display_keyword_criterion(campaign_id, controller_ad_group):
 
 
 def make_display_topics_criterion(campaign_id, controller_ad_group):
+    print('=====[make_display_topics_criterion]=====')
     biddable_criterions, negative_criterions = make_topic_criterion_by_score( campaign_id, controller_ad_group.ad_group_id )
     biddable_criterions = [ biddable_criterion for biddable_criterion in biddable_criterions if biddable_criterion.get("xsi_type") == 'CriterionUserInterest' ]
     negative_criterions = [ negative_criterion for negative_criterion in negative_criterions if negative_criterion.get("xsi_type") == 'CriterionUserInterest' ]
-    print('[biddable_criterions]: ', biddable_criterions)
-    print('[negative_criterions]: ', negative_criterions)
+    print('\t[biddable_criterions]: ', biddable_criterions)
+    print('\t[negative_criterions]: ', negative_criterions)
     for biddable_criterion in biddable_criterions:
 #         try:
         ad_group.user_vertical_criterions.update([biddable_criterion], is_delivering=True, is_included=True)
@@ -413,6 +415,7 @@ def make_display_topics_criterion(campaign_id, controller_ad_group):
 
 
 def make_user_list_criterion(campaign_id, ad_group):
+    print('=====[make_user_list_criterion]=====')
     optimized_list_dict_list, all_converters_dict_list = custom_audience.get_campaign_custom_audience(campaign_id)
     ad_group_id_list = []
     for user_list in optimized_list_dict_list:
