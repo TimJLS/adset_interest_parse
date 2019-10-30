@@ -16,18 +16,11 @@ import bid_operator
 import json
 import math
 
-DATADASE = "dev_gdn"
-START_TIME = 'start_time'
-STOP_TIME = 'stop_time'
 AI_START_DATE = 'ai_start_date'
 AI_STOP_DATE = 'ai_stop_date'
-AD_ID = 'ad_id'
 ADGROUP_ID = 'adgroup_id'
 CAMPAIGN_ID = 'campaign_id'
-CHARGE = 'charge'
 TARGET = 'target'
-BID_AMOUNT = 'bid_amount'
-REQUEST_TIME = 'request_time'
 TARGET_LEFT = 'target_left'
 
 INIT_BID = 'init_bid'
@@ -90,7 +83,8 @@ class CampaignAdapter(object):
         return self.periods
     
     def get_campaign_performance(self):
-        self.campaign_performance = self.df_camp[ TARGET ].div(self.df_camp[ 'period' ] ).sum()
+        self.campaign_performance = self.df_camp[ TARGET ].sum()
+#         self.campaign_performance = self.df_camp[ TARGET ].div(self.df_camp[ 'period' ] ).sum()
         return self.campaign_performance
     
     def get_campaign_target(self):
@@ -189,6 +183,7 @@ class AdGroupAdapter(CampaignAdapter):
         self.get_bid()
         self.get_adgroup_time_target()
         self.get_adgroup_progress()
+        database_gdn.dispose()
         return {
             ADGROUP_ID:self.adgroup_id,
             INIT_BID:self.init_bid,
