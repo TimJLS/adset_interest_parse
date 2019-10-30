@@ -486,10 +486,10 @@ def optimize_performance_campaign():
                 make_display_topics_criterion(campaign_id, native_ad_group,)
                 if is_lookalike:
                     make_user_list_criterion(campaign_id, native_ad_group)
-            modify_opt_result_db(campaign_id , True)
+            modify_opt_result_db(campaign_id , 'True')
         else:
             print('[optimize_performance_campaign] campaign is not assessed. campaign_id: ', campaign_id)
-            modify_opt_result_db(campaign_id , False)
+            modify_opt_result_db(campaign_id , 'False')
 
 
 # In[ ]:
@@ -555,13 +555,13 @@ def optimize_branding_campaign():
                     if is_lookalike:
                         make_user_list_criterion(campaign_id, native_ad_group)
                         
-                modify_opt_result_db(campaign_id , True)
+                modify_opt_result_db(campaign_id , 'True')
             else:
                 print('[optimize_branding_campaign] campaign is not assessed. campaign_id: ', campaign_id)
-                modify_opt_result_db(campaign_id , False)
+                modify_opt_result_db(campaign_id , 'False')
         else:
             print('[optimize_branding_campaign] spend money normal , achieving_rate is good ', achieving_rate)
-            modify_opt_result_db(campaign_id , False)
+            modify_opt_result_db(campaign_id , 'False')
         print('[optimize_branding_campaign]: next campaign====================')
     print('[gdn_externals]: main finish!!!!!!!!====================')
 
