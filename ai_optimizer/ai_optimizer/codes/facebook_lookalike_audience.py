@@ -16,9 +16,7 @@ import adgeek_permission as permission
 import pandas as pd
 import datetime
 import time
-
-
-
+import json
 CONVERSION_BEHAVIOR_LIST = ['Purchase', 'AddToCart', 'ViewContent']
 
 
@@ -163,19 +161,22 @@ def create_lookalike_custom_audience(account_id, campaign_id, behavior_type, aud
 
 
 def create_campaign_custom_audience_by_pixel(campaign_id):
-    campaign = facebook_business_campaign.Campaign(campaign_id)
-    campaign_object = campaign.get_insights(
-        fields = [facebook_business_campaign.Campaign.Field.account_id] )
-    account_id = campaign_object[0].get("account_id")    
+    def campaign_rule_name_parser(rule):
+        rule = json.loads(rule)
+        if 'and' in rule.keys():
+            for ele in rule['and']:
+                if 'event' in ele.keys():
+                    if 'eq' in ele['event']:
+                        return ele['event']['eq']
+    def campaign_pixel_id_parser(df):
+        return df.pixel_id.unique().tolist()[0]
     
     db = database_controller.Database()
     database_fb = database_controller.FB(db)
-    
+    this_campaign = database_fb.get_one_campaign(campaign_id).to_dict('records')[0]
+    # Get pixel id
     df = database_fb.retrieve("campaign_pixel_id", campaign_id=campaign_id, by_request_time=False)
-    df_not_opted_pixel_id = df[df.is_created=='False']
-    df_not_opted_pixel_id = df_not_opted_pixel_id.dropna(subset=['pixel_id'])
-    
-
+    df_not_opted_pixel_id = df[df.is_created=='False'].dropna(subset=['pixel_id'])
     if df_not_opted_pixel_id.empty:
         print('[create_campaign_custom_audience_by_pixel]: all custom audience of campaign {} is created.'.format(campaign_id))
         if is_lookalike_audience_created(campaign_id):
@@ -183,62 +184,71 @@ def create_campaign_custom_audience_by_pixel(campaign_id):
         else:
             print('[create_campaign_custom_audience_by_pixel]: all lookalike audience of campaign {} is not set.'.format(campaign_id))
         return
-    for pixel_id in df_not_opted_pixel_id['pixel_id'].unique().tolist():
-        event_sources = [{
-            "id": pixel_id,
-            "type": "pixel"
+    event_sources = [{
+        "id": campaign_pixel_id_parser(df_not_opted_pixel_id),
+        "type": "pixel"
+    }]
+    filters_list, name_list, behavior_list = [], [], []
+    if this_campaign.get('custom_conversion_id'):
+        behavior = 'Custom'
+        pixel_df = database_fb.retrieve("custom_conversion", campaign_id, by_request_time=False)
+        conversion_rule = pixel_df['conversion_rule'][pixel_df.conversion_id==int(this_campaign.get('custom_conversion_id'))].values[0]
+        conversion_name = pixel_df['conversion_name'][pixel_df.conversion_id==int(this_campaign.get('custom_conversion_id'))].values[0]
+            
+        filters = [{
+            "field":"event",
+            "operator":"eq",
+            "value":campaign_rule_name_parser(conversion_rule)
         }]
-        for behavior_type in df_not_opted_pixel_id['behavior_type'].tolist():
+        name = "Custom Conversion's Custom Audience"
+        filters_list.append(filters), name_list.append(name), behavior_list.append(behavior)
+    else:
+        for behavior in df_not_opted_pixel_id['behavior_type'].tolist():
             filters = [{
                 "field": "event",
-                "operator": "=",
-                "value": behavior_type,
+                "operator": "eq",
+                "value": behavior,
             }]
-            filter = {
-                "operator": "or",
-                "filters": filters,
-            }
-            fields = []
-            params = {
-                'name': 'My {} Custom Audience'.format(behavior_type),
-                "operator" : "and",
-                'rule': {
-                    "inclusions": {
-                        "operator": "or",
-                        "rules":[{
-                            "event_sources": event_sources, 
-                            "retention_seconds" : 2592000,
-                            "filter": filter,
-                            "aggregation" : {
-                                "type":"count",
-                                "operator":">",
-                                "value":1
-                            }
-                        }]
+            name = 'My {} Custom Audience'.format(behavior)    
+            filters_list.append(filters), name_list.append(name), behavior_list.append(behavior)
+    for idx, name in enumerate(name_list):
+        rule = {
+            "inclusions":{
+                "operator":"or",
+                "rules":[{
+                    "event_sources":event_sources,
+                    "retention_seconds":2592000,
+                    "filter":{
+                        "operator":"and",
+                        "filters": filters_list[idx]
                     }
-                }
+                }]
             }
-            try:
-                resp = facebook_business_adaccount.AdAccount('act_'+account_id).create_custom_audience(
-                    fields=fields,
-                    params=params,
-                )
-            except Exception as e:
-                print('[create_campaign_custom_audience_by_pixel]: unexpected error occured.')
-                return
-            print('==================[custom]')
-            print(resp)
-            audience_id = resp.get("id")
-            
-            create_lookalike_custom_audience(account_id, campaign_id, behavior_type, audience_id)
-            
-            update_sql = ("UPDATE campaign_pixel_id SET is_created='{}', audience_id={} WHERE campaign_id={} AND behavior_type='{}'".format( True, audience_id, campaign_id, behavior_type ) )
-            database_fb.upsert("campaign_pixel_id", {
-                "is_created": "True",
-                "audience_id": audience_id,
-                "campaign_id": campaign_id,
-                "behavior_type": behavior_type,
-            })
+        }
+        params = {
+            'name': name,
+            'operator': 'and',
+            'rule': rule
+        }
+        print('=====HERE====')
+        print(params)
+        try:
+            resp = facebook_business_adaccount.AdAccount( 'act_'+str(this_campaign.get("account_id"))
+                                                        ).create_custom_audience( params=params,)
+        except Exception as e:
+            print('[create_campaign_custom_audience_by_pixel]: unexpected error occured.')
+            print(e)
+            return
+        print('==================[custom]')
+        print(resp)
+        audience_id = resp.get("id")
+        create_lookalike_custom_audience(str(this_campaign.get("account_id")), campaign_id, behavior_list[idx], audience_id)
+        database_fb.upsert("campaign_pixel_id", {
+            "is_created": "True",
+            "audience_id": audience_id,
+            "campaign_id": campaign_id,
+            "behavior_type": behavior_list[idx],
+        })
     database_fb.dispose()
     return
 
@@ -279,7 +289,7 @@ def save_campaign_pixel_id(campaign_id):
         fields = [facebook_business_adset.AdSet.Field.id, facebook_business_adset.AdSet.Field.status,] )
     active_adset_id_list = [adset_object.get("id") for adset_object in campaign_object if adset_object.get("status")=='ACTIVE']
     adset = facebook_business_adset.AdSet(int(active_adset_id_list[0]))
-    adset_object = adset.remote_read( fields=['promoted_object'] )
+    adset_object = adset.api_get( fields=['promoted_object'] )
     promoted_object = adset_object.get("promoted_object")
     pixel_id = promoted_object.get("pixel_id") if promoted_object else None
     if pixel_id is None:
@@ -288,18 +298,28 @@ def save_campaign_pixel_id(campaign_id):
 
     db = database_controller.Database()
     database_fb = database_controller.FB(db)
-    
-    for behavior_type in CONVERSION_BEHAVIOR_LIST:
-        
+    this_campaign = database_fb.get_one_campaign(campaign_id).to_dict('records')[0]
+    if this_campaign.get('destination_type') == 'CUSTOM':
         database_fb.insert_ignore(
             "campaign_pixel_id",
             {
                 'campaign_id': campaign_id,
-                'behavior_type': behavior_type,
+                'behavior_type': 'Custom',
                 'pixel_id': pixel_id,
                 'is_created': 'False',
             }
         )
+    else:
+        for behavior_type in CONVERSION_BEHAVIOR_LIST:
+            database_fb.insert_ignore(
+                "campaign_pixel_id",
+                {
+                    'campaign_id': campaign_id,
+                    'behavior_type': behavior_type,
+                    'pixel_id': pixel_id,
+                    'is_created': 'False',
+                }
+            )
     database_fb.dispose()
     return
 
@@ -325,15 +345,18 @@ def is_lookalike_audience_created(campaign_id):
     
     db = database_controller.Database()
     database_fb = database_controller.FB(db)
-    
+    this_campaign = database_fb.get_one_campaign(campaign_id).to_dict('records')[0]
     df_pixel_id = database_fb.retrieve("campaign_pixel_id", campaign_id=campaign_id, by_request_time=False)
     database_fb.dispose()
     if df_pixel_id.empty:
         print('[is_lookalike_audience_created]: campaign not in DB.')
         save_campaign_pixel_id(campaign_id)
         return False
-    df_lookalike = df_pixel_id[df_pixel_id.is_created=='True']
-    return len(df_lookalike.index) == len(CONVERSION_BEHAVIOR_LIST)
+    lookalike_behavior_list = df_pixel_id.behavior_type[df_pixel_id.is_created=='True'].tolist()
+    if this_campaign.get("destination_type") == 'CUSTOM':
+        return 'Custom' in lookalike_behavior_list
+    else:
+        return len(lookalike_behavior_list) == len(CONVERSION_BEHAVIOR_LIST)
 
 
 # In[ ]:
@@ -364,7 +387,7 @@ def retrieve_custom_audience_spec(campaign_id):
         for audience_id in custom_audience_dict.values():
             if audience_id:
                 custom_audience = facebook_business_custom_audience.CustomAudience(audience_id)
-                audience_attribute = custom_audience.remote_read(fields=[
+                audience_attribute = custom_audience.api_get(fields=[
                     custom_audience.Field.data_source,
                     custom_audience.Field.operation_status,
                     custom_audience.Field.retention_days,
@@ -446,6 +469,9 @@ def save_pixel_id_for_all_campaign():
     
 
 
+# In[ ]:
+
+
 def update_all_custom_audience():
     db = database_controller.Database()
     database_fb = database_controller.FB(db)
@@ -476,6 +502,8 @@ def main():
 if __name__ == "__main__":
     main()
 
+
+# In[ ]:
 
 
 # !jupyter nbconvert --to script facebook_lookalike_audience.ipynb
