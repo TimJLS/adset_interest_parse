@@ -141,7 +141,7 @@ def get_campaign_budget(adwords_client, campaign_id):
 def main():
     db = database_controller.Database
     database_gdn = database_controller.GDN( db )
-    performance_campaign_list = database_gdn.get_running_campaign().to_dict('records')
+    performance_campaign_list = database_gdn.get_performance_campaign().to_dict('records')
     performance_campaign_list = [ campaign for campaign in performance_campaign_list if eval(campaign['is_device_pro_rata']) ]
     print(performance_campaign_list)
     for campaign in performance_campaign_list:
