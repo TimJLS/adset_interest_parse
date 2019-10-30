@@ -283,8 +283,9 @@ def get_gdn_campaign(db):
         campaign_list.append(c)    
     return campaign_list
 
-def get_gsn_campaign():    
-    df_branding = gsn_db.get_campaign_is_running()
+def get_gsn_campaign(db):    
+    database_gsn = db_controller.GSN(db)
+    df_branding = database_gsn.get_running_campaign()
     campaign_list = []
     for index, row in df_branding.iterrows():
         account_id = row['customer_id']
@@ -309,7 +310,7 @@ def home_page(request):
     campaign_fb_branding_list = get_fb_branding_campaign(db)
     campaign_fb_performance_list = get_fb_performance_campaign(db)
     campaign_gdn_list = get_gdn_campaign(db)
-    campaign_gsn_list = get_gsn_campaign()
+    campaign_gsn_list = get_gsn_campaign(db)
     
     budget_dic = {}
     budget_dic['fb_branding'] = compute_total_budget(campaign_fb_branding_list)
