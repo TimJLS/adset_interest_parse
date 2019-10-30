@@ -15,7 +15,6 @@ import gsn_datacollector as datacollector
 import google_adwords_controller as controller
 import database_controller
 
-
 IS_DEBUG = False
 DATABASE = "dev_gsn"
 DATE = datetime.datetime.now().date()
@@ -76,9 +75,9 @@ def optimize_performance_campaign():
             if spend >= 1.5 * daily_budget:
                 off_keyword_list = get_keyword_off_by_score(campaign_id).to_dict('records')
                 adjust_init_bids(off_keyword_list, bid_ratio=0.75)
-                modify_opt_result_db(campaign_id , True)
+                modify_opt_result_db(campaign_id , 'True')
             else:
-                modify_opt_result_db(campaign_id , False)
+                modify_opt_result_db(campaign_id , 'False')
 
 
 # In[ ]:
@@ -182,7 +181,7 @@ def handle_initial_bids(customer_id, campaign_id, spend, daily_budget, original_
         print('[handle_initial_bids][spend]: over daily_budget')
         print('[handle_initial_bids][target]: over daily_target')
         adjust_init_bids(keyword_insights_dict_list, 0.75)
-        modify_opt_result_db(campaign_id , True)
+        modify_opt_result_db(campaign_id , 'True')
 
     elif achieving_rate > 1 and spend < 0.8 * daily_budget:
         print('[handle_initial_bids][spend]: lower daily_budget')
@@ -198,20 +197,20 @@ def handle_initial_bids(customer_id, campaign_id, spend, daily_budget, original_
         ]
         adjust_init_bids(position_keyword_list, 1.25)
         adjust_init_bids(first_page_keyword_list, 1.25)
-        modify_opt_result_db(campaign_id , True)
+        modify_opt_result_db(campaign_id , 'True')
 
     elif 0 <= achieving_rate < 1 and spend < 0.8 * daily_budget:
         print('[handle_initial_bids][spend]: lower daily_budget')
         print('[handle_initial_bids][target]: lower daily_target')
         adjust_init_bids(keyword_insights_dict_list, 1.25)
-        modify_opt_result_db(campaign_id , False)
+        modify_opt_result_db(campaign_id , 'False')
         return
 
     elif 0 <= achieving_rate < 1 and spend >= 1.5 * daily_budget:
         print('[handle_initial_bids][spend]: over daily_budget')
         print('[handle_initial_bids][target]: lower daily_target')
         adjust_init_bids(keyword_insights_dict_list, 0.75)
-        modify_opt_result_db(campaign_id , True)
+        modify_opt_result_db(campaign_id , 'True')
 
 
 # In[ ]:
