@@ -343,11 +343,16 @@ class CRUDController(object):
             ins = mysql.insert(tbl).values( **values_dict ).prefix_with('IGNORE')#.where(tbl.c.campaign_id==111)
             self.conn.execute( ins, )
             
-    def update(self, table_name, values_dict, campaign_id=None, adset_id=None, audience_id=None):
+    def update(self, table_name, values_dict, campaign_id=None, adset_id=None, audience_id=None, keyword_id=None):
         with self.engine.connect() as self.conn:
             tbl = Table(table_name, self.metadata, autoload=True)
             if campaign_id:
                 stmt = sql.update(tbl).where( tbl.c.campaign_id==campaign_id ).values( **values_dict )
+            elif adset_id and keyword_id:
+                stmt = sql.update(tbl).where( 
+                    sql.and_( (
+                        self.metrics_converter[self.media]['adset_id']==adset_id,
+                        self.metrics_converter[self.media]['keyword_id']==keyword_id,) ).values( **values_dict )
             elif adset_id:
                 stmt = sql.update(tbl).where( self.metrics_converter[self.media]['adset_id']==adset_id ).values( **values_dict )
             elif audience_id:
@@ -454,7 +459,7 @@ class GSN(CRUDController):
 
 # database.get_performance_campaign()
 # database.get_branding_campaign()
-# database.get_brief(campaign_id=23843098840440451)
+# database.get_one_campaign(campaign_id=23843806757750647)
 
 
 # database.update_init_bid(adset_id=77067721159, update_ratio=)
