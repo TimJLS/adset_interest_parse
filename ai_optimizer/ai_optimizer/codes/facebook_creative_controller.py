@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 import facebook_business.adobjects.campaign as facebook_business_campaign
@@ -19,7 +19,7 @@ CHECK_DIFF_DAY = 7
 IS_DEBUG = False
 
 
-# In[2]:
+# In[ ]:
 
 
 class Creative(object):
@@ -121,12 +121,12 @@ def get_active_ads_by_adset(adset_id):
 def get_creative_structure(collector_campaign, active_ad_list):
     
     creative_list = [ Creative(ad_id, collector_campaign) for ad_id in active_ad_list ]
-    creative_list = [ creative for creative in creative_list if creative.impressions > 0 ]
+    creative_list = [ creative for creative in creative_list if creative.reach > 500 ]
     
     return creative_list
 
 
-# In[3]:
+# In[ ]:
 
 
 def process_creative_for_adset(collector_campaign, adset_id):
@@ -140,10 +140,10 @@ def process_creative_for_adset(collector_campaign, adset_id):
     
     creative_list = get_creative_structure(collector_campaign, active_ad_list)
     
-    if len(active_ad_list) != len(creative_list):
+    if  len(creative_list) <= 1:
         print('[process_creative_for_adset] some ad does not have insight , need every ad has insight')
         return     
-        
+    
     is_all_adset_reach_enough = True
     creative_lowest_cpr = 0
     hightest_cost_creative = None
@@ -200,7 +200,7 @@ def process_active_adsets(collector_campaign, active_adsets_list):
         print('==')
 
 
-# In[4]:
+# In[ ]:
 
 
 if __name__ == '__main__':
@@ -222,7 +222,7 @@ if __name__ == '__main__':
  
 
 
-# In[5]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script facebook_creative_controller.ipynb
