@@ -352,7 +352,8 @@ class CRUDController(object):
                 stmt = sql.update(tbl).where( 
                     sql.and_( (
                         self.metrics_converter[self.media]['adset_id']==adset_id,
-                        self.metrics_converter[self.media]['keyword_id']==keyword_id,) ).values( **values_dict )
+                        self.metrics_converter[self.media]['keyword_id']==keyword_id,))
+                ).values( **values_dict )
             elif adset_id:
                 stmt = sql.update(tbl).where( self.metrics_converter[self.media]['adset_id']==adset_id ).values( **values_dict )
             elif audience_id:
