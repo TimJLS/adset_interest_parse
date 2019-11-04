@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[17]:
+# In[ ]:
 
 
 from pathlib import Path
@@ -32,7 +32,7 @@ import database_controller
 from bid_operator import *
 
 
-# In[2]:
+# In[ ]:
 
 
 
@@ -176,7 +176,7 @@ PERFORMANCE_CAMPAIGN_LIST = [
     'MESSAGES', 'SEARCH', 'INITIATE_CHECKOUT', 'LEAD_WEBSITE', 'PURCHASES', 'ADD_TO_WISHLIST', 'VIEW_CONTENT', 'ADD_PAYMENT_INFO', 'COMPLETE_REGISTRATION', 'CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART']
 
 
-# In[3]:
+# In[ ]:
 
 
 class DatePreset:
@@ -290,7 +290,7 @@ class Field:
     
 
 
-# In[4]:
+# In[ ]:
 
 
 class Accounts(object):
@@ -311,7 +311,7 @@ class Accounts(object):
         return current_account
 
 
-# In[11]:
+# In[ ]:
 
 
 class Campaigns(object):
@@ -475,7 +475,7 @@ class Campaigns(object):
         return self.campaign_info
 
 
-# In[6]:
+# In[ ]:
 
 
 class AdSets(object):
@@ -654,7 +654,7 @@ class AdSets(object):
         adsets.remote_update()
 
 
-# In[7]:
+# In[ ]:
 
 
 def data_collect( data_base_fb, campaign_id, destination, charge_type, ai_start_date, ai_stop_date ):
@@ -695,7 +695,7 @@ def data_collect( data_base_fb, campaign_id, destination, charge_type, ai_start_
     return
 
 
-# In[8]:
+# In[ ]:
 
 
 def main():
@@ -710,7 +710,7 @@ def main():
         account_id = campaign.get("account_id")
         campaign_id = campaign.get("campaign_id")
         destination = campaign.get("destination")
-        charge_type = campaign.get("charge_type")
+        charge_type = campaign.get("destination_type")
         ai_start_date = campaign.get("ai_start_date")
         ai_stop_date = campaign.get("ai_stop_date")
         custom_conversion_id = campaign.get("custom_conversion_id")
@@ -731,7 +731,7 @@ if __name__ == "__main__":
     gc.collect()
 
 
-# In[24]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script facebook_datacollector.ipynb

@@ -47,14 +47,14 @@ def modify_result_db(campaign_id, lookalike_audience_id, is_lookalike_in_adset):
     db = database_controller.Database()
     database_fb = database_controller.FB(db)
     
-    database_fb.upsert(
-        "campaign_pixel_id",
+    database_fb.update(
+        "campaign_pixel_id", 
         {
             'is_lookalike_in_adset': is_lookalike_in_adset,
             'updated_at': opt_date,
-            'campaign_id': campaign_id,
-            'lookalike_audience_id': lookalike_audience_id,
-        }
+        },
+        campaign_id = campaign_id, lookalike_audience_id = lookalike_audience_id,
+
     )
     database_fb.dispose()
 

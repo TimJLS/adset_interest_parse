@@ -343,7 +343,7 @@ class CRUDController(object):
             ins = mysql.insert(tbl).values( **values_dict ).prefix_with('IGNORE')#.where(tbl.c.campaign_id==111)
             self.conn.execute( ins, )
             
-    def update(self, table_name, values_dict, campaign_id=None, adset_id=None, audience_id=None, keyword_id=None):
+    def update(self, table_name, values_dict, campaign_id=None, adset_id=None, audience_id=None, lookalike_audience_id=None, keyword_id=None):
         with self.engine.connect() as self.conn:
             tbl = Table(table_name, self.metadata, autoload=True)
             if campaign_id:
@@ -358,6 +358,8 @@ class CRUDController(object):
                 stmt = sql.update(tbl).where( self.metrics_converter[self.media]['adset_id']==adset_id ).values( **values_dict )
             elif audience_id:
                 stmt = sql.update(tbl).where( tbl.c.audience_id==audience_id ).values( **values_dict )
+            elif lookalike_audience_id:
+                stmt = sql.update(tbl).where( tbl.c.lookalike_audience_id==lookalike_audience_id ).values( **values_dict )
             else:
                 return self.engine.dispose()
             self.conn.execute( stmt, )
@@ -451,7 +453,7 @@ class GSN(CRUDController):
 # In[ ]:
 
 
-#!jupyter nbconvert --to script database_controller.ipynb
+# !jupyter nbconvert --to script database_controller.ipynb
 
 
 # In[ ]:
