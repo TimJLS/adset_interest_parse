@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 import json
@@ -122,10 +122,10 @@ def optimize_performance_campaign(campaign_id):
     current_flight = ( datetime.date.today()-df['ai_start_date'].iloc[0] ).days
     period = df['period'].iloc[0]
     flight_process = current_flight / period
-    charge_type = df['charge_type'].iloc[0]
+    destination_type = df['destination_type'].iloc[0]
     daily_charge = df['daily_charge'].iloc[0]
     campaign_daily_budget = df['daily_budget'].iloc[0]
-    campaign_instance = Campaigns(campaign_id, charge_type)
+    campaign_instance = Campaigns(campaign_id)
     
     day_dict = campaign_instance.generate_info(date_preset=DatePreset.yesterday)
     
@@ -240,10 +240,10 @@ def optimize_branding_campaign(campaign_id):
     current_flight = ( datetime.date.today()-df['ai_start_date'].iloc[0] ).days
     period = df['period'].iloc[0]
     flight_process = current_flight / period
-    charge_type = df['charge_type'].iloc[0]
+    destination_type = df['destination_type'].iloc[0]
     daily_charge = df['daily_charge'].iloc[0]
     campaign_daily_budget = df['daily_budget'].iloc[0]
-    campaign_instance = Campaigns(campaign_id, charge_type)
+    campaign_instance = Campaigns(campaign_id)
     
     #get setting of destination and spending
     ai_setting_spend_cap = int(df['ai_spend_cap'])
@@ -382,25 +382,25 @@ def optimize_branding_campaign(campaign_id):
 def optimize_campaign(campaign_id):
     print('[optimize_campaign] campaign_id', campaign_id)
     df = database_fb.get_one_campaign(campaign_id)
-    charge_type = df['charge_type'].iloc[0]
+    destination_type = df['destination_type'].iloc[0]
     account_id = df['account_id'].iloc[0]
     permission.init_facebook_api(account_id)
     
     campaign_name , campaign_fb_status = get_campaign_name_status(campaign_id)
     print(campaign_id, campaign_fb_status, campaign_name)
     if campaign_fb_status == 'ACTIVE':
-        print('[optimize_campaign] charge_type', charge_type)
-        if charge_type in PERFORMANCE_CAMPAIGN_LIST:
+        print('[optimize_campaign] destination_type', destination_type)
+        if destination_type in PERFORMANCE_CAMPAIGN_LIST:
             optimize_performance_campaign(campaign_id)
-        elif charge_type in BRANDING_CAMPAIGN_LIST:
+        elif destination_type in BRANDING_CAMPAIGN_LIST:
             optimize_branding_campaign(campaign_id)
-        elif charge_type in CUSTOM_CONVERSION_CAMPAIGN_LIST:
+        elif destination_type in CUSTOM_CONVERSION_CAMPAIGN_LIST:
             optimize_performance_campaign(campaign_id)
         else:
             print('[optimize_campaign] error, not optimize')
 
 
-# In[2]:
+# In[ ]:
 
 
 def get_campaign_name_status(campaign_id):
@@ -408,7 +408,7 @@ def get_campaign_name_status(campaign_id):
     return this_campaign.get('name'), this_campaign.get('status')
 
 
-# In[3]:
+# In[ ]:
 
 
 if __name__ == '__main__':
@@ -425,7 +425,7 @@ if __name__ == '__main__':
         account_id = campaign.get("account_id")
         campaign_id = campaign.get("campaign_id")        
         destination = campaign.get("destination")
-        charge_type = campaign.get("charge_type")
+        destination_type = campaign.get("destination_type")
         ai_start_date = campaign.get("ai_start_date")
         ai_stop_date = campaign.get("ai_stop_date")
         custom_conversion_id = campaign.get("custom_conversion_id")
@@ -437,14 +437,14 @@ if __name__ == '__main__':
 #     optimize_campaign(23843642051100463)
 
 
-# In[4]:
+# In[ ]:
 
 
 #nate test
 # adset_controller.make_suggest_adset(23843604240180098,23843467729120098)
 
 
-# In[5]:
+# In[ ]:
 
 
 # campaign_id = 23843467729120098
@@ -452,13 +452,13 @@ if __name__ == '__main__':
 # optimize_campaign(campaign_id)
 
 
-# In[3]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script facebook_externals.ipynb
 
 
-# In[7]:
+# In[ ]:
 
 
 # global database_fb
@@ -466,7 +466,7 @@ if __name__ == '__main__':
 # modify_opt_result_db(6130308870943, "False")
 
 
-# In[8]:
+# In[ ]:
 
 
 # global database_fb
