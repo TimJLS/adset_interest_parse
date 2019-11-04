@@ -71,6 +71,8 @@ class CRUDController(object):
             'adset_id': sql.column("adset_id"),
             'table_init_bid': "adset_initial_bid",
             'table_insights': "adset_metrics",
+            'campaign_insights': "campaign_insights",
+            'campaign_predict_bids': "campaign_predict_bids",
             'score': "adset_score",
             'optimal_weight': "campaign_optimal_weight",
             'campaign_target_suggestion': "campaign_target_suggestion",

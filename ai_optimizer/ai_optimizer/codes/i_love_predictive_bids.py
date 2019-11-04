@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 import mysql_adactivity_save
 import pandas as pd
 import facebook_datacollector as datacollector
+import database_controller
 DATABASE = "dev_facebook_test"
 
 BRANDING_LIST = ['LINK_CLICKS', 'ALL_CLICKS', 'VIDEO_VIEWS', 'REACH', 'IMPRESSIONS']
@@ -15,35 +16,31 @@ TIME_WINDOW_CONST = 36
 PREDICT_STEP = 6
 
 
-# In[2]:
+# In[ ]:
 
 
 def make_df_train(df_train):
     df_train = pd.concat([df_train.shift(-5),df_train.shift(-4),df_train.shift(-3),df_train.shift(-2),df_train.shift(-1),df_train], axis=1, sort=False)
-
     df_train = df_train.dropna().reset_index(drop=True)
     return df_train
 
 
-# In[3]:
+# In[ ]:
 
 
 def make_predict():
 #     %matplotlib inline
-    df_camp = mysql_adactivity_save.get_campaign_target()
-    df_branding = df_camp[df_camp['charge_type'].isin( BRANDING_LIST )]
-    branding_campaign_id_list = df_branding.campaign_id.tolist()
-    mydb = mysql_adactivity_save.connectDB(DATABASE)
-    mycursor = mydb.cursor()
-    print('[campaign_id_list]: ', branding_campaign_id_list)
-    for campaign_id in branding_campaign_id_list:
-        print('[campaign id]: ', campaign_id)
-        insights_sql = "select campaign_id, bid_amount from campaign_insights where campaign_id={} order by request_time desc limit 1".format(campaign_id)
-        df_insights = pd.read_sql( insights_sql , con=mydb )
-        sql = "select cost_per_target from campaign_insights where campaign_id={} order by request_time desc limit {}".format(campaign_id,TIME_WINDOW_CONST)
-        df = pd.read_sql( sql , con=mydb )
-        df_train_y = df.head(PREDICT_STEP)
-        df_train_y = make_df_train(df_train_y)
+    global database_fb
+    database_fb = database_controller.FB(database_controller.Database)
+    branding_campaign_list = database_fb.get_branding_campaign().to_dict('records')
+    
+    print('[campaign_id_list]: ', [campaign.get('campaign_id') for campaign in branding_campaign_list])
+    for campaign in branding_campaign_list:
+        print('[campaign id]: ', campaign.get('campaign_id'))
+        df_insights = database_fb.retrieve("campaign_insights", campaign_id=campaign.get('campaign_id')).tail(1)
+        
+        df = database_fb.retrieve("campaign_insights", campaign_id=campaign.get('campaign_id')).tail(TIME_WINDOW_CONST)
+        df_train_y = make_df_train(df.head(PREDICT_STEP))
         df.drop(df.head(PREDICT_STEP).index, inplace=True)
         if len(df) < TIME_WINDOW_CONST and len(df) >= PREDICT_STEP:
             size = len(df.index)//PREDICT_STEP * PREDICT_STEP
@@ -51,14 +48,12 @@ def make_predict():
             df_train_x = make_df_train(df_train_x)
             result = i_love_predict(df_train_x, df_train_y)
             df_insights['predict_bids'] = result
-            mysql_adactivity_save.intoDB("campaign_predict_bids", df_insights)
+            database_fb.upsert("campaign_predict_bids", df_insights.to_dict('records')[0])
         else:
-            print('[make_predict]: campaign_id {} not enough data to predict.'.format(campaign_id))
-    mydb.close()
-    mycursor.close()
+            print('[make_predict]: campaign_id {} not enough data to predict.'.format(campaign.get('campaign_id')))
 
 
-# In[4]:
+# In[ ]:
 
 
 # %matplotlib inline
@@ -81,7 +76,7 @@ def i_love_predict(df_train_x, df_train_y):
     return str(df_y_pred.reshape(1,-1)[0].tolist())
 
 
-# In[5]:
+# In[ ]:
 
 
 # %matplotlib inline
@@ -89,7 +84,7 @@ if __name__ == '__main__':
     make_predict()
 
 
-# In[7]:
+# In[ ]:
 
 
 #!jupyter nbconvert --to script i_love_predictive_bids.ipynb
