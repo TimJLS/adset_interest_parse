@@ -352,7 +352,7 @@ class CRUDController(object):
                 stmt = sql.update(tbl).where( 
                     sql.and_( (
                         self.metrics_converter[self.media]['adset_id']==adset_id,
-                        self.metrics_converter[self.media]['keyword_id']==keyword_id,))
+                        self.metrics_converter[self.media]['keyword_id']==keyword_id,) )
                 ).values( **values_dict )
             elif adset_id:
                 stmt = sql.update(tbl).where( self.metrics_converter[self.media]['adset_id']==adset_id ).values( **values_dict )
@@ -381,7 +381,8 @@ class CRUDController(object):
             results = self.conn.execute( query ).fetchall()
             for (adset_id, bid_amount) in results:
                 bid_amount = bid_amount * update_ratio
-                self.update(self.metrics_converter[self.media]['table_init_bid'], {'bid_amount': bid_amount}, adset_id=adset_id)
+                self.update(
+                    self.metrics_converter[self.media]['table_init_bid'], {'bid_amount': bid_amount}, adset_id=adset_id, keyword_id=keyword_id)
 #             return results
 
 
@@ -450,20 +451,20 @@ class GSN(CRUDController):
 # In[ ]:
 
 
-# !jupyter nbconvert --to script database_controller.ipynb
+#!jupyter nbconvert --to script database_controller.ipynb
 
 
 # In[ ]:
 
 
-# database = FB(Database())
+# database = GSN(Database())
 
 # database.get_performance_campaign()
 # database.get_branding_campaign()
 # database.get_one_campaign(campaign_id=23843806757750647)
 
 
-# database.update_init_bid(adset_id=77067721159, update_ratio=)
+# database.update_init_bid(adset_id=56251175647, keyword_id=295275613667, update_ratio=1)
 
 
 # In[ ]:
