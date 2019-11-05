@@ -33,7 +33,8 @@ import facebook_datacollector as fb_datacollector
 
 PICK_DEFAULT_COUNT = 3
 PICK_DEFAULT_AUDIENCE_SIZE = 100000
-ADSET_COPY_STRING = ' - Copy'
+ENG_COPY_STRING = ' - Copy'
+CHN_COPY_STRING = ' - 複本'
 AI_ADSET_PREFIX = '_AI_'
 IS_DEBUG = False #debug mode will not modify anything
 
@@ -234,8 +235,9 @@ def make_performance_suggest_adset(campaign_id, original_adset_id):
 def ad_name_remove_copy_string(ad_id):
     this_ad = facebook_business_ad.Ad(ad_id).api_get(fields=["name"])
     this_ad_name = this_ad.get('name')
-    index = this_ad_name.find(ADSET_COPY_STRING)
-    if index > -1:
+    eng_index, chn_index = this_ad_name.find(ENG_COPY_STRING), this_ad_name.find(CHN_COPY_STRING)
+    if eng_index > -1 or chn_index > -1:
+        index = list(filter(lambda x: x>-1, [eng_index, chn_index]))[0]
         remove_copy_name = this_ad_name[:index]
         try:
             this_ad.api_update( params={'name': remove_copy_name, } )
