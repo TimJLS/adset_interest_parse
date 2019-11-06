@@ -30,16 +30,19 @@ class Creative(object):
         self.impressions = self.insights.get("impressions", 0)
         self.reach = self.insights.get("reach", 0)
         self.spend = self.insights.get("spend", 0)
+        self.KPI = self.campaign.brief_dict.get("ai_spend_cap")/self.campaign.brief_dict.get("destination")
         self.__get_insights()
 #         self.cost_per_reach = round(self.spend/reach ,5)
     def __str__(self):
         return 'ad_id:' + str(self.ad_id) + ' reach:' + str(self.reach) + ' spend:' + str(self.spend)+ ' cost_per_reach:' + str(self.cost_per_reach)
+    
     def update_as_close(self):
         print('[Creative] ad_id close:', self.ad_id)
         if not IS_DEBUG:
             this_ad = facebook_business_ad.Ad(self.ad_id)
             this_ad['status'] = 'PAUSED'
             this_ad.remote_update()
+            
     def __get_insights(self):
         this_ad = facebook_business_ad.Ad(self.ad_id)
         params = {
@@ -155,7 +158,6 @@ def process_creative_for_adset(collector_campaign, adset_id):
         if c.cost_per_action > creative_lowest_cpr:
             creative_lowest_cpr = c.cost_per_action
             hightest_cost_creative = c
-        
     if not is_all_adset_reach_enough:
         print('[process_creative_for_adset] some ad reach not enough')
         return
@@ -165,7 +167,7 @@ def process_creative_for_adset(collector_campaign, adset_id):
         database_fb.upsert(TABLE_NAME_CREATIVE_LOG, {'campaign_id':collector_campaign.campaign_id, 'adset_id':adset_id, 'process_date': date.today() })
 
         #need to decide which to close
-        if hightest_cost_creative:
+        if hightest_cost_creative and hightest_cost_creative.cost_per_action > hightest_cost_creative.KPI:
             print('[process_creative_for_adset] lowest cost_per_action, ad:', hightest_cost_creative.ad_id, 'cost_per_action:', hightest_cost_creative.cost_per_action)
             hightest_cost_creative.update_as_close()
 
@@ -210,6 +212,7 @@ if __name__ == '__main__':
     for index, row in performance_campaign.iterrows():
         account_id = row['account_id']
         campaign_id = row['campaign_id']
+        print('==========[campaign_id]:', campaign_id)
         is_creative_opt = eval(row['is_creative_opt'])
         if is_creative_opt:
             permission.init_facebook_api(account_id)

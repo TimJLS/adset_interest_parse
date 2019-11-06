@@ -323,13 +323,13 @@ class Campaigns(object):
         self.currency = currency_handler.get_currency_by_campaign(self.campaign_id)
         if database_fb is None:
             database_fb = database_controller.FB( database_controller.Database() )
-        brief_dict = database_fb.get_brief( self.campaign_id )
-        self.ai_spend_cap = brief_dict[Field.ai_spend_cap]
-        self.ai_start_date = brief_dict[Field.ai_start_date]
-        self.ai_stop_date = brief_dict[Field.ai_stop_date]
-        self.charge_type = brief_dict[Field.destination_type]
-        self.destination_type = brief_dict[Field.destination_type]
-        self.custom_conversion_id = brief_dict.get("custom_conversion_id")
+        self.brief_dict = database_fb.get_brief( self.campaign_id )
+        self.ai_spend_cap = self.brief_dict[Field.ai_spend_cap]
+        self.ai_start_date = self.brief_dict[Field.ai_start_date]
+        self.ai_stop_date = self.brief_dict[Field.ai_stop_date]
+        self.charge_type = self.brief_dict[Field.destination_type]
+        self.destination_type = self.brief_dict[Field.destination_type]
+        self.custom_conversion_id = self.brief_dict.get("custom_conversion_id")
         
     # Getters
 
@@ -491,13 +491,13 @@ class AdSets(object):
         self.currency = currency_handler.get_currency_by_campaign(self.campaign_id)
         if database_fb is None:
             database_fb = database_controller.FB( database_controller.Database() )
-        brief_dict = database_fb.get_brief( self.campaign_id )
-        self.ai_spend_cap = brief_dict.get(Field.ai_spend_cap)
-        self.ai_start_date = brief_dict.get(Field.ai_start_date)
-        self.ai_stop_date = brief_dict.get(Field.ai_stop_date)
-        self.charge_type = brief_dict.get(Field.destination_type)
-        self.destination_type = brief_dict.get(Field.destination_type)
-        self.custom_conversion_id = brief_dict.get("custom_conversion_id")
+        self.brief_dict = database_fb.get_brief( self.campaign_id )
+        self.ai_spend_cap = self.brief_dict.get(Field.ai_spend_cap)
+        self.ai_start_date = self.brief_dict.get(Field.ai_start_date)
+        self.ai_stop_date = self.brief_dict.get(Field.ai_stop_date)
+        self.charge_type = self.brief_dict.get(Field.destination_type)
+        self.destination_type = self.brief_dict.get(Field.destination_type)
+        self.custom_conversion_id = self.brief_dict.get("custom_conversion_id")
         
     # Getters
     
