@@ -20,6 +20,7 @@ PREDICT_STEP = 6
 
 
 def make_df_train(df_train):
+    df_train.pop('status')
     df_train = pd.concat([df_train.shift(-5),df_train.shift(-4),df_train.shift(-3),df_train.shift(-2),df_train.shift(-1),df_train], axis=1, sort=False)
     df_train = df_train.dropna().reset_index(drop=True)
     return df_train
@@ -48,6 +49,8 @@ def make_predict():
             df_train_x = make_df_train(df_train_x)
             result = i_love_predict(df_train_x, df_train_y)
             df_insights['predict_bids'] = result
+            for col in ['target', 'reach', 'spend', 'status', 'impressions', 'cost_per_target', 'request_time']:
+                df_insights.pop(col)
             database_fb.upsert("campaign_predict_bids", df_insights.to_dict('records')[0])
         else:
             print('[make_predict]: campaign_id {} not enough data to predict.'.format(campaign.get('campaign_id')))
@@ -62,6 +65,7 @@ def i_love_predict(df_train_x, df_train_y):
     import numpy as np
     from sklearn import linear_model
     from sklearn.metrics import mean_squared_error, r2_score
+    df_train_x.pop('request_time'), df_train_y.pop('request_time')
     regr = linear_model.Ridge(alpha=0.1)
     regr.fit(df_train_x.iloc[0].as_matrix().reshape(-1,1), df_train_y.iloc[0].as_matrix().reshape(-1,1))
     df_y_pred = regr.predict(df_train_y['cost_per_target'].iloc[0].as_matrix().reshape(-1, 1))
@@ -87,7 +91,7 @@ if __name__ == '__main__':
 # In[ ]:
 
 
-#!jupyter nbconvert --to script i_love_predictive_bids.ipynb
+# !jupyter nbconvert --to script i_love_predictive_bids.ipynb
 
 
 # In[ ]:
