@@ -21,9 +21,18 @@ PREDICT_STEP = 6
 
 def make_df_train(df_train):
     df_train.pop('status')
-    df_train = pd.concat([df_train.shift(-5),df_train.shift(-4),df_train.shift(-3),df_train.shift(-2),df_train.shift(-1),df_train], axis=1, sort=False)
-    df_train = df_train.dropna().reset_index(drop=True)
-    return df_train
+    df_train_x = pd.concat(
+        [df_train.shift(-5),
+         df_train.shift(-4),
+         df_train.shift(-3),
+         df_train.shift(-2),
+         df_train.shift(-1),
+         df_train
+        ], axis=1, sort=False)
+    df_train_y = df_train.shift(-6)
+    df_train_x = df_train_x.dropna().reset_index(drop=True)
+    df_train_y = df_train_y[['cost_per_target']].dropna().reset_index(drop=True)
+    return df_train_x, df_train_y
 
 
 # In[ ]:
@@ -41,13 +50,13 @@ def make_predict():
         df_insights = database_fb.retrieve("campaign_insights", campaign_id=campaign.get('campaign_id')).tail(1)
         
         df = database_fb.retrieve("campaign_insights", campaign_id=campaign.get('campaign_id')).tail(TIME_WINDOW_CONST)
-        df_train_y = make_df_train(df.head(PREDICT_STEP))
+        df_train_x, df_train_y = make_df_train(df)
         df.drop(df.head(PREDICT_STEP).index, inplace=True)
-        if len(df) < TIME_WINDOW_CONST and len(df) >= PREDICT_STEP:
-            size = len(df.index)//PREDICT_STEP * PREDICT_STEP
-            df_train_x = df.head(size)
-            df_train_x = make_df_train(df_train_x)
+        if len(df_train_x) < TIME_WINDOW_CONST and len(df_train_x) >= PREDICT_STEP:
+            size = len(df_train_x.index)//PREDICT_STEP * PREDICT_STEP
+            df_train_x, df_train_y = df_train_x.tail(size), df_train_y.tail(size)
             result = i_love_predict(df_train_x, df_train_y)
+            
             df_insights['predict_bids'] = result
             for col in ['target', 'reach', 'spend', 'status', 'impressions', 'cost_per_target', 'request_time']:
                 df_insights.pop(col)
@@ -65,19 +74,23 @@ def i_love_predict(df_train_x, df_train_y):
     import numpy as np
     from sklearn import linear_model
     from sklearn.metrics import mean_squared_error, r2_score
-    df_train_x.pop('request_time'), df_train_y.pop('request_time')
-    regr = linear_model.Ridge(alpha=0.1)
-    regr.fit(df_train_x.iloc[0].as_matrix().reshape(-1,1), df_train_y.iloc[0].as_matrix().reshape(-1,1))
-    df_y_pred = regr.predict(df_train_y['cost_per_target'].iloc[0].as_matrix().reshape(-1, 1))
-    plt.plot([i for i in range(12)],
-             df_train_x['cost_per_target'].iloc[0].as_matrix().reshape(1,-1)[0].tolist() + df_y_pred.reshape(1,-1)[0].tolist(),
-             color='blue', linewidth=3)
-
-    plt.xticks(())
-    plt.yticks()
-
+    df_train_x.pop('request_time')#, df_train_y.pop('request_time')
+    df_train_x.pop('campaign_id')#, df_train_y.pop('campaign_id')
+    regr = linear_model.Ridge(alpha=0.0001)
+#     regr = linear_model.LinearRegression()
+    predict_bids_list = []
+    regr.fit(df_train_x[['cost_per_target']].values, df_train_y.values)
+    for i in range(0, 6):
+        df_y_pred = regr.predict(df_train_x[['cost_per_target']].tail(6).iloc[[i]].values)
+        train_x_list = df_train_x['cost_per_target'].tail(6).iloc[i].as_matrix().tolist()
+        train_x_list.reverse()
+        plt.plot(
+            [i for i in range(7)],
+            train_x_list + df_y_pred.reshape(1,-1)[0].tolist(),
+            color='blue', linewidth=3)
+        predict_bids_list.append( df_y_pred.reshape(1,-1)[0].tolist()[0] )
     plt.show()
-    return str(df_y_pred.reshape(1,-1)[0].tolist())
+    return str(predict_bids_list)
 
 
 # In[ ]:
