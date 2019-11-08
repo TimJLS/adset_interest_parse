@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[15]:
 
 
 import json
@@ -91,7 +91,7 @@ FIELDS = [
 ]
 
 
-# In[ ]:
+# In[16]:
 
 
 def make_adset(adset_params):
@@ -136,7 +136,7 @@ def get_suggestion_target_by_adset(adset_id):
         return None,None
 
 
-# In[ ]:
+# In[17]:
 
 
 def make_performance_suggest_adset(campaign_id, original_adset_id): 
@@ -229,12 +229,13 @@ def make_performance_suggest_adset(campaign_id, original_adset_id):
 #     return new_adset_id
 
 
-# In[ ]:
+# In[18]:
 
 
 def ad_name_remove_copy_string(ad_id):
     this_ad = facebook_business_ad.Ad(ad_id).api_get(fields=["name"])
     this_ad_name = this_ad.get('name')
+    print('[ad_name_remove_copy_string]:', this_ad_name)
     eng_index, chn_index = this_ad_name.find(ENG_COPY_STRING), this_ad_name.find(CHN_COPY_STRING)
     if eng_index > -1 or chn_index > -1:
         index = list(filter(lambda x: x>-1, [eng_index, chn_index]))[0]
@@ -283,7 +284,7 @@ def copy_adset_new_target(campaign_id, new_adset_params, original_adset_id):
         print('[copy_adset_new_target] this adset is not existed anymore, error:', error)
 
 
-# In[ ]:
+# In[19]:
 
 
 def copy_branding_adset(campaign_id, adset_id, actions, adset_params=None):
@@ -325,7 +326,7 @@ def copy_branding_adset(campaign_id, adset_id, actions, adset_params=None):
             
 
 
-# In[ ]:
+# In[20]:
 
 
 def make_performance_lookalike_adset(campaign_id, adsets_active_list):
@@ -361,7 +362,7 @@ def make_performance_lookalike_adset(campaign_id, adsets_active_list):
     
 
 
-# In[ ]:
+# In[21]:
 
 
 #test case
@@ -373,7 +374,7 @@ def make_performance_lookalike_adset(campaign_id, adsets_active_list):
 # make_performance_suggest_adset(campaign_id, original_adset_id)
 
 
-# In[ ]:
+# In[22]:
 
 
 
@@ -400,10 +401,26 @@ def is_adset_should_close(adset_id, setting_CPA):
     
 
 
-# In[ ]:
+# In[23]:
 
 
 #  !jupyter nbconvert --to script facebook_adset_controller.ipynb
+
+
+# In[24]:
+
+
+def fast_test_remove_copy_string(account_id, campaign_id):
+    global database_fb
+    db = database_controller.Database()
+    database_fb = database_controller.FB(db)
+    permission.init_facebook_api(account_id)
+    import facebook_datacollector
+    campaign_instance = facebook_datacollector.Campaigns(campaign_id)
+    adsets_active_list = campaign_instance.get_adsets_active()
+    for original_adset_id in adsets_active_list:
+        ad_id_list = get_ad_id_list(original_adset_id)
+        [ad_name_remove_copy_string(ad_id) for ad_id in ad_id_list]
 
 
 # In[ ]:
