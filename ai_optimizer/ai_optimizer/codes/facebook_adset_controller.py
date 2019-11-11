@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[15]:
+# In[ ]:
 
 
 import json
@@ -91,7 +91,7 @@ FIELDS = [
 ]
 
 
-# In[16]:
+# In[ ]:
 
 
 def make_adset(adset_params):
@@ -136,7 +136,7 @@ def get_suggestion_target_by_adset(adset_id):
         return None,None
 
 
-# In[17]:
+# In[ ]:
 
 
 def make_performance_suggest_adset(campaign_id, original_adset_id): 
@@ -229,17 +229,18 @@ def make_performance_suggest_adset(campaign_id, original_adset_id):
 #     return new_adset_id
 
 
-# In[18]:
+# In[ ]:
 
 
 def ad_name_remove_copy_string(ad_id):
     this_ad = facebook_business_ad.Ad(ad_id).api_get(fields=["name"])
     this_ad_name = this_ad.get('name')
-    print('[ad_name_remove_copy_string]:', this_ad_name)
+    print('[ad_name_remove_copy_string]: before', this_ad_name)
     eng_index, chn_index = this_ad_name.find(ENG_COPY_STRING), this_ad_name.find(CHN_COPY_STRING)
     if eng_index > -1 or chn_index > -1:
         index = list(filter(lambda x: x>-1, [eng_index, chn_index]))[0]
         remove_copy_name = this_ad_name[:index]
+        print('[ad_name_remove_copy_string]: after', remove_copy_name)
         try:
             this_ad.api_update( params={'name': remove_copy_name, } )
         except Exception as e:
@@ -248,8 +249,8 @@ def ad_name_remove_copy_string(ad_id):
 
 def assign_copied_ad_to_new_adset(campaign_id, new_adset_id=None, ad_id=None):
     #need permission first
-    account_id = get_account_id_by_adset(new_adset_id)
-    my_access_token = permission.get_access_token_by_account(account_id)
+#     account_id = get_account_id_by_adset(new_adset_id)
+#     my_access_token = permission.get_access_token_by_account(account_id)
     url = permission.FACEBOOK_API_VERSION_URL + str(ad_id) + '/copies'
     
     querystring = {
@@ -284,7 +285,7 @@ def copy_adset_new_target(campaign_id, new_adset_params, original_adset_id):
         print('[copy_adset_new_target] this adset is not existed anymore, error:', error)
 
 
-# In[19]:
+# In[ ]:
 
 
 def copy_branding_adset(campaign_id, adset_id, actions, adset_params=None):
@@ -326,7 +327,7 @@ def copy_branding_adset(campaign_id, adset_id, actions, adset_params=None):
             
 
 
-# In[20]:
+# In[ ]:
 
 
 def make_performance_lookalike_adset(campaign_id, adsets_active_list):
@@ -362,7 +363,7 @@ def make_performance_lookalike_adset(campaign_id, adsets_active_list):
     
 
 
-# In[21]:
+# In[ ]:
 
 
 #test case
@@ -374,7 +375,7 @@ def make_performance_lookalike_adset(campaign_id, adsets_active_list):
 # make_performance_suggest_adset(campaign_id, original_adset_id)
 
 
-# In[22]:
+# In[ ]:
 
 
 
@@ -398,16 +399,15 @@ def is_adset_should_close(adset_id, setting_CPA):
     else:
         print('[is_adset_should_close] need close')
         return True
-    
 
 
-# In[23]:
+# In[ ]:
 
 
 #  !jupyter nbconvert --to script facebook_adset_controller.ipynb
 
 
-# In[24]:
+# In[ ]:
 
 
 def fast_test_remove_copy_string(account_id, campaign_id):
