@@ -572,7 +572,7 @@ def optimize_branding_campaign():
 if __name__=="__main__":
     start_time = datetime.datetime.now()
     print('current time: ', start_time)
-    global database_fb
+    global database_gdn
     db = database_controller.Database()
     database_gdn = database_controller.GDN(db)
     optimize_performance_campaign()

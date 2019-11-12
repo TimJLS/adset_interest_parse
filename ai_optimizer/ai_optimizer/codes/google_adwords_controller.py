@@ -4,7 +4,6 @@
 # In[ ]:
 
 
-import gsn_db
 from googleads import adwords
 import pandas as pd
 import copy
@@ -123,6 +122,7 @@ class Campaign(object):
         self.service_container = service_container
         self.operator_container = OperatorContainer()
         self.ad_groups = []
+        self.creatives = []
         
     def generate_ad_group_id_type_list(self,):
         self.native_ad_group_id_list = []
@@ -139,6 +139,18 @@ class Campaign(object):
             'mutant': self.mutate_ad_group_id_list,
             'native': self.native_ad_group_id_list
         }
+    
+    def get_ads(self,):
+        self.operator_container.selector_campaign[0]['fields'] = Creative.fields
+        self.operator_container.selector_campaign[0]['predicates'][0]['values'][0] = self.campaign_id
+        results = self.service_container.service_ad.get(self.operator_container.selector_campaign)['entries']
+        for result in results:
+            ad_group_id = result['adGroupId']
+            ad_id = result['ad']['id']
+            policy_summary = result['policySummary']
+            creative = Creative(self.service_container.service_ad, ad_group_id, ad_id, policy_summary=policy_summary)
+            self.creatives.append(creative)
+        return self.creatives
     
     def get_ad_groups(self,):
         self.operator_container.selector_campaign[0]['fields'] = self.fields
@@ -548,14 +560,18 @@ class UserListCriterion(Criterion):
 
 class Creative(object):
     fields = [
-        'AdGroupId', 'Id', 'HeadlinePart1', 'HeadlinePart2', 'DisplayUrl', 'CreativeFinalUrls', 'Description', 'Url']
+        'AdGroupId', 'Id', 'HeadlinePart1', 'HeadlinePart2', 'DisplayUrl', 'CreativeFinalUrls', 'Description', 'Url', 'PolicySummary']
 #     def __setattr__(self, name, value):
 #         print(name, value)
-    def __init__(self, service_ad, ad_group_id, ad_id):
+    def __init__(self, service_ad, ad_group_id, ad_id, policy_summary=None):
         self.service_ad = service_ad
         self.ad_group_id = ad_group_id
         self.operator_container = OperatorContainer()
         self.ad_id = ad_id
+        if policy_summary:
+            self.policy = PolicySummary(summary = policy_summary)
+        else:
+            self.policy = PolicySummary(service_ad, ad_group_id, ad_id)
         
     def retrieve(self,):
         self.operator_container.selector_ad[0]['fields'] = self.fields
@@ -583,6 +599,38 @@ class Creative(object):
             self.operator_container.operations.append(self.operator_container.operation)
             result = self.service_ad.mutate(self.operator_container.operations)
             return result
+
+
+# In[ ]:
+
+
+class PolicySummary(object):
+    def __init__(self, service_ad=None, ad_group_id=None, ad_id=None, topic_entries=None, review_state=None, approval_status=None, summary=None):
+        self.operator_container = OperatorContainer()
+        self.service_ad, self.ad_group_id, self.ad_id = service_ad, ad_group_id, ad_id
+        self.topic_entries, self.review_state, self.approval_status = topic_entries, review_state, approval_status
+        self.summary = {
+            'topic_entries': self.topic_entries,
+            'review_state': self.review_state,
+            'approval_status': self.approval_status,
+        }
+        if service_ad and ad_group_id and ad_id:
+            self.service_ad, self.ad_group_id, self.ad_id = service_ad, ad_group_id, ad_id
+            self.retrieve()
+        elif summary:
+            self.topic_entries, self.review_state, self.approval_status = summary['policyTopicEntries'], summary['reviewState'], summary['combinedApprovalStatus']
+            self.summary['topic_entries'], self.summary['review_state'], self.summary['approval_status'] = self.topic_entries, self.review_state, self.approval_status
+
+    def retrieve(self):
+        self.operator_container.selector_ad[0]['fields'] = Creative.fields
+        self.operator_container.selector_ad[0]['predicates'][0]['values'][0] = self.ad_id
+        self.operator_container.selector_ad[0]['predicates'][1]['values'][0] = self.ad_group_id
+        result = self.service_ad.get(self.operator_container.selector_ad)
+        if result['totalNumEntries'] != 0:
+            self.topic_entries = result['entries'][0]['policySummary']['policyTopicEntries']
+            self.review_state = result['entries'][0]['policySummary']['reviewState']
+            self.approval_status = result['entries'][0]['policySummary']['combinedApprovalStatus']
+            self.summary['topic_entries'], self.summary['review_state'], self.summary['approval_status'] = self.topic_entries, self.review_state, self.approval_status
 
 
 # In[ ]:
@@ -642,10 +690,4 @@ class BidModifier(object):
 # optimized_list_dict_list
 
 # all_converters_dict_list
-
-
-# In[ ]:
-
-
-
 
