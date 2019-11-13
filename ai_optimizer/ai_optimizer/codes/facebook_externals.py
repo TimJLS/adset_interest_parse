@@ -404,7 +404,7 @@ def optimize_campaign(campaign_id):
 
 
 def get_campaign_name_status(campaign_id):
-    this_campaign = facebook_business_campaign.Campaign( campaign_id).remote_read(fields=["status", "name"])
+    this_campaign = facebook_business_campaign.Campaign( campaign_id).api_get(fields=["status", "name"])
     return this_campaign.get('name'), this_campaign.get('status')
 
 
@@ -475,6 +475,18 @@ if __name__ == '__main__':
 # permission.init_facebook_api(341659359840575)
 # optimize_campaign(23843651750180386)
 # database_fb.dispose()
+
+
+# In[ ]:
+
+
+# global database_fb
+# db = database_controller.Database()
+# database_fb = database_controller.FB(db)
+# account_id = 1998058836909961
+# campaign_id = 23843980686020222
+# permission.init_facebook_api(account_id)
+# optimize_branding_campaign(campaign_id)
 
 
 # In[ ]:

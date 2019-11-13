@@ -121,7 +121,7 @@ def save_adgroup_behavior(behavior_type, db_type, campaign_id, adgroup_id, crite
 
     column = ["campaign_id", "adgroup_id", "criterion_id", "display_name", "criterion_type", "behavior", "behavior_misc", "created_at"]
     values = [ int(campaign_id), int(adgroup_id), criterion_id, display_name, criterion_type, behavior_type, behavior_misc, int(created_at) ]
-    database_gdn.insert("ai_behavior_log", dict(zip(column, values)))
+    database_index[db_type].insert("ai_behavior_log", dict(zip(column, values)))
     
 
 

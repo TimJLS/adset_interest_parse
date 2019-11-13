@@ -28,6 +28,7 @@ def init_facebook_api(account_id = None):
     try:
         query_id = get_queryid_by_accountid(account_id)
         token_dic = get_media_token_by_queryid(query_id)
+        print(token_dic)
         credential_id = token_dic['credential_id']
         credential_secret = token_dic['credential_secret']
         credential_token  = token_dic['credential_token']

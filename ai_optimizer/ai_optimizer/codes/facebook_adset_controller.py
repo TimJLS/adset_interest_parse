@@ -103,7 +103,7 @@ def make_adset(adset_params):
 
 def retrieve_origin_adset_params(origin_adset_id):
     origin_adset = AdSet(fbid=origin_adset_id)
-    origin_adset_params = origin_adset.remote_read(fields=FIELDS)
+    origin_adset_params = origin_adset.api_get(fields=FIELDS)
     return origin_adset_params
 
 def get_ad_id_list(adset_id):
@@ -115,7 +115,7 @@ def get_ad_id_list(adset_id):
     return ad_id_list
 
 def get_account_id_by_adset(adset_id):
-    this_adsets = AdSet( adset_id ).remote_read(fields=["account_id"])
+    this_adsets = AdSet( adset_id ).api_get(fields=["account_id"])
     account_id = this_adsets.get('account_id')
     return account_id
 
@@ -249,8 +249,8 @@ def ad_name_remove_copy_string(ad_id):
 
 def assign_copied_ad_to_new_adset(campaign_id, new_adset_id=None, ad_id=None):
     #need permission first
-#     account_id = get_account_id_by_adset(new_adset_id)
-#     my_access_token = permission.get_access_token_by_account(account_id)
+    account_id = get_account_id_by_adset(new_adset_id)
+    my_access_token = permission.get_access_token_by_account(account_id)
     url = permission.FACEBOOK_API_VERSION_URL + str(ad_id) + '/copies'
     
     querystring = {
