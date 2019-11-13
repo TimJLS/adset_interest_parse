@@ -36,6 +36,7 @@
         <h3>FB branding: {{budget_dic.fb_branding}}</h3>
         <table>
         <tr>
+            <td>後臺狀態</td>
             <td>campaign_id</td>
             <td >目標類別</td>
             <td style="background-color:DeepPink;">表定走期</td>
@@ -60,6 +61,12 @@
             
         {% for campaign in campaign_fb_branding_list %}      
             <tr>
+                {% if campaign.delivery_status != "ACTIVE" %}
+                    <td style="background-color:Tomato;">{{campaign.delivery_status}}</td>
+                {% else %}
+                    <td>{{campaign.delivery_status}}</td>
+                {% endif %}
+                <td class="small_wording"></td>
                 <td>{{campaign.campaign_id}}</td>
                 <td class="small_wording">{{campaign.charge_type}}</td>             
                 <td>{{campaign.ai_period}}</td>
@@ -110,6 +117,7 @@
         <h3>FB performance: {{budget_dic.fb_performance}}</h3>
         <table>
         <tr>
+            <td>後臺狀態</td>
             <td>campaign_id</td>
             <td >目標類別</td>
             <td style="background-color:DeepPink;">表定走期</td>
@@ -128,12 +136,17 @@
             <td>活動名稱</td>
             <td>帳號名稱</td>
             <td>token name</td>
-            <td>currency</td>            
+            <td>currency</td>
         </tr>
             
             
         {% for campaign in campaign_fb_performance_list %}      
             <tr>
+                {% if campaign.delivery_status != "ACTIVE" %}
+                    <td style="background-color:Tomato;">{{campaign.delivery_status}}</td>
+                {% else %}
+                    <td>{{campaign.delivery_status}}</td>
+                {% endif %}
                 <td>{{campaign.campaign_id}}</td>
                 <td class="small_wording">{{campaign.charge_type}}</td>             
                 <td>{{campaign.ai_period}}</td>

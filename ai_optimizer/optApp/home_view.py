@@ -43,8 +43,8 @@ class Campaign_FB():
         self.currency = currency_handler.get_currency_by_campaign(campaign_id)
 
     def get_campaign_name(self):
-        this_campaign = facebook_business_campaign.Campaign(self.campaign_id).remote_read(fields=["name"])
-        self.name = this_campaign.get('name')
+        this_campaign = facebook_business_campaign.Campaign(self.campaign_id).remote_read(fields=["name", "status"])
+        self.name, self.delivery_status = this_campaign.get('name'), this_campaign.get('status')
         
     def get_account_name(self):
         account_id_act = 'act_' + str(self.account_id)
@@ -61,7 +61,7 @@ class Campaign_FB():
             self.ai_spend_cap = campaign.get('ai_spend_cap')
             self.current_target_count = campaign.get('target', 0)
             self.left_target_count = campaign.get('target_left', 0)
-            self.current_total_spend = campaign.get('spend', 0)
+            self.current_total_spend = campaign.get('spend', 0) if campaign.get('spend') is not None else 0
             self.ai_start_date = campaign.get('ai_start_date')
             self.ai_stop_date = campaign.get('ai_stop_date')
         else:
@@ -211,7 +211,7 @@ class Campaign_GSN():
             self.ai_spend_cap = campaign.get('ai_spend_cap')
             self.current_target_count = campaign.get('target', 0)
             self.left_target_count = campaign.get('target_left', 0)
-            self.current_total_spend = campaign.get('spend', 0)
+            self.current_total_spend = campaign.get('spend')
             self.ai_start_date = campaign.get('ai_start_date')
             self.ai_stop_date = campaign.get('ai_stop_date')
             self.customer_id = campaign.get('customer_id')
@@ -254,10 +254,14 @@ def get_fb_branding_campaign(db):
     df_branding = database_fb.get_branding_campaign()
     campaign_list = []
     for index, row in df_branding.iterrows():
+#         try:
         campaign_id = row['campaign_id']
         account_id = row['account_id']
         c = Campaign_FB(campaign_id, account_id)
-        campaign_list.append(c)    
+        campaign_list.append(c)
+#         except Exception as e:
+#             print('[get_gdn_campaign]:', e)
+#             pass
     return campaign_list
 
 def get_fb_performance_campaign(db):
@@ -266,10 +270,14 @@ def get_fb_performance_campaign(db):
     
     campaign_list = []
     for index, row in df_performance.iterrows():
+#         try:
         campaign_id = row['campaign_id']
         account_id = row['account_id']
         c = Campaign_FB(campaign_id, account_id)
-        campaign_list.append(c)    
+        campaign_list.append(c)
+#         except Exception as e:
+#             print('[get_gdn_campaign]:', e)
+#             pass
     return campaign_list
 
 def get_gdn_campaign(db):
@@ -277,10 +285,14 @@ def get_gdn_campaign(db):
     df_branding = database_gdn.get_running_campaign()
     campaign_list = []
     for index, row in df_branding.iterrows():
-        account_id = row['customer_id']
-        campaign_id = row['campaign_id']
-        c = Campaign_GDN(campaign_id, account_id)
-        campaign_list.append(c)    
+        try:
+            account_id = row['customer_id']
+            campaign_id = row['campaign_id']
+            c = Campaign_GDN(campaign_id, account_id)
+            campaign_list.append(c)  
+        except Exception as e:
+            print('[get_gdn_campaign]:', e)
+            pass
     return campaign_list
 
 def get_gsn_campaign(db):    
@@ -288,10 +300,14 @@ def get_gsn_campaign(db):
     df_branding = database_gsn.get_running_campaign()
     campaign_list = []
     for index, row in df_branding.iterrows():
-        account_id = row['customer_id']
-        campaign_id = row['campaign_id']
-        c = Campaign_GSN(campaign_id, account_id)
-        campaign_list.append(c)    
+        try:
+            account_id = row['customer_id']
+            campaign_id = row['campaign_id']
+            c = Campaign_GSN(campaign_id, account_id)
+            campaign_list.append(c)
+        except Exception as e:
+            print('[get_gsn_campaign]:', e)
+            pass
     return campaign_list
 
 def compute_total_budget(campaign_list):
