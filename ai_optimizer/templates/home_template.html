@@ -36,38 +36,37 @@
         <h3>FB branding: {{budget_dic.fb_branding}}</h3>
         <table>
         <tr>
-            <td>後臺狀態</td>
+            <td class="small_wording">後臺狀態</td>
             <td>campaign_id</td>
-            <td >目標類別</td>
-            <td style="background-color:DeepPink;">表定走期</td>
-            <td style="background-color:DeepPink;">走了幾天</td>
-            <td style="background-color:Yellow;">表定 KPI</td>
-            <td style="background-color:Yellow;">目前 CPC</td>
-            <td style="background-color:GreenYellow;">表定成果數</td>
-            <td style="background-color:GreenYellow;">目前成果數</td>
-            <td style="background-color:GreenYellow;">至今應有成果數</td>
-            <td style="background-color:Cyan;">表定總預算</td>
-            <td style="background-color:Cyan;">表定日預算</td>
-            <td style="background-color:#d9b3ff;">目前花費</td>
-            <td style="background-color:#d9b3ff;">目前應有花費</td>
-            <td>AI 開始日</td>
-            <td>AI 結束日</td>
-            <td>活動名稱</td>
-            <td>帳號名稱</td>
-            <td>token name</td>
-            <td>currency</td>
+            <td class="small_wording">目標類別</td>
+            <td class="small_wording" style="background-color:DeepPink;">表定走期</td>
+            <td class="small_wording" style="background-color:DeepPink;">走了幾天</td>
+            <td class="small_wording" style="background-color:Yellow;">表定 KPI</td>
+            <td class="small_wording" style="background-color:Yellow;">目前 CPC</td>
+            <td class="small_wording" style="background-color:GreenYellow;">表定成果數</td>
+            <td class="small_wording" style="background-color:GreenYellow;">目前成果數</td>
+            <td class="small_wording" style="background-color:GreenYellow;">至今應有成果數</td>
+            <td class="small_wording" style="background-color:Cyan;">表定總預算</td>
+            <td class="small_wording" style="background-color:Cyan;">表定日預算</td>
+            <td class="small_wording" style="background-color:#d9b3ff;">目前花費</td>
+            <td class="small_wording" style="background-color:#d9b3ff;">目前應有花費</td>
+            <td class="small_wording">AI 開始日</td>
+            <td class="small_wording">AI 結束日</td>
+            <td class="small_wording">活動名稱</td>
+            <td class="small_wording">帳號名稱</td>
+            <td class="small_wording">token name</td>
+            <td class="small_wording">currency</td>
         </tr>
             
             
         {% for campaign in campaign_fb_branding_list %}      
             <tr>
                 {% if campaign.delivery_status != "ACTIVE" %}
-                    <td style="background-color:Tomato;">{{campaign.delivery_status}}</td>
+                    <td class="small_wording" style="background-color:Tomato;">{{campaign.delivery_status}}</td>
                 {% else %}
-                    <td>{{campaign.delivery_status}}</td>
+                    <td class="small_wording">{{campaign.delivery_status}}</td>
                 {% endif %}
-                <td class="small_wording"></td>
-                <td>{{campaign.campaign_id}}</td>
+                <td class="small_wording">{{campaign.campaign_id}}</td>
                 <td class="small_wording">{{campaign.charge_type}}</td>             
                 <td>{{campaign.ai_period}}</td>
                 <td>{{campaign.ai_running_days}}</td>
@@ -117,37 +116,37 @@
         <h3>FB performance: {{budget_dic.fb_performance}}</h3>
         <table>
         <tr>
-            <td>後臺狀態</td>
+            <td class="small_wording">後臺狀態</td>
             <td>campaign_id</td>
-            <td >目標類別</td>
-            <td style="background-color:DeepPink;">表定走期</td>
-            <td style="background-color:DeepPink;">走了幾天</td>
-            <td style="background-color:Yellow;">表定 KPI</td>
-            <td style="background-color:Yellow;">目前 CPC</td>
-            <td style="background-color:GreenYellow;">表定成果數</td>
-            <td style="background-color:GreenYellow;">目前成果數</td>
-            <td style="background-color:GreenYellow;">至今應有成果數</td>
-            <td style="background-color:Cyan;">表定總預算</td>
-            <td style="background-color:Cyan;">表定日預算</td>
-            <td style="background-color:#d9b3ff;">目前花費</td>
-            <td style="background-color:#d9b3ff;">目前應有花費</td>
-            <td>AI 開始日</td>
-            <td>AI 結束日</td>
-            <td>活動名稱</td>
-            <td>帳號名稱</td>
-            <td>token name</td>
-            <td>currency</td>
+            <td class="small_wording">目標類別</td>
+            <td class="small_wording" style="background-color:DeepPink;">表定走期</td>
+            <td class="small_wording" style="background-color:DeepPink;">走了幾天</td>
+            <td class="small_wording" style="background-color:Yellow;">表定 KPI</td>
+            <td class="small_wording" style="background-color:Yellow;">目前 CPC</td>
+            <td class="small_wording" style="background-color:GreenYellow;">表定成果數</td>
+            <td class="small_wording" style="background-color:GreenYellow;">目前成果數</td>
+            <td class="small_wording" style="background-color:GreenYellow;">至今應有成果數</td>
+            <td class="small_wording" style="background-color:Cyan;">表定總預算</td>
+            <td class="small_wording" style="background-color:Cyan;">表定日預算</td>
+            <td class="small_wording" style="background-color:#d9b3ff;">目前花費</td>
+            <td class="small_wording" style="background-color:#d9b3ff;">目前應有花費</td>
+            <td class="small_wording">AI 開始日</td>
+            <td class="small_wording">AI 結束日</td>
+            <td class="small_wording">活動名稱</td>
+            <td class="small_wording">帳號名稱</td>
+            <td class="small_wording">token name</td>
+            <td class="small_wording">currency</td>
         </tr>
             
             
         {% for campaign in campaign_fb_performance_list %}      
             <tr>
                 {% if campaign.delivery_status != "ACTIVE" %}
-                    <td style="background-color:Tomato;">{{campaign.delivery_status}}</td>
+                    <td class="small_wording" style="background-color:Tomato;">{{campaign.delivery_status}}</td>
                 {% else %}
-                    <td>{{campaign.delivery_status}}</td>
+                    <td class="small_wording">{{campaign.delivery_status}}</td>
                 {% endif %}
-                <td>{{campaign.campaign_id}}</td>
+                <td class="small_wording">{{campaign.campaign_id}}</td>
                 <td class="small_wording">{{campaign.charge_type}}</td>             
                 <td>{{campaign.ai_period}}</td>
                 <td>{{campaign.ai_running_days}}</td>
@@ -181,6 +180,7 @@
                 {% else %}
                     <td>{{campaign.ai_stop_date}}</td>
                 {% endif %}
+                
                 <td class="small_wording">{{campaign.name}}</td>
                 <td class="small_wording">{{campaign.account_name}}</td>
                 <td class="small_wording">{{campaign.token_name}}</td>
