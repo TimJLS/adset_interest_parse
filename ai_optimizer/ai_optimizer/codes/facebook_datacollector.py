@@ -459,7 +459,7 @@ class Campaigns(object):
     
     def currency_handle( self ):
         if self.currency != 'TWD':
-            self.campaign_insights['spend'] = int(self.campaign_insights['spend']) * 100
+            self.campaign_insights['spend'] = float(self.campaign_insights['spend']) * 100
     
     def generate_info( self, date_preset=DatePreset.lifetime ):
         self.get_campaign_features()
@@ -644,7 +644,7 @@ class AdSets(object):
     
     def currency_handle( self ):
         if self.currency == 'USD':
-            self.adset_insights['spend'] = int(self.adset_insights['spend']) * 100
+            self.adset_insights['spend'] = float(self.adset_insights['spend']) * 100
     
     def update(self, bid_amount):
         adsets = adset.AdSet( self.adset_id )
