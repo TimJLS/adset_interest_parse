@@ -6,10 +6,13 @@
 
 import mysql_adactivity_save
 import pandas as pd
+import numpy as np
 import facebook_datacollector as datacollector
 import database_controller
+import facebook_currency_handler as currency_handler
+import adgeek_permission as permission
 DATABASE = "dev_facebook_test"
-
+np.set_printoptions(suppress=True)
 BRANDING_LIST = ['LINK_CLICKS', 'ALL_CLICKS', 'VIDEO_VIEWS', 'REACH', 'IMPRESSIONS']
 
 TIME_WINDOW_CONST = 36
@@ -46,16 +49,21 @@ def make_predict():
     
     print('[campaign_id_list]: ', [campaign.get('campaign_id') for campaign in branding_campaign_list])
     for campaign in branding_campaign_list:
-        print('[campaign id]: ', campaign.get('campaign_id'))
+        print('[campaign id]: ', campaign.get('campaign_id'), campaign.get('account_id'))
+        permission.init_facebook_api(campaign.get('account_id'))
         df_insights = database_fb.retrieve("campaign_insights", campaign_id=campaign.get('campaign_id')).tail(1)
         
         df = database_fb.retrieve("campaign_insights", campaign_id=campaign.get('campaign_id')).tail(TIME_WINDOW_CONST)
+#         print(df)
         df_train_x, df_train_y = make_df_train(df)
+#         if len(df_train_x) != len(df_train_y):
+#             print(len(df_train_x), len(df_train_y))
+#             continue
         df.drop(df.head(PREDICT_STEP).index, inplace=True)
         if len(df_train_x) < TIME_WINDOW_CONST and len(df_train_x) >= PREDICT_STEP:
             size = len(df_train_x.index)//PREDICT_STEP * PREDICT_STEP
             df_train_x, df_train_y = df_train_x.tail(size), df_train_y.tail(size)
-            result = i_love_predict(df_train_x, df_train_y)
+            result = i_love_predict(campaign.get('campaign_id'), df_train_x, df_train_y)
             
             df_insights['predict_bids'] = result
             for col in ['target', 'reach', 'spend', 'status', 'impressions', 'cost_per_target', 'request_time']:
@@ -69,11 +77,13 @@ def make_predict():
 
 
 # %matplotlib inline
-def i_love_predict(df_train_x, df_train_y):
+def i_love_predict(campaign_id, df_train_x, df_train_y):
     import matplotlib.pyplot as plt
     import numpy as np
     from sklearn import linear_model
     from sklearn.metrics import mean_squared_error, r2_score
+#     campaign_id = str(df_train_x.campaign_id.iloc[:,0].unique().astype(np.int64)[0])
+#     print(type(campaign_id), campaign_id)
     df_train_x.pop('request_time')#, df_train_y.pop('request_time')
     df_train_x.pop('campaign_id')#, df_train_y.pop('campaign_id')
     regr = linear_model.Ridge(alpha=0.0001)
@@ -84,11 +94,15 @@ def i_love_predict(df_train_x, df_train_y):
         df_y_pred = regr.predict(df_train_x[['cost_per_target']].tail(6).iloc[[i]].values)
         train_x_list = df_train_x['cost_per_target'].tail(6).iloc[i].as_matrix().tolist()
         train_x_list.reverse()
+        currency = currency_handler.get_currency_by_campaign(campaign_id)
+        bids = df_y_pred.reshape(1,-1)[0].tolist()[0]
+        if currency in currency_handler.OFFSET_A_HUNDRED:
+            bids = bids / 100
         plt.plot(
             [i for i in range(7)],
             train_x_list + df_y_pred.reshape(1,-1)[0].tolist(),
             color='blue', linewidth=3)
-        predict_bids_list.append( df_y_pred.reshape(1,-1)[0].tolist()[0] )
+        predict_bids_list.append( bids )
     plt.show()
     return str(predict_bids_list)
 
