@@ -14,6 +14,8 @@ import adgeek_permission as permission
 import google_adwords_controller as controller
 import database_controller
 
+LIMMITED_STATUS_LIST = ['UNDER_REVIEW', 'DISAPPROVED']
+
 
 # In[ ]:
 
@@ -21,7 +23,7 @@ import database_controller
 def is_all_disapproved(controller_campaign):
     controller_campaign.get_ads()
     disapproved_creative_list = [
-        creative.policy.approval_status for creative in controller_campaign.creatives if creative.policy.approval_status == 'DISAPPROVED']
+        creative.policy.approval_status for creative in controller_campaign.creatives if creative.policy.approval_status in LIMMITED_STATUS_LIST ]
     return len(controller_campaign.creatives) == len(disapproved_creative_list)
 
 
@@ -33,7 +35,7 @@ def handle_gdn_campaign():
     database_gdn = database_controller.GDN(db)
     running_campaign_dict_list = database_gdn.get_running_campaign().to_dict('records')
     campaign_id_list = [ running_campaign_dict['campaign_id'] for running_campaign_dict in running_campaign_dict_list ]
-    print('[optimize_performance_campaign]: campaign_id_list', campaign_id_list)
+    print('[handle_gdn_campaign]: campaign_id_list', campaign_id_list)
     for running_campaign_dict in running_campaign_dict_list:
         customer_id = running_campaign_dict['customer_id']
         campaign_id = running_campaign_dict['campaign_id']
@@ -55,7 +57,7 @@ def handle_gsn_campaign():
     database_gsn = database_controller.GSN(db)
     running_campaign_dict_list = database_gsn.get_running_campaign().to_dict('records')
     campaign_id_list = [ running_campaign_dict['campaign_id'] for running_campaign_dict in running_campaign_dict_list ]
-    print('[optimize_performance_campaign]: campaign_id_list', campaign_id_list)
+    print('[handle_gsn_campaign]: campaign_id_list', campaign_id_list)
     for running_campaign_dict in running_campaign_dict_list:
         customer_id = running_campaign_dict['customer_id']
         campaign_id = running_campaign_dict['campaign_id']
@@ -86,6 +88,12 @@ def main():
 
 if __name__=='__main__':
     main()
+
+
+# In[ ]:
+
+
+# !jupyter nbconvert --to script google_adwords_creative_handler.ipynb
 
 
 # In[ ]:
