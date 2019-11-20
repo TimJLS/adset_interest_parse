@@ -130,7 +130,7 @@ class Campaign(object):
             else:
                 value_dict_list = df.to_dict('records')
                 for val in value_dict_list:
-                    database_gdn.upsert( performance_type.lower()+'_insights', val )
+                    database.upsert( performance_type.lower()+'_insights', val )
             return df
         
     def get_keyword_insights(self, date_preset=None):
@@ -318,13 +318,13 @@ def data_collect(database, campaign):
 def main():
     start_time = datetime.datetime.now()
     db = database_controller.Database()
-    database_gdn = database_controller.GSN(db)
-    campaign_running_list = database_gdn.get_running_campaign().to_dict('records')
+    database_gsn = database_controller.GSN(db)
+    campaign_running_list = database_gsn.get_running_campaign().to_dict('records')
     print([campaign['campaign_id'] for campaign in campaign_running_list])
     for campaign in campaign_running_list:
         print('[campaign_id]: ', campaign.get('campaign_id'))
         
-        data_collect(database_gdn, campaign)
+        data_collect(database_gsn, campaign)
     print(datetime.datetime.now()-start_time)
 
 
@@ -340,4 +340,10 @@ if __name__=='__main__':
 
 
 # !jupyter nbconvert --to script gsn_datacollector.ipynb
+
+
+# In[ ]:
+
+
+
 
