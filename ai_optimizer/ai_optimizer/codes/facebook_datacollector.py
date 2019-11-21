@@ -425,7 +425,7 @@ class Campaigns(object):
             self.campaign_insights.pop( Field.clicks, None )
             self.campaign_insights.pop( Field.cpc, None )
             self.currency_handle()
-            return self.campaign_insights
+        return self.campaign_insights
 
     def get_adsets( self ):
         adset_list=list()
@@ -627,7 +627,7 @@ class AdSets(object):
             self.adset_insights.pop( Field.clicks, None )
             self.adset_insights.pop( Field.cpc, None )
             self.currency_handle()
-            return self.adset_insights
+        return self.adset_insights
 
     # Operator
     
