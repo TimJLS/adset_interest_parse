@@ -10,8 +10,8 @@ ADGEEK_FACEBOOK_APP_SECRET = 'a952f55afca38572cea2994d440d674b'
 ADGEEK_FACEBOOK_ACCESS_TOKEN = 'EAANoD9I4obMBACygIE9jqmlaWeOW6tBma0oS6JbRpLgAvOYXpVi2XcXuasuwbBgqmaZBj5cP8MHE5WY2l9tAoi549eGZCP61mKr9BA8rZA6kxEW4ovX3KlbbrRGgt4RZC8MAi1UG0l0ZBUd0UBAhIPhzkZBi46ncuyCwkYPB7a6voVBZBTbEZAwH3azZA3Ph6g7aCOfxZCdDOp4AZDZD'
 #ADGEEK_FACEBOOK_ACCESS_TOKEN = 'EAANoD9I4obMBALrHTgMWgRujnWcZA3ZB823phs6ynDDtQxnzIZASyRQZCHfr5soXBZA7NM9Dc4j9O8FtnlIzxiPCsYt4tmPQ6ZAT3yJLPuYQqjnWZBWX5dsOVzNhEqsHYj1jVJ3RAVVueW7RSxRDbNXKvK3W23dcAjNMjxIjQGIOgZDZD'
 
-ACCOUNT_API_URL = 'http://mpc.adgeek.net/v2/accounts/'
-ACCOUNT_TOEKN_API_URL = 'http://mpc.adgeek.net/v2/credentials/'
+ACCOUNT_API_URL = 'https://mpc.adgeek.net/v2/accounts/'
+ACCOUNT_TOEKN_API_URL = 'https://mpc.adgeek.net/v2/credentials/'
 
 FACEBOOK_API_VERSION_URL = 'https://graph.facebook.com/v3.3/'
 
@@ -28,7 +28,6 @@ def init_facebook_api(account_id = None):
     try:
         query_id = get_queryid_by_accountid(account_id)
         token_dic = get_media_token_by_queryid(query_id)
-        print(token_dic)
         credential_id = token_dic['credential_id']
         credential_secret = token_dic['credential_secret']
         credential_token  = token_dic['credential_token']
