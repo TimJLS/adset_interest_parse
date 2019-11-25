@@ -389,39 +389,40 @@ class Campaigns(object):
             elif self.charge_type in PERFORMANCE_CAMPAIGN_LIST+BRANDING_CAMPAIGN_LIST:
                 actions_list = current_campaign.get( Field.actions )
                 actions_dict = FUNNEL_METRICS.get( self.charge_type )
-                if self.custom_conversion_id:
-                    custom_conversion_key = 'offsite_conversion.custom.' + str(self.custom_conversion_id)
-                    insights = dict( { custom_conversion_key: 0 } )
-                    action_type_list = [act["action_type"] for act in actions_list]
-                    action_value_list = [int(act["value"]) for act in actions_list]
-                    insights.update( dict( zip( action_type_list, action_value_list ) ) )
-                    for key, val in insights.copy().items():
-                        if val < insights[custom_conversion_key]:
-                            insights.pop(key)
-                    value_list = list(sorted(set(insights.values()), reverse=False))[:4]
-                    values = set([insights[custom_conversion_key]])
-                    for key, val in insights.copy().items():
-                        if key != custom_conversion_key:
-                            if val in values: 
-                                del insights[key]
-                            else:
-                                values.add(val)
-                    for key, val in insights.copy().items():
-                        if val not in value_list:
-                            insights.pop(key)
-                    funnel_dict = dict( zip( insights.keys(), FUNNEL_LIST ) )
-                    actual_metrics_list = list(insights.keys())
-                    insights = dict((funnel_dict[key], value) for (key, value) in insights.items())
-                    insights.update({"actual_metrics": str(actual_metrics_list)})
-                    self.campaign_insights.update( insights )
-                    
-                else:
-                    action_type_list = [actions_dict.get(act["action_type"]) for act in actions_list if act["action_type"] in actions_dict]
-                    print("[action_type_list]: ", action_type_list)
-                    action_value_list = [int(act["value"]) for act in actions_list if act["action_type"] in actions_dict]
-                    self.campaign_insights.update(
-                        dict( zip( action_type_list, action_value_list ) )
-                    )
+                if actions_list:
+                    if self.custom_conversion_id:
+                        custom_conversion_key = 'offsite_conversion.custom.' + str(self.custom_conversion_id)
+                        insights = dict( { custom_conversion_key: 0 } )
+                        action_type_list = [act["action_type"] for act in actions_list]
+                        action_value_list = [int(act["value"]) for act in actions_list]
+                        insights.update( dict( zip( action_type_list, action_value_list ) ) )
+                        for key, val in insights.copy().items():
+                            if val < insights[custom_conversion_key]:
+                                insights.pop(key)
+                        value_list = list(sorted(set(insights.values()), reverse=False))[:4]
+                        values = set([insights[custom_conversion_key]])
+                        for key, val in insights.copy().items():
+                            if key != custom_conversion_key:
+                                if val in values: 
+                                    del insights[key]
+                                else:
+                                    values.add(val)
+                        for key, val in insights.copy().items():
+                            if val not in value_list:
+                                insights.pop(key)
+                        funnel_dict = dict( zip( insights.keys(), FUNNEL_LIST ) )
+                        actual_metrics_list = list(insights.keys())
+                        insights = dict((funnel_dict[key], value) for (key, value) in insights.items())
+                        insights.update({"actual_metrics": str(actual_metrics_list)})
+                        self.campaign_insights.update( insights )
+
+                    else:
+                        action_type_list = [actions_dict.get(act["action_type"]) for act in actions_list if act["action_type"] in actions_dict]
+                        print("[action_type_list]: ", action_type_list)
+                        action_value_list = [int(act["value"]) for act in actions_list if act["action_type"] in actions_dict]
+                        self.campaign_insights.update(
+                            dict( zip( action_type_list, action_value_list ) )
+                        )
             self.campaign_insights.pop( Field.clicks, None )
             self.campaign_insights.pop( Field.cpc, None )
             self.currency_handle()
