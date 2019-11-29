@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 
 from pathlib import Path
@@ -30,7 +30,7 @@ IS_DEBUG = False
 DESTINATION_SPEED_RATIO_VALUE = 1.1
 
 
-# In[ ]:
+# In[2]:
 
 
 def update_campaign_daily_budget(campaign_id, daily_budget):
@@ -83,7 +83,7 @@ def set_campaign_daily_budget_lower(campaign_id, ai_daily_budget, lower_rate):
         update_campaign_daily_budget(campaign_id, ai_daily_budget * lower_rate)
 
 
-# In[ ]:
+# In[3]:
 
 
 def smart_spending_branding(campaign_id):
@@ -110,7 +110,7 @@ def smart_spending_branding(campaign_id):
     ai_period = (ai_stop_date - ai_start_date ).days + 1
     today = datetime.date.today()
     ai_left_days = (ai_stop_date - today ).days + 1
-    ai_running_days = (today - ai_start_date ).days + 1
+    ai_running_days = (today - ai_start_date ).days 
     
     ai_daily_budget = ai_spend_cap / ai_period
     left_money_can_spend = ai_spend_cap - current_total_spend
@@ -220,7 +220,7 @@ def smart_spending_branding(campaign_id):
     
 
 
-# In[ ]:
+# In[4]:
 
 
 def smart_spending_performance(campaign_id):
@@ -302,7 +302,7 @@ def smart_spending_performance(campaign_id):
         
 
 
-# In[ ]:
+# In[5]:
 
 
 def process_branding_campaign():
@@ -332,7 +332,7 @@ def process_branding_campaign():
     
 
 
-# In[ ]:
+# In[6]:
 
 
 def process_performance_campaign():
@@ -359,7 +359,7 @@ def process_performance_campaign():
     print('-------',datetime.datetime.now().date(), '-------all finish-------')
 
 
-# In[ ]:
+# In[7]:
 
 
 if __name__ == "__main__":
@@ -367,13 +367,13 @@ if __name__ == "__main__":
     process_performance_campaign()
 
 
-# In[ ]:
+# In[8]:
 
 
 # UPDATE `campaign_target` SET  `destination`=100,`destination_max`=110 WHERE `campaign_id` = 23843605741390744
 
 
-# In[ ]:
+# In[9]:
 
 
 
@@ -387,13 +387,13 @@ if __name__ == "__main__":
 # print(result)
 
 
-# In[ ]:
+# In[10]:
 
 
 # smart_spending_performance(23842880697850266)
 
 
-# In[ ]:
+# In[11]:
 
 
 # !jupyter nbconvert --to script facebook_smart_spending.ipynb
