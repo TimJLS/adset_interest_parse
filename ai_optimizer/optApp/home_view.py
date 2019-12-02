@@ -34,13 +34,13 @@ class Campaign_FB():
         self.token_name = permission.get_access_name_by_account(account_id)
         self.account_id = account_id
         self.campaign_id = campaign_id
+        self.currency = currency_handler.get_currency_by_campaign(campaign_id)
         self.get_campaign_status()
         self.get_campaign_name()
         self.get_account_name()
         self.compute()
         self.ai_start_date = self.ai_start_date.strftime("%Y/%m/%d")
         self.ai_stop_date = self.ai_stop_date.strftime("%Y/%m/%d")
-        self.currency = currency_handler.get_currency_by_campaign(campaign_id)
 
     def get_campaign_name(self):
         this_campaign = facebook_business_campaign.Campaign(self.campaign_id).remote_read(fields=["name", "status"])
@@ -64,10 +64,18 @@ class Campaign_FB():
             self.current_total_spend = campaign.get('spend', 0) if campaign.get('spend') is not None else 0
             self.ai_start_date = campaign.get('ai_start_date')
             self.ai_stop_date = campaign.get('ai_stop_date')
+            if self.currency == 'USD':
+                self.ai_spend_cap /= 100
+                self.current_total_spend /= 100
         else:
             print('[get_campaign_status] error, len ==0')
             
     def compute(self):
+        print('[FB compute] campaign_id', self.campaign_id, ' left_target_count:', self.left_target_count)
+        if self.charge_type == 'REACH':
+            self.destination /= 1000
+            self.current_target_count /= 1000
+            self.left_target_count /= 1000
         self.ai_period = (self.ai_stop_date - self.ai_start_date ).days + 1
         today = datetime.date.today()
         self.ai_left_days = (self.ai_stop_date - today ).days + 1
@@ -313,7 +321,10 @@ def get_gsn_campaign(db):
 def compute_total_budget(campaign_list):
     total_budget = 0
     for campaign in campaign_list:
-        total_budget += campaign.ai_spend_cap
+        if campaign.currency and campaign.currency == 'USD':
+            total_budget += campaign.ai_spend_cap * 30
+        else:
+            total_budget += campaign.ai_spend_cap
     return total_budget
 
  
