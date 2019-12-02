@@ -109,6 +109,9 @@ def smart_spending_branding(campaign_id):
     
     ai_period = (ai_stop_date - ai_start_date ).days + 1
     today = datetime.date.today()
+    if today == ai_start_date:
+        print('[smart_spending_branding] today is ai_start_date , not to do anything' ,campaign_id)
+        return
     ai_left_days = (ai_stop_date - today ).days + 1
     ai_running_days = (today - ai_start_date ).days 
     
@@ -246,8 +249,12 @@ def smart_spending_performance(campaign_id):
     
     ai_period = (ai_stop_date - ai_start_date ).days + 1
     today = datetime.date.today()
+    
+    if today == ai_start_date:
+        print('[smart_spending_performance] today is ai_start_date , not to do anything' ,campaign_id)
+        return
     ai_left_days = (ai_stop_date - today ).days + 1
-    ai_running_days = (today - ai_start_date ).days + 1
+    ai_running_days = (today - ai_start_date ).days
     
     ai_daily_budget = ai_spend_cap / ai_period
     left_money_can_spend = ai_spend_cap - current_total_spend
