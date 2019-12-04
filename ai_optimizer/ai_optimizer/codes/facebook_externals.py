@@ -153,7 +153,7 @@ def optimize_performance_campaign(campaign_id):
     if 'target' in day_dict:
         target = int(day_dict['target'])
     
-    achieving_rate = lifetime_target / (df['destination'].iloc[0] * flight_process)
+    achieving_rate = lifetime_target / (df['destination'].iloc[0] * flight_process + 5)
     print('[achieving rate]', achieving_rate, ' current_target', lifetime_target, ' destined_target', (df['destination'].iloc[0] * flight_process))
 
     if achieving_rate > ACTION_BOUNDARY and achieving_rate < 1:
@@ -189,7 +189,7 @@ def optimize_performance_campaign(campaign_id):
             print('create one suggestion asset for CPA campaigin')        
             adset_id = adsets_active_list[0]
             if is_target_suggest:
-                new_adset_id = adset_controller.make_performance_suggest_adset(campaign_id, adset_id)
+                new_adset_id = adset_controller.make_performance_suggest_adset(campaign_id, adsets_active_list)
                 if new_adset_id:
                     ai_logger.save_adset_behavior(new_adset_id, ai_logger.BehaviorType.CREATE)
                 
@@ -447,23 +447,19 @@ if __name__ == '__main__':
 # In[ ]:
 
 
-# campaign_id = 23843467729120098
-# adset_id = 23843641398470098
-# optimize_campaign(campaign_id)
-
-
-# In[ ]:
-
-
 # !jupyter nbconvert --to script facebook_externals.ipynb
 
 
 # In[ ]:
 
 
+# %%time
 # global database_fb
-# database_fb = database_controller.FB( database_controller.Database() )
-# modify_opt_result_db(6130308870943, "False")
+# db = database_controller.Database()
+# database_fb = database_controller.FB(db)
+# not_opt_list = [23843488842640474]
+# for campaign_id in not_opt_list:
+#     optimize_campaign(campaign_id)
 
 
 # In[ ]:
@@ -472,19 +468,8 @@ if __name__ == '__main__':
 # global database_fb
 # db = database_controller.Database()
 # database_fb = database_controller.FB(db)
-# permission.init_facebook_api(341659359840575)
-# optimize_campaign(23843651750180386)
-# database_fb.dispose()
-
-
-# In[ ]:
-
-
-# global database_fb
-# db = database_controller.Database()
-# database_fb = database_controller.FB(db)
-# account_id = 1998058836909961
-# campaign_id = 23843980686020222
+# account_id = 2371372156415755
+# campaign_id = 23843426278230073
 # permission.init_facebook_api(account_id)
 # optimize_branding_campaign(campaign_id)
 

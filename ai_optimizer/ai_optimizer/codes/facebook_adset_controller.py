@@ -139,11 +139,18 @@ def get_suggestion_target_by_adset(adset_id):
 # In[ ]:
 
 
-def make_performance_suggest_adset(campaign_id, original_adset_id): 
+def make_performance_suggest_adset(campaign_id, adsets_active_list): 
     
     saved_suggest_id_name_dic, saved_suggest_id_size_dic = campaign_suggestion.get_suggestion_not_used(campaign_id)
     print('[make_suggest_adset] saved_suggest_id_name_dic', saved_suggest_id_name_dic, 'saved_suggest_id_size_dic', saved_suggest_id_size_dic)
-    
+    for adset_id in adsets_active_list:
+        this_adset_interest_id_name_list = campaign_suggestion.retrieve_adset_interest_list(adset_id)
+        if this_adset_interest_id_name_list:
+            original_adset_id = adset_id
+            break
+    else:
+        print('[make_suggest_adset] no interest adset exist')
+        return
     if not saved_suggest_id_name_dic:
         print('[make_suggest_adset] saved_suggest_id_name_dic not exist')
         return
@@ -196,37 +203,6 @@ def make_performance_suggest_adset(campaign_id, original_adset_id):
     new_adset_params[AdSet.Field.id] = None
     new_adset_id = copy_adset_new_target(campaign_id, new_adset_params, original_adset_id)
     return new_adset_id
-
-
-# ##not use now , just backup
-# def make_suggest_adset_by_account_suggestion(original_adset_id): 
-#     suggestion_id, suggestion_name = get_suggestion_target_by_adset(original_adset_id)
-#     if suggestion_id is None:
-#         print('[make_suggest_adset] error')
-#         return 
-    
-#     print('[make_suggest_adset] pick this suggestion:',suggestion_id, suggestion_name)
-    
-#     new_adset_params = retrieve_origin_adset_params(original_adset_id)
-#     print(new_adset_params)
-#     new_adset_params[AdSet.Field.name] = suggestion_name + "_Target_AI"
-
-#     interest_pair = {
-#             "interests":[{
-#                 "id": suggestion_id,
-#                 "name": suggestion_name,
-#             }]
-#         }
-#     if new_adset_params[AdSet.Field.targeting].get("flexible_spec") == None:
-#         print('[make_suggest_adset_by_account_suggestion] no flexible_spec')
-        
-#     new_adset_params[AdSet.Field.targeting]["flexible_spec"] = interest_pair
-
-#     print('[make_suggest_adset] new_adset_params',new_adset_params)
-#     original_adset_id = new_adset_params[AdSet.Field.id]
-#     new_adset_params[AdSet.Field.id] = None
-#     new_adset_id = copy_adset_new_target(campaign_id, new_adset_params, original_adset_id)
-#     return new_adset_id
 
 
 # In[ ]:
@@ -331,7 +307,14 @@ def copy_branding_adset(campaign_id, adset_id, actions, adset_params=None):
 
 
 def make_performance_lookalike_adset(campaign_id, adsets_active_list):
-    original_adset_id = adsets_active_list[0]
+    for adset_id in adsets_active_list:
+        this_adset_interest_id_name_list = campaign_suggestion.retrieve_adset_interest_list(adset_id)
+        if this_adset_interest_id_name_list:
+            original_adset_id = adset_id
+            break
+    else:
+        print('[make_suggest_adset] no interest adset exist')
+        return
     new_adset_params = retrieve_origin_adset_params(original_adset_id)
     new_adset_params.pop("id")
     ad_id_list = get_ad_id_list(original_adset_id)
@@ -361,18 +344,6 @@ def make_performance_lookalike_adset(campaign_id, adsets_active_list):
         lookalike_audience.modify_result_db(campaign_id, lookalike_audience_id, "True")
     return new_adset_id
     
-
-
-# In[ ]:
-
-
-#test case
-# import adgeek_permission as permission
-# account_id = 10155657593726278
-# campaign_id = 23842880697850266
-# original_adset_id = 23843708355320266
-# permission.init_facebook_api(account_id)
-# make_performance_suggest_adset(campaign_id, original_adset_id)
 
 
 # In[ ]:
@@ -421,6 +392,33 @@ def fast_test_remove_copy_string(account_id, campaign_id):
     for original_adset_id in adsets_active_list:
         ad_id_list = get_ad_id_list(original_adset_id)
         [ad_name_remove_copy_string(ad_id) for ad_id in ad_id_list]
+
+
+# In[ ]:
+
+
+# global database_fb
+# db = database_controller.Database()
+# database_fb = database_controller.FB(db)
+# campaign_not_opted_list = database_fb.get_performance_campaign().to_dict('records')
+
+# print('df_not_opted len:', len(campaign_not_opted_list))
+# print(campaign_not_opted_list)
+# for campaign in campaign_not_opted_list:
+
+#     fast_test_remove_copy_string(campaign['account_id'], campaign['campaign_id'])
+
+
+# In[ ]:
+
+
+##make suggest adset , test case
+# import adgeek_permission as permission
+# account_id = 1690972390965768
+# campaign_id = 23844021038540408
+# original_adset_id = 23844030923290408
+# permission.init_facebook_api(account_id)
+# make_performance_suggest_adset(campaign_id, [original_adset_id])
 
 
 # In[ ]:
