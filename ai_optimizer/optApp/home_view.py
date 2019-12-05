@@ -11,15 +11,14 @@ import numpy as np
 import pandas as pd
 from sklearn.externals import joblib
 import database_controller as db_controller
-import mysql_adactivity_save as mysql_saver
-from ai_optimizer.codes import gdn_db
-from ai_optimizer.codes import gsn_db
+
 from ai_optimizer.codes import gdn_datacollector
 
 import facebook_custom_conversion_handler as custom_conversion_handler
 import facebook_business.adobjects.campaign as facebook_business_campaign
 import facebook_business.adobjects.adaccount as facebook_business_adaccount
-import facebook_currency_handler as currency_handler
+import facebook_currency_handler as fb_currency_handler
+import google_adwords_currency_handler as google_currency_handler
 import datetime
 
 
@@ -34,7 +33,7 @@ class Campaign_FB():
         self.token_name = permission.get_access_name_by_account(account_id)
         self.account_id = account_id
         self.campaign_id = campaign_id
-        self.currency = currency_handler.get_currency_by_campaign(campaign_id)
+        self.currency = fb_currency_handler.get_currency_by_campaign(campaign_id)
         self.get_campaign_status()
         self.get_campaign_name()
         self.get_account_name()
@@ -107,6 +106,7 @@ class Campaign_GDN():
         self.adwords_client = permission.init_google_api(account_id)
         self.token_name = permission.get_access_name_by_account(account_id)
         self.campaign_id = campaign_id
+        self.currency = google_currency_handler.get_currency(campaign_id=self.campaign_id, media='gdn')
         self.get_campaign_status()
         self.get_campaign_name()
         self.compute()
@@ -186,6 +186,7 @@ class Campaign_GSN():
         self.adwords_client = permission.init_google_api(account_id)       
         self.token_name = permission.get_access_name_by_account(account_id)
         self.campaign_id = campaign_id
+        self.currency = google_currency_handler.get_currency(campaign_id=self.campaign_id, media='gsn')
         self.get_campaign_status()
         self.get_campaign_name()
         self.compute()
