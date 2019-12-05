@@ -321,7 +321,7 @@ def get_gsn_campaign(db):
 def compute_total_budget(campaign_list):
     total_budget = 0
     for campaign in campaign_list:
-        if campaign.currency and campaign.currency == 'USD':
+        if hasattr(campaign, 'currency') and campaign.currency == 'USD':
             total_budget += campaign.ai_spend_cap * 30
         else:
             total_budget += campaign.ai_spend_cap
