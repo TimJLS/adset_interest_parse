@@ -142,12 +142,12 @@ class Insights(object):
 
 def main():
     global database
-    database = database_controller.FB( database_controller.Database )
+    database = database_controller.FB( database_controller.DevDatabase )
     performance_campaigns = database.get_performance_campaign().to_dict('records')
     print(datetime.date.today() - performance_campaigns[0]['ai_start_date'])
     for campaign in performance_campaigns:
         days_passed = datetime.date.today() - performance_campaigns[0]['ai_start_date']
-        if days_passed >= 5:
+        if days_passed >= datetime.timedelta(5):
             permission.init_facebook_api(campaign['account_id'])
             adset_ids = data_collector.Campaigns(campaign_id=campaign['campaign_id'],
                                                  database_fb=database).get_adsets_active()
@@ -159,7 +159,7 @@ def main():
                 if ins.is_available:
                     bid = ins.polynomial_fit()
                     if bid:
-                        database.update_init_bid(adset_id=ins.adset_id, update_ratio=1)
+                        database.update("adset_initial_bid", {'bid_amount': ins.reverted_bid.astype(object)}, adset_id=ins.adset_id)
                     print('\t[status record]: bid={}'.format(ins.reverted_bid), )
                     print('\t[status record]: origin bid={}'.format(ins.origin_bid), )
                     print('\t[status record]: sequence={}'.format(ins.sequence), )
@@ -172,7 +172,7 @@ if __name__=='__main__':
     main()
 
 
-# In[1]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script facebook_auto_calibration.ipynb
@@ -197,9 +197,3 @@ if __name__=='__main__':
 # weight = np.array([0.317138,0.983337,0.974521,0.131263,0.965162,0.509806,0.196673])
 # a = np.array([5,4,0,0,np.nan,np.nan,1117,1387,np.nan,245,848])
 # b = np.array([2,8,3,1,np.nan,np.nan,464,568,np.nan,76,433])
-
-# In[ ]:
-
-
-
-
