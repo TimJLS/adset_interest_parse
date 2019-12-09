@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[11]:
+# In[ ]:
 
 
 import math
@@ -42,7 +42,7 @@ LAST_BID = 'last_bid'
 
 CENTER = 1
 WIDTH = 10
-BID_RANGE = 2.0
+BID_RANGE = 0.5
 
 def reverse_bid_amount(bid_amount):
     init_bid = bid_amount / ( BID_RANGE * ( normalized_sigmoid_fkt(CENTER, WIDTH, 0) - 0.5 ) + 1 )
@@ -97,8 +97,14 @@ if __name__=='__main__':
     print(result)
 
 
-# In[10]:
+# In[ ]:
 
 
 #!jupyter nbconvert --to script gsn_bid_operator.ipynb
+
+
+# In[ ]:
+
+
+
 
