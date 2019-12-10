@@ -106,12 +106,70 @@ class OperatorContainer():
 # In[ ]:
 
 
+class Predicates:
+    field = 'field'
+    operator = 'operator'
+    values = 'values'
+    def __init__(self):
+        self.spec = {
+            self.field: None ,
+            self.operator: 'EQUALS' ,
+            self.values: None
+        }
+
+
+# In[ ]:
+
+
+class Selector:
+    fields = 'fields'
+    predicates = 'predicates'
+    def __init__(self):
+        self.predicates_object = Predicates()
+        self.spec = {
+            self.fields: None,
+            self.predicates: [self.predicates_object.spec],
+        }
+
+
+# In[ ]:
+
+
+class Operand:
+    xsi_type = 'xsi_type'
+    campaign_id = 'campaignId'
+    criterion = 'criterion'
+    def __init__(self):
+        self.spec = {
+            'xsi_type': None,
+            'campaignId': None,
+            'criterion': None
+        }
+
+
+# In[ ]:
+
+
+class Operation:
+    operator = 'operator'
+    operand = 'operand'
+    def __init__(self):
+        self.spec = {
+            'operator': None,
+            'operand': None
+        }
+
+
+# In[ ]:
+
+
 class CampaignServiceContainer(object):
 
     def __init__(self, customer_id):
         self.customer_id = customer_id
         self.adwords_client = permission.init_google_api(account_id=self.customer_id)
         self.service_campaign = self.adwords_client.GetService('CampaignService', version='v201809')
+        self.service_criterion = self.adwords_client.GetService('CampaignCriterionService', version='v201809')
         self.operator_container = OperatorContainer()
         self.ad_group = AdGroup
         
@@ -123,6 +181,18 @@ class Campaign(object):
         self.operator_container = OperatorContainer()
         self.ad_groups = []
         self.creatives = []
+        self._init_selector()
+        self._init_operand()
+        self.negative_criterions = self._create_negetive_criterions()
+        
+    def _init_selector(self):
+        self.selector = Selector()
+    
+    def _init_operand(self):
+        self.operand = Operand()
+        
+    def _create_negetive_criterions(self):
+        return NegativeCriterion(self)
         
     def generate_ad_group_id_type_list(self,):
         self.native_ad_group_id_list = []
@@ -175,6 +245,42 @@ class Campaign(object):
                     microAmount = ad_dic['budget']['amount']['microAmount']
                     self.amount = microAmount/ 1000000
                     return self.amount
+
+
+# In[ ]:
+
+
+class NegativeCriterion(object):
+    def __init__(self, Campaign):
+        self.campaign = Campaign
+        self.operand = self._init_operand()
+        self.operation = self._init_operation()
+        self.operand.spec['xsi_type'] = 'NegativeCampaignCriterion'
+        self.operand.spec['campaignId'] = Campaign.campaign_id
+        
+        self.criterions = []
+        self.operations = []
+        
+    def _init_operand(self):
+        self.operand = Operand()
+        return self.operand
+        
+    def _init_operation(self):
+        self.operation = Operation()
+        return self.operation
+        
+    def make_from_df(self, data=None):
+        for idx, row in data.iterrows():
+            criterion = {}
+            criterion['xsi_type'] = 'Placement'
+            criterion['url'] = row['display_name']
+            self.operand.spec['criterion'] = criterion
+            self.operation.spec['operator'] = 'ADD'
+            self.operation.spec['operand'] = self.operand.spec
+
+            self.operations.append(copy.deepcopy(self.operation.spec))
+        result = self.campaign.service_container.service_criterion.mutate(self.operations)
+        return result
 
 
 # In[ ]:
@@ -691,3 +797,50 @@ class BidModifier(object):
 
 # all_converters_dict_list
 
+
+# In[ ]:
+
+
+search_query_fields = [
+    'CampaignName', 'CampaignId', 'AdGroupName', 'AdGroupId', 'Query', 'QueryTargetingStatus', 'KeywordTextMatchingQuery',
+    'KeywordId', 'QueryMatchTypeWithVariant'
+]
+campaign_negative_keywords = [
+    'CampaignId', 'CampaignName', 'CampaignStatus', 'Criteria', 'Id', 'IsNegative', 'KeywordMatchType'
+]
+display_keywords = [
+    'CampaignId', 'CampaignName', 'CampaignStatus', 'AdGroupName', 'AdGroupId', 'Criteria', 'Id', 'IsNegative'
+]
+
+
+# selector = {
+#     'fields': search_query_fields,
+#     'predicates': [{
+#         'field': 'CampaignId',
+#         'operator': 'EQUALS',
+#         'values':[campaign_id]
+#     }]
+# }
+# report = {
+#     'reportName': 'SEARCH_QUERY_PERFORMANCE_REPORT',
+#     'reportType': 'SEARCH_QUERY_PERFORMANCE_REPORT',
+#     'downloadFormat': 'CSV',
+#     'selector': selector,
+#     'dateRangeType': 'ALL_TIME',
+# }
+
+# selector = {
+#     'fields': campaign_negative_keywords,
+#     'predicates': [{
+#         'field': 'CampaignId',
+#         'operator': 'EQUALS',
+#         'values':[campaign_id]
+#     }]
+# }
+# report = {
+#     'reportName': 'CAMPAIGN_NEGATIVE_KEYWORDS_PERFORMANCE_REPORT',
+#     'reportType': 'CAMPAIGN_NEGATIVE_KEYWORDS_PERFORMANCE_REPORT',
+#     'downloadFormat': 'CSV',
+#     'selector': selector,
+#     'dateRangeType': 'ALL_TIME',
+# }
