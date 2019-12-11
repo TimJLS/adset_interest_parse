@@ -58,7 +58,7 @@ def save_adset_behavior(adset_id, behavior_type, behavior_misc = '' ):
             'adset_id': int(adset_id),
             'adset_name': adset_name,
             'behavior': behavior_type,
-            'behavior_misc': behavior_misc if adset_bid not None or adset_bid != 0 else auto_bidding_string,
+            'behavior_misc': behavior_misc if not adset_bid or adset_bid != 0 else auto_bidding_string,
             'created_at': int(created_at),
         }
     )
@@ -79,11 +79,5 @@ if __name__ == "__main__":
 # In[ ]:
 
 
-#!jupyter nbconvert --to script facebook_ai_behavior_log.ipynb
-
-
-# In[ ]:
-
-
-
+# !jupyter nbconvert --to script facebook_ai_behavior_log.ipynb
 
