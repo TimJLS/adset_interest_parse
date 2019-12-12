@@ -588,7 +588,7 @@ class AdSets(object):
                 for act in actions_list:
                     if act["action_type"] == CAMPAIGN_OBJECTIVE_FIELD[ self.charge_type ]:
                         target = int( act.get("value") ) if act.get("value") else 0
-                        self.campaign_insights.update( {"action": target} )
+                        self.adset_insights.update( {"action": target} )
                         
             elif self.charge_type in PERFORMANCE_CAMPAIGN_LIST+BRANDING_CAMPAIGN_LIST:
                 actions_list = current_adset.get( Field.actions )
@@ -701,7 +701,8 @@ def main():
 
     db = database_controller.Database()
     data_base_fb = database_controller.FB(db)
-    campaign_running_list = data_base_fb.get_running_campaign().to_dict('records')
+#     campaign_running_list = data_base_fb.get_running_campaign().to_dict('records')
+    campaign_running_list = data_base_fb.get_branding_campaign().to_dict('records')
     print([campaign['campaign_id'] for campaign in campaign_running_list])
 
     for campaign in campaign_running_list:
