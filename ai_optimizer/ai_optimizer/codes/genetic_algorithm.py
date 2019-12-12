@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 import matplotlib.pyplot as plt
@@ -21,7 +21,7 @@ PERFORMANCE_CAMPAIGN_LIST = [
     'CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART']
 
 
-# In[2]:
+# In[ ]:
 
 
 class GeneticAlgorithm(object):
@@ -238,7 +238,7 @@ class GAIndividual(object):
 #     return
 
 
-# In[3]:
+# In[ ]:
 
 
 def generate_optimal_weight(campaign_id, charge_type):
@@ -272,7 +272,7 @@ def generate_optimal_weight(campaign_id, charge_type):
     print('[operation time]: ', datetime.datetime.now()-start_time)
 
 
-# In[4]:
+# In[ ]:
 
 
 def assess_adset(campaign_object, campaign_optimal_object):
@@ -290,7 +290,7 @@ def assess_adset(campaign_object, campaign_optimal_object):
         )
 
 
-# In[5]:
+# In[ ]:
 
 
 def main():
@@ -323,7 +323,7 @@ def main():
     return
 
 
-# In[6]:
+# In[ ]:
 
 
 class Campaign(object):
@@ -360,8 +360,8 @@ class Campaign(object):
         self.condition.update({
             "flight": (datetime.date.today()-self.brief_dict.get("ai_start_date")).days
         })
-        self.condition['spend'] = int(self.condition.get("spend", 0))
-        self.condition['impressions'] = int(self.condition.get("impressions", 0))
+        self.condition['spend'] = self.condition.get("spend", 0)
+        self.condition['impressions'] = self.condition.get("impressions", 0)
         self.condition.update({
             "attention": self.condition.get("impressions"),
             "discovery": self.condition.get("reach"),
@@ -404,7 +404,7 @@ class AdSet(object):
         self.optimal_weight = OptimalWeight(self.destination_type)
 
 
-# In[7]:
+# In[ ]:
 
 
 class OptimalWeight(object):        
@@ -431,7 +431,7 @@ class CampaignOptimalWeight(OptimalWeight):
     
 
 
-# In[8]:
+# In[ ]:
 
 
 class Chromosome(object):
@@ -514,7 +514,7 @@ class ObjectChromosome(Chromosome):
     
 
 
-# In[9]:
+# In[ ]:
 
 
 if __name__ == "__main__":
@@ -524,7 +524,7 @@ if __name__ == "__main__":
 #     main(campaign_id=23843467729120098)
 
 
-# In[11]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script genetic_algorithm.ipynb
