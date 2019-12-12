@@ -584,7 +584,7 @@ class AdSets(object):
                 self.adset_insights[ "action" ] = int(self.adset_insights[ Field.impressions ])
 
             elif self.charge_type in ['THRUPLAY', 'VIDEO_VIEWS']:
-                actions_list = current_campaign.get( Field.thruplay_actions )
+                actions_list = current_adset.get( Field.thruplay_actions )
                 for act in actions_list:
                     if act["action_type"] == CAMPAIGN_OBJECTIVE_FIELD[ self.charge_type ]:
                         target = int( act.get("value") ) if act.get("value") else 0
