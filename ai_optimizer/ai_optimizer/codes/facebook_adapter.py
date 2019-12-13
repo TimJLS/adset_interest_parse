@@ -51,14 +51,14 @@ class FacebookCampaignAdapter(object):
         try:
             self.campaign_days_left = ( self.df_camp[ AI_STOP_DATE ].iloc[0] - self.request_date ).days + 1
         except Exception as e:
-            self.campaign_days_left = 1
+            self.campaign_days_left = np.int64(1)
         
         self.campaign_days = ( self.df_camp[ AI_STOP_DATE ].iloc[0] - self.df_camp[ AI_START_DATE ].iloc[0] ).days
         self.campaign_performance = self.df_camp[ TARGET ].sum()
         self.campaign_target = self.df_camp[ TARGET_LEFT ].iloc[0].astype(dtype=object)
         self.campaign_day_target = self.campaign_target / self.campaign_days_left
         self.campaign_progress = (self.campaign_performance / (self.campaign_days-self.campaign_days_left)) / self.campaign_day_target
-        self.campaign_progress = 1 if self.campaign_day_target <= 0 else self.campaign_progress
+        self.campaign_progress = np.int64(1) if self.campaign_day_target <= 0 or self.campaign_days == self.campaign_days_left else self.campaign_progress
         self.account_id = self.df_camp[ 'account_id' ].iloc[0].astype(dtype=object)
         print('===================================')
         print('Campaign Days: ', self.campaign_days)
@@ -254,7 +254,8 @@ def main(campaign_id=None):
             adset_list = collector_campaign.get_adsets_active()
             charge_type = campaign.get("destination_type")
             for adset_id in adset_list:
-                s = FacebookAdSetAdapter( adset_id, fb )
+                
+                s = FacebookAdSetAdapter( int(adset_id), fb )
                 status = s.retrieve_adset_attribute()
                 media = result['media']
                 is_adjust_condition_sufficient=True
@@ -301,4 +302,10 @@ if __name__=='__main__':
 
 
 # !jupyter nbconvert --to script facebook_adapter.ipynb
+
+
+# In[ ]:
+
+
+
 
