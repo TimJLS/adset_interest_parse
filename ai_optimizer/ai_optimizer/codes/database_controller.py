@@ -393,6 +393,24 @@ class CRUDController(object):
 # In[ ]:
 
 
+class AIComputation(CRUDController):
+    __database = 'dev_ai_computation'
+    def __init__(self, database):
+        super().__init__(database)
+        self.engine = create_engine(
+            'mysql://{user}:{password}@{host}/{database}'.format(
+                user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database
+            ),
+            poolclass=NullPool,
+        )
+        print('mysql://{user}:{password}@{host}/{database}'.format(
+                user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database))
+        self.metadata = MetaData(bind=self.engine)
+
+
+# In[ ]:
+
+
 class FB(CRUDController):
     __database = 'dev_facebook_test'
     def __init__(self, database):
@@ -461,7 +479,7 @@ class GSN(CRUDController):
 # In[ ]:
 
 
-# database = GSN(Database())
+# database = FB(Database())
 
 # database.get_performance_campaign()
 # database.get_branding_campaign()
