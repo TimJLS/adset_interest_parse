@@ -2,7 +2,8 @@ import math
 import numpy as np
 import pandas as pd
 import copy
-import ai_engine_db
+# import ai_engine_db
+import database_controller
 ADAPTER = {
     "Amobee":{
         "adset_id":"package_id",
@@ -37,6 +38,8 @@ LAST_BID = 'last_bid'
 CENTER = 1
 WIDTH = 10
 BID_RANGE = 0.8
+
+ai_engine_db = database_controller.AIComputation(database_controller.Database)
 
 def reverse_bid_amount(bid_amount):
     init_bid = bid_amount / ( BID_RANGE * ( normalized_sigmoid_fkt(CENTER, WIDTH, 0) - 0.5 ) + 1 )
@@ -76,10 +79,10 @@ def adjust(media, **status):
         'bid': bid
     } )
     status['id'] = status.pop( ADAPTER[media]['adset_id'] )
-    status['campaign_progress'] = status.pop( ADAPTER[media]['campaign_progress'] )
-    status['adset_progress'] = status.pop( ADAPTER[media]['adset_progress'] )
+    status['campaign_progress'] = status.pop( ADAPTER[media]['campaign_progress'] ).astype(object)
+    status['adset_progress'] = status.pop( ADAPTER[media]['adset_progress'] ).astype(object)
     df_status = pd.DataFrame( status, index=[0] )
-    ai_engine_db.into_table( df_status, "bidding_computation" )
+    ai_engine_db.insert( "bidding_computation", status, )
     return { ADAPTER[media].get("adset_id"):status['id'], BID:np.round(bid, 2) }
     return { ADSET_ID:adset_id, BID:bid }
 

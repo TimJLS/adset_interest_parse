@@ -106,9 +106,7 @@ class FacebookCampaignAdapter(object):
     def retrieve_campaign_attribute(self):
 #         self.mydb = mysql_adactivity_save.connectDB( DATADASE )
         self.df_ad = self.database_fb.retrieve('table_insights', self.campaign_id)
-        self.adset_list = [adset['adset_id'] for adset in self.df_ad.to_dict('records')]
-#         self.df_ad = pd.read_sql( "SELECT * FROM adset_metrics where campaign_id={}".format( self.campaign_id ), con=self.mydb )
-#         self.adset_list = self.df_ad[ADSET_ID][( self.df_ad.request_time.dt.date == self.request_time.date())].unique().tolist()
+        self.adset_list = [adset['adset_id'] for adset in self.df_ad.to_dict('records') if adset['request_time'] == datetime.date.today() and adset['request_time'].hour == datetime.datetime.today().hour]
         self.get_bid()
         
 #         self.mydb.close()
