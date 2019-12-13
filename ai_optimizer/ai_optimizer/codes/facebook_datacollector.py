@@ -704,8 +704,7 @@ def main():
 
     db = database_controller.Database()
     data_base_fb = database_controller.FB(db)
-#     campaign_running_list = data_base_fb.get_running_campaign().to_dict('records')
-    campaign_running_list = data_base_fb.get_branding_campaign().to_dict('records')
+    campaign_running_list = data_base_fb.get_running_campaign().to_dict('records')
     print([campaign['campaign_id'] for campaign in campaign_running_list])
 
     for campaign in campaign_running_list:
@@ -737,4 +736,10 @@ if __name__ == "__main__":
 
 
 # !jupyter nbconvert --to script facebook_datacollector.ipynb
+
+
+# In[ ]:
+
+
+
 
