@@ -6,6 +6,7 @@
 
 import datetime
 import pandas as pd
+import numpy as np
 import database_controller
 import bid_operator
 import json
@@ -56,10 +57,16 @@ class FacebookCampaignAdapter(object):
         self.campaign_performance = self.df_camp[ TARGET ].sum()
         self.campaign_target = self.df_camp[ TARGET_LEFT ].iloc[0].astype(dtype=object)
         self.campaign_day_target = self.campaign_target / self.campaign_days_left
-        self.campaign_progress = self.campaign_performance / self.campaign_day_target
+        self.campaign_progress = (self.campaign_performance / (self.campaign_days-self.campaign_days_left)) / self.campaign_day_target
         self.campaign_progress = 1 if self.campaign_day_target <= 0 else self.campaign_progress
-#         self.mydb.close()
         self.account_id = self.df_camp[ 'account_id' ].iloc[0].astype(dtype=object)
+        print('===================================')
+        print('Campaign Days: ', self.campaign_days)
+        print('Campaign Performance: ', self.campaign_performance)
+        print('Campaign Target: ', self.campaign_target)
+        print('Campaign Days Left: ', self.campaign_days_left)
+        print('Campaign Day Target: ', self.campaign_day_target)
+        print('Campaign Progress: ', self.campaign_progress)
         permission.init_facebook_api(self.account_id)
             
     def get_df(self):
@@ -68,8 +75,10 @@ class FacebookCampaignAdapter(object):
     def get_bid(self):
 #         df_init_bid = pd.read_sql( "SELECT * FROM adset_initial_bid WHERE campaign_id={} ;".format( self.campaign_id ), con=self.mydb )
 
-        for adset in self.adset_list:           
+        for adset in self.adset_list:
             try:
+                if type(adset) != int:
+                    adset = adset.astype(object)
                 init_bid = self.database_fb.get_init_bid(adset)
                 last_bid = self.database_fb.get_last_bid(adset)
 #                 init_bid = df_init_bid[BID_AMOUNT][df_init_bid.adset_id==adset].head(1).iloc[0].astype(dtype=object)
@@ -107,6 +116,7 @@ class FacebookCampaignAdapter(object):
 #         self.mydb = mysql_adactivity_save.connectDB( DATADASE )
         self.df_ad = self.database_fb.retrieve('table_insights', self.campaign_id)
         self.adset_list = [adset['adset_id'] for adset in self.df_ad.to_dict('records') if adset['request_time'] == datetime.date.today() and adset['request_time'].hour == datetime.datetime.today().hour]
+        self.adset_list = list(pd.Series(self.adset_list).unique())
         self.get_bid()
         
 #         self.mydb.close()
@@ -175,6 +185,13 @@ class FacebookAdSetAdapter(FacebookCampaignAdapter):
         self.get_bid()
         self.get_adset_time_target()
         self.get_adset_progress()
+        print('===================================')
+        print('AdSet length: ', len(self.fb.adset_list))
+        print('AdSet Performance: ', self.adset_performance)
+        print('AdSet Day Target: ', self.adset_day_target)
+        print('AdSet Time Progress: ', self.time_progress)
+        print('AdSet Time Target: ', self.adset_time_target)
+        print('AdSet Progress: ', self.adset_progress)
         return {
             ADSET_ID:self.adset_id,
             INIT_BID:self.init_bid,
@@ -191,7 +208,7 @@ def main(campaign_id=None):
         print('==========[campaign_id]: {} =========='.format(campaign_id))
         result={ 'media': 'Facebook', 'campaign_id': campaign_id, 'contents':[] }
         collector_campaign = collector.Campaigns(campaign_id, database_fb=database_fb)
-        fb = FacebookCampaignAdapter( campaign_id )
+        fb = FacebookCampaignAdapter( campaign_id, database_fb )
         fb.get_df()
         fb.retrieve_campaign_attribute()
         adset_list = collector_campaign.get_adsets_active()
@@ -284,10 +301,4 @@ if __name__=='__main__':
 
 
 # !jupyter nbconvert --to script facebook_adapter.ipynb
-
-
-# In[ ]:
-
-
-
 
