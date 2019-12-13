@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 from pathlib import Path
@@ -32,7 +32,7 @@ import database_controller
 from bid_operator import *
 
 
-# In[2]:
+# In[ ]:
 
 
 
@@ -64,7 +64,7 @@ CAMPAIGN_OBJECTIVE_FIELD = {
     'PURCHASES': 'offsite_conversion.fb_pixel_purchase',
     'INITIATE_CHECKOUT': 'offsite_conversion.fb_pixel_initiate_checkout',
     'SEARCH': 'offsite_conversion.fb_pixel_search',
-    'MESSAGES': 'onsite_conversion.messaging_reply',
+    'MESSAGES': 'onsite_conversion.messaging_conversation_started_7d',
     "CUSTOM": "offsite_conversion.custom."
 }
 CAMPAIGN_FIELD = {
@@ -168,6 +168,9 @@ FUNNEL_METRICS = {
     "SEARCH": {
         "offsite_conversion.fb_pixel_search": "action",
     },
+    "MESSAGES": {
+        "onsite_conversion.messaging_conversation_started_7d": "action",
+    },
 }
 FUNNEL_LIST = ['action', 'desire', 'interest', 'awareness', 'spend']
 BRANDING_CAMPAIGN_LIST = [
@@ -176,7 +179,7 @@ PERFORMANCE_CAMPAIGN_LIST = [
     'CUSTOM', 'MESSAGES', 'SEARCH', 'INITIATE_CHECKOUT', 'LEAD_WEBSITE', 'PURCHASE', 'ADD_TO_WISHLIST', 'VIEW_CONTENT', 'ADD_PAYMENT_INFO', 'COMPLETE_REGISTRATION', 'CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART']
 
 
-# In[3]:
+# In[ ]:
 
 
 class DatePreset:
@@ -290,7 +293,7 @@ class Field:
     
 
 
-# In[4]:
+# In[ ]:
 
 
 class Accounts(object):
@@ -311,7 +314,7 @@ class Accounts(object):
         return current_account
 
 
-# In[5]:
+# In[ ]:
 
 
 class Campaigns(object):
@@ -379,7 +382,7 @@ class Campaigns(object):
             elif self.charge_type == 'IMPRESSIONS':
                 self.campaign_insights[ "action" ] = int(self.campaign_insights[ Field.impressions ])
                 
-            elif self.charge_type in ['THRUPLAY', 'VIDEO_VIEWS']:
+            elif self.charge_type in ['THRUPLAY']:
                 actions_list = current_campaign.get( TARGET_FIELD[Field.video_thruplay_watched_actions], [] )
                 for act in actions_list:
                     if act["action_type"] == CAMPAIGN_OBJECTIVE_FIELD[ self.charge_type ]:
@@ -471,7 +474,7 @@ class Campaigns(object):
         return self.campaign_info
 
 
-# In[6]:
+# In[ ]:
 
 
 class AdSets(object):
@@ -582,8 +585,8 @@ class AdSets(object):
 
             elif self.charge_type == 'IMPRESSIONS':
                 self.adset_insights[ "action" ] = int(self.adset_insights[ Field.impressions ])
-
-            elif self.charge_type in ['THRUPLAY', 'VIDEO_VIEWS']:
+                
+            elif self.charge_type in ['THRUPLAY']:
                 actions_list = current_adset.get( TARGET_FIELD[Field.video_thruplay_watched_actions], [] )
                 for act in actions_list:
                     if act["action_type"] == CAMPAIGN_OBJECTIVE_FIELD[ self.charge_type ]:
@@ -652,7 +655,7 @@ class AdSets(object):
         adsets.remote_update()
 
 
-# In[7]:
+# In[ ]:
 
 
 def data_collect( data_base_fb, campaign_id, destination, charge_type, ai_start_date, ai_stop_date ):
@@ -693,7 +696,7 @@ def data_collect( data_base_fb, campaign_id, destination, charge_type, ai_start_
     return
 
 
-# In[8]:
+# In[ ]:
 
 
 def main():
@@ -721,7 +724,7 @@ def main():
     print(datetime.datetime.now()-start_time)
 
 
-# In[9]:
+# In[ ]:
 
 
 if __name__ == "__main__":
@@ -730,7 +733,7 @@ if __name__ == "__main__":
     gc.collect()
 
 
-# In[10]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script facebook_datacollector.ipynb
