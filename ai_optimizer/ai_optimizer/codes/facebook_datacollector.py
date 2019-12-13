@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 
 from pathlib import Path
@@ -32,7 +32,7 @@ import database_controller
 from bid_operator import *
 
 
-# In[ ]:
+# In[2]:
 
 
 
@@ -96,7 +96,7 @@ GENERAL_FIELD = {
 TARGET_FIELD = {
     'actions': AdsInsights.Field.actions,
     'cost_per_actions': AdsInsights.Field.cost_per_action_type,
-    'thruplay_actions': AdsInsights.Field.video_thruplay_watched_actions,
+    'video_thruplay_watched_actions': AdsInsights.Field.video_thruplay_watched_actions ,
     'cost_per_thruplay': AdsInsights.Field.cost_per_thruplay
 }
 GENERAL_INSIGHTS = {
@@ -176,7 +176,7 @@ PERFORMANCE_CAMPAIGN_LIST = [
     'CUSTOM', 'MESSAGES', 'SEARCH', 'INITIATE_CHECKOUT', 'LEAD_WEBSITE', 'PURCHASE', 'ADD_TO_WISHLIST', 'VIEW_CONTENT', 'ADD_PAYMENT_INFO', 'COMPLETE_REGISTRATION', 'CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART']
 
 
-# In[ ]:
+# In[3]:
 
 
 class DatePreset:
@@ -283,14 +283,14 @@ class Field:
     unique_video_continuous_2_sec_watched_actions = 'unique_video_continuous_2_sec_watched_actions'
     unique_video_view_10_sec = 'unique_video_view_10_sec'
     unique_video_view_15_sec = 'unique_video_view_15_sec'
-    thruplay_actions = 'thruplay_actions'
+    video_thruplay_watched_actions = 'video_thruplay_watched_actions'
     cost_per_thruplay = 'cost_per_thruplay'
     website_ctr = 'website_ctr'
     website_purchase_roas = 'website_purchase_roas'
     
 
 
-# In[ ]:
+# In[4]:
 
 
 class Accounts(object):
@@ -311,7 +311,7 @@ class Accounts(object):
         return current_account
 
 
-# In[ ]:
+# In[5]:
 
 
 class Campaigns(object):
@@ -380,7 +380,7 @@ class Campaigns(object):
                 self.campaign_insights[ "action" ] = int(self.campaign_insights[ Field.impressions ])
                 
             elif self.charge_type in ['THRUPLAY', 'VIDEO_VIEWS']:
-                actions_list = current_campaign.get( TARGET_FIELD[Field.thruplay_actions] )
+                actions_list = current_campaign.get( TARGET_FIELD[Field.video_thruplay_watched_actions], [] )
                 for act in actions_list:
                     if act["action_type"] == CAMPAIGN_OBJECTIVE_FIELD[ self.charge_type ]:
                         target = int( act.get("value") ) if act.get("value") else 0
@@ -471,7 +471,7 @@ class Campaigns(object):
         return self.campaign_info
 
 
-# In[ ]:
+# In[6]:
 
 
 class AdSets(object):
@@ -584,7 +584,7 @@ class AdSets(object):
                 self.adset_insights[ "action" ] = int(self.adset_insights[ Field.impressions ])
 
             elif self.charge_type in ['THRUPLAY', 'VIDEO_VIEWS']:
-                actions_list = current_adset.get( TARGET_FIELD[Field.thruplay_actions] )
+                actions_list = current_adset.get( TARGET_FIELD[Field.video_thruplay_watched_actions], [] )
                 for act in actions_list:
                     if act["action_type"] == CAMPAIGN_OBJECTIVE_FIELD[ self.charge_type ]:
                         target = int( act.get("value") ) if act.get("value") else 0
@@ -652,7 +652,7 @@ class AdSets(object):
         adsets.remote_update()
 
 
-# In[ ]:
+# In[7]:
 
 
 def data_collect( data_base_fb, campaign_id, destination, charge_type, ai_start_date, ai_stop_date ):
@@ -693,7 +693,7 @@ def data_collect( data_base_fb, campaign_id, destination, charge_type, ai_start_
     return
 
 
-# In[ ]:
+# In[8]:
 
 
 def main():
@@ -721,7 +721,7 @@ def main():
     print(datetime.datetime.now()-start_time)
 
 
-# In[ ]:
+# In[9]:
 
 
 if __name__ == "__main__":
@@ -730,14 +730,8 @@ if __name__ == "__main__":
     gc.collect()
 
 
-# In[ ]:
+# In[10]:
 
 
 # !jupyter nbconvert --to script facebook_datacollector.ipynb
-
-
-# In[ ]:
-
-
-
 

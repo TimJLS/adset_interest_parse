@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 import datetime
@@ -142,7 +142,7 @@ class FacebookAdSetAdapter(FacebookCampaignAdapter):
     
     def get_adset_day_target(self):
         adset_num = len( self.fb.adset_list )
-        self.adset_day_target = self.campaign_day_target / adset_num
+        self.adset_day_target = (self.campaign_day_target / adset_num) if adset_num != 0 else 1
         return self.adset_day_target
     
     def get_adset_performance(self):
@@ -272,7 +272,7 @@ def main(campaign_id=None):
     return
 
 
-# In[2]:
+# In[ ]:
 
 
 if __name__=='__main__':
@@ -282,7 +282,7 @@ if __name__=='__main__':
 #     main(23842953829930431)
 
 
-# In[3]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script facebook_adapter.ipynb
