@@ -333,7 +333,14 @@ class Campaigns(object):
         self.charge_type = self.brief_dict[Field.destination_type]
         self.destination_type = self.brief_dict[Field.destination_type]
         self.custom_conversion_id = self.brief_dict.get("custom_conversion_id")
+        self.bid_strategy = self.get_bid_strategy()
         
+    def get_bid_strategy(self):
+        ad_campaign = campaign.Campaign( self.campaign_id )
+        settings = ad_campaign.api_get( fields = ["bid_strategy"] )
+        self.bid_strategy = dict(settings).get("bid_strategy")
+        return self.bid_strategy
+    
     # Getters
 
     def get_campaign_features( self ):
@@ -497,8 +504,15 @@ class AdSets(object):
         self.charge_type = self.brief_dict.get(Field.destination_type)
         self.destination_type = self.brief_dict.get(Field.destination_type)
         self.custom_conversion_id = self.brief_dict.get("custom_conversion_id")
+        self.bid_strategy = self.get_bid_strategy()
         
     # Getters
+    
+    def get_bid_strategy(self):
+        adsets = adset.AdSet( self.adset_id )
+        settings = adsets.api_get( fields = ["bid_strategy"] )
+        self.bid_strategy = dict(settings).get("bid_strategy")
+        return self.bid_strategy
     
     def get_ads( self ):
         ad_list=list()
@@ -715,7 +729,11 @@ def main():
         ai_start_date = campaign.get("ai_start_date")
         ai_stop_date = campaign.get("ai_stop_date")
         custom_conversion_id = campaign.get("custom_conversion_id")
-        permission.init_facebook_api(account_id)
+        try:
+            permission.init_facebook_api(account_id)
+        except:
+            print('Permission failed: unable to get token')
+            continue
         print(campaign_id, charge_type, custom_conversion_id)
         
         data_collect( data_base_fb, int(campaign_id), destination, charge_type, ai_start_date, ai_stop_date )

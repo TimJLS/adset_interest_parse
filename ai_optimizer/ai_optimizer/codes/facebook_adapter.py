@@ -67,7 +67,6 @@ class FacebookCampaignAdapter(object):
         print('Campaign Days Left: ', self.campaign_days_left)
         print('Campaign Day Target: ', self.campaign_day_target)
         print('Campaign Progress: ', self.campaign_progress)
-        permission.init_facebook_api(self.account_id)
             
     def get_df(self):
         return
@@ -244,19 +243,27 @@ def main(campaign_id=None):
         campaign_running_list = database_fb.get_running_campaign().to_dict('records')
         print('[campaign id list]: {}'.format([campaign['campaign_id'] for campaign in campaign_running_list]))
         for campaign in campaign_running_list:
+            permission.init_facebook_api(campaign.get("account_id"))
             campaign_id = campaign.get("campaign_id")
             print('==========[campaign_id]: {} =========='.format(campaign_id))
             collector_campaign = collector.Campaigns(campaign_id, database_fb=database_fb)
-            result={ 'media': 'Facebook', 'campaign_id': campaign_id, 'contents':[] }
+            if collector_campaign.bid_strategy == "LOWEST_COST_WITHOUT_CAP":
+                print('********** Campaign No Cap **********')
+                continue
+            
             fb = FacebookCampaignAdapter( campaign_id, database_fb )
             fb.get_df()
             fb.retrieve_campaign_attribute()
             adset_list = collector_campaign.get_adsets_active()
             charge_type = campaign.get("destination_type")
             for adset_id in adset_list:
+                collector_adset = collector.AdSets(adset_id, database_fb=database_fb)
+                if not collector_campaign.bid_strategy and (collector_adset.bid_strategy == "LOWEST_COST_WITHOUT_CAP" or not collector_adset.bid_strategy):
+                    print('********** Adset No Cap **********')
+                    continue
                 s = FacebookAdSetAdapter( int(adset_id), fb )
                 status = s.retrieve_adset_attribute()
-                media = result['media']
+                media = 'Facebook'
                 is_adjust_condition_sufficient=True
                 for key, val in status.items():
                     if val is None:
@@ -264,17 +271,15 @@ def main(campaign_id=None):
                         is_adjust_condition_sufficient = False
                 if is_adjust_condition_sufficient:
                     bid = bid_operator.adjust(media, **status)
-                    result['contents'].append(bid)
                     print('[facebook_adapter.main]: adset_id: {}, bid is {}'.format(adset_id, bid['bid']))
-                    adset = collector.AdSets(adset_id, database_fb=database_fb)
-                    adset.get_adset_features()
+                    collector_adset.get_adset_features()
                     bid['pred_cpc'] = bid.pop('bid')
                     bid['pred_cpc'] = int( bid['pred_cpc'] )
-                    bid["status"] = adset.status
+                    bid["status"] = collector_adset.status
                     try:
                         next_bidding = bid['pred_cpc']
                         ai_logger.save_adset_behavior(adset_id, ai_logger.BehaviorType.ADJUST, next_bidding)
-                        adset.update(next_bidding)
+                        collector_adset.update(next_bidding)
                     except Exception as e:
                         print('[main]: update bid unavailable..', e)
                         pass
