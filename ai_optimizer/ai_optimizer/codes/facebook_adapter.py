@@ -150,7 +150,7 @@ class FacebookAdSetAdapter(FacebookCampaignAdapter):
     
     def get_adset_day_target(self):
         adset_num = len( self.fb.adset_list )
-        self.adset_day_target = (self.campaign_day_target / adset_num) if adset_num != 0 else 1
+        self.adset_day_target = (self.campaign_day_target / adset_num) if adset_num != 0 else np.int64(1)
         return self.adset_day_target
     
     def get_adset_performance(self):
@@ -158,9 +158,9 @@ class FacebookAdSetAdapter(FacebookCampaignAdapter):
             self.adset_performance = self.df_ad[self.df_ad.adset_id==self.adset_id][[ ACTION ]].tail(1).iloc[0,0]
         except Exception as e:
             print('[facebook_adapter.FacebookAdSetAdapter.get_adset_performance()]', e)
-            self.adset_performance = 0
+            self.adset_performance = np.int64(0)
         if math.isnan(self.adset_performance):
-            self.adset_performance = 0
+            self.adset_performance = np.int64(0)
         return self.adset_performance
     
     def get_bid(self):
@@ -174,7 +174,7 @@ class FacebookAdSetAdapter(FacebookCampaignAdapter):
     
     def get_adset_progress(self):
         self.adset_progress = self.adset_performance / self.adset_time_target
-        self.adset_progress = 1 if self.adset_time_target <= 0 else self.adset_progress
+        self.adset_progress = np.int64(1) if self.adset_time_target <= 0 else self.adset_progress
         return self.adset_progress
     
     def retrieve_adset_attribute(self):
@@ -254,7 +254,6 @@ def main(campaign_id=None):
             adset_list = collector_campaign.get_adsets_active()
             charge_type = campaign.get("destination_type")
             for adset_id in adset_list:
-                
                 s = FacebookAdSetAdapter( int(adset_id), fb )
                 status = s.retrieve_adset_attribute()
                 media = result['media']
