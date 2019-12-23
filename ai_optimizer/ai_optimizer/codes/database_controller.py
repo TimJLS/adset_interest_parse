@@ -30,7 +30,7 @@ class Database(object):
         user: username.
         password: password
     """
-    host = "aws-prod-ai-private.adgeek.cc"
+    host = "aws-dev-ai-private.adgeek.cc"
     user = "app"
     password = "adgeek1234"
 
@@ -107,6 +107,10 @@ class CRUDController(object):
             'table_init_bid': "adgroup_initial_bid",
             'table_insights': "keywords_insights",
             'score': "adgroup_score",
+            
+            'keywords_score': "keywords_score",
+            'keywords_insights': "keywords_insights",
+            
             'optimal_weight': "optimal_weight",
             'ai_behavior_log': "ai_behavior_log",
         }
