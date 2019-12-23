@@ -13,6 +13,7 @@ import math
 import datetime
 import pandas as pd
 import gdn_datacollector as collector
+import google_adwords_report_generator as collector
 import google_adwords_controller as controller
 import database_controller
 import adgeek_permission as permission
@@ -22,7 +23,6 @@ import adgeek_permission as permission
 
 
 sizepop, vardim, MAXGEN, params = 1000, 7, 15, [0.9, 0.5, 0.5]
-# sizepop, vardim, MAXGEN, params = 1000, 3, 10, [0.9, 0.5, 0.5]
 ASSESSMENT_PERIOD = 14
 BIDDING_INDEX = {
     'cpc': 'cpc_bid',
@@ -250,14 +250,15 @@ class GAIndividual(object):
 
 
 class Campaign(object):
-    __condition_field = ["action", "desire", "interest", "awareness", "attention", "impressions", "destination_daily_spend",
-                       "destination_daily_target", "cost_per_action", "spend", "daily_spend", "daily_target", "KPI", "destination_type"]
+    __condition_field = [
+        "action", "desire", "interest", "awareness", "attention", "impressions", "destination_daily_spend",
+        "destination_daily_target", "cost_per_action", "spend", "daily_spend", "daily_target", "KPI", "destination_type"
+    ]
     def __init__(self, campaign_id):
         self.campaign_id = campaign_id
         self.__get_brief()
         self.destination_type = self.brief_dict.get("destination_type")
-        self.collector_campaign = collector.Campaign(
-            self.brief_dict.get("customer_id"), self.campaign_id, database_gdn=database_gdn)
+        self.collector_campaign = collector.CampaignReportGenerator(self.campaign_id, 'gdn')
         self.service_container = controller.AdGroupServiceContainer(self.brief_dict.get("customer_id"))
         self.controller_campaign = controller.Campaign(self.service_container, self.campaign_id)
         self.__create_condition()
@@ -288,9 +289,12 @@ class Campaign(object):
         self.display_topics =  [ DisplayTopic(self, condition) for condition in condition_list ]
         
     def __get_ad_groups(self):
-        self.controller_campaign.generate_ad_group_id_type_list()
-        ad_group_id_list = self.controller_campaign.native_ad_group_id_list
-        self.ad_groups = [ AdGroup(self, ad_group_id) for ad_group_id in ad_group_id_list ]
+        df = database_gdn.retrieve("table_insights", campaign_id=self.campaign_id)
+        ad_group_list = list(df.groupby(['adgroup_id']).groups.keys())
+        condition_list = [
+            df.groupby(['adgroup_id']).get_group(ad_group_id).to_dict('records')[0] for ad_group_id in ad_group_list
+        ]
+        self.ad_groups = [ AdGroup(self, condition) for condition in condition_list ]
         
     def __get_brief(self):
         df_list = database_gdn.get_one_campaign(self.campaign_id).to_dict('records')
@@ -302,9 +306,10 @@ class Campaign(object):
         return optimal_weight_list[0]
         
     def __create_condition(self):
-        self.condition = self.collector_campaign.get_campaign_insights(date_preset = collector.DatePreset.lifetime)
-        init_list = ['impressions', 'clicks', 'all_conversions', 'view_conversions', 'conversions', ]
-        action_list = ["attention", "awareness", "interest", "desire", "action", ]
+        insights = self.collector_campaign.get_insights(date_preset = collector.DatePreset.lifetime)
+        self.condition = insights[0] if insights else []
+        init_list = ['impressions', 'clicks', 'all_conversions', 'view_conversions', 'conversions']
+        action_list = ["attention", "awareness", "interest", "desire", "action"]
         for idx, ele in enumerate(init_list):
             self.condition[action_list[idx]] = self.condition.pop(ele)
         self.condition.update(self.brief_dict)
@@ -328,19 +333,19 @@ class Campaign(object):
 
 
 class AdGroup(object):
-    __condition_field = ["action", "desire", "interest", "awareness", "attention", "impressions", "destination_daily_spend",
-                       "destination_daily_target", "cost_per_action", "spend", "daily_spend", "daily_target", "KPI", "destination_type"]
-    def __init__(self, campaign, ad_group_id):
+    __condition_field = [
+        "action", "desire", "interest", "awareness", "attention", "impressions", "destination_daily_spend",
+        "destination_daily_target", "cost_per_action", "spend", "daily_spend", "daily_target", "KPI", "destination_type"
+    ]
+    def __init__(self, campaign, condition):
         self.campaign = campaign
-        self.ad_group_id = ad_group_id
-        self.destination_type = self.campaign.destination_type
-        self.collector_ad_group = collector.AdGroup(
-            self.campaign.brief_dict.get("customer_id"), self.campaign.campaign_id, self.ad_group_id, database_gdn=database_gdn)
+        self.condition = condition
+        self.ad_group_id = condition.get("adgroup_id")
+        self.destination_type = campaign.destination_type
         self.__create_condition()
         self.__create_optimal_weight()
     
     def __create_condition(self):
-        self.condition = self.collector_ad_group.get_adgroup_insights(date_preset = collector.DatePreset.lifetime)[0]
         init_list = ['impressions', 'clicks', 'all_conversions', 'view_conversions', 'conversions', ]
         action_list = ["attention", "awareness", "interest", "desire", "action", ]
         for idx, ele in enumerate(init_list):
@@ -367,8 +372,10 @@ class AdGroup(object):
 
 
 class Audience(object):
-    __condition_field = ["action", "desire", "interest", "awareness", "attention", "impressions", "destination_daily_spend",
-                       "destination_daily_target", "cost_per_action", "spend", "daily_spend", "daily_target", "KPI", "destination_type"]
+    __condition_field = [
+        "action", "desire", "interest", "awareness", "attention", "impressions", "destination_daily_spend",
+        "destination_daily_target", "cost_per_action", "spend", "daily_spend", "daily_target", "KPI", "destination_type"
+    ]
     def __init__(self, campaign, condition):
         self.campaign = campaign
         self.destination_type = campaign.destination_type
@@ -402,8 +409,10 @@ class Audience(object):
 
 
 class DisplayKeyword(object):
-    __condition_field = ["action", "desire", "interest", "awareness", "attention", "impressions", "destination_daily_spend",
-                       "destination_daily_target", "cost_per_action", "spend", "daily_spend", "daily_target", "KPI", "destination_type"]
+    __condition_field = [
+        "action", "desire", "interest", "awareness", "attention", "impressions", "destination_daily_spend",
+        "destination_daily_target", "cost_per_action", "spend", "daily_spend", "daily_target", "KPI", "destination_type"
+    ]
     def __init__(self, campaign, condition):
         self.campaign = campaign
         self.destination_type = campaign.destination_type
@@ -437,8 +446,10 @@ class DisplayKeyword(object):
 
 
 class DisplayTopic(object):
-    __condition_field = ["action", "desire", "interest", "awareness", "attention", "impressions", "destination_daily_spend",
-                       "destination_daily_target", "cost_per_action", "spend", "daily_spend", "daily_target", "KPI", "destination_type"]
+    __condition_field = [
+        "action", "desire", "interest", "awareness", "attention", "impressions", "destination_daily_spend",
+        "destination_daily_target", "cost_per_action", "spend", "daily_spend", "daily_target", "KPI", "destination_type"
+    ]
     def __init__(self, campaign, condition):
         self.campaign = campaign
         self.destination_type = campaign.destination_type
@@ -484,16 +495,14 @@ class OptimalWeight(object):
         self.kpi = self.matrix[6]
 
 class CampaignOptimalWeight(OptimalWeight):
-    def __init__(self, campaign_id, destination_type, optimal_weight):
+    def __init__(self, campaign, optimal_weight):
         super().__init__(optimal_weight)
-        self.destination_type = destination_type
+        self.destination_type = campaign.destination_type
         if self.destination_type in database_controller.CRUDController.BRANDING_CAMPAIGN_LIST:
             self.desire, self.interest, self.awareness, self.discovery = 0, 0, 0, 0
             self.matrix = np.array([
                 self.action, self.desire, self.interest, self.awareness, self.discovery, self.spend, self.kpi
             ])
-
-    
 
 
 # In[ ]:
@@ -559,17 +568,9 @@ class ObjectChromosome(Chromosome):
         
     def __create_m_awareness(self):
         self.m_awareness = 0
-#         if self.destination_type in database_controller.CRUDController.BRANDING_CAMPAIGN_LIST:
-#             self.m_awareness = 0
-#         else:
-#             self.m_awareness = (self.condition.get("awareness") / self.condition.get("discovery")) if self.condition.get("discovery") != 0 else 0
         
     def __create_m_discovery(self):
         self.m_discovery = 0
-#         if self.destination_type in database_controller.CRUDController.BRANDING_CAMPAIGN_LIST:
-#             self.m_discovery = 0
-#         else:
-#             self.m_discovery = (self.condition.get("discovery") / self.condition.get("attention")) if self.condition.get("attention") != 0 else 0
         
     def __create_m_spend(self):
         self.m_spend = ( self.condition.get("destination_daily_spend")-self.condition.get("spend")) / self.condition.get("destination_daily_spend")
@@ -582,41 +583,6 @@ class ObjectChromosome(Chromosome):
             self.m_action, self.m_desire, self.m_interest, self.m_awareness, self.m_discovery, self.m_spend, self.m_kpi
         ])
     
-
-
-# In[ ]:
-
-
-def generate_optimal_weight(campaign_id, destination_type):
-    global chromosome
-    print('[campaign_id]:', campaign_id )
-    print('[current time]: ', datetime.datetime.now() )
-    start_time = datetime.datetime.now()
-    
-    campaign = Campaign(campaign_id)
-    chromosome = ObjectChromosome(campaign.condition)
-
-    bound = np.tile([[0], [1]], vardim)
-    ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
-    result_optimal_weight = ga.solve()
-    
-    optimal_campaign = CampaignOptimalWeight(campaign_id, destination_type, result_optimal_weight)
-    
-    score = np.dot(optimal_campaign.matrix, chromosome.matrix)
-    print('==========SCORE========')
-    print(score)
-
-    score_columns=['w_action', 'w_desire', 'w_interest', 'w_awareness', 'w_discovery', 'w_spend', 'w_bid']
-    df_score = pd.DataFrame(data=[optimal_campaign.matrix], columns=score_columns, index=[0])
-    df_score['campaign_id'], df_score['score'] = campaign_id, score
-    database_gdn.upsert("optimal_weight", df_score.to_dict('records')[0])
-
-    assess_ad_group(campaign, optimal_campaign)
-    assess_audience(campaign, optimal_campaign)
-    assess_display_keywords(campaign, optimal_campaign)
-    assess_display_topics(campaign, optimal_campaign)
-    print('[optimal_weight]:', optimal_campaign.matrix)
-    print('[operation time]: ', datetime.datetime.now()-start_time)
 
 
 # In[ ]:
@@ -698,6 +664,42 @@ def assess_display_topics(campaign_object, campaign_optimal_object):
 # In[ ]:
 
 
+def generate_optimal_weight(campaign_id, destination_type):
+    global chromosome
+    print('[campaign_id]:', campaign_id )
+    print('[current time]: ', datetime.datetime.now() )
+    start_time = datetime.datetime.now()
+    
+    campaign = Campaign(campaign_id)
+    chromosome = ObjectChromosome(campaign.condition)
+
+    bound = np.tile([[0], [1]], vardim)
+    ga = GeneticAlgorithm(sizepop, vardim, bound, MAXGEN, params)
+    result_optimal_weight = ga.solve()
+    
+    optimal_campaign = CampaignOptimalWeight(campaign, result_optimal_weight)
+    
+    score = np.dot(optimal_campaign.matrix, chromosome.matrix)
+    print('==========SCORE========')
+    print(score)
+
+    score_columns=[
+        'w_action', 'w_desire', 'w_interest', 'w_awareness', 'w_discovery', 'w_spend', 'w_bid']
+    df_score = pd.DataFrame(data=[optimal_campaign.matrix], columns=score_columns, index=[0])
+    df_score['campaign_id'], df_score['score'] = campaign_id, score
+    database_gdn.upsert("optimal_weight", df_score.to_dict('records')[0])
+
+    assess_ad_group(campaign, optimal_campaign)
+    assess_audience(campaign, optimal_campaign)
+    assess_display_keywords(campaign, optimal_campaign)
+    assess_display_topics(campaign, optimal_campaign)
+    print('[optimal_weight]:', optimal_campaign.matrix)
+    print('[operation time]: ', datetime.datetime.now()-start_time)
+
+
+# In[ ]:
+
+
 def retrive_all_criteria_insights():
     campaign_list = database_gdn.get_running_campaign().to_dict('records')
     # retrive all criteria insights
@@ -707,9 +709,26 @@ def retrive_all_criteria_insights():
         campaign_id = campaign['campaign_id']
         destination_type = campaign['destination_type']
         adwords_client = permission.init_google_api(customer_id)
-        camp = collector.Campaign(customer_id, campaign_id, database_gdn=database_gdn)
-        for criteria in CRITERIA_LIST:
-            camp.get_performance_insights( performance_type=criteria, date_preset='LAST_14_DAYS' )
+        
+        collector_ad_group = collector.AdGroupReportGenerator(campaign_id, 'gdn')
+        ad_group_insights = collector_ad_group.get_insights(date_preset=None)
+        for insights in ad_group_insights:
+            database_gdn.upsert( 'adgroup_insights', insights )
+        
+        collector_display_keyword = collector.DisplayKeywordReportGenerator(campaign_id, 'gdn')
+        display_keyword_insights = collector_display_keyword.get_insights(date_preset=None)
+        for insights in display_keyword_insights:
+            database_gdn.upsert( 'display_keyword_insights', insights )
+        
+        collector_display_topics = collector.DisplayTopicReportGenerator(campaign_id, 'gdn')
+        display_topics_insights = collector_display_topics.get_insights(date_preset=None)
+        for insights in display_topics_insights:
+            database_gdn.upsert( 'display_topics_insights', insights )        
+        
+        collector_audience = collector.AudienceReportGenerator(campaign_id, 'gdn')
+        audience_insights = collector_audience.get_insights(date_preset=None)
+        for insights in audience_insights:
+            database_gdn.upsert( 'audience_insights', insights )
 
 
 # In[ ]:
