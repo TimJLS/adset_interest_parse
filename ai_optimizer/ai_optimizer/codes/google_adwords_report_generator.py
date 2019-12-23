@@ -17,6 +17,16 @@ import database_controller
 # In[ ]:
 
 
+class DatePreset:
+    today = 'TODAY'
+    yesterday = 'YESTERDAY'
+    lifetime = 'ALL_TIME'
+    last_14_days = 'LAST_14_DAYS'
+
+
+# In[ ]:
+
+
 class Predicates:
     field = 'field'
     operator = 'operator'
@@ -84,13 +94,20 @@ class ReportGenerator(object):
         'Keyword / Placement', 'Criteria Display Name', 'Topic'
     ]
     _money_columns = [
-        'First page CPC', 'Max. CPM', 'Max. CPV', 'Max. CPC', 'Default max. CPC', 'Target CPA', 'Cost', 'Avg. Cost', 'Avg. CPC',
-        'Cost / conv.', 'Cost / all conv.', 'Amount', 'AverageCost', 'AverageCpc', 'CostPerAllConversion', 'CpcBid'
+        'First page CPC', 'Max. CPM', 'Max. CPV', 'Max. CPC', 'Default max. CPC', 'Cost', 'Avg. Cost', 'Avg. CPC',
+        'Cost / conv.', 'Cost / all conv.', 'Amount', 'AverageCost', 'AverageCpc', 'CostPerAllConversion'
     ]
     param_types = {
         'breakdowns': ['hour', 'day', 'device']
     }
-    
+    google_smart_bidding = {
+        'Maximize clicks': 'CpcBid',
+        'Maximize Conversions': 'CpcBid',
+        'Target CPA': 'TargetCpa',
+        'Target ROAS': None,
+        'Maximize Conversion Value': None,
+        'Target Outranking Share': None,
+    }
     def __init__(self, campaign_id, media):
         self.campaign_id = campaign_id
         self.__init_customer(media)
@@ -177,10 +194,14 @@ class ReportGenerator(object):
                                                              client_customer_id=self.customer_id)
         data_list = data.split('\n')[:-1]
         data_df = pd.DataFrame( columns=self.fields, data=[data.split(',') for data in data_list] )
+        if data_df.empty:
+            return []
+        self.bidding_type = data_df['BiddingStrategyType'].all()
         if 'Ctr' in data_df.columns:
             data_df['Ctr'] = data_df.Ctr.str.split('%', expand = True)[0]
         data_df[data_df.columns.difference( self._non_numeric_columns )] = data_df[data_df.columns.difference( self._non_numeric_columns )].apply(pd.to_numeric, errors='ignore')
-        data_df[data_df.columns.intersection( self._money_columns )] = data_df[data_df.columns.intersection( self._money_columns )].div(1000000)
+        numeric_money_list = [column for column in data_df.columns if (column in self._money_columns) and data_df[column].dtype != 'object']
+        data_df[data_df.columns.intersection( numeric_money_list )] = data_df[data_df.columns.intersection( numeric_money_list )].div(1000000)
         data_df.rename( columns=dict(zip(data_df.columns, self.columns)), inplace=True)
         return [data.to_dict() for idx, data in data_df.iterrows()]
 
@@ -217,42 +238,14 @@ class CampaignReportGenerator(ReportGenerator):
 # In[ ]:
 
 
-customer_id = 8845038097
-campaign_id = 2080506438
-
-
-# In[ ]:
-
-
-c = CampaignReportGenerator(campaign_id, media='gdn')
-
-
-# In[ ]:
-
-
-params = {
-    'breakdowns': 'day'
-}
-data = c.get_insights(date_preset=None, params=params)
-
-
-# In[ ]:
-
-
-pd.DataFrame(data=data)
-
-
-# In[ ]:
-
-
 class AdGroupReportGenerator(ReportGenerator):
     _fields = [
-        'ExternalCustomerId', 'CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus', 'CpmBid','CpvBid', 'CpcBid',
-        'TargetCpa', 'BiddingStrategyType', 'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'AverageCpc',
-        'CostPerConversion', 'CostPerAllConversion', 'Ctr', 'ViewThroughConversions'
+        'ExternalCustomerId', 'CampaignId', 'AdGroupType', 'AdGroupId', 'AdGroupStatus', 'CpmBid', 'CpvBid', 'CpcBid', 'TargetCpa',
+        'EnhancedCpcEnabled', 'BiddingStrategyType', 'Cost', 'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AllConversions',
+        'AverageCpc', 'CostPerConversion', 'CostPerAllConversion', 'Ctr', 'ViewThroughConversions'
     ]
     _columns = [
-        'customer_id', 'campaign_id', 'channel_type', 'adgroup_id', 'status', 'cpm_bid', 'cpv_bid', 'cpc_bid', 'cpa_bid',
+        'customer_id', 'campaign_id', 'channel_type', 'adgroup_id', 'status', 'cpm_bid', 'cpv_bid', 'cpc_bid', 'cpa_bid', 'enhanced',
         'bidding_type', 'spend', 'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click',
         'cost_per_conversion', 'cost_per_all_conversion', 'ctr', 'view_conversions' 
     ]
@@ -268,6 +261,112 @@ class AdGroupReportGenerator(ReportGenerator):
     def __init_report(self):
         self.report.spec[self.report.report_name] = self.report_name
         self.report.spec[self.report.report_type] = self.report_type
+        
+    def get_bidding_column(self, data):
+        if self.bidding_type in self.google_smart_bidding.keys() and self.google_smart_bidding[self.bidding_type] in data.columns:
+            self.col = self.google_smart_bidding.get(self.bidding_type)
+        else:
+            self.col = 'CpcBid'
+        return data
+    
+    def parse_bidding_column(self, data):
+        if self.bidding_type in ['Maximize clicks', 'Maximize Conversions']:
+            data[self.col] = data[self.col].str.split(':', expand = True)[1]
+        else:
+            pass
+        
+        return data
+    
+    def get_insights(self, date_preset, params=None):
+        self.add_params(params)
+        self._ReportGenerator__init_selector(date_preset)
+        data = self.report_downloader.DownloadReportAsString(self.report.spec,
+                                                             skip_report_header=True,
+                                                             skip_column_header=True,
+                                                             skip_report_summary=True,
+                                                             include_zero_impressions=True,
+                                                             client_customer_id=self.customer_id)
+        data_list = data.split('\n')[:-1]
+        data_df = pd.DataFrame( columns=self.fields, data=[data.split(',') for data in data_list] )
+#         return data_df
+        if data_df.empty:
+            return []
+        self.bidding_type = data_df['BiddingStrategyType'].all()
+        if 'Ctr' in data_df.columns:
+            data_df['Ctr'] = data_df.Ctr.str.split('%', expand = True)[0]
+        data_df = self.parse_bidding_column(self.get_bidding_column(data_df))
+        data_df[data_df.columns.difference( self._non_numeric_columns )] = data_df[data_df.columns.difference( self._non_numeric_columns )].apply(pd.to_numeric, errors='ignore')
+        numeric_money_list = [column for column in data_df.columns if (column in self._money_columns+[self.col]) and data_df[column].dtype != 'object']
+        data_df[data_df.columns.intersection( numeric_money_list )] = data_df[data_df.columns.intersection( numeric_money_list )].div(1000000)
+        data_df.rename( columns=dict(zip(data_df.columns, self.columns)), inplace=True)
+        return [data.to_dict() for idx, data in data_df.iterrows()]
+
+
+# In[ ]:
+
+
+class KeywordReportGenerator(ReportGenerator):
+    _fields = [
+        'ExternalCustomerId','CampaignId', 'AdGroupId', 'AdGroupStatus', 'Criteria', 'Id','TopImpressionPercentage', 'SystemServingStatus',
+        'FirstPageCpc', 'CpmBid', 'CpcBid', 'EnhancedCpcEnabled', 'BiddingStrategyType', 'AverageCost', 'Cost', 
+        'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'AverageCpc', 'CostPerConversion', 'CostPerAllConversion', 'Ctr', 
+        'ViewThroughConversions'
+    ]
+    _columns = [
+        'customer_id', 'campaign_id', 'adgroup_id', 'status', 'keyword', 'keyword_id', 'top_impression_percentage', 'serving_status',
+        'first_page_cpc', 'cpm_bid', 'cpc_bid', 'enhanced', 'bidding_type', 'cost_per_target', 'spend', 'impressions',
+        'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 'cost_per_all_conversion', 'ctr', 
+        'view_conversions' 
+    ]
+    report_name = 'KEYWORDS_PERFORMANCE_REPORT'
+    report_type = 'KEYWORDS_PERFORMANCE_REPORT'
+    
+    def __init__(self, campaign_id, media):
+        super().__init__(campaign_id, media)
+        self._fields = self._fields
+        self._columns = self._columns
+        self.__init_report()
+        
+    def __init_report(self):
+        self.report.spec[self.report.report_name] = self.report_name
+        self.report.spec[self.report.report_type] = self.report_type
+
+    def get_bidding_column(self, data):
+        if self.bidding_type in self.google_smart_bidding.keys() and self.google_smart_bidding[self.bidding_type] in data.columns:
+            self.col = self.google_smart_bidding.get(self.bidding_type)
+        else:
+            self.col = 'CpcBid'
+        return data
+    
+    def parse_bidding_column(self, data):
+        if self.bidding_type in ['Maximize clicks', 'Maximize Conversions']:
+            data[self.col] = data[self.col].str.split(':', expand = True)[1]
+        else:
+            pass
+        return data
+    
+    def get_insights(self, date_preset, params=None):
+        self.add_params(params)
+        self._ReportGenerator__init_selector(date_preset)
+        data = self.report_downloader.DownloadReportAsString(self.report.spec,
+                                                             skip_report_header=True,
+                                                             skip_column_header=True,
+                                                             skip_report_summary=True,
+                                                             include_zero_impressions=True,
+                                                             client_customer_id=self.customer_id)
+        data_list = data.split('\n')[:-1]
+        data_df = pd.DataFrame( columns=self.fields, data=[data.split(',') for data in data_list] )
+        if data_df.empty:
+            return []
+        self.bidding_type = data_df['BiddingStrategyType'].all()
+        if 'Ctr' in data_df.columns:
+            data_df['Ctr'] = data_df.Ctr.str.split('%', expand = True)[0]
+        data_df = self.parse_bidding_column(self.get_bidding_column(data_df))
+        data_df[data_df.columns.difference( self._non_numeric_columns )] = data_df[data_df.columns.difference( self._non_numeric_columns )].apply(pd.to_numeric, errors='ignore')
+        numeric_money_list = [column for column in data_df.columns if (column in self._money_columns+[self.col]) and data_df[column].dtype != 'object']
+        data_df[data_df.columns.intersection( numeric_money_list )] = data_df[data_df.columns.intersection( numeric_money_list )].div(1000000)
+        data_df.rename( columns=dict(zip(data_df.columns, self.columns)), inplace=True)
+        return [data.to_dict() for idx, data in data_df.iterrows()]
 
 
 # In[ ]:
@@ -280,7 +379,7 @@ class AudienceReportGenerator(ReportGenerator):
         'CostPerAllConversion', 'Ctr', 'ViewThroughConversions'
     ]
     _columns = [
-        'customer_id', 'campaign_id', 'adgroup_id', 'keyword', 'keyword_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 
+        'customer_id', 'campaign_id', 'adgroup_id', 'audience', 'criterion_id', 'status', 'cpm_bid', 'cpc_bid', 'bidding_type', 'spend', 
         'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion', 
         'cost_per_all_conversion', 'ctr', 'view_conversions'
     ]
@@ -391,6 +490,8 @@ class UrlReportGenerator(ReportGenerator):
                                                              client_customer_id=self.customer_id)
         data_list = data.split('\n')[:-1]
         data_df = pd.DataFrame( columns=self._fields, data=[data.split(',') for data in data_list] )
+        if data_df.empty:
+            return []
         if 'Ctr' in data_df.columns:
             data_df['Ctr'] = data_df.Ctr.str.split('%', expand = True)[0]
         data_df[data_df.columns.difference( self._non_numeric_columns )] = data_df[data_df.columns.difference( self._non_numeric_columns )].apply(pd.to_numeric, errors='ignore')
@@ -443,6 +544,8 @@ class PlacementReportGenerator(ReportGenerator):
                                                              client_customer_id=self.customer_id)
         data_list = data.split('\n')[:-1]
         data_df = pd.DataFrame( columns=self.fields, data=[data.split(',') for data in data_list] )
+        if data_df.empty:
+            return []
         if 'Ctr' in data_df.columns:
             data_df['Ctr'] = data_df.Ctr.str.split('%', expand = True)[0]
         data_df[data_df.columns.difference( self._non_numeric_columns )] = data_df[
