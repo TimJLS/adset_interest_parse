@@ -30,7 +30,7 @@ class Database(object):
         user: username.
         password: password
     """
-    host = "aws-dev-ai-private.adgeek.cc"
+    host = "aws-prod-ai-private.adgeek.cc"
     user = "app"
     password = "adgeek1234"
 
@@ -84,6 +84,7 @@ class CRUDController(object):
             'account_target_suggestion': "account_target_suggestion",
         },
         'gdn': {
+            'account_id': sql.column("customer_id"),
             'campaign_id': sql.column("campaign_id"),
             'adset_id': sql.column("adgroup_id"),
             'campaign_target': "campaign_target",
@@ -100,6 +101,7 @@ class CRUDController(object):
             'ai_behavior_log': "ai_behavior_log",
         },
         'gsn': {
+            'account_id': sql.column("customer_id"),
             'campaign_id': sql.column("campaign_id"),
             'adset_id': sql.column("adgroup_id"),
             'keyword_id': sql.column("keyword_id"),
@@ -252,7 +254,10 @@ class CRUDController(object):
     def get_brief(self, campaign_id):
         with self.engine.connect() as self.conn:
             tbl = Table("campaign_target", self.metadata, autoload=True)
-            query_list = [tbl.c.ai_spend_cap, tbl.c.ai_start_date, tbl.c.ai_stop_date, tbl.c.destination_type, tbl.c.destination,]
+            query_list = [
+                self.metrics_converter[self.media]['account_id'], tbl.c.ai_spend_cap, tbl.c.ai_start_date, tbl.c.ai_stop_date,
+                tbl.c.destination_type, tbl.c.destination,
+            ]
             if self.media == 'facebook':
                 query_list.append(tbl.c.custom_conversion_id)
             df = pd.read_sql(
