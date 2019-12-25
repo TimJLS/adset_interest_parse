@@ -236,7 +236,7 @@ def generate_optimal_weight(campaign_id, time_slice):
     df_score['campaign_id'], df_score['score'] = campaign_id, campaign.score
     database_fb.upsert(table_name, df_score.to_dict('records')[0])
 
-#     assess_adset(campaign, optimal_campaign)
+    assess_adset(campaign, time_slice)
 
     print('[optimal_weight]:', campaign.optimal_weight_object.matrix)
     print('[operation time]: ', datetime.datetime.now()-start_time)
@@ -245,19 +245,17 @@ def generate_optimal_weight(campaign_id, time_slice):
 # In[ ]:
 
 
-def assess_adset(campaign_object, campaign_optimal_object):
+def assess_adset(campaign_object, time_slice):
+    table_name = "adset_score" if time_slice == 'lifetime' else "adset_score_7d"
     for adset in campaign_object.adsets:
         
-        chromosome_adset = ObjectChromosome(adset.condition)
+        score = adset.get_score(time_slice)
         
-        score = np.dot(campaign_optimal_object.matrix, chromosome_adset.matrix)
-        
+        print('===========CAAMPAIGN {}=========='.format(campaign_object.campaign_id))
         print('=====[adset_id]=====', adset.adset_id, '==========[score]', score)
 
-        database_fb.insert(
-            "adset_score", 
-            {'campaign_id':campaign_object.campaign_id, 'adset_id':adset.adset_id, 'score':score.item()}
-        )
+        database_fb.insert(table_name, 
+                           {'campaign_id':campaign_object.campaign_id, 'adset_id':adset.adset_id, 'score':score.item()})
 
 
 # In[ ]:
@@ -318,8 +316,7 @@ class Campaign(object):
         self.brief_dict['KPI'] = self.brief_dict.get("ai_spend_cap")/self.brief_dict.get("destination")
         
     def run(self, time_slice):
-        if not time_slice: 
-            raise ValueError("time_slice should be 'lifetime' or 'last_7d'.")
+        if not time_slice: raise ValueError("time_slice should be 'lifetime' or 'last_7d'.")
         if time_slice == collector.DatePreset.lifetime:
             self.optimal_weight_object = self.genetic_algorithm.solve(time_slice=collector.DatePreset.lifetime)
             self.score = np.dot(self.optimal_weight_object.matrix, self.chromosome.matrix)
@@ -378,6 +375,8 @@ class AdSet(object):
         self.service_collect = collector.AdSets(self.adset_id, charge_type=None)
         self.condition = self._create_condition(time_slice=collector.DatePreset.lifetime)
         self.condition_7d = self._create_condition(time_slice=collector.DatePreset.last_7d)
+        self.chromosome = ObjectChromosome(self.condition)
+        self.chromosome_7d = ObjectChromosome(self.condition_7d)
         
     def _create_condition(self, time_slice=None):
         period = (self.campaign.brief_dict.get("ai_stop_date")-self.campaign.brief_dict.get("ai_start_date")).days
@@ -401,11 +400,14 @@ class AdSet(object):
         })
         return {k: v for k, v in condition.items() if k in self._condition_field}
         
-    def __create_fitness(self):
-        self.fitness = Chromosome(self.condition)
-        
-    def __create_optimal_weight(self):
-        self.optimal_weight = OptimalWeight(self.destination_type)
+    def get_score(self, time_slice):
+        if not time_slice: raise ValueError("time_slice should be 'lifetime' or 'last_7d'.")
+        if time_slice == collector.DatePreset.lifetime:
+            self.score = np.dot(self.campaign.optimal_weight_object.matrix, self.chromosome.matrix)
+        elif time_slice == collector.DatePreset.last_7d:
+            self.score = np.dot(self.campaign.optimal_weight_object.matrix, self.chromosome_7d.matrix)
+        else: raise ValueError("Incorrect 'time_slice' value, should be 'lifetime' or 'last_7d'.")
+        return self.score
 
 
 # In[ ]:
@@ -531,4 +533,10 @@ if __name__ == "__main__":
 
 
 # !jupyter nbconvert --to script genetic_algorithm.ipynb
+
+
+# In[ ]:
+
+
+
 
