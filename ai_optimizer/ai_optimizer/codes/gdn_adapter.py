@@ -88,7 +88,7 @@ class CampaignAdapter(object):
         return self.campaign_performance
     
     def get_campaign_target(self):
-        self.campaign_target = self.df_camp[ TARGET_LEFT ].iloc[0].astype(dtype=object)
+        self.campaign_target = self.df_camp[ TARGET_LEFT ].iloc[0]#.astype(dtype=object)
         return self.campaign_target
     
     def get_campaign_day_target(self):
@@ -97,7 +97,7 @@ class CampaignAdapter(object):
 
     def get_campaign_progress(self):
         self.campaign_progress = self.campaign_performance / self.campaign_day_target
-        self.campaign_progress = 1 if self.campaign_day_target <= 0 else self.campaign_progress
+        self.campaign_progress = np.int64(1) if self.campaign_day_target <= 0 else self.campaign_progress
         return self.campaign_progress
     
     def get_adgroup_list(self):
@@ -172,7 +172,7 @@ class AdGroupAdapter(CampaignAdapter):
     def get_adgroup_progress(self):
 #         print(self.adgroup_performance, self.adgroup_time_target)
         self.adgroup_progress = self.adgroup_performance / self.adgroup_time_target
-        self.adgroup_progress = 1 if self.adgroup_time_target <= 0 else self.adgroup_progress
+        self.adgroup_progress = np.int64(1) if self.adgroup_time_target <= 0 else self.adgroup_progress
         return self.adgroup_progress
     
     def retrieve_adgroup_attribute(self):
