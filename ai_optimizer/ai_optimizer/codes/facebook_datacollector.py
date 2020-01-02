@@ -4,27 +4,20 @@
 # In[ ]:
 
 
-from pathlib import Path
-from facebook_business.api import FacebookAdsApi
+import datetime
+import pandas as pd
+import math
+
 from facebook_business.adobjects.adaccount import AdAccount
 import facebook_business.adobjects.adset as adset
 from facebook_business.adobjects.ad import Ad
 import facebook_business.adobjects.campaign as campaign
-from facebook_business.adobjects.adcreative import AdCreative
-from facebook_business.adobjects.adactivity import AdActivity
-from facebook_business.adobjects.insightsresult import InsightsResult
 from facebook_business.adobjects.adsinsights import AdsInsights
 # my_app_id = '958842090856883'
 # my_app_secret = 'a952f55afca38572cea2994d440d674b'
 # my_access_token = 'EAANoD9I4obMBACygIE9jqmlaWeOW6tBma0oS6JbRpLgAvOYXpVi2XcXuasuwbBgqmaZBj5cP8MHE5WY2l9tAoi549eGZCP61mKr9BA8rZA6kxEW4ovX3KlbbrRGgt4RZC8MAi1UG0l0ZBUd0UBAhIPhzkZBi46ncuyCwkYPB7a6voVBZBTbEZAwH3azZA3Ph6g7aCOfxZCdDOp4AZDZD'
 
 # FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
-
-import json
-import datetime
-import pandas as pd
-import math
-import random
 
 import facebook_currency_handler as currency_handler
 import adgeek_permission as permission
@@ -33,7 +26,6 @@ from bid_operator import *
 
 
 # In[ ]:
-
 
 
 CAMPAIGN_OBJECTIVE_FIELD = {
@@ -127,9 +119,9 @@ FUNNEL_METRICS = {
         "landing_page_view": "awareness",
     },
     "LEAD_WEBSITE": {
-        "offsite_conversion.fb_pixel_lead":"action",
-        "offsite_conversion.fb_pixel_view_content":"desire",
-        "landing_page_view":"interest",
+        "offsite_conversion.fb_pixel_lead": "action",
+        "offsite_conversion.fb_pixel_view_content": "desire",
+        "landing_page_view": "interest",
         "link_click": "awareness",
     },
     "LINK_CLICKS": {
@@ -171,12 +163,24 @@ FUNNEL_METRICS = {
     "MESSAGES": {
         "onsite_conversion.messaging_conversation_started_7d": "action",
     },
+    "ADD_TO_CART": {
+        "offsite_conversion.fb_pixel_add_to_cart": "action",
+    },
+    "LANDING_PAGE_VIEW": {
+        "landing_page_view": "action",
+    },
 }
 FUNNEL_LIST = ['action', 'desire', 'interest', 'awareness', 'spend']
 BRANDING_CAMPAIGN_LIST = [
-    'THRUPLAY', 'LINK_CLICKS', 'ALL_CLICKS', 'VIDEO_VIEWS', 'REACH', 'POST_ENGAGEMENT', 'PAGE_LIKES', 'LANDING_PAGE_VIEW']
+    'THRUPLAY', 'LINK_CLICKS', 'ALL_CLICKS', 'VIDEO_VIEWS', 'REACH', 'POST_ENGAGEMENT', 'PAGE_LIKES', 'LANDING_PAGE_VIEW'
+]
 PERFORMANCE_CAMPAIGN_LIST = [
-    'CUSTOM', 'MESSAGES', 'SEARCH', 'INITIATE_CHECKOUT', 'LEAD_WEBSITE', 'PURCHASE', 'ADD_TO_WISHLIST', 'VIEW_CONTENT', 'ADD_PAYMENT_INFO', 'COMPLETE_REGISTRATION', 'CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART']
+    'CUSTOM', 'MESSAGES', 'SEARCH', 'INITIATE_CHECKOUT', 'LEAD_WEBSITE', 'PURCHASE', 'ADD_TO_WISHLIST', 'VIEW_CONTENT',
+    'ADD_PAYMENT_INFO', 'COMPLETE_REGISTRATION', 'CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART'
+]
+CUSTOM_CAMPAIGN_LIST = [
+    'CUSTOM', 'CONVERSIONS'
+]
 
 
 # In[ ]:
@@ -301,14 +305,14 @@ class Accounts(object):
         self.account_id = account_id
         self.account_insights = dict()
         
-    def get_account_insights( self, date_preset=DatePreset.yesterday ):
-        accounts = AdAccount( self.account_id )
+    def get_account_insights(self, date_preset=DatePreset.yesterday):
+        accounts = AdAccount(self.account_id)
         params = {
             'date_preset': date_preset,
         }
         insights = accounts.get_insights(
             params=params,
-            fields=list( GENERAL_FIELD.values() )+list( TARGET_FIELD.values() )
+            fields=list(GENERAL_FIELD.values())+list(TARGET_FIELD.values())
         )
         current_account = insights[0]
         return current_account
@@ -318,39 +322,40 @@ class Accounts(object):
 
 
 class Campaigns(object):
-    def __init__( self, campaign_id, charge_type=None, database_fb=None ):
+    def __init__(self, campaign_id, charge_type=None, database_fb=None):
         self.campaign_id = campaign_id
         self.charge_type = charge_type
         self.campaign_insights = dict.fromkeys(FUNNEL_LIST, 0)
         self.campaign_features = dict.fromkeys(CAMPAIGN_FIELD, 0)
-        self.currency = currency_handler.get_currency_by_campaign(self.campaign_id)
         if database_fb is None:
-            database_fb = database_controller.FB( database_controller.Database() )
-        self.brief_dict = database_fb.get_brief( self.campaign_id )
+            database_fb = database_controller.FB(database_controller.Database())
+        self.brief_dict = database_fb.get_brief(self.campaign_id)
+        permission.init_facebook_api(self.brief_dict["account_id"])
         self.ai_spend_cap = self.brief_dict[Field.ai_spend_cap]
         self.ai_start_date = self.brief_dict[Field.ai_start_date]
         self.ai_stop_date = self.brief_dict[Field.ai_stop_date]
         self.charge_type = self.brief_dict[Field.destination_type]
         self.destination_type = self.brief_dict[Field.destination_type]
         self.custom_conversion_id = self.brief_dict.get("custom_conversion_id")
+        self.currency = currency_handler.get_currency_by_campaign(self.campaign_id)
         self.bid_strategy = self.get_bid_strategy()
         
     def get_bid_strategy(self):
-        ad_campaign = campaign.Campaign( self.campaign_id )
-        settings = ad_campaign.api_get( fields = ["bid_strategy"] )
+        ad_campaign = campaign.Campaign(self.campaign_id)
+        settings = ad_campaign.api_get(fields = ["bid_strategy"])
         self.bid_strategy = dict(settings).get("bid_strategy")
         return self.bid_strategy
     
     # Getters
 
-    def get_campaign_features( self ):
-        ad_campaign = campaign.Campaign( self.campaign_id )
-        adcamps = ad_campaign.api_get( fields = list(CAMPAIGN_FIELD.values()) )
+    def get_campaign_features(self):
+        ad_campaign = campaign.Campaign(self.campaign_id)
+        adcamps = ad_campaign.api_get(fields = list(CAMPAIGN_FIELD.values()))
         for campaign_field in list(adcamps.keys()):
-            self.campaign_features.update( {campaign_field:adcamps.get(campaign_field)} )
+            self.campaign_features.update({campaign_field:adcamps.get(campaign_field)})
         return self.campaign_features
     
-    def get_campaign_insights( self, date_preset=None ):
+    def get_campaign_insights(self, date_preset=None):
         params = {}
         if date_preset is None or date_preset == DatePreset.lifetime:
             params = {
@@ -361,51 +366,51 @@ class Campaigns(object):
             params = {
                 'date_preset': date_preset,
             }
-        camp = campaign.Campaign( self.campaign_id )
+        camp = campaign.Campaign(self.campaign_id)
         try:
             insights = camp.get_insights(
                 params=params,
-                fields=list( GENERAL_FIELD.values() )+list( TARGET_FIELD.values() )
+                fields=list(GENERAL_FIELD.values())+list(TARGET_FIELD.values())
             )
         except:
             insights = camp.get_insights(
-                fields=list( GENERAL_FIELD.values() )+list( TARGET_FIELD.values() )
+                fields=list(GENERAL_FIELD.values())+list(TARGET_FIELD.values())
             )
         if len(insights) > 0:
             current_campaign = insights[0]
             if current_campaign.get(Field.impressions):
-                spend = float( current_campaign.get( Field.spend ) )
+                spend = float(current_campaign.get(Field.spend))
                 
-            for campaign_field in list( GENERAL_FIELD.keys() ):
-                self.campaign_insights.update( {campaign_field: current_campaign.get(campaign_field)} )
+            for campaign_field in list(GENERAL_FIELD.keys()):
+                self.campaign_insights.update({campaign_field: current_campaign.get(campaign_field)})
             # Deal with those metrics not in 'actions' metric
             if self.charge_type == 'ALL_CLICKS':
                 '''assign to field target and cost_per_target'''
-                self.campaign_insights[ "action" ] = int(self.campaign_insights.pop( Field.clicks ))
+                self.campaign_insights["action"] = int(self.campaign_insights.pop(Field.clicks))
                 
             elif self.charge_type == 'REACH':
-                self.campaign_insights[ "action" ] = int(self.campaign_insights[ Field.reach ])
+                self.campaign_insights["action"] = int(self.campaign_insights[Field.reach])
                 
             elif self.charge_type == 'IMPRESSIONS':
-                self.campaign_insights[ "action" ] = int(self.campaign_insights[ Field.impressions ])
+                self.campaign_insights["action"] = int(self.campaign_insights[Field.impressions])
                 
             elif self.charge_type in ['THRUPLAY']:
-                actions_list = current_campaign.get( TARGET_FIELD[Field.video_thruplay_watched_actions], [] )
+                actions_list = current_campaign.get(TARGET_FIELD[Field.video_thruplay_watched_actions], [])
                 for act in actions_list:
-                    if act["action_type"] == CAMPAIGN_OBJECTIVE_FIELD[ self.charge_type ]:
-                        target = int( act.get("value") ) if act.get("value") else 0
-                        self.campaign_insights.update( {"action": target} )
+                    if act["action_type"] == CAMPAIGN_OBJECTIVE_FIELD[self.charge_type]:
+                        target = int(act.get("value")) if act.get("value") else 0
+                        self.campaign_insights.update({"action": target})
                         
             elif self.charge_type in PERFORMANCE_CAMPAIGN_LIST+BRANDING_CAMPAIGN_LIST:
-                actions_list = current_campaign.get( Field.actions )
-                actions_dict = FUNNEL_METRICS.get( self.charge_type )
+                actions_list = current_campaign.get(Field.actions)
+                actions_dict = FUNNEL_METRICS.get(self.charge_type)
                 if actions_list:
                     if self.custom_conversion_id:
                         custom_conversion_key = 'offsite_conversion.custom.' + str(self.custom_conversion_id)
-                        insights = dict( { custom_conversion_key: 0 } )
+                        insights = dict({custom_conversion_key: 0})
                         action_type_list = [act["action_type"] for act in actions_list]
                         action_value_list = [int(act["value"]) for act in actions_list]
-                        insights.update( dict( zip( action_type_list, action_value_list ) ) )
+                        insights.update(dict(zip(action_type_list, action_value_list)))
                         for key, val in insights.copy().items():
                             if val < insights[custom_conversion_key]:
                                 insights.pop(key)
@@ -420,11 +425,11 @@ class Campaigns(object):
                         for key, val in insights.copy().items():
                             if val not in value_list:
                                 insights.pop(key)
-                        funnel_dict = dict( zip( insights.keys(), FUNNEL_LIST ) )
+                        funnel_dict = dict(zip(insights.keys(), FUNNEL_LIST))
                         actual_metrics_list = list(insights.keys())
                         insights = dict((funnel_dict[key], value) for (key, value) in insights.items())
                         insights.update({"actual_metrics": str(actual_metrics_list)})
-                        self.campaign_insights.update( insights )
+                        self.campaign_insights.update(insights)
 
                     else:
                         action_type_list = [actions_dict.get(act["action_type"]) for act in actions_list if act["action_type"] in actions_dict]
@@ -433,33 +438,33 @@ class Campaigns(object):
                         self.campaign_insights.update(
                             dict( zip( action_type_list, action_value_list ) )
                         )
-            self.campaign_insights.pop( Field.clicks, None )
-            self.campaign_insights.pop( Field.cpc, None )
+            self.campaign_insights.pop(Field.clicks, None)
+            self.campaign_insights.pop(Field.cpc, None)
             self.currency_handle()
         return self.campaign_insights
 
-    def get_adsets( self ):
+    def get_adsets(self):
         adset_list=list()
-        camp = campaign.Campaign( self.campaign_id )
-        adsets = camp.get_ad_sets( fields = [adset.AdSet.Field.id ,  adset.AdSet.Field.status])
-        adset_list = [ adset.get("id") for adset in adsets ]
+        camp = campaign.Campaign(self.campaign_id)
+        adsets = camp.get_ad_sets(fields = [adset.AdSet.Field.id, adset.AdSet.Field.status])
+        adset_list = [adset.get("id") for adset in adsets]
         return adset_list
     
     def get_adsets_active(self):
         adset_active_list = list()
-        camp = campaign.Campaign( self.campaign_id )
-        adsets = camp.get_ad_sets( fields = [adset.AdSet.Field.id ,  adset.AdSet.Field.status])
+        camp = campaign.Campaign(self.campaign_id)
+        adsets = camp.get_ad_sets(fields = [adset.AdSet.Field.id, adset.AdSet.Field.status])
         adset_active_list = [
             adset.get("id") for adset in adsets if adset.get("status") == 'ACTIVE'
         ]
-        print('[get_adsets_active] adset_active_list:', adset_active_list )
+        print('[get_adsets_active] adset_active_list:', adset_active_list)
         return adset_active_list
 
-    def get_account_id( self ):
-        camp = campaign.Campaign( self.campaign_id )
+    def get_account_id(self):
+        camp = campaign.Campaign(self.campaign_id)
         account = camp.get_ad_sets(fields=[campaign.Campaign.Field.account_id])
         current_account = account[0]
-        return current_account.get( Field.account_id )
+        return current_account.get(Field.account_id)
         
     # Operator
     
@@ -467,17 +472,17 @@ class Campaigns(object):
         if self.currency in currency_handler.OFFSET_A_HUNDRED:
             self.campaign_insights['spend'] = float(self.campaign_insights['spend']) * 100
     
-    def generate_info( self, date_preset=DatePreset.lifetime ):
+    def generate_info(self, date_preset=DatePreset.lifetime):
         self.get_campaign_features()
-        self.get_campaign_insights( date_preset )
-        self.campaign_features[ Field.campaign_id ] = self.campaign_features.pop('id')
-        self.campaign_features[ Field.target_type ] = self.campaign_features.pop('objective')
+        self.get_campaign_insights(date_preset)
+        self.campaign_features[Field.campaign_id] = self.campaign_features.pop('id')
+        self.campaign_features[Field.target_type] = self.campaign_features.pop('objective')
         start_time_str = str(self.campaign_features[Field.start_time])[:-5]
-        self.campaign_features[ Field.start_time ] = datetime.datetime.strptime( start_time_str,'%Y-%m-%dT%H:%M:%S' )
-        self.campaign_features[ Field.period ] = ( self.ai_stop_date - self.ai_start_date ).days + 1
-        self.campaign_features[ Field.start_time ] = self.campaign_features[Field.start_time].strftime( '%Y-%m-%d %H:%M:%S' )
-        self.campaign_features[ Field.daily_budget ] = int( self.ai_spend_cap )/self.campaign_features[Field.period]
-        self.campaign_info = { **self.campaign_insights, **self.campaign_features }
+        self.campaign_features[Field.start_time] = datetime.datetime.strptime(start_time_str,'%Y-%m-%dT%H:%M:%S')
+        self.campaign_features[Field.period] = (self.ai_stop_date - self.ai_start_date).days + 1
+        self.campaign_features[Field.start_time] = self.campaign_features[Field.start_time].strftime('%Y-%m-%d %H:%M:%S')
+        self.campaign_features[Field.daily_budget] = int(self.ai_spend_cap)/self.campaign_features[Field.period]
+        self.campaign_info = {**self.campaign_insights, **self.campaign_features}
         return self.campaign_info
 
 
