@@ -351,11 +351,11 @@ class Campaign(object):
         condition.update({
             "flight": flight
         })
-        condition['spend'] = eval(condition.get("spend", 0))
-        condition['impressions'] = eval(condition.get("impressions", 0))
+        condition['spend'] = float(condition.get("spend", 0))
+        condition['impressions'] = float(condition.get("impressions", 0))
         condition.update({
             "attention": condition.get("impressions"),
-            "discovery": int(condition.get("reach")),
+            "discovery": int(condition.get("reach", 0)),
             "destination_spend": condition.get("ai_spend_cap") * flight,
             "destination_target": condition.get("destination") * flight,
             "cost_per_action": condition.get("spend") / condition.get("action") if condition.get("action")!=0 else 1,
@@ -389,8 +389,8 @@ class AdSet(object):
             flight = (7 / period)
         else: raise ValueError("time_slice should be 'lifetime' or 'last_7d'.")
         
-        condition['spend'] = eval(condition.get("spend", 0))
-        condition['impressions'] = eval(condition.get("impressions", 0))
+        condition['spend'] = float(condition.get("spend", 0))
+        condition['impressions'] = float(condition.get("impressions", 0))
         condition.update({
             "KPI": self.campaign.condition.get("KPI"),
             "destination_type": self.destination_type,
