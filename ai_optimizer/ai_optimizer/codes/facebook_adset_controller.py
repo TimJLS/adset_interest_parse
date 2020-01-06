@@ -5,28 +5,19 @@
 
 
 import json
-import requests
 import time
-import pytz
 import datetime
 import math
 import random
-import pandas as pd
-from copy import deepcopy
+import requests
+
 from facebook_business.adobjects.adset import AdSet
-from facebook_business.adobjects.targeting import Targeting
-from facebook_business.api import FacebookAdsApi
-import facebook_business.adobjects.campaign as facebook_business_campaign
 import facebook_business.adobjects.ad as facebook_business_ad
 
 from bid_operator import revert_bid_amount
 import database_controller
 import adgeek_permission as permission
 
-from facebook_datacollector import Campaigns
-from facebook_datacollector import DatePreset
-from facebook_adapter import FacebookCampaignAdapter
-import facebook_currency_handler as fb_currency_handler
 import facebook_lookalike_audience as lookalike_audience
 import facebook_campaign_suggestion as campaign_suggestion
 import facebook_datacollector as fb_datacollector
@@ -35,7 +26,7 @@ PICK_DEFAULT_COUNT = 3
 PICK_DEFAULT_AUDIENCE_SIZE = 100000
 ENG_COPY_STRING = ' - Copy'
 CHN_COPY_STRING = ' - 複本'
-AI_ADSET_PREFIX = '_AI_'
+AI_ADSET_PREFIX = '_AI'
 IS_DEBUG = False #debug mode will not modify anything
 
 ACTION_DICT = {
@@ -115,7 +106,7 @@ def get_ad_id_list(adset_id):
     return ad_id_list
 
 def get_account_id_by_adset(adset_id):
-    this_adsets = AdSet( adset_id ).api_get(fields=["account_id"])
+    this_adsets = AdSet(adset_id).api_get(fields=["account_id"])
     account_id = this_adsets.get('account_id')
     return account_id
 
@@ -129,18 +120,17 @@ def get_suggestion_target_by_adset(adset_id):
     if not df_target_suggestion.empty:
         target_suggestion_list = df_target_suggestion.to_dict('records')
         pick_index = random.randint(0, len(target_suggestion_list)-1)
-        print('[get_suggestion_target_by_adset] pick:',target_suggestion_list[pick_index])
+        print('[get_suggestion_target_by_adset] pick:', target_suggestion_list[pick_index])
         target_suggestions = target_suggestion_list[pick_index]
         return (target_suggestions['suggestion_id'], target_suggestions['suggestion_name'])
     else:
-        return None,None
+        return None, None
 
 
 # In[ ]:
 
 
 def make_performance_suggest_adset(campaign_id, adsets_active_list): 
-    
     saved_suggest_id_name_dic, saved_suggest_id_size_dic = campaign_suggestion.get_suggestion_not_used(campaign_id)
     print('[make_suggest_adset] saved_suggest_id_name_dic', saved_suggest_id_name_dic, 'saved_suggest_id_size_dic', saved_suggest_id_size_dic)
     for adset_id in adsets_active_list:
@@ -182,7 +172,7 @@ def make_performance_suggest_adset(campaign_id, adsets_active_list):
         print('[make_suggest_adset] no flexible_spec')
         return
 
-    suggestion_full_name =  '__'.join(suggest_name_list)
+    suggestion_full_name = '__'.join(suggest_name_list)
     new_adset_params[AdSet.Field.name] = "AI__" + str(datetime.datetime.now().date()) + '_' + suggestion_full_name
     
     if new_adset_params[AdSet.Field.targeting].get("custom_audiences"): 
@@ -199,7 +189,7 @@ def make_performance_suggest_adset(campaign_id, adsets_active_list):
 
     new_adset_params[AdSet.Field.targeting]["flexible_spec"][0]['interests'] = suggest_group_list
 
-    print('[make_suggest_adset] new_adset_params after process',new_adset_params)
+    print('[make_suggest_adset] new_adset_params after process', new_adset_params)
     new_adset_params[AdSet.Field.id] = None
     new_adset_id = copy_adset_new_target(campaign_id, new_adset_params, original_adset_id)
     return new_adset_id
@@ -214,11 +204,11 @@ def ad_name_remove_copy_string(ad_id):
     print('[ad_name_remove_copy_string]: before', this_ad_name)
     eng_index, chn_index = this_ad_name.find(ENG_COPY_STRING), this_ad_name.find(CHN_COPY_STRING)
     if eng_index > -1 or chn_index > -1:
-        index = list(filter(lambda x: x>-1, [eng_index, chn_index]))[0]
+        index = list(filter(lambda x: x > -1, [eng_index, chn_index]))[0]
         remove_copy_name = this_ad_name[:index]
         print('[ad_name_remove_copy_string]: after', remove_copy_name)
         try:
-            this_ad.api_update( params={'name': remove_copy_name, } )
+            this_ad.api_update(params={'name': remove_copy_name})
         except Exception as e:
             print('[ad name change failed]: ', e)
             pass
@@ -233,7 +223,7 @@ def assign_copied_ad_to_new_adset(campaign_id, new_adset_id=None, ad_id=None):
         "adset_id": "{}".format(new_adset_id),
         "status_option": "INHERITED_FROM_SOURCE"}
     headers = {
-        'Authorization': "Bearer {}".format(my_access_token), }
+        'Authorization': "Bearer {}".format(my_access_token)}
     response = requests.request(
         "POST", url, headers=headers, params=querystring)
     return response.text
@@ -243,11 +233,10 @@ def copy_adset_new_target(campaign_id, new_adset_params, original_adset_id):
     new_adset_id = -1
     try:
         new_adset_id = make_adset(new_adset_params)
-        print('[copy_adset_new_target] make_adset success, campaign_id:' ,campaign_id, ' original_adset_id', original_adset_id, ' new_adset_id', new_adset_id)
+        print('[copy_adset_new_target] make_adset success, campaign_id:', campaign_id, ' original_adset_id', original_adset_id, ' new_adset_id', new_adset_id)
         time.sleep(10)
         ad_id_list = get_ad_id_list(original_adset_id)
         print('ad_id_list', ad_id_list)
-
         for ad_id in ad_id_list:
             result_message = assign_copied_ad_to_new_adset(campaign_id, new_adset_id=new_adset_id, ad_id=ad_id)
             print('[copy_adset_new_target] result_message', result_message)
@@ -275,13 +264,13 @@ def copy_branding_adset(campaign_id, adset_id, actions, adset_params=None):
     new_adset_name = ''
     index = origin_adset_name.find(AI_ADSET_PREFIX)
     if index > 0:
-        new_adset_name = origin_adset_name[:index]  + AI_ADSET_PREFIX + str(datetime.datetime.now().date()) 
+        new_adset_name = origin_adset_name[:index]  + AI_ADSET_PREFIX
     else:
-        new_adset_name = origin_adset_name + AI_ADSET_PREFIX + str(datetime.datetime.now().date())
+        new_adset_name = origin_adset_name + AI_ADSET_PREFIX
     
     for i, action in enumerate(actions.keys()):
         if action == 'bid':
-            new_adset_params[ACTION_DICT[action]] = math.floor( revert_bid_amount(actions[action]) )  # for bid
+            new_adset_params[ACTION_DICT[action]] = math.floor(revert_bid_amount(actions[action]))  # for bid
 
         elif action == 'age':
             age_list = actions[action][0].split('-')
@@ -343,12 +332,9 @@ def make_performance_lookalike_adset(campaign_id, adsets_active_list):
     if new_adset_id:
         lookalike_audience.modify_result_db(campaign_id, lookalike_audience_id, "True")
     return new_adset_id
-    
 
 
 # In[ ]:
-
-
 
 
 def is_adset_should_close(adset_id, setting_CPA):
