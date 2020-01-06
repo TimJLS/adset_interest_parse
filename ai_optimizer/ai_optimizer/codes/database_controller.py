@@ -74,6 +74,7 @@ class CRUDController(object):
             'campaign_insights': "campaign_insights",
             'campaign_predict_bids': "campaign_predict_bids",
             'score': "adset_score",
+            'score_7d': "adset_score_7d",
             'optimal_weight': "campaign_optimal_weight",
             'campaign_target_suggestion': "campaign_target_suggestion",
             'facebook_campaign_currency': "facebook_campaign_currency",
