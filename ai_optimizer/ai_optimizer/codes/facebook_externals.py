@@ -4,46 +4,44 @@
 # In[ ]:
 
 
-import json
-import requests
-import time
-import pytz
 import datetime
 import math
-import random
-import pandas as pd
 from copy import deepcopy
+import numpy as np
+import pandas as pd
+
 from facebook_business.adobjects.adset import AdSet
-from facebook_business.adobjects.targeting import Targeting
-from facebook_business.adobjects.ad import Ad
-from facebook_business.api import FacebookAdsApi
 import facebook_business.adobjects.campaign as facebook_business_campaign
 
 from bid_operator import revert_bid_amount
 import database_controller
-from facebook_datacollector import Campaigns
-from facebook_datacollector import DatePreset
-from facebook_adapter import FacebookCampaignAdapter
+import facebook_datacollector as collector
+import facebook_adapter as adapter 
 import facebook_currency_handler as fb_currency_handler
-import facebook_lookalike_audience as lookalike_audience
 import facebook_ai_behavior_log as ai_logger
 import facebook_adset_controller as adset_controller
-
 import adgeek_permission as permission
 
-IS_DEBUG = False #debug mode will not modify anything
+
+# In[ ]:
+
+
+IS_DEBUG = True #debug mode will not modify anything
 
 DATABASE = 'dev_facebook_test'
 DATE = datetime.datetime.now().date()#-datetime.timedelta(1)
 ACTION_BOUNDARY = 0.8
-ACTION_DICT = {'bid': AdSet.Field.bid_amount,
-               'age': AdSet.Field.targeting, 'interest': AdSet.Field.targeting}
+ACTION_DICT = {
+    'bid': AdSet.Field.bid_amount,
+    'age': AdSet.Field.targeting, 
+    'interest': AdSet.Field.targeting
+}
 
 BRANDING_CAMPAIGN_LIST = [
     'THRUPLAY', 'LINK_CLICKS', 'ALL_CLICKS', 'VIDEO_VIEWS', 'REACH', 'POST_ENGAGEMENT', 'PAGE_LIKES', 'LANDING_PAGE_VIEW']
 PERFORMANCE_CAMPAIGN_LIST = [
     'PURCHASE', 'MESSAGES', 'SEARCH', 'INITIATE_CHECKOUT', 'LEAD_WEBSITE', 'PURCHASES', 'ADD_TO_WISHLIST', 'VIEW_CONTENT', 'ADD_PAYMENT_INFO', 'COMPLETE_REGISTRATION', 'CONVERSIONS', 'LEAD_GENERATION', 'ADD_TO_CART']
-CUSTOM_CONVERSION_CAMPAIGN_LIST = [
+CUSTOM_CAMPAIGN_LIST = [
     'CUSTOM', 'CONVERSIONS'
 ]
 
@@ -54,6 +52,9 @@ ADSET_COPY_COUNT = 3
 AI_ADSET_PREFIX = '_AI_'
 
 
+# In[ ]:
+
+
 def update_interest(adset_id=None, adset_params=None):
     adset = AdSet(adset_id)
     update_response = adset.update(adset_params)
@@ -61,7 +62,6 @@ def update_interest(adset_id=None, adset_params=None):
         params={'status': 'PAUSED', }
     )
     return
-
 
 def update_status(adset_id, status=AdSet.Status.active):
     if IS_DEBUG:
@@ -79,23 +79,77 @@ def update_daily_min_spend_target(adset_id):
     adset = AdSet(adset_id)
     adset[AdSet.Field.status] = status
     adset.remote_update()
-
     
-def get_sorted_adset(campaign_id,):
-    df = database_fb.retrieve('score', campaign_id)
+def set_adset_status(campaign_instance, ai_kpi_setting):
+    df = database_fb.retrieve('score_7d', campaign_instance.campaign_id)
+    adsets_active_list = campaign_instance.get_adsets_active()
+    adset_list = []
+    adset_action_list = []
     if df.empty:
         print('[get_sorted_adset] Error, no adset score')
         return []
     else:
-        df_today = df.sort_values( by=['score'], ascending=False)
-        print('[get_sorted_adset] df_today' , df_today )
-        return df_today['adset_id'].unique().tolist()
+        df_today = df.sort_values(by=['score'], ascending=False)
+        print('[get_sorted_adset] df_today', df_today)
+        adset_list = df_today['adset_id'].unique().tolist()
+        return adset_list
+    
+    for adset in adset_list:
+        if str(adset) in adsets_active_list:
+            adset_action_list.append(adset)
+    
+    adset_for_copy_list, adset_for_off_list = split_adset_list(adset_action_list)
+    # current going adset is less than ADSET_MIN_COUNT, not to close any adset
+    if len(adsets_active_list) <= ADSET_MIN_COUNT:
+        adset_for_off_list = []
+    
+    print('[optimize_performance_campaign] adset_list', len(adset_list))
+    print('[optimize_performance_campaign] adset_action_list', len(adset_action_list))
+    print('[optimize_performance_campaign] adset_for_copy_list', len(adset_for_copy_list))
+    print('[optimize_performance_campaign] adset_for_off_list', len(adset_for_off_list))
+    close_adset(adset_for_off_list, ai_kpi_setting)
+    
+def adset_optimization(campaign_instance):
+    adset_list = campaign_instance.get_adsets_active()
+    print('    [adset_optimization] adsets_active_list:', adset_list)
+    if len(adset_list) <= ADSET_MAX_COUNT_CPA:
+        if len(adset_list) > 0 and not IS_DEBUG:
+            #create one suggestion adset for CPA campaigin
+            print('    [adset_optimization] create one suggestion asset for CPA campaigin')
+            if is_target_suggest:
+                new_adset_id = adset_controller.make_performance_suggest_adset(campaign_id, adset_list)
+                if new_adset_id:
+                    ai_logger.save_adset_behavior(new_adset_id, ai_logger.BehaviorType.CREATE)
+            #create one lookalike adset for CPA campaigin
+            print('    [adset_optimization] create one lookalike asset for CPA campaigin')
+            if is_lookalike:
+                new_adset_id = adset_controller.make_performance_lookalike_adset(campaign_id, adset_list)
+                if new_adset_id:
+                    ai_logger.save_adset_behavior(new_adset_id, ai_logger.BehaviorType.CREATE)
+            modify_opt_result_db(campaign_id, "True")
+    
+def close_adset(adset_list, ai_kpi_setting):
+    for adset_id in adset_list:
+        origin_adset_params = adset_controller.retrieve_origin_adset_params(adset_id)
+        origin_name = origin_adset_params[AdSet.Field.name]
+        if not is_contain_rt_string(origin_name):
+            if adset_controller.is_adset_should_close(int(adset_id), ai_kpi_setting):
+                update_status(adset_id, status=AdSet.Status.paused)
+
+def adset_sorting_by_score(campaign_instance):
+    df = database_fb.retrieve('score_7d', campaign_instance.campaign_id)
+    if df.empty:
+        print('    [get_sorted_adset] Error, no adset score')
+        return []
+    else:
+        df_today = df.sort_values(by=['score'], ascending=False)
+        print('    [get_sorted_adset] df_today', df_today)
+        adset_list = df_today['adset_id'].unique().tolist()
+        return adset_list
 
 def split_adset_list(adset_list):
-    import math
     half = math.ceil(len(adset_list) / 2)
     return adset_list[:ADSET_COPY_COUNT], adset_list[half:]
-
 
 def is_contain_copy_string(adset_name):
     return (AI_ADSET_PREFIX in adset_name)
@@ -106,173 +160,237 @@ def is_contain_rt_string(adset_name):
 def is_contain_lookalike_string(adset_name):
     return ('Look-a-like' in adset_name)
 
-
 def modify_opt_result_db(campaign_id, is_optimized):
     #get date
     opt_date = datetime.date.today()
-    database_fb.update("campaign_target", {"is_optimized": is_optimized, "optimized_date": opt_date }, campaign_id=campaign_id)
+    database_fb.update("campaign_target", {"is_optimized": is_optimized, "optimized_date": opt_date}, campaign_id=campaign_id)
 
-def optimize_performance_campaign(campaign_id):
+
+# In[ ]:
+
+
+def get_campaign_name_status(campaign_id):
+    this_campaign = facebook_business_campaign.Campaign(campaign_id).api_get(fields=["status", "name"])
+    return this_campaign.get('name'), this_campaign.get('status')
+
+
+# In[ ]:
+
+
+def optimize_performance_campaign(account_id,
+                                  campaign_id,
+                                  destination,
+                                  destination_max,
+                                  charge_type,
+                                  destination_type,
+                                  custom_conversion_id,
+                                  is_optimized,
+                                  optimized_date,
+                                  cost_per_target,
+                                  daily_budget,
+                                  daily_charge,
+                                  impressions,
+                                  ctr,
+                                  period,
+                                  spend,
+                                  ai_spend_cap,
+                                  ai_start_date,
+                                  ai_stop_date,
+                                  ai_status,
+                                  spend_cap,
+                                  start_time,
+                                  stop_time,
+                                  target,
+                                  desire,
+                                  interest,
+                                  awareness,
+                                  target_left,
+                                  target_type,
+                                  reach,
+                                  is_smart_spending,
+                                  is_target_suggest,
+                                  is_lookalike,
+                                  is_creative_opt,
+                                  actual_metrics,
+                                 ):
+    print('[optimize_performance_campaign] campaign ', campaign_id)
+    is_smart_spending = eval(is_smart_spending)
+    is_target_suggest = eval(is_target_suggest)
+    is_lookalike = eval(is_lookalike)
+    current_flight = (datetime.date.today()-ai_start_date).days + 1
+    last_7d_flight_process = 7 / period
+    lifetime_flight_process = current_flight / period
+
+    campaign_instance = collector.Campaigns(campaign_id)
     
-    print('[optimize_performance_campaign] campaign ',campaign_id)
-    df = database_fb.get_one_campaign(campaign_id)
-    is_smart_spending = eval(df['is_smart_spending'].iloc[0])
-    is_target_suggest = eval(df['is_target_suggest'].iloc[0])
-    is_lookalike = eval(df['is_lookalike'].iloc[0])
-    current_flight = ( datetime.date.today()-df['ai_start_date'].iloc[0] ).days
-    period = df['period'].iloc[0]
-    flight_process = current_flight / period
-    destination_type = df['destination_type'].iloc[0]
-    daily_charge = df['daily_charge'].iloc[0]
-    campaign_daily_budget = df['daily_budget'].iloc[0]
-    campaign_instance = Campaigns(campaign_id)
-    
-    day_dict = campaign_instance.generate_info(date_preset=DatePreset.yesterday)
-    
+    day_dict = campaign_instance.generate_info(date_preset=collector.DatePreset.yesterday)
+    last_7d_dict = campaign_instance.generate_info(date_preset=collector.DatePreset.last_7d)
     # this lifetime means ai_start_date and ai_stop_date; 
-    lifetime_dict = campaign_instance.generate_info(date_preset=DatePreset.lifetime)
+    lifetime_dict = campaign_instance.generate_info(date_preset=collector.DatePreset.lifetime)
     day_dict['target'] = day_dict.pop('action')
+    last_7d_dict['target'] = last_7d_dict.pop('action')
+    last_7d_target = int(last_7d_dict['target'])
     lifetime_dict['target'] = lifetime_dict.pop('action')
-    lifetime_target = int( lifetime_dict['target'] )
-    
+    lifetime_target = int(lifetime_dict['target'])
     #get setting of destination and spending
-    ai_setting_spend_cap = int(df['ai_spend_cap'])
-    ai_setting_destination_count = int(df['destination'])
-    ai_setting_cost_per_result = ai_setting_spend_cap/ai_setting_destination_count
-    print('[optimize_performance_campaign] ai_setting_destination_count:' ,ai_setting_destination_count, ' ai_setting_spend_cap:', ai_setting_spend_cap, ' ai_setting_cost_per_result:',ai_setting_cost_per_result)
-    
-    
+    ai_setting_spend_cap = int(ai_spend_cap)
+    ai_setting_destination_count = int(destination)
+    ai_setting_cost_per_result = ai_setting_spend_cap / ai_setting_destination_count
+    print('[optimize_performance_campaign]\n    ai_setting_destination_count:', ai_setting_destination_count,
+          '\n    ai_setting_spend_cap:', ai_setting_spend_cap,
+          '\n    ai_setting_cost_per_result:', ai_setting_cost_per_result)
     # good enough
-    if lifetime_target > df['destination'].iloc[0]:
+    if lifetime_target > ai_setting_destination_count:
         modify_opt_result_db(campaign_id, "False")
         print('[optimize_performance_campaign] lifetime good enough')
         return    
 
-    #compute achieving_rate
+    #compute lifetime_achieving_rate
     target = 0 # get by insight
     if 'target' in day_dict:
         target = int(day_dict['target'])
     
-    achieving_rate = lifetime_target / (df['destination'].iloc[0] * flight_process + 5)
-    print('[achieving rate]', achieving_rate, ' current_target', lifetime_target, ' destined_target', (df['destination'].iloc[0] * flight_process))
-
-    if achieving_rate > ACTION_BOUNDARY and achieving_rate < 1:
-        print('[optimize_performance_campaign] 0.8 < achieving_rate < 1')
-    elif achieving_rate < ACTION_BOUNDARY:
-        # update bid for original existed adset
-        print('[optimize_performance_campaign] campaign_daily_budget', campaign_daily_budget)
-        if not day_dict.get('spend'):
-            print('[optimize_performance_campaign] no spend value')            
-            return
-        yesterday_spend = float(day_dict.get('spend'))
-        if campaign_daily_budget and yesterday_spend and (yesterday_spend <= campaign_daily_budget * 0.8):
-            print('[optimize_performance_campaign] yesterday_spend not enough:', yesterday_spend)            
-            if not IS_DEBUG:
-                database_fb.update_init_bid(campaign_id, update_ratio=1.1)
-        else:
-            print('[optimize_performance_campaign] yesterday_spend is enough, no need to up bidding')
-    else: # good enough, not to do anything
-        print('[optimize_performance_campaign] good enough, not to do anything')
-        modify_opt_result_db(campaign_id , "False")
-        return
-
-    #not to generate suggestion for CPA campaign if adset count > ADSET_MAX_COUNT_CPA
-    total_destination = df['destination'].iloc[0]
-    ai_period = df['period'].iloc[0]
-
+    last_7d_achieving_rate = last_7d_target / (ai_setting_destination_count * last_7d_flight_process)
+    lifetime_achieving_rate = lifetime_target / (ai_setting_destination_count * lifetime_flight_process) if (ai_setting_destination_count)!=0 else 0
+    print('[achieving rate]', lifetime_achieving_rate, ' current_target', lifetime_target,
+          ' \n    destined_target', (ai_setting_destination_count * lifetime_flight_process))
     adsets_active_list = campaign_instance.get_adsets_active()
-    print('[optimize_performance_campaign] adsets_active_list:', adsets_active_list)
-    if len(adsets_active_list) <= ADSET_MAX_COUNT_CPA:
-        if len(adsets_active_list) > 0 and not IS_DEBUG: 
-#         if len(adsets_active_list) > 0:
-            #create one suggestion adset for CPA campaigin
-            print('create one suggestion asset for CPA campaigin')        
-            adset_id = adsets_active_list[0]
-            if is_target_suggest:
-                new_adset_id = adset_controller.make_performance_suggest_adset(campaign_id, adsets_active_list)
-                if new_adset_id:
-                    ai_logger.save_adset_behavior(new_adset_id, ai_logger.BehaviorType.CREATE)
-                
-            #create one lookalike adset for CPA campaigin
-            print('create one lookalike asset for CPA campaigin')
-            if is_lookalike:
-                new_adset_id = adset_controller.make_performance_lookalike_adset(campaign_id, adsets_active_list)
-                if new_adset_id:
-                    ai_logger.save_adset_behavior(new_adset_id, ai_logger.BehaviorType.CREATE)
-            
+    
+    if last_7d_achieving_rate < 1:
+        print('[optimize_performance_campaign] last_7d status: off standard.\n')
+        if lifetime_achieving_rate < 1:
+            print('[optimize_performance_campaign] lifetime status: off standard.\n')
+            # 1.close half (免死)
+            adset_list = adset_sorting_by_score(campaign_instance)
+            adset_list = [adset for adset in adset_list if str(adset) in adsets_active_list]
+            adset_for_copy_list, adset_for_off_list = split_adset_list(adset_list)
+            adset_for_off_list = [adset for adset in adset_list if len(adsets_active_list) <= ADSET_MIN_COUNT]
+            close_adset(adset_for_off_list, ai_setting_cost_per_result)
+            # 2.add one suggestion
+            adset_optimization(campaign_instance)
+        else:
+            print('[optimize_performance_campaign] lifetime status: meet requirements.\n')
+            # 1.In [adset for adset in lifetime_adset if adset_cpa <= 1.2 KPI] pick adset who has the lowest cpa.
+            lifetime_adsets = campaign_instance.get_adsets()
+            adset_insights_list = [
+                collector.AdSets(adset_id).get_adset_insights(date_preset=collector.DatePreset.lifetime) for adset_id in lifetime_adsets
+            ]
+            [adset_insights_list[idx].update({"adset_id": adset_id}) for idx, adset_id in enumerate(lifetime_adsets)]
+            df_insights = pd.DataFrame(adset_insights_list)
+            df_insights["CPA"] = df.spend / df.action
+            df_insights = df_insights[
+                (np.isfinite(df_insights.CPA))&(df_insights.CPA < 1.2*ai_setting_cost_per_result)].sort_values(by=['CPA'])
+            if df_insights.empty:
+                # add suggestion
+                adset_optimization(campaign_instance)
+            else:
+                pass
+                update_status(df_insights.adset_id.head(1).values[0], status=AdSet.Status.active)
+            # Or, add one suggestion
+            # 2. close half (免死)
+            adset_list = adset_sorting_by_score(campaign_instance)
+            adset_list = [adset for adset in adset_list if str(adset) in adsets_active_list]
+            adset_for_copy_list, adset_for_off_list = split_adset_list(adset_list)
+            adset_for_off_list = [adset for adset in adset_list if len(adsets_active_list) <= ADSET_MIN_COUNT]
+            close_adset(adset_for_off_list, ai_setting_cost_per_result)
+        modify_opt_result_db(campaign_id, "True")
+    else:
+        print('[optimize_performance_campaign] last_7d status: meet requirements.\n')
+        if lifetime_achieving_rate < 1:
+            print('[optimize_performance_campaign] lifetime status: off standard.\n')
+            # close one low rank (免死)
+            adset_list = adset_sorting_by_score(campaign_instance)
+            adset_list = [adset for adset in adset_list if str(adset) in adsets_active_list]
+            close_adset([adset_list.pop()], ai_setting_cost_per_result)
             modify_opt_result_db(campaign_id, "True")
-            return
+        else:
+            print('[optimize_performance_campaign] lifetime status: meet requirements.\n')
+            modify_opt_result_db(campaign_id, "False")
 
-    #performance not to copy adset, just close adset
-    adset_list = get_sorted_adset(campaign_id)
-    adset_action_list = []
-    for adset in adset_list:
-        if str(adset) in adsets_active_list:
-            adset_action_list.append(adset)
-    
-    adset_for_copy_list, adset_for_off_list = split_adset_list(adset_action_list)
-    # current going adset is less than ADSET_MIN_COUNT, not to close any adset
-    if len(adsets_active_list) <= ADSET_MIN_COUNT:
-        adset_for_off_list = []
-    
-    print('[optimize_performance_campaign] adset_list',len(adset_list))
-    print('[optimize_performance_campaign] adset_action_list',len(adset_action_list))
-    print('[optimize_performance_campaign] adset_for_copy_list',len(adset_for_copy_list))
-    print('[optimize_performance_campaign] adset_for_off_list',len(adset_for_off_list))
 
-    for adset_id in adset_for_off_list:
-        origin_adset_params = adset_controller.retrieve_origin_adset_params(adset_id)
-        origin_name = origin_adset_params[AdSet.Field.name]
-        if not is_contain_rt_string(origin_name):
-            if adset_controller.is_adset_should_close(int(adset_id), ai_setting_cost_per_result):
-                update_status(adset_id, status=AdSet.Status.paused)
-    
-    # optimize finish
-    modify_opt_result_db(campaign_id, "True")
-    
-def optimize_branding_campaign(campaign_id):
-    print('[optimize_branding_campaign] campaign ',campaign_id)
-    df = database_fb.get_one_campaign(campaign_id)
+# In[ ]:
+
+
+def optimize_branding_campaign(account_id,
+                               campaign_id,
+                               destination,
+                               destination_max,
+                               charge_type,
+                               destination_type,
+                               custom_conversion_id,
+                               is_optimized,
+                               optimized_date,
+                               cost_per_target,
+                               daily_budget,
+                               daily_charge,
+                               impressions,
+                               ctr,
+                               period,
+                               spend,
+                               ai_spend_cap,
+                               ai_start_date,
+                               ai_stop_date,
+                               ai_status,
+                               spend_cap,
+                               start_time,
+                               stop_time,
+                               target,
+                               desire,
+                               interest,
+                               awareness,
+                               target_left,
+                               target_type,
+                               reach,
+                               is_smart_spending,
+                               is_target_suggest,
+                               is_lookalike,
+                               is_creative_opt,
+                               actual_metrics,
+                              ):
+    print('[optimize_branding_campaign] campaign ', campaign_id)
     # charge_type attribute of first row
-    is_smart_spending = eval(df['is_smart_spending'].iloc[0])
-    is_target_suggest = eval(df['is_target_suggest'].iloc[0])
-    is_lookalike = eval(df['is_lookalike'].iloc[0])
-    current_flight = ( datetime.date.today()-df['ai_start_date'].iloc[0] ).days
-    period = df['period'].iloc[0]
-    flight_process = current_flight / period
-    destination_type = df['destination_type'].iloc[0]
-    daily_charge = df['daily_charge'].iloc[0]
-    campaign_daily_budget = df['daily_budget'].iloc[0]
-    campaign_instance = Campaigns(campaign_id)
+    is_smart_spending = eval(is_smart_spending)
+    is_target_suggest = eval(is_target_suggest)
+    is_lookalike = eval(is_lookalike)
+    current_flight = (datetime.date.today()-ai_start_date).days + 1
+    last_7d_flight_process = 7 / period
+    lifetime_flight_process = current_flight / period
+    
+    campaign_daily_budget = daily_budget
+    
+    campaign_instance = collector.Campaigns(campaign_id)
     
     #get setting of destination and spending
-    ai_setting_spend_cap = int(df['ai_spend_cap'])
-    ai_setting_destination_count = int(df['destination'])
-    ai_setting_cost_per_result = ai_setting_spend_cap/ai_setting_destination_count
-    print('[optimize_branding_campaign] ai_setting_destination_count:' ,ai_setting_destination_count, ' ai_setting_spend_cap:', ai_setting_spend_cap, ' ai_setting_cost_per_result:',ai_setting_cost_per_result)
+    ai_setting_spend_cap = int(ai_spend_cap)
+    ai_setting_destination_count = int(destination)
+    ai_setting_cost_per_result = ai_setting_spend_cap / ai_setting_destination_count
+    print('[optimize_performance_campaign]\n    ai_setting_destination_count:', ai_setting_destination_count,
+          '\n    ai_setting_spend_cap:', ai_setting_spend_cap,
+          '\n    ai_setting_cost_per_result:', ai_setting_cost_per_result)
     
-    day_dict = campaign_instance.generate_info(date_preset=DatePreset.yesterday)
+    day_dict = campaign_instance.generate_info(date_preset=collector.DatePreset.yesterday)
     # this lifetime means ai_start_date and ai_stop_date; 
-    lifetime_dict = campaign_instance.generate_info(date_preset=DatePreset.lifetime)
+    lifetime_dict = campaign_instance.generate_info(date_preset=collector.DatePreset.lifetime)
     day_dict['target'] = day_dict.pop('action')
     lifetime_dict['target'] = lifetime_dict.pop('action')
-    lifetime_target = int( lifetime_dict['target'] )
-    if lifetime_target > df['destination'].iloc[0]:
-        print('[optimize_branding_campaign] good enough, not to do anything')        
+    lifetime_target = int(lifetime_dict['target'])
+    if lifetime_target > ai_setting_destination_count:
+        print('[optimize_performance_campaign] lifetime good enough')
         modify_opt_result_db(campaign_id, "False")
-        return    
+        return  
     
-    #compute achieving_rate
+    #compute lifetime_achieving_rate
     target = 0 # get by insight
     if 'target' in day_dict:
         target = int(day_dict['target'])
     
-    achieving_rate = lifetime_target / (df['destination'].iloc[0] * flight_process)
-    print('[achieving rate]', achieving_rate, ' current_target', lifetime_target, ' destined_target', (df['destination'].iloc[0] * flight_process))
+    lifetime_achieving_rate = lifetime_target / (ai_setting_destination_count * lifetime_flight_process)
+    print('[achieving rate]', lifetime_achieving_rate, ' current_target', lifetime_target,
+          ' \n    destined_target', (ai_setting_destination_count * lifetime_flight_process))
 
-    if achieving_rate > ACTION_BOUNDARY and achieving_rate < 1:
-        print('[optimize_branding_campaign] 0.8 < achieving_rate < 1')
-    elif achieving_rate < ACTION_BOUNDARY:
+    if lifetime_achieving_rate > ACTION_BOUNDARY and lifetime_achieving_rate < 1:
+        print('[optimize_branding_campaign] 0.8 < lifetime_achieving_rate < 1')
+    elif lifetime_achieving_rate < ACTION_BOUNDARY:
         # update bid for original existed adset
         print('[optimize_branding_campaign] campaign_daily_budget', campaign_daily_budget)
         if not day_dict.get('spend'):
@@ -287,41 +405,21 @@ def optimize_branding_campaign(campaign_id):
             print('[optimize_branding_campaign] yesterday_spend is enough, no need to up bidding')
     else: # good enough, not to do anything
         print('[optimize_branding_campaign] good enough, not to do anything')
-        modify_opt_result_db(campaign_id , "False")
+        modify_opt_result_db(campaign_id, "False")
         return
 
     # current going adset is less than ADSET_MIN_COUNT, not to close any adset
     adsets_active_list = campaign_instance.get_adsets_active()
     print('[optimize_branding_campaign] adsets_active_list:', adsets_active_list)
     
-    adset_list = get_sorted_adset(campaign_id,)
-    adset_action_list = []
-    for adset in adset_list:
-        if str(adset) in adsets_active_list:
-            adset_action_list.append(adset)
-    adset_for_copy_list, adset_for_off_list = split_adset_list(adset_action_list)
-    # current going adset is less than ADSET_MIN_COUNT, not to close any adset
-    if len(adsets_active_list) <= ADSET_MIN_COUNT:
-        adset_for_off_list = []
-    
-    print('[optimize_branding_campaign] adset_list',len(adset_list))
-    print('[optimize_branding_campaign] adset_action_list',len(adset_action_list))
-    print('[optimize_branding_campaign] adset_for_copy_list',len(adset_for_copy_list))
-    print('[optimize_branding_campaign] adset_for_off_list',len(adset_for_off_list))
-
-    for adset_id in adset_for_off_list:
-        origin_adset_params = adset_controller.retrieve_origin_adset_params(adset_id)
-        origin_name = origin_adset_params[AdSet.Field.name]
-        if not is_contain_rt_string(origin_name):
-            if adset_controller.is_adset_should_close(int(adset_id), ai_setting_cost_per_result):
-                update_status(adset_id, status=AdSet.Status.paused)
+    set_adset_status(campaign_instance, ai_setting_cost_per_result)
     
     # get ready to duplicate
     actions = {'bid': None, 'age': list(), 'interest': None}
     actions_list = list()
         
     #get adset bid for this campaign
-    fb_adapter = FacebookCampaignAdapter( campaign_id, database_fb )
+    fb_adapter = adapter.FacebookCampaignAdapter(campaign_id, database_fb)
     fb_adapter.retrieve_campaign_attribute()
     
     for adset_id in adset_for_copy_list:
@@ -376,36 +474,29 @@ def optimize_branding_campaign(campaign_id):
                 if copy_result_new_adset_id:
                     ai_logger.save_adset_behavior(copy_result_new_adset_id, ai_logger.BehaviorType.COPY)
                 
-    modify_opt_result_db(campaign_id, "True")    
-    
-    
-def optimize_campaign(campaign_id):
-    print('[optimize_campaign] campaign_id', campaign_id)
-    df = database_fb.get_one_campaign(campaign_id)
-    destination_type = df['destination_type'].iloc[0]
-    account_id = df['account_id'].iloc[0]
-    permission.init_facebook_api(account_id)
-    
-    campaign_name , campaign_fb_status = get_campaign_name_status(campaign_id)
-    print(campaign_id, campaign_fb_status, campaign_name)
-    if campaign_fb_status == 'ACTIVE':
-        print('[optimize_campaign] destination_type', destination_type)
-        if destination_type in PERFORMANCE_CAMPAIGN_LIST:
-            optimize_performance_campaign(campaign_id)
-        elif destination_type in BRANDING_CAMPAIGN_LIST:
-            optimize_branding_campaign(campaign_id)
-        elif destination_type in CUSTOM_CONVERSION_CAMPAIGN_LIST:
-            optimize_performance_campaign(campaign_id)
-        else:
-            print('[optimize_campaign] error, not optimize')
+    modify_opt_result_db(campaign_id, "True")
 
 
 # In[ ]:
 
 
-def get_campaign_name_status(campaign_id):
-    this_campaign = facebook_business_campaign.Campaign( campaign_id).api_get(fields=["status", "name"])
-    return this_campaign.get('name'), this_campaign.get('status')
+def optimize_campaign(campaign_id):
+    print('[optimize_campaign] campaign_id', campaign_id)
+    campaign = database_fb.get_one_campaign(campaign_id).to_dict('records')[0]
+    permission.init_facebook_api(campaign['account_id'])
+    print(campaign)
+    campaign_name, campaign_fb_status = get_campaign_name_status(campaign_id)
+    print(campaign_id, campaign_fb_status, campaign_name)
+    if campaign_fb_status == 'ACTIVE':
+        print('[optimize_campaign] destination_type', campaign['destination_type'])
+        if campaign['destination_type'] in collector.PERFORMANCE_CAMPAIGN_LIST:
+            optimize_performance_campaign(**campaign)
+        elif campaign['destination_type'] in collector.BRANDING_CAMPAIGN_LIST:
+            optimize_branding_campaign(**campaign)
+        elif campaign['destination_type'] in collector.CUSTOM_CAMPAIGN_LIST:
+            optimize_performance_campaign(**campaign)
+        else:
+            print('[optimize_campaign] error, not optimize')
 
 
 # In[ ]:

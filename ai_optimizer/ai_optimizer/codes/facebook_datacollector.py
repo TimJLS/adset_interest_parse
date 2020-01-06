@@ -501,8 +501,8 @@ class AdSets(object):
         self.campaign_id = self.get_campaign_id()
         self.currency = currency_handler.get_currency_by_campaign(self.campaign_id)
         if database_fb is None:
-            database_fb = database_controller.FB( database_controller.Database() )
-        self.brief_dict = database_fb.get_brief( self.campaign_id )
+            database_fb = database_controller.FB(database_controller.Database())
+        self.brief_dict = database_fb.get_brief(self.campaign_id)
         self.ai_spend_cap = self.brief_dict.get(Field.ai_spend_cap)
         self.ai_start_date = self.brief_dict.get(Field.ai_start_date)
         self.ai_stop_date = self.brief_dict.get(Field.ai_stop_date)
@@ -514,43 +514,36 @@ class AdSets(object):
     # Getters
     
     def get_bid_strategy(self):
-        adsets = adset.AdSet( self.adset_id )
-        settings = adsets.api_get( fields = ["bid_strategy"] )
+        adsets = adset.AdSet(self.adset_id)
+        settings = adsets.api_get(fields = ["bid_strategy"])
         self.bid_strategy = dict(settings).get("bid_strategy")
         return self.bid_strategy
     
-    def get_ads( self ):
-        ad_list=list()
-        adsets = adset.AdSet( self.adset_id )
-        try:
-            ads = adsets.get_ads( fields = [ Ad.Field.id ])
-        except Exception as e:
-            print('[AdSets.get_ads] adset id: ', self.adset_id)
-            print('[AdSets.get_ads] error: ', e)
-        for ad in ads:
-            ad_list.append( ad.get("id") )
-        return ad_list
+    def get_ads(self):
+        adsets = adset.AdSet(self.adset_id)
+        ads = adsets.get_ads(fields=[Ad.Field.id])
+        return [ad.get("id") for ad in ads]
     
-    def get_fb_pixel_id( self ):
-        adsets = adset.AdSet( self.adset_id )
-        adsets = adsets.api_get( fields=['promoted_object'] )
+    def get_fb_pixel_id(self):
+        adsets = adset.AdSet(self.adset_id)
+        adsets = adsets.api_get(fields=['promoted_object'])
         promoted_object = adsets.get("promoted_object")
         return promoted_object.get("pixel_id") if promoted_object else None
     
-    def get_campaign_id( self ):
-        adsets = adset.AdSet( self.adset_id )
-        adsets = adsets.api_get( fields=['campaign_id'] )
+    def get_campaign_id(self):
+        adsets = adset.AdSet(self.adset_id)
+        adsets = adsets.api_get(fields=['campaign_id'])
         campaign_id = adsets.get("campaign_id")
         return campaign_id
     
-    def get_adset_features( self ):
-        adsets = adset.AdSet( self.adset_id )
+    def get_adset_features(self):
+        adsets = adset.AdSet(self.adset_id)
         try:
-            adsets = adsets.api_get( fields=list( ADSET_FIELD.values() ) )
+            adsets = adsets.api_get(fields=list( ADSET_FIELD.values() ))
         except Exception as e:
             print('[AdSets.get_adset_features] adset id: ', self.adset_id)
             print('[AdSets.get_adset_features] error: ', e)
-            return self.adset_features.update( {'id':self.adset_id})
+            return self.adset_features.update({'id':self.adset_id})
         for adset_field in list(adsets.keys()):
             if adset_field == Field.targeting:
                 self.adset_features.update( { Field.age_max:adsets.get( Field.targeting ).get( Field.age_max ) } )
@@ -558,7 +551,7 @@ class AdSets(object):
                 self.adset_features.update( { Field.flexible_spec: str(adsets.get( Field.targeting ).get( Field.flexible_spec ) ) } )
                 self.adset_features.update( { Field.geo_locations: str(adsets.get( Field.targeting ).get( Field.geo_locations ) ) } )
             else:
-                self.adset_features.update( { adset_field:adsets.get(adset_field) } )
+                self.adset_features.update( { adset_field: adsets.get(adset_field) } )
         self.status = self.adset_features.pop( Field.status )
         self.adset_features.update( { Field.status: self.status } )
         if self.status == Status.active:
@@ -568,7 +561,7 @@ class AdSets(object):
 
         return self.adset_features
     
-    def get_adset_insights( self, date_preset=None ):
+    def get_adset_insights(self, date_preset=None):
         adsets = adset.AdSet( self.adset_id )
         if date_preset is None or date_preset == DatePreset.lifetime:
             params = {
@@ -594,7 +587,7 @@ class AdSets(object):
                 spend = float( current_adset.get( Field.spend ) )
                 
             for adset_field in list( GENERAL_FIELD.keys() ):
-                self.adset_insights.update( {adset_field: current_adset.get(adset_field)} )
+                self.adset_insights.update( {adset_field: eval(current_adset.get(adset_field))} )
                 
             if self.charge_type == 'ALL_CLICKS':
                 self.adset_insights[ "action" ] = int(self.adset_insights.pop( Field.clicks ))
@@ -704,7 +697,7 @@ def data_collect( data_base_fb, campaign_id, destination, charge_type, ai_start_
         try:
             adset_dict['bid_amount'] = math.ceil(reverse_bid_amount(adset_dict['bid_amount']))
             df_adset = pd.DataFrame(adset_dict, index=[0])
-            data_base_fb.insert_ignore("adset_initial_bid", { key : adset_dict[key] for key in [ Field.campaign_id, Field.adset_id, Field.bid_amount ] })
+            data_base_fb.insert_ignore("adset_initial_bid", {key : adset_dict[key] for key in [Field.campaign_id, Field.adset_id, Field.bid_amount]})
         except Exception as e:
             print('[datacollect] adset id: ', adset_id)
             print('[datacollect] error: ', e)
@@ -759,10 +752,4 @@ if __name__ == "__main__":
 
 
 # !jupyter nbconvert --to script facebook_datacollector.ipynb
-
-
-# In[ ]:
-
-
-
 
