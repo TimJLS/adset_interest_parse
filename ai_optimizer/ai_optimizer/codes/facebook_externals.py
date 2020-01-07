@@ -148,6 +148,8 @@ def adset_sorting_by_score(campaign_instance):
         return adset_list
 
 def split_adset_list(adset_list):
+    if not adset_list:
+        return [], []
     half = math.ceil(len(adset_list) / 2)
     return adset_list[:ADSET_COPY_COUNT], adset_list[half:]
 
@@ -301,8 +303,11 @@ def optimize_performance_campaign(account_id,
             # close one low rank (免死)
             adset_list = adset_sorting_by_score(campaign_instance)
             adset_list = [adset for adset in adset_list if str(adset) in adsets_active_list]
-            close_adset([adset_list.pop()], ai_setting_cost_per_result)
-            modify_opt_result_db(campaign_id, "True")
+            if adset_list:
+                close_adset([adset_list.pop()], ai_setting_cost_per_result)
+                modify_opt_result_db(campaign_id, "True")
+            else:
+                modify_opt_result_db(campaign_id, "False")
         else:
             print('[optimize_performance_campaign] lifetime status: meet requirements.\n')
             modify_opt_result_db(campaign_id, "False")
@@ -421,6 +426,9 @@ def optimize_branding_campaign(account_id,
     #get adset bid for this campaign
     fb_adapter = adapter.FacebookCampaignAdapter(campaign_id, database_fb)
     fb_adapter.retrieve_campaign_attribute()
+    
+    adset_list = campaign_instance.get_adsets_active()
+    adset_for_copy_list, adset_for_off_list = split_adset_list(adset_list)
     
     for adset_id in adset_for_copy_list:
         # bid adjust
@@ -563,10 +571,4 @@ if __name__ == '__main__':
 # campaign_id = 23843426278230073
 # permission.init_facebook_api(account_id)
 # optimize_branding_campaign(campaign_id)
-
-
-# In[ ]:
-
-
-
 
