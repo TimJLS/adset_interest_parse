@@ -587,7 +587,7 @@ class AdSets(object):
                 spend = float( current_adset.get( Field.spend ) )
                 
             for adset_field in list( GENERAL_FIELD.keys() ):
-                self.adset_insights.update( {adset_field: eval(current_adset.get(adset_field))} )
+                self.adset_insights.update( {adset_field: float(current_adset.get(adset_field, 0))} )
                 
             if self.charge_type == 'ALL_CLICKS':
                 self.adset_insights[ "action" ] = int(self.adset_insights.pop( Field.clicks ))
@@ -752,4 +752,10 @@ if __name__ == "__main__":
 
 
 # !jupyter nbconvert --to script facebook_datacollector.ipynb
+
+
+# In[ ]:
+
+
+
 
