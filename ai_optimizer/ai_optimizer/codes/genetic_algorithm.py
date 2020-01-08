@@ -261,39 +261,6 @@ def assess_adset(campaign_object, time_slice):
 # In[ ]:
 
 
-def main():
-    starttime = datetime.datetime.now()
-    print('[start time]: ', starttime)
-    global database_fb
-    db = database_controller.Database()
-    database_fb = database_controller.FB(db)
-    campaign_list = database_fb.get_branding_campaign().to_dict('records')
-    print([campaign['campaign_id'] for campaign in campaign_list])
-    for campaign in campaign_list:
-        campaign_id = campaign.get("campaign_id")
-        for time_slice in ['lifetime', 'last_7d']:
-            generate_optimal_weight(campaign_id, time_slice=time_slice)
-    
-    campaign_list = database_fb.get_performance_campaign().to_dict('records')
-    for campaign in campaign_list:
-        campaign_id = campaign.get("campaign_id")
-        for time_slice in ['lifetime', 'last_7d']:
-            generate_optimal_weight(campaign_id, time_slice=time_slice)
-        
-#     campaign_list = database_fb.get_custom_performance_campaign().to_dict('records')
-#     for campaign in campaign_list:
-#         campaign_id = campaign.get("campaign_id")
-#         charge_type = campaign.get("charge_type")
-#         generate_optimal_weight(campaign_id) 
-        
-    print('[total operation time]: ', datetime.datetime.now()-starttime)
-    print('genetic algorithm finish.')
-    return
-
-
-# In[ ]:
-
-
 class Campaign(object):
     _condition_field = [
         "action", "desire", "interest", "awareness", "attention", "discovery", "impressions", "destination_spend",
@@ -433,8 +400,6 @@ class CampaignOptimalWeight(OptimalWeight):
                 self.action, self.desire, self.interest, self.awareness, self.discovery, self.spend, self.kpi
             ])
 
-    
-
 
 # In[ ]:
 
@@ -516,7 +481,40 @@ class ObjectChromosome(Chromosome):
         self.matrix = np.array([
             self.m_action, self.m_desire, self.m_interest, self.m_awareness, self.m_discovery, self.m_spend, self.m_kpi
         ])
+
+
+# In[ ]:
+
+
+def main():
+    starttime = datetime.datetime.now()
+    print('[start time]: ', starttime)
+    global database_fb
+    db = database_controller.Database()
+    database_fb = database_controller.FB(db)
+    campaign_list = database_fb.get_branding_campaign().to_dict('records')
+    print("Branding Campaign In Assessment: \n", [campaign['campaign_id'] for campaign in campaign_list])
+    for campaign in campaign_list:
+        campaign_id = campaign.get("campaign_id")
+        for time_slice in ['lifetime', 'last_7d']:
+            generate_optimal_weight(campaign_id, time_slice=time_slice)
     
+    campaign_list = database_fb.get_performance_campaign().to_dict('records')
+    print("Performance Campaign In Assessment: \n", [campaign['campaign_id'] for campaign in campaign_list])
+    for campaign in campaign_list:
+        campaign_id = campaign.get("campaign_id")
+        for time_slice in ['lifetime', 'last_7d']:
+            generate_optimal_weight(campaign_id, time_slice=time_slice)
+        
+#     campaign_list = database_fb.get_custom_performance_campaign().to_dict('records')
+#     for campaign in campaign_list:
+#         campaign_id = campaign.get("campaign_id")
+#         charge_type = campaign.get("charge_type")
+#         generate_optimal_weight(campaign_id) 
+        
+    print('[total operation time]: ', datetime.datetime.now()-starttime)
+    print('genetic algorithm finish.')
+    return
 
 
 # In[ ]:
