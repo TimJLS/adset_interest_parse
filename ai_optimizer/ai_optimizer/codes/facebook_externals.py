@@ -279,7 +279,7 @@ def optimize_performance_campaign(account_id,
             ]
             [adset_insights_list[idx].update({"adset_id": adset_id}) for idx, adset_id in enumerate(lifetime_adsets)]
             df_insights = pd.DataFrame(adset_insights_list)
-            df_insights["CPA"] = df.spend / df.action
+            df_insights["CPA"] = df_insights.spend / df_insights.action
             df_insights = df_insights[
                 (np.isfinite(df_insights.CPA))&(df_insights.CPA < 1.2*ai_setting_cost_per_result)].sort_values(by=['CPA'])
             if df_insights.empty:
