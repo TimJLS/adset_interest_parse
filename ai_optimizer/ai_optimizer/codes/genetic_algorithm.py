@@ -98,12 +98,12 @@ class GeneticAlgorithm(object):
 
         print("Optimal function value is: %f; " %
               self.trace[self.t, 0])
-        print ("Optimal solution is:")
+        print("Optimal solution is:")
         print(self.best.chrom)
         self.printResult()
         self.best_optimal_weight = self.best.chrom
         return CampaignOptimalWeight(self.campaign, self.best_optimal_weight)
-    
+
     def selectionOperation(self):
         '''
         selection operation for Genetic Algorithm
@@ -148,7 +148,7 @@ class GeneticAlgorithm(object):
                 for j in range(crossPos, self.vardim):
                     newpop[i].chrom[j] = newpop[i].chrom[
                         j] * self.params[2] + (1 - self.params[2]) * newpop[i + 1].chrom[j]
-                    newpop[i + 1].chrom[j] = newpop[i + 1].chrom[j] * self.params[2] +                         (1 - self.params[2]) * newpop[i].chrom[j]
+                    newpop[i + 1].chrom[j] = newpop[i + 1].chrom[j] * self.params[2] + (1 - self.params[2]) * newpop[i].chrom[j]
         self.population = newpop
 
     def mutationOperation(self):
@@ -189,7 +189,7 @@ class GAIndividual(object):
     '''
     individual of genetic algorithm
     '''
-    def __init__(self,  vardim, bound):
+    def __init__(self, vardim, bound):
         '''
         vardim: dimension of variables
         bound: boundaries of variables
@@ -207,12 +207,11 @@ class GAIndividual(object):
         self.chrom = np.zeros(len)
         for i in range(0, len):
             self.chrom[i] = self.bound[0, i] + (self.bound[1, i] - self.bound[0, i]) * rnd[i]
-        
+
     def calculate_fitness(self, chromosome_object):
         '''calculate the fitness of the chromsome'''
         optimal_weight = OptimalWeight(self.chrom)
         self.fitness = np.dot(optimal_weight.matrix, chromosome_object.matrix)
-#         self.fitness = ObjectiveFunc.fitnessfunc( self.chrom, df )
 
 
 # In[ ]:
@@ -220,18 +219,16 @@ class GAIndividual(object):
 
 def generate_optimal_weight(campaign_id, time_slice):
     table_name = "campaign_optimal_weight" if time_slice == 'lifetime' else "campaign_optimal_weight_7d"
-    
-    print('==========[campaign_id]:', campaign_id )
+    print('==========[campaign_id]:', campaign_id)
     print('==========[current time]: ', datetime.datetime.now())
     start_time = datetime.datetime.now()
-    
     campaign = Campaign(campaign_id)
     print('==========RUNNING {}=========='.format(time_slice.upper()))
     campaign.run(time_slice=time_slice)
     print('==========SCORE========')
     print(campaign.score)
 
-    score_columns=['w_action', 'w_desire', 'w_interest', 'w_awareness', 'w_discovery', 'w_spend', 'w_bid']
+    score_columns = ['w_action', 'w_desire', 'w_interest', 'w_awareness', 'w_discovery', 'w_spend', 'w_bid']
     df_score = pd.DataFrame(data=[campaign.optimal_weight_object.matrix], columns=score_columns, index=[0])
     df_score['campaign_id'], df_score['score'] = campaign_id, campaign.score
     database_fb.upsert(table_name, df_score.to_dict('records')[0])
@@ -248,13 +245,11 @@ def generate_optimal_weight(campaign_id, time_slice):
 def assess_adset(campaign_object, time_slice):
     table_name = "adset_score" if time_slice == 'lifetime' else "adset_score_7d"
     for adset in campaign_object.adsets:
-        
         score = adset.get_score(time_slice)
-        
         print('===========CAAMPAIGN {}=========='.format(campaign_object.campaign_id))
         print('=====[adset_id]=====', adset.adset_id, '==========[score]', score)
 
-        database_fb.insert(table_name, 
+        database_fb.insert(table_name,
                            {'campaign_id':campaign_object.campaign_id, 'adset_id':adset.adset_id, 'score':score.item()})
 
 
@@ -277,11 +272,11 @@ class Campaign(object):
         self.chromosome = ObjectChromosome(self.condition)
         self.chromosome_7d = ObjectChromosome(self.condition_7d)
         self.genetic_algorithm = GeneticAlgorithm(self, sizepop, vardim, MAXGEN, params)
-        
+
     def _get_brief(self):
         self.brief_dict = database_fb.get_brief(self.campaign_id)
         self.brief_dict['KPI'] = self.brief_dict.get("ai_spend_cap")/self.brief_dict.get("destination")
-        
+
     def run(self, time_slice):
         if not time_slice: raise ValueError("time_slice should be 'lifetime' or 'last_7d'.")
         if time_slice == collector.DatePreset.lifetime:
@@ -292,26 +287,26 @@ class Campaign(object):
             self.optimal_weight_object = self.genetic_algorithm.solve(time_slice=collector.DatePreset.last_7d)
             self.score = np.dot(self.optimal_weight_object.matrix, self.chromosome_7d.matrix)
         else: raise ValueError("Incorrect 'time_slice' value, should be 'lifetime' or 'last_7d'.")
-    
+
     def get_weight(self, time_slice=None):
-        if not time_slice or time_slice==collector.DatePreset.lifetime:
+        if not time_slice or time_slice == collector.DatePreset.lifetime:
             optimal_weight_list = database_fb.retrieve("campaign_optimal_weight", self.campaign_id).to_dict('records')
-        elif time_slice==collector.DatePreset.last_7d:
+        elif time_slice == collector.DatePreset.last_7d:
             optimal_weight_list = database_fb.retrieve("campaign_optimal_weight_7d", self.campaign_id).to_dict('records')
         else: raise ValueError("time_slice should be 'lifetime' or 'last_7d'.")
         return optimal_weight_list[0]
-        
+
     def _get_adsets(self):
         adset_id_list = self.service_collect.get_adsets_active()
-        self.adsets = [ AdSet(self, adset_id) for adset_id in adset_id_list ]
-        
+        self.adsets = [AdSet(self, adset_id) for adset_id in adset_id_list]
+
     def _create_condition(self, time_slice=None):
-        if not time_slice or time_slice==collector.DatePreset.lifetime:
-            condition = self.service_collect.generate_info(date_preset = collector.DatePreset.lifetime)
+        if not time_slice or time_slice == collector.DatePreset.lifetime:
+            condition = self.service_collect.generate_info(date_preset=collector.DatePreset.lifetime)
             time_delta = datetime.date.today()-self.brief_dict.get("ai_start_date")
-            flight = (time_delta.days / condition.get("period")) if (time_delta.days!=0) else (1 / condition.get("period"))
-        elif time_slice==collector.DatePreset.last_7d:
-            condition = self.service_collect.generate_info(date_preset = collector.DatePreset.last_7d)
+            flight = (time_delta.days / condition.get("period")) if (time_delta.days != 0) else (1 / condition.get("period"))
+        elif time_slice == collector.DatePreset.last_7d:
+            condition = self.service_collect.generate_info(date_preset=collector.DatePreset.last_7d)
             flight = (7 / condition.get("period"))
         else: raise ValueError("time_slice should be 'lifetime' or 'last_7d'.")
         condition.update(self.brief_dict)
@@ -325,14 +320,14 @@ class Campaign(object):
             "discovery": int(condition.get("reach", 0)),
             "destination_spend": condition.get("ai_spend_cap") * flight,
             "destination_target": condition.get("destination") * flight,
-            "cost_per_action": condition.get("spend") / condition.get("action") if condition.get("action")!=0 else 1,
+            "cost_per_action": condition.get("spend") / condition.get("action") if condition.get("action") != 0 else 1,
         })
         return {k: v for k, v in condition.items() if k in self._condition_field}
-        
-        
+
+
 class AdSet(object):
     _condition_field = [
-        "action", "desire", "interest", "awareness", "impressions", "destination_spend", "destination_target", 
+        "action", "desire", "interest", "awareness", "impressions", "destination_spend", "destination_target",
         "bid_amount", "cost_per_action", "spend", "KPI", "destination_type"
     ]
     def __init__(self, campaign, adset_id):
@@ -344,18 +339,18 @@ class AdSet(object):
         self.condition_7d = self._create_condition(time_slice=collector.DatePreset.last_7d)
         self.chromosome = ObjectChromosome(self.condition)
         self.chromosome_7d = ObjectChromosome(self.condition_7d)
-        
+
     def _create_condition(self, time_slice=None):
         period = (self.campaign.brief_dict.get("ai_stop_date")-self.campaign.brief_dict.get("ai_start_date")).days
-        if not time_slice or time_slice==collector.DatePreset.lifetime:
-            condition = self.service_collect.generate_info(date_preset = collector.DatePreset.lifetime)
+        if not time_slice or time_slice == collector.DatePreset.lifetime:
+            condition = self.service_collect.generate_info(date_preset=collector.DatePreset.lifetime)
             time_delta = datetime.date.today()-self.campaign.brief_dict.get("ai_start_date")
-            flight = (time_delta.days / period) if (time_delta.days!=0) else (1 / period)
-        elif time_slice==collector.DatePreset.last_7d:
-            condition = self.service_collect.generate_info(date_preset = collector.DatePreset.last_7d)
+            flight = (time_delta.days / period) if (time_delta.days != 0) else (1 / period)
+        elif time_slice == collector.DatePreset.last_7d:
+            condition = self.service_collect.generate_info(date_preset=collector.DatePreset.last_7d)
             flight = (7 / period)
         else: raise ValueError("time_slice should be 'lifetime' or 'last_7d'.")
-        
+
         condition['spend'] = float(condition.get("spend", 0))
         condition['impressions'] = float(condition.get("impressions", 0))
         condition.update({
@@ -366,7 +361,7 @@ class AdSet(object):
             "cost_per_action": condition.get("spend") / int(condition.get("action")) if int(condition.get("action")) != 0 else 0
         })
         return {k: v for k, v in condition.items() if k in self._condition_field}
-        
+
     def get_score(self, time_slice):
         if not time_slice: raise ValueError("time_slice should be 'lifetime' or 'last_7d'.")
         if time_slice == collector.DatePreset.lifetime:
@@ -380,7 +375,7 @@ class AdSet(object):
 # In[ ]:
 
 
-class OptimalWeight(object):        
+class OptimalWeight(object):
     def __init__(self, optimal_weight):
         self.matrix = optimal_weight
         self.action = self.matrix[0]
@@ -435,48 +430,48 @@ class ObjectChromosome(Chromosome):
         self.__create_m_spend()
         self.__create_m_kpi()
         self.__create_matrix()
-        
+
     def __initialize(self):
         for field in self.__fields:
             if not self.condition.get(field):
                 self.condition[field] = 0
-        
+
     def __create_m_action(self):
         if self.destination_type in collector.BRANDING_CAMPAIGN_LIST:
             self.m_action = (self.condition.get("destination_target")/int(self.condition.get("action"))) if int(self.condition.get("action")) != 0 else 0
         else:
             self.m_action = (int(self.condition.get("action")) / self.condition.get("desire")) if int(self.condition.get("desire")) != 0 else 0
-        
+
     def __create_m_desire(self):
         if self.destination_type in collector.BRANDING_CAMPAIGN_LIST:
             self.m_desire = 0
         else:
             self.m_desire = (self.condition.get("desire") / self.condition.get("interest")) if self.condition.get("interest") != 0 else 0
-        
+
     def __create_m_interest(self):
         if self.destination_type in collector.BRANDING_CAMPAIGN_LIST:
             self.m_interest = 0
         else:
             self.m_interest = (self.condition.get("interest") / self.condition.get("awareness")) if self.condition.get("awareness") != 0 else 0
-        
+
     def __create_m_awareness(self):
         if self.destination_type in collector.BRANDING_CAMPAIGN_LIST:
             self.m_awareness = 0
         else:
             self.m_awareness = (self.condition.get("awareness") / self.condition.get("discovery")) if self.condition.get("discovery") != 0 else 0
-        
+
     def __create_m_discovery(self):
         if self.destination_type in collector.BRANDING_CAMPAIGN_LIST:
             self.m_discovery = 0
         else:
             self.m_discovery = (self.condition.get("discovery") / self.condition.get("attention")) if self.condition.get("attention") != 0 else 0
-        
+
     def __create_m_spend(self):
-        self.m_spend = ( self.condition.get("destination_spend")-self.condition.get("spend")) / self.condition.get("destination_spend")
-        
+        self.m_spend = (self.condition.get("destination_spend")-self.condition.get("spend")) / self.condition.get("destination_spend")
+
     def __create_m_kpi(self):
-        self.m_kpi = ( self.condition.get("KPI")-self.condition.get("cost_per_action") ) / self.condition.get("KPI")
-    
+        self.m_kpi = (self.condition.get("KPI")-self.condition.get("cost_per_action")) / self.condition.get("KPI")
+
     def __create_matrix(self):
         self.matrix = np.array([
             self.m_action, self.m_desire, self.m_interest, self.m_awareness, self.m_discovery, self.m_spend, self.m_kpi
@@ -498,23 +493,16 @@ def main():
         campaign_id = campaign.get("campaign_id")
         for time_slice in ['lifetime', 'last_7d']:
             generate_optimal_weight(campaign_id, time_slice=time_slice)
-    
+
     campaign_list = database_fb.get_performance_campaign().to_dict('records')
     print("Performance Campaign In Assessment: \n", [campaign['campaign_id'] for campaign in campaign_list])
     for campaign in campaign_list:
         campaign_id = campaign.get("campaign_id")
         for time_slice in ['lifetime', 'last_7d']:
             generate_optimal_weight(campaign_id, time_slice=time_slice)
-        
-#     campaign_list = database_fb.get_custom_performance_campaign().to_dict('records')
-#     for campaign in campaign_list:
-#         campaign_id = campaign.get("campaign_id")
-#         charge_type = campaign.get("charge_type")
-#         generate_optimal_weight(campaign_id) 
-        
+
     print('[total operation time]: ', datetime.datetime.now()-starttime)
     print('genetic algorithm finish.')
-    return
 
 
 # In[ ]:
