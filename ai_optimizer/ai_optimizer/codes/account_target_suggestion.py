@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 # ref: https://developers.facebook.com/tools/explorer?method=GET&path=act_516689492098932%2Ftargetingsuggestions&version=v3.3&classic=0
@@ -18,8 +18,7 @@ import facebook_business.adobjects.adsinsights as facebook_business_adsinsights
 import facebook_business.adobjects.adaccounttargetingunified as facebook_business_adaccounttarget
 
 import facebook_datacollector as fb_collector
-import mysql_adactivity_save as mysql_saver
-
+import database_controller
 ADSET_INSIGHT_QUERY_FIELD = {
     'account_id': facebook_business_adsinsights.AdsInsights.Field.account_id,
     'campaign_id': facebook_business_adsinsights.AdsInsights.Field.campaign_id
@@ -27,7 +26,8 @@ ADSET_INSIGHT_QUERY_FIELD = {
 
 
 class Account_Suggestion_Handler(object):
-    database_connector = mysql_saver.connectDB(mysql_saver.DATABASE)
+    db = database_controller.Database()
+    database_connector = database_controller.FB(db)
     
     def __init__(self, account_id, suggestion_id, suggestion_name, suggestion_type, audience_size):
         self.account_id = account_id
@@ -46,19 +46,15 @@ class Account_Suggestion_Handler(object):
         placeholders = ', '.join(['%s'] * len(self.__dict__))
         
         table_name = 'account_target_suggestion'
-        stmt = "insert into `{table}` ({columns}) values ({values});".format(table = table_name, columns = cols , values = placeholders)
-        
-        mycursor = self.database_connector.cursor()
-        mycursor.execute(stmt, list( vals) )
-        self.database_connector.commit()
+        self.database_connector.insert(table_name, dict(zip(cols, placeholders)))
         
 def get_account_id_by_adset(adset_id):
-    this_adsets = facebook_business_adset.AdSet( adset_id ).remote_read(fields=["account_id"])
+    this_adsets = facebook_business_adset.AdSet( adset_id ).api_get(fields=["account_id"])
     account_id = this_adsets.get('account_id')
     return account_id
 
 def get_account_id_by_campaign(campaign_id):
-    this_campaign = facebook_business_campaign.Campaign( campaign_id ).remote_read(fields=["account_id"])
+    this_campaign = facebook_business_campaign.Campaign( campaign_id ).api_get(fields=["account_id"])
     account_id = this_campaign.get('account_id')
     return account_id
     
@@ -87,14 +83,15 @@ def process_account_suggestion(account_id):
         
     
 def save_suggestion_for_all_campaign():
-    campaign_list =  mysql_saver.get_campaign_target().campaign_id.unique().tolist()
+    db = database_controller.Database()
+    database_connector = database_controller.FB(db)
+    campaign_list =  database_connector.get_running_campaign().to_dict('records')
     print('[save_suggestion_for_all_campaign] current running campaign:', len(campaign_list), campaign_list )
-    print()
     
-    for campaign_id in campaign_list:
-        account_id = get_account_id_by_campaign(campaign_id)
-        print('[save_suggestion_for_all_campaign] account_id:', account_id, 'campaign_id:', campaign_id)
-        process_account_suggestion(account_id)
+    for campaign in campaign_list:
+#         account_id = get_account_id_by_campaign(campaign['campaign_id'])
+        print('[save_suggestion_for_all_campaign] account_id:', campaign['account_id'], 'campaign_id:', campaign['campaign_id'])
+        process_account_suggestion(campaign['account_id'])
         
 def main():
     save_suggestion_for_all_campaign()
@@ -103,48 +100,6 @@ def main():
     
 if __name__ == "__main__":
     main()
-
-
-# In[2]:
-
-
-# #nate test
-# from facebook_business.adobjects.targetingsearch import TargetingSearch
-# params = {
-#     'type': 'adTargetingCategory',
-#     'class': 'demographics',
-#      'limit':1000    
-# }
-
-# resp = TargetingSearch.search(params=params)
-# # print(resp)
-
-# target_name = []
-# for targeting in resp:
-#     print(targeting.get('name'))
-    
-    
-# # print(len(target_name))
-# # target_name
-
-
-# In[3]:
-
-
-# params = {
-
-#     'type': 'adgeolocation',
-#     'location_types': ['city'],
-#      'limit':1000
-# }
-
-# resp = TargetingSearch.search(params=params)
-# # print(resp)
-
-# target_name = []
-# for targeting in resp:
-#     print(targeting.get('name'))
-    
 
 
 # In[ ]:

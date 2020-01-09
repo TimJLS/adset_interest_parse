@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 from pathlib import Path
@@ -19,19 +19,19 @@ import adgeek_permission as permission
 IGNORE_ADSET_STR_LIST = ['AI', 'Copy', 'COPY', 'Lookalike', 'RT', 'Look-a-like']
 
 
-# In[2]:
+# In[ ]:
 
 
 def get_adset_name(adset_id):
-    this_adset = facebook_business_adset.AdSet( adset_id).remote_read(fields=[ "name" ])
+    this_adset = facebook_business_adset.AdSet( adset_id).api_get(fields=[ "name" ])
     return this_adset.get('name')
 
 
-# In[3]:
+# In[ ]:
 
 
 def get_account_id_by_campaign(campaign_id):
-    this_campaign = facebook_business_campaign.Campaign( campaign_id ).remote_read(fields=["account_id"])
+    this_campaign = facebook_business_campaign.Campaign( campaign_id ).api_get(fields=["account_id"])
     account_id = this_campaign.get('account_id')
     return account_id
 
@@ -54,7 +54,7 @@ def search_target_keyword(keyword):
 
 def retrieve_adset_interest_list(origin_adset_id):
     this_adset = facebook_business_adset.AdSet(fbid = origin_adset_id)
-    this_adset_interest = this_adset.remote_read(fields=[facebook_business_adset.AdSet.Field.targeting])
+    this_adset_interest = this_adset.api_get(fields=[facebook_business_adset.AdSet.Field.targeting])
     if this_adset_interest.get("targeting") and this_adset_interest.get("targeting").get("flexible_spec"):
         flexible_spec_list = this_adset_interest.get("targeting").get("flexible_spec")
         if len(flexible_spec_list) > 0:
@@ -271,24 +271,24 @@ def get_suggestion_not_used(campaign_id):
 def main():
     # only save suggestion once for each campaign
     import adgeek_permission as permission
-    a_id = 1529888140439425
-    c_id = 23843636008320022
+    a_id = 237880526824540
+    c_id = 23844100165680431
     permission.init_facebook_api(a_id)
     saved_suggest_id_name_dic, saved_suggest_id_size_dic  = get_suggestion_not_used(c_id)
     print('[make_suggest_adset] saved_suggest_id_name_dic', saved_suggest_id_name_dic, 'saved_suggest_id_size_dic', saved_suggest_id_size_dic)
 
 
-# In[4]:
+# In[ ]:
 
 
 if __name__ == "__main__":
     main()
 
 
-# In[5]:
+# In[ ]:
 
 
-#!jupyter nbconvert --to script facebook_campaign_suggestion.ipynb
+# !jupyter nbconvert --to script facebook_campaign_suggestion.ipynb
 
 
 # In[ ]:

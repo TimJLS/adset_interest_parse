@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 from pathlib import Path
@@ -30,7 +30,7 @@ IS_DEBUG = False
 DESTINATION_SPEED_RATIO_VALUE = 1.1
 
 
-# In[2]:
+# In[ ]:
 
 
 def update_campaign_daily_budget(campaign_id, daily_budget):
@@ -61,11 +61,11 @@ def update_campaign_bidding_ratio(campaign_id, bid_up_ratio):
     database_fb.update_init_bid(campaign_id, bid_up_ratio)
     
 def get_campaign_name_status(campaign_id):
-    this_campaign = facebook_business_campaign.Campaign( campaign_id).remote_read(fields=["status", "name"])
+    this_campaign = facebook_business_campaign.Campaign( campaign_id).api_get(fields=["status", "name"])
     return this_campaign.get('name'), this_campaign.get('status')
     
 def get_campaign_daily_budget(campaign_id):
-    this_campaign = facebook_business_campaign.Campaign( campaign_id).remote_read(fields=["daily_budget"])
+    this_campaign = facebook_business_campaign.Campaign( campaign_id).api_get(fields=["daily_budget"])
     daily_budget = None
     try:
         daily_budget = int(this_campaign.get('daily_budget'))
@@ -83,7 +83,7 @@ def set_campaign_daily_budget_lower(campaign_id, ai_daily_budget, lower_rate):
         update_campaign_daily_budget(campaign_id, ai_daily_budget * lower_rate)
 
 
-# In[3]:
+# In[ ]:
 
 
 def smart_spending_branding(campaign_id):
@@ -223,7 +223,7 @@ def smart_spending_branding(campaign_id):
     
 
 
-# In[4]:
+# In[ ]:
 
 
 def smart_spending_performance(campaign_id):
@@ -309,7 +309,7 @@ def smart_spending_performance(campaign_id):
         
 
 
-# In[5]:
+# In[ ]:
 
 
 def process_branding_campaign():
@@ -339,7 +339,7 @@ def process_branding_campaign():
     
 
 
-# In[6]:
+# In[ ]:
 
 
 def process_performance_campaign():
@@ -366,7 +366,7 @@ def process_performance_campaign():
     print('-------',datetime.datetime.now().date(), '-------all finish-------')
 
 
-# In[7]:
+# In[ ]:
 
 
 if __name__ == "__main__":
@@ -374,19 +374,19 @@ if __name__ == "__main__":
     process_performance_campaign()
 
 
-# In[8]:
+# In[ ]:
 
 
 # UPDATE `campaign_target` SET  `destination`=100,`destination_max`=110 WHERE `campaign_id` = 23843605741390744
 
 
-# In[9]:
+# In[ ]:
 
 
 
 
 # def is_campaign_adjust_dayily_budget(campaign_id):
-#     this_campaign = facebook_business_campaign.Campaign( campaign_id).remote_read(fields=["spend_cap"])
+#     this_campaign = facebook_business_campaign.Campaign( campaign_id).api_get(fields=["spend_cap"])
 #     return this_campaign.get('spend_cap')
 
 # permission.init_facebook_api(350498128813378)
@@ -394,13 +394,13 @@ if __name__ == "__main__":
 # print(result)
 
 
-# In[10]:
+# In[ ]:
 
 
 # smart_spending_performance(23842880697850266)
 
 
-# In[11]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script facebook_smart_spending.ipynb

@@ -4,7 +4,6 @@
 # In[ ]:
 
 
-
 from pathlib import Path
 import datetime
 import time
@@ -26,7 +25,7 @@ import adgeek_permission as permission
 
 
 def get_account_id_by_campaign(campaign_id):
-    this_campaign = facebook_business_campaign.Campaign( campaign_id ).remote_read(fields=["account_id"])
+    this_campaign = facebook_business_campaign.Campaign( campaign_id ).api_get(fields=["account_id"])
     account_id = this_campaign.get('account_id')
     return account_id
 
@@ -41,7 +40,7 @@ def save_account_custom_conversions_intodb(account_id, campaign_id, customconver
     
     for customconversions_id in customconversions_id_list:
         this_customconversions = facebook_business_customconversion.CustomConversion(customconversions_id)
-        customconversions_result = this_customconversions.remote_read(fields=["name", 'rule' , 'id'])
+        customconversions_result = this_customconversions.api_get(fields=["name", 'rule' , 'id'])
         conversion_name = this_customconversions.get('name')
         conversion_rule = this_customconversions.get('rule')
         conversion_id  = this_customconversions.get('id')
@@ -104,7 +103,7 @@ def save_adset_optimization_goal_intodb(campaign_id, adset_id_list):
     database_fb = database_controller.FB(db)
     
     for adset_id in adset_id_list:
-        this_adset = facebook_business_adset.AdSet( adset_id ).remote_read(fields=['name','id','optimization_goal','optimization_sub_event','promoted_object'])
+        this_adset = facebook_business_adset.AdSet( adset_id ).api_get(fields=['name','id','optimization_goal','optimization_sub_event','promoted_object'])
         print('[save_adset_optimization_goal_intodb]', this_adset)
         adset_name = this_adset.get('name')
         
@@ -243,4 +242,10 @@ if __name__ == "__main__":
 
 
 # !jupyter nbconvert --to script facebook_custom_conversion_handler.ipynb
+
+
+# In[ ]:
+
+
+
 
