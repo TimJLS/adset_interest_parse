@@ -26,7 +26,7 @@ import adgeek_permission as permission
 # In[ ]:
 
 
-IS_DEBUG = True #debug mode will not modify anything
+IS_DEBUG = False #debug mode will not modify anything
 
 DATABASE = 'dev_facebook_test'
 DATE = datetime.datetime.now().date()#-datetime.timedelta(1)
@@ -79,7 +79,7 @@ def set_adset_status(campaign_instance, ai_kpi_setting):
         print('[get_sorted_adset] Error, no adset score')
         return []
     df_today = df.sort_values(by=['score'], ascending=False)
-    print('[get_sorted_adset] df_today', df_today)
+    print('[get_sorted_adset] df_today\n', df_today)
     adset_list = df_today['adset_id'].unique().tolist()
     for adset in adset_list:
         if str(adset) in adsets_active_list:
@@ -97,6 +97,9 @@ def set_adset_status(campaign_instance, ai_kpi_setting):
 def adset_optimization(campaign_instance):
     adset_list = campaign_instance.get_adsets_active()
     print('    [adset_optimization] adsets_active_list:', adset_list)
+    campaign = database_fb.get_one_campaign(campaign_instance.campaign_id).to_dict('records')[0]
+    is_target_suggest = campaign.get("is_target_suggest")
+    is_lookalike = campaign.get("is_target_suggest")
     if len(adset_list) <= ADSET_MAX_COUNT_CPA:
         if len(adset_list) > 0 and not IS_DEBUG:
             #create one suggestion adset for CPA campaigin
@@ -111,7 +114,6 @@ def adset_optimization(campaign_instance):
                 new_adset_id = adset_controller.make_performance_lookalike_adset(campaign_id, adset_list)
                 if new_adset_id:
                     ai_logger.save_adset_behavior(new_adset_id, ai_logger.BehaviorType.CREATE)
-            modify_opt_result_db(campaign_id, "True")
 
 def close_adset(adset_list, ai_kpi_setting):
     for adset_id in adset_list:
@@ -229,10 +231,10 @@ def optimize_performance_campaign(account_id,
           '\n    ai_setting_spend_cap:', ai_setting_spend_cap,
           '\n    ai_setting_cost_per_result:', ai_setting_cost_per_result)
 
-    if lifetime_target > ai_setting_destination_count:
-        modify_opt_result_db(campaign_id, "False")
-        print('[optimize_performance_campaign] lifetime good enough')
-        return    
+#     if lifetime_target > ai_setting_destination_count:
+#         modify_opt_result_db(campaign_id, "False")
+#         print('[optimize_performance_campaign] lifetime good enough')
+#         return
 
     target = 0 # get by insight
     if 'target' in day_dict:
@@ -269,12 +271,12 @@ def optimize_performance_campaign(account_id,
             df_insights["CPA"] = df_insights.spend / df_insights.action
             df_insights = df_insights[
                 (np.isfinite(df_insights.CPA))&(df_insights.CPA < 1.2*ai_setting_cost_per_result)].sort_values(by=['CPA'])
+            adset_to_turn_on_list = [adset for adset in list(df_insights.adset_id.unique()) if str(adset) not in adsets_active_list]
             if df_insights.empty:
                 # add suggestion
                 adset_optimization(campaign_instance)
-            else:
-                pass
-                update_status(df_insights.adset_id.head(1).values[0], status=AdSet.Status.active)
+            elif adset_to_turn_on_list:
+                update_status(adset_to_turn_on_list[0], status=AdSet.Status.active)
             # Or, add one suggestion
             # 2. close half (免死)
             adset_list = adset_sorting_by_score(campaign_instance)
@@ -515,28 +517,4 @@ if __name__ == '__main__':
 
 
 # !jupyter nbconvert --to script facebook_externals.ipynb
-
-
-# In[ ]:
-
-
-# %%time
-# global database_fb
-# db = database_controller.Database()
-# database_fb = database_controller.FB(db)
-# not_opt_list = [23843488842640474]
-# for campaign_id in not_opt_list:
-#     optimize_campaign(campaign_id)
-
-
-# In[ ]:
-
-
-# global database_fb
-# db = database_controller.Database()
-# database_fb = database_controller.FB(db)
-# account_id = 2371372156415755
-# campaign_id = 23843426278230073
-# permission.init_facebook_api(account_id)
-# optimize_branding_campaign(campaign_id)
 
