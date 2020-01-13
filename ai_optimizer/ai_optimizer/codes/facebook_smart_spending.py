@@ -10,17 +10,11 @@ import time
 import math
 import json
 
-from facebook_business.api import FacebookAdsApi
-# from facebook_business.adobjects.adaccount import AdAccount
 import facebook_business.adobjects.adset as facebook_business_adset
-# from facebook_business.adobjects.ad import Ad
 import facebook_business.adobjects.campaign as facebook_business_campaign
-# from facebook_business.adobjects.adcreative import AdCreative
-# from facebook_business.adobjects.adactivity import AdActivity
-# from facebook_business.adobjects.insightsresult import InsightsResult
 import facebook_business.adobjects.adsinsights as facebook_business_adsinsights
 
-import facebook_datacollector as fb_collector
+import facebook_datacollector as collector
 import database_controller
 import facebook_currency_handler as currency_handler
 import adgeek_permission as permission
@@ -46,7 +40,7 @@ def update_campaign_daily_budget(campaign_id, daily_budget):
     })
     
     try:
-        this_campaign.remote_update()
+        this_campaign.api_update()
     except Exception as error:
         print('[update_campaign_daily_budget] error:', error)
 
@@ -61,11 +55,11 @@ def update_campaign_bidding_ratio(campaign_id, bid_up_ratio):
     database_fb.update_init_bid(campaign_id, bid_up_ratio)
     
 def get_campaign_name_status(campaign_id):
-    this_campaign = facebook_business_campaign.Campaign( campaign_id).api_get(fields=["status", "name"])
+    this_campaign = facebook_business_campaign.Campaign(campaign_id).api_get(fields=["status", "name"])
     return this_campaign.get('name'), this_campaign.get('status')
     
 def get_campaign_daily_budget(campaign_id):
-    this_campaign = facebook_business_campaign.Campaign( campaign_id).api_get(fields=["daily_budget"])
+    this_campaign = facebook_business_campaign.Campaign(campaign_id).api_get(fields=["daily_budget"])
     daily_budget = None
     try:
         daily_budget = int(this_campaign.get('daily_budget'))
@@ -86,13 +80,7 @@ def set_campaign_daily_budget_lower(campaign_id, ai_daily_budget, lower_rate):
 # In[ ]:
 
 
-def smart_spending_branding(campaign_id):
-    db = database_controller.Database()
-    database_fb = database_controller.FB(db)
-    
-    df_list = database_fb.retrieve("campaign_target", campaign_id=campaign_id, by_request_time=False).to_dict('records')
-    
-    campaign_target_dict = df_list[0]
+def smart_spending_branding(campaign_instance, campaign_target_dict):
     destination = campaign_target_dict.get('destination')
     destination_max = campaign_target_dict.get('destination_max')
     ai_spend_cap = campaign_target_dict.get('ai_spend_cap')
@@ -101,19 +89,18 @@ def smart_spending_branding(campaign_id):
     current_total_spend = campaign_target_dict.get('spend')
     ai_start_date = campaign_target_dict.get('ai_start_date')
     ai_stop_date = campaign_target_dict.get('ai_stop_date')
-    
-    currency = currency_handler.get_currency_by_campaign(campaign_id)
+
     #avoid error
     if current_target_count is None or current_target_count == 0:
         current_target_count = 1
     
-    ai_period = (ai_stop_date - ai_start_date ).days + 1
+    ai_period = (ai_stop_date - ai_start_date).days + 1
     today = datetime.date.today()
     if today == ai_start_date:
-        print('[smart_spending_branding] today is ai_start_date , not to do anything' ,campaign_id)
+        print('[smart_spending_branding] today is ai_start_date , not to do anything', campaign_instance.campaign_id)
         return
-    ai_left_days = (ai_stop_date - today ).days + 1
-    ai_running_days = (today - ai_start_date ).days 
+    ai_left_days = (ai_stop_date - today).days + 1
+    ai_running_days = (today - ai_start_date).days 
     
     ai_daily_budget = ai_spend_cap / ai_period
     left_money_can_spend = ai_spend_cap - current_total_spend
@@ -126,7 +113,7 @@ def smart_spending_branding(campaign_id):
     destination_count_until_today = destination * (ai_running_days / ai_period)
     destination_speed_ratio = current_target_count / destination_count_until_today
             
-    print('[smart_spending_branding] campaign_id', campaign_id)
+    print('[smart_spending_branding] campaign_id', campaign_instance.campaign_id)
     print('[smart_spending_branding] kpi_cpc', kpi_cpc)
     print('[smart_spending_branding] current_cpc', current_cpc)    
     print('[smart_spending_branding] destination', destination)
@@ -134,7 +121,7 @@ def smart_spending_branding(campaign_id):
     print('[smart_spending_branding] current_target_count', current_target_count)
     print('[smart_spending_branding] left_target_count', left_target_count)
     print('[smart_spending_branding] --')        
-    print('[smart_spending_branding] currency', currency)    
+    print('[smart_spending_branding] currency', campaign_instance.currency)    
     print('[smart_spending_branding] ai_spend_cap', ai_spend_cap)
     print('[smart_spending_branding] current_total_spend', current_total_spend)    
     print('[smart_spending_branding] left_money_can_spend', left_money_can_spend) 
@@ -156,7 +143,7 @@ def smart_spending_branding(campaign_id):
     
     #need to update daily budget everyday
     if left_money_can_spend_per_day > 0:
-        update_campaign_daily_budget(campaign_id, left_money_can_spend_per_day)
+        update_campaign_daily_budget(campaign_instance.campaign_id, left_money_can_spend_per_day)
     
     if left_money_can_spend < 0:
         print('[smart_spending_branding] Error, spend too much money!!!')  
@@ -164,12 +151,12 @@ def smart_spending_branding(campaign_id):
         if destination_max is None:
             print('[smart_spending_branding][spend money] destination is already satisfied, up the bid to spend money')
             bid_up_ratio = 1.1
-            update_campaign_bidding_ratio(campaign_id, bid_up_ratio)             
+            update_campaign_bidding_ratio(campaign_instance.campaign_id, bid_up_ratio)             
         else:
             print('[smart_spending_branding][save money] destination is already satisfied, destination:', destination , ' destination_max:' ,destination_max)
             if current_target_count > destination_max:
                 print('[smart_spending_branding][save money] set daily budget multiply 0.5')
-                set_campaign_daily_budget_lower(campaign_id, ai_daily_budget, 0.5)
+                set_campaign_daily_budget_lower(campaign_instance.campaign_id, ai_daily_budget, 0.5)
             else: 
 #                 max_achieve_count = destination_max - current_target_count
 #                 max_achieve_count_per_day = max_achieve_count / ai_left_days
@@ -180,7 +167,7 @@ def smart_spending_branding(campaign_id):
 
                 #facebook can not set daily budget too low , so that we use currect daily budget * 0.75
                 print('[smart_spending_branding][save money] action-> update_campaign_daily_budget')     
-                set_campaign_daily_budget_lower(campaign_id, ai_daily_budget, 0.75)
+                set_campaign_daily_budget_lower(campaign_instance.campaign_id, ai_daily_budget, 0.75)
 
     else:
         print('[smart_spending_branding] destination not satisfied')
@@ -190,11 +177,10 @@ def smart_spending_branding(campaign_id):
             
             if destination_max is None:
                 print('[smart_spending_branding] need to spend all money')
-                
                 if destination_speed_ratio >= DESTINATION_SPEED_RATIO_VALUE: # speed good, can up bid to use money
                     print('[smart_spending_branding][spend money] speed good, can spend all money')
                     bid_up_ratio = 1.1
-                    update_campaign_bidding_ratio(campaign_id, bid_up_ratio)
+                    update_campaign_bidding_ratio(campaign_instance.campaign_id, bid_up_ratio)
                 else:
                     print('[smart_spending_branding][spend money] destination_max is None, destination_speed_ratio too low')
             else:
@@ -211,8 +197,7 @@ def smart_spending_branding(campaign_id):
 #                     update_campaign_daily_budget(campaign_id, int(campaign_daily_budget_revised))
                     #facebook can not set daily budget too low , so that we use currect daily budget * 0.75
                     print('[smart_spending_branding][save money] action-> update_campaign_daily_budget')     
-                    set_campaign_daily_budget_lower(campaign_id, 0.75)
-                    
+                    set_campaign_daily_budget_lower(campaign_instance.campaign_id, 0.75)
                 else:
                     print('[smart_spending_branding][save money] destination_max exist, destination_speed_ratio too low')
                     
@@ -226,13 +211,7 @@ def smart_spending_branding(campaign_id):
 # In[ ]:
 
 
-def smart_spending_performance(campaign_id):
-    db = database_controller.Database()
-    database_fb = database_controller.FB(db)
-    
-    df_list = database_fb.retrieve("campaign_target", campaign_id=campaign_id, by_request_time=False).to_dict('records')
-
-    campaign_target_dict = df_list[0]
+def smart_spending_performance(campaign_instance, campaign_target_dict):
     destination = campaign_target_dict.get('destination')
     destination_max = campaign_target_dict.get('destination_max')
     ai_spend_cap = campaign_target_dict.get('ai_spend_cap')
@@ -241,20 +220,18 @@ def smart_spending_performance(campaign_id):
     current_total_spend = campaign_target_dict.get('spend')
     ai_start_date = campaign_target_dict.get('ai_start_date')
     ai_stop_date = campaign_target_dict.get('ai_stop_date')
-    
-    currency = currency_handler.get_currency_by_campaign(campaign_id)
     #avoid error
     if current_target_count is None or current_target_count == 0:
         current_target_count = 1
     
-    ai_period = (ai_stop_date - ai_start_date ).days + 1
+    ai_period = (ai_stop_date - ai_start_date).days + 1
     today = datetime.date.today()
     
     if today == ai_start_date:
-        print('[smart_spending_performance] today is ai_start_date , not to do anything' ,campaign_id)
+        print('[smart_spending_performance] today is ai_start_date , not to do anything', campaign_instance.campaign_id)
         return
-    ai_left_days = (ai_stop_date - today ).days + 1
-    ai_running_days = (today - ai_start_date ).days
+    ai_left_days = (ai_stop_date - today).days + 1
+    ai_running_days = (today - ai_start_date).days
     
     ai_daily_budget = ai_spend_cap / ai_period
     left_money_can_spend = ai_spend_cap - current_total_spend
@@ -266,7 +243,7 @@ def smart_spending_performance(campaign_id):
     
     destination_count_until_today = destination * (ai_running_days / ai_period)
     destination_speed_ratio = current_target_count / destination_count_until_today
-    print('[smart_spending_performance] campaign_id', campaign_id)
+    print('[smart_spending_performance] campaign_id', campaign_instance.campaign_id)
     print('[smart_spending_performance] kpi_cpc', kpi_cpc)
     print('[smart_spending_performance] current_cpc', current_cpc)    
     print('[smart_spending_performance] destination', destination)
@@ -274,7 +251,7 @@ def smart_spending_performance(campaign_id):
     print('[smart_spending_performance] current_target_count', current_target_count)
     print('[smart_spending_performance] left_target_count', left_target_count)
     print('[smart_spending_performance] --')        
-    print('[smart_spending_performance] currency', currency)    
+    print('[smart_spending_performance] currency', campaign_instance.currency)    
     print('[smart_spending_performance] ai_spend_cap', ai_spend_cap)
     print('[smart_spending_performance] current_total_spend', current_total_spend)    
     print('[smart_spending_performance] left_money_can_spend', left_money_can_spend) 
@@ -295,7 +272,7 @@ def smart_spending_performance(campaign_id):
     
     #need to update daily budget everyday
     if left_money_can_spend_per_day > 0:
-        update_campaign_daily_budget(campaign_id, int(left_money_can_spend_per_day))
+        update_campaign_daily_budget(campaign_instance.campaign_id, int(left_money_can_spend_per_day))
     
     if left_money_can_spend < 0:
         print('[smart_spending_performance] Error, spend too much money!!!')  
@@ -305,7 +282,7 @@ def smart_spending_performance(campaign_id):
             if current_total_spend < spend_until_today:
                 print('[smart_spending_performance] more than target count, spend not enough, up bidding to spend money')  
                 bid_up_ratio = 1.1
-                update_campaign_bidding_ratio(campaign_id, bid_up_ratio)
+                update_campaign_bidding_ratio(campaign_instance.campaign_id, bid_up_ratio)
         
 
 
@@ -317,26 +294,20 @@ def process_branding_campaign():
     database_fb = database_controller.FB(db)
     campaign_list = database_fb.get_branding_campaign().to_dict('records')
     for campaign in campaign_list:
-        account_id = campaign.get("account_id")
         campaign_id = campaign.get("campaign_id")
-        charge_type = campaign.get("destination_type")
-        permission.init_facebook_api(account_id)
-        campaign_name , campaign_fb_status = get_campaign_name_status(campaign_id)
-        print('[process_branding_campaign] campaign_id', campaign_id, charge_type, campaign_fb_status, campaign_name)
-        
-#         if campaign_id != 23843628364880022:
-#             continue
+        collector_campaign = collector.Campaigns(campaign_id)
+        print('[process_branding_campaign] campaign_id',
+              collector_campaign.campaign_id,
+              collector_campaign.destination_type,
+              collector_campaign.status,
+              collector_campaign.name)
 
-        is_smart_spending = (campaign.get('is_smart_spending') == 'True')
-        is_active = (campaign_fb_status == 'ACTIVE')
-        print('[process_branding_campaign] is_smart_spending:',is_smart_spending, ' is_active:',is_active)
-        if is_smart_spending and is_active:
-            smart_spending_branding(campaign_id)
+        if collector_campaign.bid_strategy:
+            if collector_campaign.budget_pacing_type == "DAILY":
+                if (campaign.get('is_smart_spending') == 'True') and (collector_campaign.status == 'ACTIVE'):
+                    smart_spending_branding(collector_campaign, campaign)
     
     print('-------',datetime.datetime.now().date(), '-------all finish-------')
-    
-
-    
 
 
 # In[ ]:
@@ -347,21 +318,18 @@ def process_performance_campaign():
     database_fb = database_controller.FB(db)
     campaign_list = database_fb.get_performance_campaign().to_dict('records')
     for campaign in campaign_list:
-        account_id = campaign.get("account_id")
         campaign_id = campaign.get("campaign_id")
-        charge_type = campaign.get("destination_type")
-        permission.init_facebook_api(account_id)
-        campaign_name , campaign_fb_status = get_campaign_name_status(campaign_id)
-        print('[process_performance_campaign] campaign_id', campaign_id, charge_type, campaign_fb_status, campaign_name)
-        
-#         if campaign_id != 23843569311660559:
-#             continue
-        
-        is_smart_spending = (campaign.get('is_smart_spending') == 'True')
-        is_active = (campaign_fb_status == 'ACTIVE')
-        print('[process_performance_campaign] is_smart_spending:',is_smart_spending, ' is_active:',is_active)
-        if is_smart_spending and is_active:
-            smart_spending_performance(campaign_id)
+        collector_campaign = collector.Campaigns(campaign_id)
+        print('[process_performance_campaign] campaign_id',
+              collector_campaign.campaign_id,
+              collector_campaign.destination_type,
+              collector_campaign.status,
+              collector_campaign.name)
+
+        if collector_campaign.bid_strategy:
+            if collector_campaign.budget_pacing_type == "DAILY":
+                if (campaign.get('is_smart_spending') == 'True') and (collector_campaign.status == 'ACTIVE'):
+                    smart_spending_branding(collector_campaign, campaign)
     
     print('-------',datetime.datetime.now().date(), '-------all finish-------')
 

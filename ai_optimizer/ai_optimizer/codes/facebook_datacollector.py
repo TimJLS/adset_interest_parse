@@ -13,11 +13,6 @@ import facebook_business.adobjects.adset as adset
 from facebook_business.adobjects.ad import Ad
 import facebook_business.adobjects.campaign as campaign
 from facebook_business.adobjects.adsinsights import AdsInsights
-# my_app_id = '958842090856883'
-# my_app_secret = 'a952f55afca38572cea2994d440d674b'
-# my_access_token = 'EAANoD9I4obMBACygIE9jqmlaWeOW6tBma0oS6JbRpLgAvOYXpVi2XcXuasuwbBgqmaZBj5cP8MHE5WY2l9tAoi549eGZCP61mKr9BA8rZA6kxEW4ovX3KlbbrRGgt4RZC8MAi1UG0l0ZBUd0UBAhIPhzkZBi46ncuyCwkYPB7a6voVBZBTbEZAwH3azZA3Ph6g7aCOfxZCdDOp4AZDZD'
-
-# FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
 
 import facebook_currency_handler as currency_handler
 import adgeek_permission as permission
@@ -339,13 +334,38 @@ class Campaigns(object):
         self.custom_conversion_id = self.brief_dict.get("custom_conversion_id")
         self.currency = currency_handler.get_currency_by_campaign(self.campaign_id)
         self.bid_strategy = self.get_bid_strategy()
-        
+        self.budget_pacing_type = self.get_budget_pacing_type()
+        self.name = self.get_name()
+        self.status = self.get_backstage_status()
+
+    # Controllers
+
     def get_bid_strategy(self):
         ad_campaign = campaign.Campaign(self.campaign_id)
-        settings = ad_campaign.api_get(fields = ["bid_strategy"])
-        self.bid_strategy = dict(settings).get("bid_strategy")
-        return self.bid_strategy
+        settings = ad_campaign.api_get(fields=["bid_strategy"])
+        return dict(settings).get("bid_strategy")
+
+    def get_budget_pacing_type(self):
+        if not self.bid_strategy:
+            return
+        ad_campaign = campaign.Campaign(self.campaign_id)
+        settings = ad_campaign.api_get(fields=["daily_budget", "lifetime_budget"])
+        if "daily_budget" in dict(settings):
+            budget_pacing_type = "DAILY"
+        elif "lifetime_budget" in dict(settings):
+            budget_pacing_type = "LIFETIME"
+        return budget_pacing_type
     
+    def get_name(self):
+        ad_campaign = campaign.Campaign(self.campaign_id)
+        settings = ad_campaign.api_get(fields=["name"])
+        return dict(settings).get("name")
+        
+    def get_backstage_status(self):
+        ad_campaign = campaign.Campaign(self.campaign_id)
+        settings = ad_campaign.api_get(fields=["status"])
+        return dict(settings).get("status")
+        
     # Getters
 
     def get_campaign_features(self):
@@ -457,7 +477,6 @@ class Campaigns(object):
         adset_active_list = [
             adset.get("id") for adset in adsets if adset.get("status") == 'ACTIVE'
         ]
-        print('[get_adsets_active] adset_active_list:', adset_active_list)
         return adset_active_list
 
     def get_account_id(self):
