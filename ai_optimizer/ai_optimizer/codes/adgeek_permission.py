@@ -13,7 +13,7 @@ ADGEEK_FACEBOOK_ACCESS_TOKEN = 'EAANoD9I4obMBACygIE9jqmlaWeOW6tBma0oS6JbRpLgAvOY
 ACCOUNT_API_URL = 'https://mpc.adgeek.net/v2/accounts/'
 ACCOUNT_TOEKN_API_URL = 'https://mpc.adgeek.net/v2/credentials/'
 
-FACEBOOK_API_VERSION_URL = 'https://graph.facebook.com/v3.3/'
+FACEBOOK_API_VERSION_URL = 'https://graph.facebook.com/v4.0/'
 
 from facebook_business.session import FacebookSession
 from facebook_business.api import FacebookAdsApi
@@ -142,6 +142,12 @@ def get_access_name_by_account(account_id):
 if __name__=='__main__':
     init_facebook_api(341659359840575)
 #     init_google_api(6714857152)
+
+
+# In[ ]:
+
+
+# !jupyter nbconvert --to script adgeek_permission.ipynb
 
 
 # In[ ]:
