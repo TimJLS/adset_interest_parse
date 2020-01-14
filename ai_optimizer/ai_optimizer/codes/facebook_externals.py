@@ -60,8 +60,9 @@ def update_status(adset_id, status=AdSet.Status.active):
     if status == AdSet.Status.paused:
         ai_logger.save_adset_behavior(adset_id, ai_logger.BehaviorType.CLOSE)
     adset = AdSet(adset_id)
-    adset[AdSet.Field.status] = status
-    adset.api_update()
+    adset.api_update(
+        params={'status': status}
+    )
 
 def update_daily_min_spend_target(adset_id):
     if IS_DEBUG:
@@ -105,13 +106,13 @@ def adset_optimization(campaign_instance):
             #create one suggestion adset for CPA campaigin
             print('    [adset_optimization] create one suggestion asset for CPA campaigin')
             if is_target_suggest:
-                new_adset_id = adset_controller.make_performance_suggest_adset(campaign_id, adset_list)
+                new_adset_id = adset_controller.make_performance_suggest_adset(campaign_instance.campaign_id, adset_list)
                 if new_adset_id:
                     ai_logger.save_adset_behavior(new_adset_id, ai_logger.BehaviorType.CREATE)
             #create one lookalike adset for CPA campaigin
             print('    [adset_optimization] create one lookalike asset for CPA campaigin')
             if is_lookalike:
-                new_adset_id = adset_controller.make_performance_lookalike_adset(campaign_id, adset_list)
+                new_adset_id = adset_controller.make_performance_lookalike_adset(campaign_instance.campaign_id, adset_list)
                 if new_adset_id:
                     ai_logger.save_adset_behavior(new_adset_id, ai_logger.BehaviorType.CREATE)
 
