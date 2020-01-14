@@ -219,7 +219,6 @@ def optimize_performance_campaign(account_id,
     last_7d_dict = campaign_instance.generate_info(date_preset=collector.DatePreset.last_7d)
     # this lifetime means ai_start_date and ai_stop_date; 
     lifetime_dict = campaign_instance.generate_info(date_preset=collector.DatePreset.lifetime)
-    day_dict['target'] = day_dict.pop('action')
     last_7d_dict['target'] = last_7d_dict.pop('action')
     last_7d_target = int(last_7d_dict['target'])
     lifetime_dict['target'] = lifetime_dict.pop('action')
@@ -237,9 +236,7 @@ def optimize_performance_campaign(account_id,
 #         print('[optimize_performance_campaign] lifetime good enough')
 #         return
 
-    target = 0 # get by insight
-    if 'target' in day_dict:
-        target = int(day_dict['target'])
+    target = int(day_dict.get('action', 0)) # get by insight
 
     last_7d_achieving_rate = last_7d_target / (ai_setting_destination_count * last_7d_flight_process)
     lifetime_achieving_rate = lifetime_target / (ai_setting_destination_count * lifetime_flight_process) if (ai_setting_destination_count) != 0 else 0
@@ -249,13 +246,26 @@ def optimize_performance_campaign(account_id,
 
     if last_7d_achieving_rate < 1:
         print('[optimize_performance_campaign] last_7d status: off standard.\n')
+        if lifetime_achieving_rate < ACTION_BOUNDARY:
+            # update bid for original existed adset
+            print('[optimize_performance_campaign] campaign_daily_budget', daily_budget)
+            if not day_dict.get('spend'):
+                print('[optimize_performance_campaign] no spend value')            
+                return
+            yesterday_spend = float(day_dict.get('spend'))
+            if daily_budget and yesterday_spend and (yesterday_spend <= daily_budget * 0.8):
+                print('[optimize_performance_campaign] yesterday_spend not enough:', yesterday_spend)            
+                if not IS_DEBUG:
+                    database_fb.update_init_bid(campaign_id, update_ratio=1.1)
+            else:
+                print('[optimize_performance_campaign] yesterday_spend is enough, no need to up bidding')
         if lifetime_achieving_rate < 1:
             print('[optimize_performance_campaign] lifetime status: off standard.\n')
             # 1.close half (免死)
             adset_list = adset_sorting_by_score(campaign_instance)
             adset_list = [adset for adset in adset_list if str(adset) in adsets_active_list]
             adset_for_copy_list, adset_for_off_list = split_adset_list(adset_list)
-            adset_for_off_list = [adset for adset in adset_list if len(adsets_active_list) >= ADSET_MIN_COUNT]
+            adset_for_off_list = [adset for adset in adset_for_off_list if len(adsets_active_list) >= ADSET_MIN_COUNT]
             close_adset(adset_for_off_list, ai_setting_cost_per_result)
             # 2.add one suggestion
             adset_optimization(campaign_instance)
@@ -283,7 +293,7 @@ def optimize_performance_campaign(account_id,
             adset_list = adset_sorting_by_score(campaign_instance)
             adset_list = [adset for adset in adset_list if str(adset) in adsets_active_list]
             adset_for_copy_list, adset_for_off_list = split_adset_list(adset_list)
-            adset_for_off_list = [adset for adset in adset_list if len(adsets_active_list) >= ADSET_MIN_COUNT]
+            adset_for_off_list = [adset for adset in adset_for_off_list if len(adsets_active_list) >= ADSET_MIN_COUNT]
             close_adset(adset_for_off_list, ai_setting_cost_per_result)
         modify_opt_result_db(campaign_id, "True")
     else:
@@ -518,10 +528,4 @@ if __name__ == '__main__':
 
 
 # !jupyter nbconvert --to script facebook_externals.ipynb
-
-
-# In[ ]:
-
-
-
 
