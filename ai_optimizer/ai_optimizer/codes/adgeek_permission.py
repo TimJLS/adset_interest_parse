@@ -22,7 +22,7 @@ def init_facebook_api(account_id = None):
     if not account_id:
         session = FacebookSession()
 #         FacebookAdsApi(session, api_version="latest")
-        FacebookAdsApi(session, api_version="3.3").init(ADGEEK_FACEBOOK_API_ID, ADGEEK_FACEBOOK_APP_SECRET, ADGEEK_FACEBOOK_ACCESS_TOKEN)
+        FacebookAdsApi(session).init(ADGEEK_FACEBOOK_API_ID, ADGEEK_FACEBOOK_APP_SECRET, ADGEEK_FACEBOOK_ACCESS_TOKEN)
         return ADGEEK_FACEBOOK_ACCESS_TOKEN
     
     try:
@@ -34,13 +34,13 @@ def init_facebook_api(account_id = None):
         session = FacebookSession()
 #         FacebookAdsApi(session, api_version="latest")
         
-        FacebookAdsApi(session, api_version="3.3").init(credential_id, credential_secret, credential_token)
+        FacebookAdsApi(session).init(credential_id, credential_secret, credential_token)
         return credential_token
     except:
         print('[init_facebook_api] error')
         session = FacebookSession()
 #         FacebookAdsApi(session, api_version="latest")
-        FacebookAdsApi(session, api_version="3.3").init(ADGEEK_FACEBOOK_API_ID, ADGEEK_FACEBOOK_APP_SECRET, ADGEEK_FACEBOOK_ACCESS_TOKEN)
+        FacebookAdsApi(session).init(ADGEEK_FACEBOOK_API_ID, ADGEEK_FACEBOOK_APP_SECRET, ADGEEK_FACEBOOK_ACCESS_TOKEN)
         return ADGEEK_FACEBOOK_ACCESS_TOKEN
 ##############################################################################
 
