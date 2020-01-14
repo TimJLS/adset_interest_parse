@@ -12,8 +12,8 @@ ADGEEK_FACEBOOK_ACCESS_TOKEN = 'EAANoD9I4obMBACygIE9jqmlaWeOW6tBma0oS6JbRpLgAvOY
 
 ACCOUNT_API_URL = 'https://mpc.adgeek.net/v2/accounts/'
 ACCOUNT_TOEKN_API_URL = 'https://mpc.adgeek.net/v2/credentials/'
-
-FACEBOOK_API_VERSION_URL = 'https://graph.facebook.com/v4.0/'
+FACEBOOK_API_VERSION = "v4.0"
+FACEBOOK_API_VERSION_URL = 'https://graph.facebook.com/{}/'.format(FACEBOOK_API_VERSION)
 
 from facebook_business.session import FacebookSession
 from facebook_business.api import FacebookAdsApi
@@ -22,7 +22,7 @@ def init_facebook_api(account_id = None):
     if not account_id:
         session = FacebookSession()
 #         FacebookAdsApi(session, api_version="latest")
-        FacebookAdsApi(session).init(ADGEEK_FACEBOOK_API_ID, ADGEEK_FACEBOOK_APP_SECRET, ADGEEK_FACEBOOK_ACCESS_TOKEN)
+        FacebookAdsApi(session).init(ADGEEK_FACEBOOK_API_ID, ADGEEK_FACEBOOK_APP_SECRET, ADGEEK_FACEBOOK_ACCESS_TOKEN, api_version=FACEBOOK_API_VERSION)
         return ADGEEK_FACEBOOK_ACCESS_TOKEN
     
     try:
@@ -34,13 +34,13 @@ def init_facebook_api(account_id = None):
         session = FacebookSession()
 #         FacebookAdsApi(session, api_version="latest")
         
-        FacebookAdsApi(session).init(credential_id, credential_secret, credential_token)
+        FacebookAdsApi(session).init(credential_id, credential_secret, credential_token, api_version=FACEBOOK_API_VERSION)
         return credential_token
     except:
         print('[init_facebook_api] error')
         session = FacebookSession()
 #         FacebookAdsApi(session, api_version="latest")
-        FacebookAdsApi(session).init(ADGEEK_FACEBOOK_API_ID, ADGEEK_FACEBOOK_APP_SECRET, ADGEEK_FACEBOOK_ACCESS_TOKEN)
+        FacebookAdsApi(session).init(ADGEEK_FACEBOOK_API_ID, ADGEEK_FACEBOOK_APP_SECRET, ADGEEK_FACEBOOK_ACCESS_TOKEN, api_version=FACEBOOK_API_VERSION)
         return ADGEEK_FACEBOOK_ACCESS_TOKEN
 ##############################################################################
 
