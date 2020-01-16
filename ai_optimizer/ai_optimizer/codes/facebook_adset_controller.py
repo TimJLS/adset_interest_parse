@@ -173,8 +173,8 @@ def make_performance_suggest_adset(campaign_id, adsets_active_list):
         return
 
     suggestion_full_name = '__'.join(suggest_name_list)
-    new_adset_params[AdSet.Field.name] = "AI__" + str(datetime.datetime.now().date()) + '_' + suggestion_full_name
-    
+    new_adset_params[AdSet.Field.name] = "(BT/{name}/X/AI_{date})BT/{name}/X#[BT,{name}]".format(name=suggestion_full_name,
+                                                                                                 date=datetime.date.today().strftime("%Y%m%d"))
     if new_adset_params[AdSet.Field.targeting].get("custom_audiences"): 
         print('[make_suggest_adset] remove custom_audiences when add suggestion adset')
         del new_adset_params[AdSet.Field.targeting]['custom_audiences']
@@ -321,10 +321,11 @@ def make_performance_lookalike_adset(campaign_id, adsets_active_list):
         return
     
     # Pick first lookalike audience
-
-    lookalike_audience_id = list(lookalike_audience_dict.values())[0]
-    targeting["custom_audiences"] = [{"id": lookalike_audience_id}]
-    new_adset_params["name"] = "AI__" + "Look-a-like Custom {}".format(list(lookalike_audience_dict.keys())[0])
+    action_name = list(lookalike_audience_dict.keys())[0]
+    audience_id = list(lookalike_audience_dict.values())[0]
+    targeting["custom_audiences"] = [{"id": audience_id}]
+    new_adset_params["name"] = "(LL/{action}_3%/X/AI_{date})LL/{action}/X#[LL,{action}]".format(action=action_name,
+                                                                                                date=datetime.date.today().strftime("%Y%m%d"))
     print('==================')
     print('new_adset_params:', new_adset_params)
     
@@ -405,10 +406,4 @@ def fast_test_remove_copy_string(account_id, campaign_id):
 # original_adset_id = 23844030923290408
 # permission.init_facebook_api(account_id)
 # make_performance_suggest_adset(campaign_id, [original_adset_id])
-
-
-# In[ ]:
-
-
-
 
