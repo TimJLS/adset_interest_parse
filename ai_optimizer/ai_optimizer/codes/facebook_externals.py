@@ -203,6 +203,7 @@ def optimize_performance_campaign(account_id,
                                   is_target_suggest,
                                   is_lookalike,
                                   is_creative_opt,
+                                  is_smart_bidding,
                                   actual_metrics,
                                  ):
     print('[optimize_performance_campaign] campaign ', campaign_id)
@@ -350,6 +351,7 @@ def optimize_branding_campaign(account_id,
                                is_target_suggest,
                                is_lookalike,
                                is_creative_opt,
+                               is_smart_bidding,
                                actual_metrics,
                               ):
     print('[optimize_branding_campaign] campaign ', campaign_id)
@@ -528,4 +530,10 @@ if __name__ == '__main__':
 
 
 # !jupyter nbconvert --to script facebook_externals.ipynb
+
+
+# In[ ]:
+
+
+
 
