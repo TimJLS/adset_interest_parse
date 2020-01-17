@@ -41,7 +41,7 @@ ADSET_MAX_COUNT_CPA = 5
 ADSET_MIN_COUNT = 3
 ADSET_COPY_COUNT = 3
 
-AI_ADSET_PREFIX = '_AI_'
+AI_ADSET_PREFIX = 'AI_'
 
 
 # In[ ]:
@@ -148,7 +148,7 @@ def is_contain_rt_string(adset_name):
     return ('RT_' in adset_name)
 
 def is_contain_lookalike_string(adset_name):
-    return ('Look-a-like' in adset_name)
+    return ('LL/' in adset_name)
 
 def modify_opt_result_db(campaign_id, is_optimized):
     #get date
