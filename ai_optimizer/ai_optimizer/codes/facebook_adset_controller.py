@@ -26,7 +26,7 @@ PICK_DEFAULT_COUNT = 3
 PICK_DEFAULT_AUDIENCE_SIZE = 100000
 ENG_COPY_STRING = ' - Copy'
 CHN_COPY_STRING = ' - 複本'
-AI_ADSET_PREFIX = '_AI'
+AI_ADSET_PREFIX = '_AI_'
 IS_DEBUG = False #debug mode will not modify anything
 
 ACTION_DICT = {
