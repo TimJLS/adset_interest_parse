@@ -331,7 +331,7 @@ def make_performance_lookalike_adset(campaign_id, adsets_active_list):
     
     new_adset_id = copy_adset_new_target(campaign_id, new_adset_params, original_adset_id)
     if new_adset_id:
-        lookalike_audience.modify_result_db(campaign_id, lookalike_audience_id, "True")
+        lookalike_audience.modify_result_db(campaign_id, audience_id, "True")
     return new_adset_id
 
 
