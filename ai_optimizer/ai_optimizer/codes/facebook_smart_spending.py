@@ -35,12 +35,9 @@ def update_campaign_daily_budget(campaign_id, daily_budget):
         return
             
     this_campaign = facebook_business_campaign.Campaign(campaign_id)
-    this_campaign.update({
-        facebook_business_campaign.Campaign.Field.daily_budget: daily_budget
-    })
     
     try:
-        this_campaign.api_update()
+        resp = this_campaign.api_update(params={"daily_budget": daily_budget})
     except Exception as error:
         print('[update_campaign_daily_budget] error:', error)
 

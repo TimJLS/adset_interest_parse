@@ -680,10 +680,7 @@ class AdSets(object):
     
     def update(self, bid_amount):
         adsets = adset.AdSet( self.adset_id )
-        adsets.update({
-            adset.AdSet.Field.bid_amount: bid_amount,
-        })
-        adsets.remote_update()
+        adsets.api_update(params={"bid_amount": bid_amount})
 
 
 # In[ ]:
