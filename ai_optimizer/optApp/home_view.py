@@ -27,19 +27,22 @@ import adgeek_permission as permission
 
 class Campaign_FB():
     def __init__(self, campaign_id, account_id):   
-        permission.init_facebook_api(account_id)
-        db = db_controller.Database()
-        self.database_fb = db_controller.FB(db)
-        self.token_name = permission.get_access_name_by_account(account_id)
-        self.account_id = account_id
-        self.campaign_id = campaign_id
-        self.currency = fb_currency_handler.get_currency_by_campaign(campaign_id)
-        self.get_campaign_status()
-        self.get_campaign_name()
-        self.get_account_name()
-        self.compute()
-        self.ai_start_date = self.ai_start_date.strftime("%Y/%m/%d")
-        self.ai_stop_date = self.ai_stop_date.strftime("%Y/%m/%d")
+        try:
+            permission.init_facebook_api(account_id)
+            db = db_controller.Database()
+            self.database_fb = db_controller.FB(db)
+            self.token_name = permission.get_access_name_by_account(account_id)
+            self.account_id = account_id
+            self.campaign_id = campaign_id
+            self.currency = fb_currency_handler.get_currency_by_campaign(campaign_id)
+            self.get_campaign_status()
+            self.get_campaign_name()
+            self.get_account_name()
+            self.compute()
+            self.ai_start_date = self.ai_start_date.strftime("%Y/%m/%d")
+            self.ai_stop_date = self.ai_stop_date.strftime("%Y/%m/%d")
+        except Exception as e:
+            self.name = str(e)
 
     def get_campaign_name(self):
         this_campaign = facebook_business_campaign.Campaign(self.campaign_id).remote_read(fields=["name", "status"])
