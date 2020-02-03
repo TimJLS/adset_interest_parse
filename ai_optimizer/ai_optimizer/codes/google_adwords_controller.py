@@ -94,7 +94,8 @@ class OperatorContainer():
         }
         self.operations = []
         self.selector_budget = [{
-            'fields': 'Amount',
+            'fields': [
+                'Amount', 'BudgetId', 'BudgetStatus', 'DeliveryMethod', 'BudgetName'],
             'predicates': [{
                 'field': 'CampaignId',
                 'operator': 'EQUALS',
@@ -164,15 +165,19 @@ class Operation:
 
 
 class CampaignServiceContainer(object):
-
     def __init__(self, customer_id):
         self.customer_id = customer_id
         self.adwords_client = permission.init_google_api(account_id=self.customer_id)
         self.service_campaign = self.adwords_client.GetService('CampaignService', version='v201809')
+        self.service_budget = self.adwords_client.GetService('BudgetService', version='v201809')
         self.service_criterion = self.adwords_client.GetService('CampaignCriterionService', version='v201809')
         self.operator_container = OperatorContainer()
         self.ad_group = AdGroup
-        
+
+
+# In[ ]:
+
+
 class Campaign(object):
     fields = ['CampaignId', 'Name', 'AdGroupId']
     def __init__(self, service_container, campaign_id):
@@ -238,13 +243,33 @@ class Campaign(object):
     def get_budget(self,):
         self.operator_container.selector_budget[0]['predicates'][0]['values'] = self.campaign_id
         ad_params = self.service_container.service_campaign.get(self.operator_container.selector_budget)
+        budget = ad_params.entries[0].budget
+        return Budget(**budget.__dict__['__values__'])
         if 'entries' in ad_params:
-    #         print('ad_params', ad_params)
             for ad_dic in ad_params['entries']:
                 if 'budget' in ad_dic and 'amount' in ad_dic['budget'] and 'microAmount' in ad_dic['budget']['amount']:
                     microAmount = ad_dic['budget']['amount']['microAmount']
-                    self.amount = microAmount/ 1000000
+                    self.amount = microAmount / 1000000
                     return self.amount
+
+
+# In[ ]:
+
+
+class Budget(object):
+    def __init__(self, *arg, **kwarg):
+        self.body = kwarg
+        self.budget_id = kwarg['budgetId']
+        self.name = kwarg['name']
+        self.amount = self._parse_amount()
+        self.status = kwarg['status']
+        self.delivery_method = kwarg['deliveryMethod']
+        self.reference_count = kwarg['referenceCount']
+        self.is_explicitly_shared = kwarg['isExplicitlyShared']
+        
+    def _parse_amount(self):
+        amount = dict(self.body['amount'].__dict__['__values__'])
+        return amount['microAmount'] / 1000000
 
 
 # In[ ]:

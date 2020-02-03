@@ -155,7 +155,7 @@ def main():
         ad_group_service_container = controller.AdGroupServiceContainer( customer_id )
         collector_campaign = collector.Campaign(customer_id, campaign_id)
         controller_campaign = controller.Campaign(campaign_service_container, campaign_id)
-        daily_budget = controller_campaign.get_budget()
+        daily_budget = controller_campaign.get_budget().amount
         if not daily_budget:
             print('camp.ai_spend_cap:', collector_campaign.ai_spend_cap, 'ai_period:', collector_campaign.ai_period)
             daily_budget =  collector_campaign.ai_spend_cap / int(collector_campaign.ai_period)
