@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 
 import datetime
@@ -23,7 +23,7 @@ import facebook_adset_controller as adset_controller
 import adgeek_permission as permission
 
 
-# In[ ]:
+# In[2]:
 
 
 IS_DEBUG = False #debug mode will not modify anything
@@ -44,7 +44,7 @@ ADSET_COPY_COUNT = 3
 AI_ADSET_PREFIX = 'AI_'
 
 
-# In[ ]:
+# In[3]:
 
 
 def update_interest(adset_id=None, adset_params=None):
@@ -158,7 +158,7 @@ def modify_opt_result_db(campaign_id, is_optimized):
                        campaign_id=campaign_id)
 
 
-# In[ ]:
+# In[4]:
 
 
 def get_campaign_name_status(campaign_id):
@@ -166,7 +166,7 @@ def get_campaign_name_status(campaign_id):
     return this_campaign.get('name'), this_campaign.get('status')
 
 
-# In[ ]:
+# In[5]:
 
 
 def optimize_performance_campaign(account_id,
@@ -314,7 +314,7 @@ def optimize_performance_campaign(account_id,
             modify_opt_result_db(campaign_id, "False")
 
 
-# In[ ]:
+# In[6]:
 
 
 def optimize_branding_campaign(account_id,
@@ -380,7 +380,7 @@ def optimize_branding_campaign(account_id,
     lifetime_dict['target'] = lifetime_dict.pop('action')
     lifetime_target = int(lifetime_dict['target'])
     if lifetime_target > ai_setting_destination_count:
-        print('[optimize_performance_campaign] lifetime good enough')
+        print('[optimize_branding_campaign] lifetime good enough')
         modify_opt_result_db(campaign_id, "False")
         return  
 
@@ -472,7 +472,7 @@ def optimize_branding_campaign(account_id,
     modify_opt_result_db(campaign_id, "True")
 
 
-# In[ ]:
+# In[7]:
 
 
 def optimize_campaign(campaign_id):
@@ -494,7 +494,7 @@ def optimize_campaign(campaign_id):
             print('[optimize_campaign] error, not optimize')
 
 
-# In[ ]:
+# In[8]:
 
 
 if __name__ == '__main__':
@@ -519,17 +519,34 @@ if __name__ == '__main__':
     print(datetime.datetime.now().date(), '==================!!facebook_externals.py finish!!=======================')
 
 
-# In[ ]:
+# In[9]:
 
 
 #nate test
 # adset_controller.make_suggest_adset(23843604240180098,23843467729120098)
 
 
-# In[ ]:
+# In[10]:
 
 
 # !jupyter nbconvert --to script facebook_externals.ipynb
+
+
+# In[11]:
+
+
+#nate test
+#copy adset for branding adset
+# account_id = 350498128813378
+# campaign_id = 23844199663310559
+# adset_id = 23844199663710559
+# adset_min = 20
+# adset_max = 30
+# permission.init_facebook_api(account_id)
+# actions_copy = { 'age': list(), 'interest': None}
+# actions_copy['age'].append( str(adset_min) + '-' + str(adset_max))
+# origin_adset_params = adset_controller.retrieve_origin_adset_params(adset_id)
+# adset_controller.copy_branding_adset(campaign_id, adset_id, actions_copy, origin_adset_params)
 
 
 # In[ ]:

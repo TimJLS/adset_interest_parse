@@ -172,7 +172,7 @@ def make_performance_suggest_adset(campaign_id, adsets_active_list):
         print('[make_suggest_adset] no flexible_spec')
         return
 
-    suggestion_full_name = '__'.join(suggest_name_list)
+    suggestion_full_name = '_'.join(suggest_name_list)
     new_adset_params[AdSet.Field.name] = "(BT/{name}/X/AI_{date})BT/{name}/X#[BT,{name}]".format(name=suggestion_full_name,
                                                                                                  date=datetime.date.today().strftime("%Y%m%d"))
     if new_adset_params[AdSet.Field.targeting].get("custom_audiences"): 
@@ -260,24 +260,26 @@ def copy_branding_adset(campaign_id, adset_id, actions, adset_params=None):
     original_adset_id = adset_id
     new_adset_params[AdSet.Field.id] = None
     
-    # Generate new adset name
-    new_adset_name = ''
-    index = origin_adset_name.find(AI_ADSET_PREFIX)
-    if index > 0:
-        new_adset_name = origin_adset_name[:index]  + AI_ADSET_PREFIX
-    else:
-        new_adset_name = origin_adset_name + AI_ADSET_PREFIX
-    
     for i, action in enumerate(actions.keys()):
         if action == 'bid':
             new_adset_params[ACTION_DICT[action]] = math.floor(revert_bid_amount(actions[action]))  # for bid
 
         elif action == 'age':
             age_list = actions[action][0].split('-')
-            new_adset_params[AdSet.Field.targeting]["age_min"] = int(
-                age_list[:1][0])
-            new_adset_params[AdSet.Field.targeting]["age_max"] = int(
-                age_list[1:][0])
+            age_min = int(age_list[:1][0])
+            age_max = int(age_list[1:][0])
+            
+            # Generate new adset name
+            new_adset_name = ''
+            index = origin_adset_name.find(AI_ADSET_PREFIX)
+            
+            if index > 0:
+                new_adset_name = origin_adset_name[:index] + '_' + str(age_min) + 'to' + str(age_max) + AI_ADSET_PREFIX
+            else:
+                new_adset_name = origin_adset_name + '_' + str(age_min) + 'to' + str(age_max) +  AI_ADSET_PREFIX
+
+            new_adset_params[AdSet.Field.targeting]["age_min"] = age_min
+            new_adset_params[AdSet.Field.targeting]["age_max"] = age_max
             new_adset_params[AdSet.Field.name] = new_adset_name
 
 #         elif action == 'interest':
@@ -359,7 +361,7 @@ def is_adset_should_close(adset_id, setting_CPA):
         return True
 
 
-# In[ ]:
+# In[2]:
 
 
 #  !jupyter nbconvert --to script facebook_adset_controller.ipynb
