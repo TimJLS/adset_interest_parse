@@ -109,18 +109,14 @@ def make_addition_dict(customer_id,
                        is_lookalike,
                        is_creative_opt,
                        is_device_pro_rata):
-    
-#     print(campaign)
     addition_dict = {}
-    
-    target = eval(CAMPAIGN_OBJECTIVE_FIELD[ destination_type ])
-    target_left = int(destination) - eval(CAMPAIGN_OBJECTIVE_FIELD[ destination_type ])
+    target = eval(CAMPAIGN_OBJECTIVE_FIELD[destination_type])
+    target_left = int(destination) - eval(CAMPAIGN_OBJECTIVE_FIELD[destination_type])
+    period_left = (datetime.date.today() - ai_start_date).days + 1 if period_left == 0 else period_left
     daily_target = target_left / period_left
-    
     addition_dict['target'] = target
     addition_dict['target_left'] = target_left
     addition_dict['daily_target'] = daily_target
-    
     addition_dict['period'] = ( ai_stop_date - ai_start_date ).days + 1
     addition_dict['period_left'] = ( ai_stop_date-datetime.datetime.now().date() ).days + 1
     return addition_dict
@@ -130,15 +126,13 @@ def make_addition_dict(customer_id,
 
 
 def data_collect(database_gdn, campaign):
+    campaign = pd.DataFrame(data=[campaign]).fillna(0).to_dict('records')[0]
     customer_id = campaign.get("customer_id")
     campaign_id = campaign.get("campaign_id")
     destination = campaign.get("destination")
     destination_type = campaign.get("destination_type")
     ai_start_date = campaign.get("ai_start_date")
     ai_stop_date = campaign.get("ai_stop_date")
-
-    service_container = controller.AdGroupServiceContainer(customer_id=customer_id)
-    controller_campaign = controller.Campaign(service_container=service_container, campaign_id=campaign_id)
     
     collector_campaign = collector.CampaignReportGenerator(campaign_id, media='gdn')
     campaign_lifetime_insights = collector_campaign.get_insights(date_preset=None)
@@ -151,7 +145,6 @@ def data_collect(database_gdn, campaign):
         **addition_dict,
     }
     database_gdn.upsert("campaign_target", campaign_dict)
-    ad_group_list = controller_campaign.get_ad_groups()
     
     collector_ad_group = collector.AdGroupReportGenerator(campaign_id, media='gdn')
     ad_group_day_insights = collector_ad_group.get_insights(date_preset='TODAY')
