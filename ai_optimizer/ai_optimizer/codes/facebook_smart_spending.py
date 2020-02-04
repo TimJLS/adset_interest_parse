@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 
 from pathlib import Path
@@ -24,7 +24,7 @@ IS_DEBUG = False
 DESTINATION_SPEED_RATIO_VALUE = 1.1
 
 
-# In[ ]:
+# In[2]:
 
 
 def update_campaign_daily_budget(campaign_id, daily_budget):
@@ -74,7 +74,7 @@ def set_campaign_daily_budget_lower(campaign_id, ai_daily_budget, lower_rate):
         update_campaign_daily_budget(campaign_id, ai_daily_budget * lower_rate)
 
 
-# In[ ]:
+# In[3]:
 
 
 def smart_spending_branding(campaign_instance, campaign_target_dict):
@@ -140,6 +140,7 @@ def smart_spending_branding(campaign_instance, campaign_target_dict):
     
     #need to update daily budget everyday
     if left_money_can_spend_per_day > 0:
+        print('[smart_spending_branding] daily reset budget')
         update_campaign_daily_budget(campaign_instance.campaign_id, left_money_can_spend_per_day)
     
     if left_money_can_spend < 0:
@@ -155,20 +156,21 @@ def smart_spending_branding(campaign_instance, campaign_target_dict):
                 print('[smart_spending_branding][save money] set daily budget multiply 0.5')
                 set_campaign_daily_budget_lower(campaign_instance.campaign_id, ai_daily_budget, 0.5)
             else: 
-#                 max_achieve_count = destination_max - current_target_count
-#                 max_achieve_count_per_day = max_achieve_count / ai_left_days
-#                 print('[smart_spending_branding][save money] destination count satifisted, max_achieve_count', max_achieve_count) 
-#                 print('[smart_spending_branding][save money] destination count satifisted, max_achieve_count_per_day', max_achieve_count_per_day)      
+                max_achieve_count = destination_max - current_target_count
+                max_achieve_count_per_day = max_achieve_count / ai_left_days
+                print('[smart_spending_branding][save money] destination count satifisted, max_achieve_count', max_achieve_count) 
+                print('[smart_spending_branding][save money] destination count satifisted, max_achieve_count_per_day', max_achieve_count_per_day)      
 
-#                 campaign_daily_budget_revised = math.ceil(max_achieve_count_per_day) * current_cpc
+                opt_set_cpc = (current_cpc + kpi_cpc) / 2
+                campaign_daily_budget_revised = math.ceil(max_achieve_count_per_day) * opt_set_cpc
 
-                #facebook can not set daily budget too low , so that we use currect daily budget * 0.75
-                print('[smart_spending_branding][save money] action-> update_campaign_daily_budget')     
-                set_campaign_daily_budget_lower(campaign_instance.campaign_id, ai_daily_budget, 0.75)
+                print('[smart_spending_branding][save money] action-> update_campaign_daily_budget, campaign_daily_budget_revised:',campaign_daily_budget_revised)     
+                update_campaign_daily_budget(campaign_instance.campaign_id, campaign_daily_budget_revised)
 
     else:
         print('[smart_spending_branding] destination not satisfied')
         
+        #spend money
         if ai_running_days >= ai_left_days: #over half period
             print('[smart_spending_branding] over half period')
             
@@ -179,33 +181,31 @@ def smart_spending_branding(campaign_instance, campaign_target_dict):
                     bid_up_ratio = 1.1
                     update_campaign_bidding_ratio(campaign_instance.campaign_id, bid_up_ratio)
                 else:
-                    print('[smart_spending_branding][spend money] destination_max is None, destination_speed_ratio too low')
-            else:
-                if destination_speed_ratio >= 1: 
-                    print('[smart_spending_branding][save money] speed good, destination:', destination , ' destination_max:' ,destination_max, 'current_target_count:', current_target_count)
-#                     max_achieve_count = destination_max - current_target_count
-#                     max_achieve_count_per_day = max_achieve_count / ai_left_days
-#                     print('[smart_spending_branding][save money] max_achieve_count', max_achieve_count) 
-#                     print('[smart_spending_branding][save money] max_achieve_count_per_day', max_achieve_count_per_day)      
-
-#                     campaign_daily_budget_revised = math.ceil(max_achieve_count_per_day) * kpi_cpc
-
-#                     print('[smart_spending_branding][save money] action-> update_campaign_daily_budget campaign_daily_budget_revised', campaign_daily_budget_revised)     
-#                     update_campaign_daily_budget(campaign_id, int(campaign_daily_budget_revised))
-                    #facebook can not set daily budget too low , so that we use currect daily budget * 0.75
-                    print('[smart_spending_branding][save money] action-> update_campaign_daily_budget')     
-                    set_campaign_daily_budget_lower(campaign_instance.campaign_id, 0.75)
-                else:
-                    print('[smart_spending_branding][save money] destination_max exist, destination_speed_ratio too low')
-                    
+                    print('[smart_spending_branding][spend money] destination_max is None, destination_speed_ratio too low')  
 
         else:
             print('[smart_spending_branding] less than half period, do nothing')
+        
+        #save money
+        if destination_max and destination_speed_ratio >= 1: 
+            print('[smart_spending_branding][save money] speed good, destination:', destination , ' destination_max:' ,destination_max, 'current_target_count:', current_target_count)
+            max_achieve_count = destination_max - current_target_count
+            max_achieve_count_per_day = max_achieve_count / ai_left_days
+            print('[smart_spending_branding][save money] destination count satifisted, max_achieve_count', max_achieve_count) 
+            print('[smart_spending_branding][save money] destination count satifisted, max_achieve_count_per_day', max_achieve_count_per_day)      
+
+            opt_set_cpc = (current_cpc + kpi_cpc) / 2
+            campaign_daily_budget_revised = math.ceil(max_achieve_count_per_day) * opt_set_cpc
+            print('[smart_spending_branding][save money] action-> update_campaign_daily_budget, campaign_daily_budget_revised:',campaign_daily_budget_revised)     
+            update_campaign_daily_budget(campaign_instance.campaign_id, campaign_daily_budget_revised)
+        else:
+            print('[smart_spending_branding][save money] destination_max exist, destination_max is None or destination_speed_ratio too low')
+                  
     print('[smart_spending_branding] finish---------------------------------------------------')
     
 
 
-# In[ ]:
+# In[4]:
 
 
 def smart_spending_performance(campaign_instance, campaign_target_dict):
@@ -269,6 +269,7 @@ def smart_spending_performance(campaign_instance, campaign_target_dict):
     
     #need to update daily budget everyday
     if left_money_can_spend_per_day > 0:
+        print('[smart_spending_performance] daily reset budget')
         update_campaign_daily_budget(campaign_instance.campaign_id, int(left_money_can_spend_per_day))
     
     if left_money_can_spend < 0:
@@ -283,7 +284,7 @@ def smart_spending_performance(campaign_instance, campaign_target_dict):
         
 
 
-# In[ ]:
+# In[5]:
 
 
 def process_branding_campaign():
@@ -307,7 +308,7 @@ def process_branding_campaign():
     print('-------',datetime.datetime.now().date(), '-------all finish-------')
 
 
-# In[ ]:
+# In[6]:
 
 
 def process_performance_campaign():
@@ -331,7 +332,7 @@ def process_performance_campaign():
     print('-------',datetime.datetime.now().date(), '-------all finish-------')
 
 
-# In[ ]:
+# In[7]:
 
 
 if __name__ == "__main__":
@@ -339,13 +340,13 @@ if __name__ == "__main__":
     process_performance_campaign()
 
 
-# In[ ]:
+# In[8]:
 
 
 # UPDATE `campaign_target` SET  `destination`=100,`destination_max`=110 WHERE `campaign_id` = 23843605741390744
 
 
-# In[ ]:
+# In[9]:
 
 
 
@@ -359,13 +360,13 @@ if __name__ == "__main__":
 # print(result)
 
 
-# In[ ]:
+# In[10]:
 
 
 # smart_spending_performance(23842880697850266)
 
 
-# In[ ]:
+# In[11]:
 
 
 # !jupyter nbconvert --to script facebook_smart_spending.ipynb
