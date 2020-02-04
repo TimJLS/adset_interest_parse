@@ -140,7 +140,7 @@ class Insights(object):
 def main():
     global database
     database = database_controller.FB( database_controller.Database )
-    performance_campaigns = database.get_performance_campaign().to_dict('records')
+    performance_campaigns = database.get_running_campaign().to_dict('records')
     performance_campaigns = [campaign for campaign in performance_campaigns if (campaign['is_smart_bidding']=='True')]
     for campaign in performance_campaigns:
         days_passed = datetime.date.today() - performance_campaigns[0]['ai_start_date']
