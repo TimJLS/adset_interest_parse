@@ -22,11 +22,9 @@ import adgeek_permission as permission
 import facebook_datacollector as data_collector
 import database_controller
 LEN_SEQUENCE = 5
-logger.add(
-    '../../app_log/auto_calibration/facebook/{date}.log'.format(
-        date=datetime.datetime.strftime(datetime.datetime.today(), "%m_%d_%Y")
-    )
-)
+PATH = '/home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/auto_calibration/facebook/{date}.log'.format(
+    date=datetime.datetime.strftime(datetime.datetime.today(), "%m_%d_%Y"))
+logger.add(PATH)
 
 
 # In[ ]:
@@ -136,44 +134,45 @@ class Insights(object):
 # In[ ]:
 
 
-@logger.catch
+# @logger.catch
 def main():
     global database
     database = database_controller.FB( database_controller.Database )
     performance_campaigns = database.get_running_campaign().to_dict('records')
     performance_campaigns = [campaign for campaign in performance_campaigns if (campaign['is_smart_bidding']=='True')]
     for campaign in performance_campaigns:
-        days_passed = datetime.date.today() - performance_campaigns[0]['ai_start_date']
-        logger.info("Campaign Id: {}".format(campaign['campaign_id']))
+        days_passed = datetime.date.today() - campaign['ai_start_date']
+        logger.info("Campaign Id: {}".format(campaign['campaign_id']), feature="f-strings")
         logger.info("Campaign Days Passed: {}".format(days_passed))
-        if days_passed >= datetime.timedelta(5):
-            logger.info("Calibration Condition Matched.")
-            adset_ids = data_collector.Campaigns(campaign_id=campaign['campaign_id'],
-                                                 database_fb=database).get_adsets_active()
-            for adset_id in adset_ids:
-                ins = Insights(campaign_id=campaign['campaign_id'], adset_id=adset_id)
-                if ins.is_available:
-                    bid = ins.polynomial_fit()
-                    if bid:
-                        database.update("adset_initial_bid", {'bid_amount': ins.reverted_bid.astype(object)}, adset_id=ins.adset_id)
-                        database.insert(
-                            table_name="adset_bidding_calibration_log",
-                            values_dict={
-                                "campaign_id": ins.campaign_id,
-                                "adset_id": ins.adset_id,
-                                "sequence": ins.sequence,
-                                "result_bid": ins.reverted_bid,
-                                "origin_bid": ins.origin_bid,
-                                "request_time": datetime.datetime.today() - datetime.timedelta(1),
-                            }
-                        )
-                logger.info("  AdSet Id: {}".format(adset_id))
-                logger.info("    Is Available: {}".format(ins.is_available))
-                logger.info("    Sequence: {}".format(ins.sequence))
-                logger.info("    Result Bid: {}".format(bid))
-                logger.info("    Origin Bid: {}".format(ins.origin_bid))
-        else:
-            logger.info("Calibration Condition not Matched.")
+        
+#         if days_passed >= datetime.timedelta(5):
+#             logger.info("Calibration Condition Matched.")
+#             adset_ids = data_collector.Campaigns(campaign_id=campaign['campaign_id'],
+#                                                  database_fb=database).get_adsets_active()
+#             for adset_id in adset_ids:
+#                 ins = Insights(campaign_id=campaign['campaign_id'], adset_id=adset_id)
+#                 if ins.is_available:
+#                     bid = ins.polynomial_fit()
+#                     if bid:
+#                         database.update("adset_initial_bid", {'bid_amount': ins.reverted_bid.astype(object)}, adset_id=ins.adset_id)
+#                         database.insert(
+#                             table_name="adset_bidding_calibration_log",
+#                             values_dict={
+#                                 "campaign_id": ins.campaign_id,
+#                                 "adset_id": ins.adset_id,
+#                                 "sequence": ins.sequence,
+#                                 "result_bid": ins.reverted_bid,
+#                                 "origin_bid": ins.origin_bid,
+#                                 "request_time": datetime.datetime.today() - datetime.timedelta(1),
+#                             }
+#                         )
+#                 logger.info("  AdSet Id: {}".format(adset_id))
+#                 logger.info("    Is Available: {}".format(ins.is_available))
+#                 logger.info("    Sequence: {}".format(ins.sequence))
+#                 logger.info("    Result Bid: {}".format(bid))
+#                 logger.info("    Origin Bid: {}".format(ins.origin_bid))
+#         else:
+#             logger.info("Calibration Condition not Matched.")
 
 
 # In[ ]:
