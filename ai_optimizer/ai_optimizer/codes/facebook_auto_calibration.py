@@ -134,7 +134,7 @@ class Insights(object):
 # In[ ]:
 
 
-# @logger.catch
+@logger.catch
 def main():
     global database
     database = database_controller.FB( database_controller.Database )
