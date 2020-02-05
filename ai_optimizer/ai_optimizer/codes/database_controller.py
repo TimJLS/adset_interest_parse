@@ -4,18 +4,14 @@
 # In[ ]:
 
 
-import mysql.connector
-import pandas as pd
 import datetime
-# from pandas.io import sql
+import pandas as pd
+
 from sqlalchemy.pool import NullPool
 from sqlalchemy import create_engine
 from sqlalchemy import Table, MetaData
 from sqlalchemy import sql
 from sqlalchemy.dialects import mysql
-import pymysql
-pymysql.install_as_MySQLdb()
-import MySQLdb
 
 
 # In[ ]:
@@ -30,7 +26,7 @@ class Database(object):
         user: username.
         password: password
     """
-    host = "aws-prod-ai-private.adgeek.cc"
+    host = "aws-dev-ai-private.adgeek.cc"
     user = "app"
     password = "adgeek1234"
 
@@ -127,10 +123,10 @@ class CRUDController(object):
     ]
     def __init__(self, database):
         self.database = database
-        
+
     def dispose(self):
         self.engine.dispose()
-    
+
     def get_one_campaign(self, campaign_id):
         with self.engine.connect() as self.conn:
             tbl = Table("campaign_target", self.metadata, autoload=True)
@@ -144,7 +140,19 @@ class CRUDController(object):
                     )
                 ), con=self.conn
             )
-    
+
+    def get_running_campaign_group(self):
+        with self.engine.connect() as self.conn:
+            tbl = Table("campaign_initial_budget", self.metadata, autoload=True)
+            return pd.read_sql(
+                sql.select(['*'], from_obj=tbl).where(
+                    sql.and_(
+                        sql.func.date(tbl.c.stop_date) >= '{:%Y/%m/%d}'.format(self.dt),
+                        sql.func.date(tbl.c.start_date) <= '{:%Y/%m/%d}'.format(self.dt),
+                    )
+                ), con=self.conn
+            )
+
     def get_running_campaign(self,):
         with self.engine.connect() as self.conn:
             tbl = Table("campaign_target", self.metadata, autoload=True)
@@ -157,7 +165,7 @@ class CRUDController(object):
                     )
                 ), con=self.conn
             )
-    
+
     def get_performance_campaign(self,):
         with self.engine.connect() as self.conn:
             tbl = Table("campaign_target", self.metadata, autoload=True)
@@ -171,7 +179,7 @@ class CRUDController(object):
                     )
                 ), con=self.conn
             )
-        
+
     def get_standard_performance_campaign(self,):
         with self.engine.connect() as self.conn:
             tbl = Table("campaign_target", self.metadata, autoload=True)
@@ -186,7 +194,7 @@ class CRUDController(object):
                     )
                 ), con=self.conn
             )
-        
+
     def get_custom_performance_campaign(self, unstaged=False):
         with self.engine.connect() as self.conn:
             tbl = Table("campaign_target", self.metadata, autoload=True)
@@ -202,10 +210,10 @@ class CRUDController(object):
                 stmt.append(tbl.c.custom_conversion_id != None)
             return pd.read_sql(
                 sql.select(['*'], from_obj=tbl).where(
-                    sql.and_( *stmt )
+                    sql.and_(*stmt)
                 ), con=self.conn
             )
-        
+
     def get_branding_campaign(self,):
         with self.engine.connect() as self.conn:
             tbl = Table("campaign_target", self.metadata, autoload=True)
@@ -219,7 +227,7 @@ class CRUDController(object):
                     )
                 ), con=self.conn
             )
-    
+
     def get_not_opted_campaign(self,):
         with self.engine.connect() as self.conn:
             tbl = Table("campaign_target", self.metadata, autoload=True)
@@ -236,7 +244,7 @@ class CRUDController(object):
                     )
                 ), con=self.conn
             )
-        
+
     def get_unprocessed_custom_campaign(self):
         with self.engine.connect() as self.conn:
             tbl = Table("campaign_target", self.metadata, autoload=True)
@@ -251,7 +259,7 @@ class CRUDController(object):
                     )
                 ), con=self.conn
             )
-        
+
     def get_brief(self, campaign_id):
         with self.engine.connect() as self.conn:
             tbl = Table("campaign_target", self.metadata, autoload=True)
@@ -270,29 +278,27 @@ class CRUDController(object):
                 ), con=self.conn,
             )
             return df.to_dict('rocords')[0] if not df.empty else {}
-        
+
     def get_init_bid(self, adset_id, keyword_id=None):
-#         adset_id = self.metrics_converter[self.media]['adset_id']
-        stmt = [self.metrics_converter[self.media]['adset_id'] == adset_id,]
+        stmt = [self.metrics_converter[self.media]['adset_id'] == adset_id]
         if keyword_id:
             stmt.append(self.metrics_converter[self.media]['keyword_id'] == keyword_id)
         with self.engine.connect() as self.conn:
             tbl = Table(self.metrics_converter[self.media]['table_init_bid'], self.metadata, autoload=True)
-            query = sql.select([tbl.c.bid_amount], from_obj=tbl).where( sql.and_( *stmt ) )
-            results = self.conn.execute( query ).fetchall()
+            query = sql.select([tbl.c.bid_amount], from_obj=tbl).where(sql.and_(*stmt))
+            results = self.conn.execute(query).fetchall()
             for (result, ) in results:
                 return result
-    
+
     def get_last_bid(self, adset_id, platform='facebook', keyword_id=None):
-#         adset_id = self.metrics_converter[self.media]['adset_id']
-        stmt = [self.metrics_converter[self.media]['adset_id'] == adset_id,]
+        stmt = [self.metrics_converter[self.media]['adset_id'] == adset_id]
         if keyword_id:
             stmt.append(self.metrics_converter[self.media]['keyword_id'] == keyword_id)
         with self.engine.connect() as self.conn:
             tbl = Table(self.metrics_converter[self.media]['table_insights'], self.metadata, autoload=True)
             col = tbl.c.bid_amount if self.media == 'facebook' else tbl.c.cpc_bid
-            query = sql.select([col], from_obj=tbl).where( sql.and_( *stmt ) ).order_by(sql.desc(tbl.c.request_time)).limit(1)
-            results = self.conn.execute( query ).fetchall()
+            query = sql.select([col], from_obj=tbl).where(sql.and_(*stmt)).order_by(sql.desc(tbl.c.request_time)).limit(1)
+            results = self.conn.execute(query).fetchall()
             for (result, ) in results:
                 return result
 
@@ -302,80 +308,80 @@ class CRUDController(object):
             tbl = Table(table_name, self.metadata, autoload=True)
             if campaign_id:
                 if by_request_time:
-                    stmt =  sql.select(['*'], from_obj=tbl).where(sql.and_(
+                    stmt = sql.select(['*'], from_obj=tbl).where(sql.and_(
                         self.metrics_converter[self.media]['campaign_id'] == campaign_id,
                         sql.func.date(tbl.c.request_time) == '{:%Y/%m/%d}'.format(self.dt),
                     ))
-                    return pd.read_sql( stmt, con=self.conn,)
+                    return pd.read_sql(stmt, con=self.conn)
                 else:
                     stmt = sql.select(['*'], from_obj=tbl).where(sql.and_(
                         self.metrics_converter[self.media]['campaign_id'] == campaign_id,
                     ))
-                    return pd.read_sql( stmt, con=self.conn,)
+                    return pd.read_sql(stmt, con=self.conn)
             elif adset_id:
-                stmt = sql.select(['*'], from_obj=tbl).where( sql.and_(
+                stmt = sql.select(['*'], from_obj=tbl).where(sql.and_(
                     self.metrics_converter[self.media]['adset_id'] == adset_id,
                 ))
-                return pd.read_sql( stmt, con=self.conn,)
+                return pd.read_sql(stmt, con=self.conn)
             elif account_id:
-                stmt = sql.select(['*'], from_obj=tbl).where( sql.and_(
+                stmt = sql.select(['*'], from_obj=tbl).where(sql.and_(
                     self.metrics_converter[self.media]['account_id'] == account_id,
                 ))
-                return pd.read_sql( stmt, con=self.conn,)
+                return pd.read_sql(stmt, con=self.conn)
             else:
                 self.engine.dispose()
-                
-    def retrieve_all(self, table_name, ):
+
+    def retrieve_all(self, table_name):
         with self.engine.connect() as self.conn:
             tbl = Table(table_name, self.metadata, autoload=True)
-            stmt =  sql.select(['*'], from_obj=tbl)
-            return pd.read_sql( stmt, con=self.conn,)
-        
+            stmt = sql.select(['*'], from_obj=tbl)
+            return pd.read_sql(stmt, con=self.conn)
+
     def insert(self, table_name, values_dict):
         with self.engine.connect() as self.conn:
             tbl = Table(table_name, self.metadata, autoload=True)
-            ins = mysql.insert(tbl).values( **values_dict )
-            self.conn.execute( ins, )
-            
+            ins = mysql.insert(tbl).values(**values_dict)
+            self.conn.execute(ins)
+
     def upsert(self, table_name, values_dict):
         with self.engine.connect() as self.conn:
             tbl = Table(table_name, self.metadata, autoload=True)
-            ins = mysql.insert(tbl).values( **values_dict ).on_duplicate_key_update( ** values_dict  )
-            self.conn.execute( ins, )
-            
+            ins = mysql.insert(tbl).values(**values_dict).on_duplicate_key_update(**values_dict)
+            self.conn.execute(ins)
+
     def upsert_nothing(self, table_name, values_dict):
         with self.engine.connect() as self.conn:
             tbl = Table(table_name, self.metadata, autoload=True)
-            ins = mysql.insert(tbl).values( **values_dict ).on_duplicate_key_update()
-            self.conn.execute( ins, )
-            
+            ins = mysql.insert(tbl).values(**values_dict).on_duplicate_key_update()
+            self.conn.execute(ins)
+
     def insert_ignore(self, table_name, values_dict):
         with self.engine.connect() as self.conn:
             tbl = Table(table_name, self.metadata, autoload=True)
-            ins = mysql.insert(tbl).values( **values_dict ).prefix_with('IGNORE')#.where(tbl.c.campaign_id==111)
-            self.conn.execute( ins, )
-            
+            ins = mysql.insert(tbl).values(**values_dict).prefix_with('IGNORE')#.where(tbl.c.campaign_id==111)
+            self.conn.execute(ins)
+
     def update(self, table_name, values_dict, campaign_id=None, adset_id=None, audience_id=None, lookalike_audience_id=None, keyword_id=None):
         with self.engine.connect() as self.conn:
             tbl = Table(table_name, self.metadata, autoload=True)
             if campaign_id:
-                stmt = sql.update(tbl).where( tbl.c.campaign_id==campaign_id ).values( **values_dict )
+                stmt = sql.update(tbl).where(tbl.c.campaign_id==campaign_id).values(**values_dict)
             elif adset_id and keyword_id:
                 stmt = sql.update(tbl).where( 
-                    sql.and_( (
+                    sql.and_((
                         self.metrics_converter[self.media]['adset_id']==adset_id,
-                        self.metrics_converter[self.media]['keyword_id']==keyword_id,) )
-                ).values( **values_dict )
+                        self.metrics_converter[self.media]['keyword_id']==keyword_id))
+                ).values(**values_dict)
             elif adset_id:
-                stmt = sql.update(tbl).where( self.metrics_converter[self.media]['adset_id']==adset_id ).values( **values_dict )
+                stmt = sql.update(tbl).where(self.metrics_converter[self.media]['adset_id']==adset_id).values(**values_dict)
             elif audience_id:
-                stmt = sql.update(tbl).where( tbl.c.audience_id==audience_id ).values( **values_dict )
+                stmt = sql.update(tbl).where(tbl.c.audience_id == audience_id).values(**values_dict)
             elif lookalike_audience_id:
-                stmt = sql.update(tbl).where( tbl.c.lookalike_audience_id==lookalike_audience_id ).values( **values_dict )
+                stmt = sql.update(tbl).where(tbl.c.lookalike_audience_id == lookalike_audience_id).values(**values_dict)
             else:
                 return self.engine.dispose()
-            self.conn.execute( stmt, )
-            
+            self.conn.execute(stmt)
+
     def update_init_bid(self, campaign_id=None, update_ratio=1.1, adset_id=None, keyword_id=None):
         with self.engine.connect() as self.conn:
             tbl = Table(self.metrics_converter[self.media]['table_init_bid'], self.metadata, autoload=True)
@@ -391,13 +397,12 @@ class CRUDController(object):
             else:
                 return self.engine.dispose()
             query_list = [self.metrics_converter[self.media]['adset_id'], tbl.c.bid_amount]
-            query = sql.select(query_list, from_obj=tbl).where( sql.and_( *stmt ) )
-            results = self.conn.execute( query ).fetchall()
+            query = sql.select(query_list, from_obj=tbl).where(sql.and_(*stmt))
+            results = self.conn.execute(query).fetchall()
             for (adset_id, bid_amount) in results:
                 bid_amount = bid_amount * update_ratio
                 self.update(
                     self.metrics_converter[self.media]['table_init_bid'], {'bid_amount': bid_amount}, adset_id=adset_id, keyword_id=keyword_id)
-#             return results
 
 
 # In[ ]:
@@ -408,13 +413,17 @@ class AIComputation(CRUDController):
     def __init__(self, database):
         super().__init__(database)
         self.engine = create_engine(
-            'mysql://{user}:{password}@{host}/{database}'.format(
-                user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database
-            ),
+            'mysql://{user}:{password}@{host}/{database}?charset=utf8'.format(user=self.database.user,
+                                                                 password=self.database.password,
+                                                                 host=self.database.host,
+                                                                 database=self.__database),
             poolclass=NullPool,
+            convert_unicode=True
         )
-        print('mysql://{user}:{password}@{host}/{database}'.format(
-                user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database))
+        print('mysql://{user}:{password}@{host}/{database}'.format(user=self.database.user,
+                                                                   password=self.database.password,
+                                                                   host=self.database.host,
+                                                                   database=self.__database))
         self.metadata = MetaData(bind=self.engine)
 
 
@@ -426,13 +435,17 @@ class FB(CRUDController):
     def __init__(self, database):
         super().__init__(database)
         self.engine = create_engine(
-            'mysql://{user}:{password}@{host}/{database}'.format(
-                user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database
-            ),
+            'mysql://{user}:{password}@{host}/{database}?charset=utf8'.format(user=self.database.user,
+                                                                 password=self.database.password,
+                                                                 host=self.database.host,
+                                                                 database=self.__database),
             poolclass=NullPool,
+            convert_unicode=True
         )
-        print('mysql://{user}:{password}@{host}/{database}'.format(
-                user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database))
+        print('mysql://{user}:{password}@{host}/{database}'.format(user=self.database.user,
+                                                                   password=self.database.password,
+                                                                   host=self.database.host,
+                                                                   database=self.__database))
         self.metadata = MetaData(bind=self.engine)
         self.table_init_bid = 'adset_initial_bid'
         self.media = 'facebook'
@@ -446,14 +459,17 @@ class GDN(CRUDController):
     def __init__(self, database):
         super().__init__(database)
         self.engine = create_engine(
-            'mysql://{user}:{password}@{host}/{database}'.format(
-                user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database
-            ),
+            'mysql://{user}:{password}@{host}/{database}?charset=utf8'.format(user=self.database.user,
+                                                                 password=self.database.password,
+                                                                 host=self.database.host,
+                                                                 database=self.__database),
             poolclass=NullPool,
+            convert_unicode=True
         )
-        print('mysql://{user}:{password}@{host}/{database}'.format(
-                user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database
-        ))
+        print('mysql://{user}:{password}@{host}/{database}'.format(user=self.database.user,
+                                                                   password=self.database.password,
+                                                                   host=self.database.host,
+                                                                   database=self.__database))
         self.metadata = MetaData(bind=self.engine)
         self.table_init_bid = 'adgroup_initial_bid'
         self.media = 'gdn'
@@ -467,14 +483,17 @@ class GSN(CRUDController):
     def __init__(self, database):
         super().__init__(database)
         self.engine = create_engine(
-            'mysql://{user}:{password}@{host}/{database}'.format(
-                user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database
-            ),
+            'mysql://{user}:{password}@{host}/{database}?charset=utf8'.format(user=self.database.user,
+                                                                 password=self.database.password,
+                                                                 host=self.database.host,
+                                                                 database=self.__database),
             poolclass=NullPool,
+            convert_unicode=True
         )
-        print('mysql://{user}:{password}@{host}/{database}'.format(
-                user=self.database.user, password=self.database.password, host=self.database.host, database=self.__database
-        ))
+        print('mysql://{user}:{password}@{host}/{database}'.format(user=self.database.user,
+                                                                   password=self.database.password,
+                                                                   host=self.database.host,
+                                                                   database=self.__database))
         self.metadata = MetaData(bind=self.engine)
         self.table_init_bid = 'adgroup_initial_bid'
         self.media = 'gsn'
