@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 
 from pathlib import Path
@@ -10,8 +10,9 @@ import time
 import facebook_business.adobjects.adset as facebook_business_adset
 import facebook_business.adobjects.campaign as facebook_business_campaign
 import facebook_business.adobjects.adsinsights as facebook_business_adsinsights
+import facebook_business.adobjects.adaccount as facebook_business_adaccount
 
-import facebook_datacollector as fb_collector
+# import facebook_datacollector as fb_collector
 import database_controller
 
 import adgeek_permission as permission
@@ -19,7 +20,7 @@ import adgeek_permission as permission
 IGNORE_ADSET_STR_LIST = ['AI', 'Copy', 'COPY', 'Lookalike', 'RT', 'Look-a-like']
 
 
-# In[ ]:
+# In[2]:
 
 
 def get_adset_name(adset_id):
@@ -27,7 +28,7 @@ def get_adset_name(adset_id):
     return this_adset.get('name')
 
 
-# In[ ]:
+# In[3]:
 
 
 def get_account_id_by_campaign(campaign_id):
@@ -36,7 +37,26 @@ def get_account_id_by_campaign(campaign_id):
     return account_id
 
 
-# In[ ]:
+# In[4]:
+
+
+def get_campaign_name_by_campaign(campaign_id):
+    this_campaign = facebook_business_campaign.Campaign( campaign_id ).api_get(fields=["name"])
+    campaign_name = this_campaign.get('name')
+    return campaign_name
+
+
+# In[5]:
+
+
+def get_account_name_by_account(account_id):
+    account_id_act = 'act_' + str(account_id)
+    this_account = facebook_business_adaccount.AdAccount(account_id_act).remote_read(fields=["name"])
+    account_name = this_account.get('name')
+    return account_name
+
+
+# In[6]:
 
 
 def search_target_keyword(keyword):
@@ -49,7 +69,7 @@ def search_target_keyword(keyword):
     return search_target_result_list
 
 
-# In[ ]:
+# In[7]:
 
 
 def retrieve_adset_interest_list(origin_adset_id):
@@ -64,7 +84,7 @@ def retrieve_adset_interest_list(origin_adset_id):
     return None
 
 
-# In[ ]:
+# In[8]:
 
 
 def get_existed_all_interests(campaign_id):
@@ -89,7 +109,7 @@ def get_existed_all_interests(campaign_id):
     return campaign_interest_id_list, interest_id_name_mapping 
 
 
-# In[ ]:
+# In[9]:
 
 
 def get_suggest_interets_by_keyword(interest_id, interest_name):
@@ -110,7 +130,7 @@ def get_suggest_interets_by_keyword(interest_id, interest_name):
     return suggest_id_list, suggest_id_name_mapping, suggest_id_size_mapping
 
 
-# In[ ]:
+# In[10]:
 
 
 def save_suggestion_by_adset(account_id, campaign_id, adset_id, suggest_id_set, suggest_id_name_mapping, suggest_id_size_mapping):
@@ -120,7 +140,7 @@ def save_suggestion_by_adset(account_id, campaign_id, adset_id, suggest_id_set, 
         suggest_name = suggest_id_name_mapping.get(suggest_id)
         audience_size = suggest_id_size_mapping.get(suggest_id)
         
-        database_fb.insert_ignore(
+        database_fb.upsert(
             "campaign_target_suggestion",
             {
                 'account_id': int(account_id),
@@ -133,7 +153,7 @@ def save_suggestion_by_adset(account_id, campaign_id, adset_id, suggest_id_set, 
         )
 
 
-# In[ ]:
+# In[11]:
 
 
 def get_queryed_adset_list(campaign_id):
@@ -146,7 +166,7 @@ def get_queryed_adset_list(campaign_id):
         return []
 
 
-# In[ ]:
+# In[12]:
 
 
 def get_saved_suggestion_interests(campaign_id):
@@ -167,7 +187,7 @@ def get_saved_suggestion_interests(campaign_id):
     return saved_suggest_id_name_dic, saved_suggest_id_size_dic
 
 
-# In[ ]:
+# In[13]:
 
 
 def process_campaign_suggestion(campaign_id):
@@ -225,7 +245,7 @@ def process_campaign_suggestion(campaign_id):
     print('--')
 
 
-# In[ ]:
+# In[14]:
 
 
 def save_suggestion_for_all_campaign():
@@ -235,11 +255,14 @@ def save_suggestion_for_all_campaign():
     print('[save_suggestion_for_all_campaign] current running campaign:', len(campaign_list), campaign_list )
     
     for campaign in campaign_list:
-        print('[save_suggestion_for_all_campaign] campaign_id:', campaign.get("campaign_id"))
-        process_campaign_suggestion(campaign.get("campaign_id"))
+        a_id = campaign.get("account_id")
+        c_id = campaign.get("campaign_id")
+        print('[save_suggestion_for_all_campaign] campaign_id:', c_id, ' account_id:', a_id)
+        permission.init_facebook_api(a_id)
+        process_campaign_suggestion(c_id)
 
 
-# In[ ]:
+# In[15]:
 
 
 def get_suggestion_not_used(campaign_id):
@@ -265,34 +288,82 @@ def get_suggestion_not_used(campaign_id):
     return saved_suggest_id_name_dic, saved_suggest_id_size_dic
 
 
-# In[ ]:
+# In[16]:
+
+
+def save_suggestion_status(account_id, campaign_id, available_count, available_name, account_name, campaign_name):
+    db = database_controller.Database()
+    database_fb = database_controller.FB(db)
+   
+    database_fb.upsert(
+        "campaign_suggestion_log",
+        {
+            'account_id': int(account_id),
+            'campaign_id': int(campaign_id),
+            'available_count': int(available_count),
+            'available_name': available_name,
+            'process_date': datetime.date.today(),
+            'account_name': account_name,
+            'campaign_name': campaign_name,
+        }
+    )
+
+
+# In[17]:
+
+
+def record_suggestion_status():
+    db = database_controller.Database()
+    database_fb = database_controller.FB(db)
+    campaign_list = database_fb.get_running_campaign().to_dict('records')
+    print('[record_suggestion_status] current running campaign:', len(campaign_list), campaign_list )
+    
+    for campaign in campaign_list:
+        account_id = campaign.get("account_id")
+        campaign_id = campaign.get("campaign_id")
+        permission.init_facebook_api(account_id)
+        account_name = get_account_name_by_account(account_id)
+        campaign_name = get_campaign_name_by_campaign(campaign_id)
+        
+        saved_suggest_id_name_dic, saved_suggest_id_size_dic  = get_suggestion_not_used(campaign_id)
+        print('[record_suggestion_status] saved_suggest_id_name_dic', saved_suggest_id_name_dic)
+        if saved_suggest_id_name_dic:  
+            available_count = len(saved_suggest_id_name_dic)
+            available_name_list = []
+            for name in saved_suggest_id_name_dic.values():
+                available_name_list.append(name)
+            available_name = '|'.join(available_name_list)
+
+            print('[record_suggestion_status] available_count:', available_count, account_name, campaign_name, available_name)
+            save_suggestion_status(account_id, campaign_id, available_count, available_name, account_name, campaign_name)
+        else:
+            save_suggestion_status(account_id, campaign_id, 0, "", account_name, campaign_name)
+
+
+# In[18]:
 
 
 def main():
+    save_suggestion_for_all_campaign()
+    record_suggestion_status()
+
+
+# In[19]:
+
+
+def test():
     # only save suggestion once for each campaign
     import adgeek_permission as permission
-    a_id = 237880526824540
-    c_id = 23844100165680431
+    a_id = 350498128813378
+    c_id = 23844199663310559
     permission.init_facebook_api(a_id)
     saved_suggest_id_name_dic, saved_suggest_id_size_dic  = get_suggestion_not_used(c_id)
     print('[make_suggest_adset] saved_suggest_id_name_dic', saved_suggest_id_name_dic, 'saved_suggest_id_size_dic', saved_suggest_id_size_dic)
 
 
-# In[ ]:
+# In[20]:
 
 
 if __name__ == "__main__":
     main()
-
-
-# In[ ]:
-
-
-# !jupyter nbconvert --to script facebook_campaign_suggestion.ipynb
-
-
-# In[ ]:
-
-
-
 
