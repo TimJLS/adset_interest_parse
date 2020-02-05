@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 import datetime
@@ -23,7 +23,7 @@ import facebook_adset_controller as adset_controller
 import adgeek_permission as permission
 
 
-# In[2]:
+# In[ ]:
 
 
 IS_DEBUG = False #debug mode will not modify anything
@@ -44,7 +44,7 @@ ADSET_COPY_COUNT = 3
 AI_ADSET_PREFIX = 'AI_'
 
 
-# In[3]:
+# In[ ]:
 
 
 def update_interest(adset_id=None, adset_params=None):
@@ -158,7 +158,7 @@ def modify_opt_result_db(campaign_id, is_optimized):
                        campaign_id=campaign_id)
 
 
-# In[4]:
+# In[ ]:
 
 
 def get_campaign_name_status(campaign_id):
@@ -166,7 +166,7 @@ def get_campaign_name_status(campaign_id):
     return this_campaign.get('name'), this_campaign.get('status')
 
 
-# In[5]:
+# In[ ]:
 
 
 def optimize_performance_campaign(account_id,
@@ -314,7 +314,7 @@ def optimize_performance_campaign(account_id,
             modify_opt_result_db(campaign_id, "False")
 
 
-# In[6]:
+# In[ ]:
 
 
 def optimize_branding_campaign(account_id,
@@ -459,7 +459,7 @@ def optimize_branding_campaign(account_id,
             age_interval = math.ceil((adset_max-adset_min) / interval)
             for i in range(interval):
                 current_adset_min = adset_min
-                current_adset_max = current_adset_min + age_interval
+                current_adset_max = current_adset_min + age_interval if (current_adset_min + age_interval) < 66 else 65
                 actions['age'][0] = str(current_adset_min) + '-' + str(current_adset_max)
                 adset_min = current_adset_max
                 actions_copy = deepcopy(actions)
@@ -472,7 +472,7 @@ def optimize_branding_campaign(account_id,
     modify_opt_result_db(campaign_id, "True")
 
 
-# In[7]:
+# In[ ]:
 
 
 def optimize_campaign(campaign_id):
@@ -494,7 +494,7 @@ def optimize_campaign(campaign_id):
             print('[optimize_campaign] error, not optimize')
 
 
-# In[8]:
+# In[ ]:
 
 
 if __name__ == '__main__':
@@ -519,20 +519,20 @@ if __name__ == '__main__':
     print(datetime.datetime.now().date(), '==================!!facebook_externals.py finish!!=======================')
 
 
-# In[9]:
+# In[ ]:
 
 
 #nate test
 # adset_controller.make_suggest_adset(23843604240180098,23843467729120098)
 
 
-# In[10]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script facebook_externals.ipynb
 
 
-# In[11]:
+# In[ ]:
 
 
 #nate test
