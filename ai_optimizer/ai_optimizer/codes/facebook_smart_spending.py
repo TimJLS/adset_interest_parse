@@ -80,7 +80,7 @@ def set_campaign_daily_budget_lower(campaign_id, ai_daily_budget, lower_rate):
 def smart_spending_branding(campaign_instance, campaign_target_dict):
     destination = campaign_target_dict.get('destination')
     destination_max = campaign_target_dict.get('destination_max')
-    if math.isnan(destination_max):
+    if destination_max is None or math.isnan(destination_max):
         destination_max = None
     ai_spend_cap = campaign_target_dict.get('ai_spend_cap')
     current_target_count = campaign_target_dict.get('target')
@@ -213,7 +213,7 @@ def smart_spending_branding(campaign_instance, campaign_target_dict):
 def smart_spending_performance(campaign_instance, campaign_target_dict):
     destination = campaign_target_dict.get('destination')
     destination_max = campaign_target_dict.get('destination_max')
-    if math.isnan(destination_max):
+    if destination_max is None or math.isnan(destination_max):
         destination_max = None
     ai_spend_cap = campaign_target_dict.get('ai_spend_cap')
     current_target_count = campaign_target_dict.get('target')
