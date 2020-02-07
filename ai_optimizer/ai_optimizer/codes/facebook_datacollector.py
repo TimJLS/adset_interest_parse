@@ -35,7 +35,7 @@ CAMPAIGN_OBJECTIVE_FIELD = {
     'APP_INSTALLS': 'app_installs',
     'BRAND_AWARENESS': 'brand_awareness',
     'EVENT_RESPONSES': 'event_responses',
-    'LEAD_GENERATION': 'leadgen.other',
+    'LEAD_GENERATION': 'lead',
     'LOCAL_AWARENESS': 'local_awareness',
     'OFFER_CLAIMS': 'offer_claims',
     'PAGE_LIKES': 'like',
@@ -132,7 +132,7 @@ FUNNEL_METRICS = {
         "video_view": "action",
     },
     "LEAD_GENERATION": {
-        "leadgen.other": "action",
+        "lead": "action",
     },
     "PAGE_LIKES": {
         "like": "action",
