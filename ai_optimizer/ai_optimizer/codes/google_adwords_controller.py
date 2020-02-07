@@ -4,13 +4,38 @@
 # In[ ]:
 
 
-from googleads import adwords
-import pandas as pd
 import copy
 import math
 import datetime
-from enum import Enum
+import inspect
+from typing import Union
+from functools import wraps
+
+import json
+import pandas as pd
+from googleads import adwords
 import adgeek_permission as permission
+
+
+# In[ ]:
+
+
+def checked(func):
+    rules = func.__annotations__
+    sig = inspect.signature(func)
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        bound = sig.bind(*args, **kwargs)
+        for name, val in bound.arguments.items():
+            if name in rules:
+                assert isinstance(val, rules[name].__args__), f"Expected {rules[name].__args__}"
+ 
+        if 'return' in rules and not isinstance(func(*args, **kwargs), rules['return']):
+            assert isinstance(func(*args, **kwargs),
+                              rules[name].__args__), f"Expected {rules['return']}, got {type(func(*args, **kwargs))}"
+ 
+        return func(*args, **kwargs)
+    return wrapper
 
 
 # In[ ]:
@@ -243,21 +268,27 @@ class Campaign(object):
     def get_budget(self,):
         self.operator_container.selector_budget[0]['predicates'][0]['values'] = self.campaign_id
         ad_params = self.service_container.service_campaign.get(self.operator_container.selector_budget)
-        budget = ad_params.entries[0].budget
-        return Budget(**budget.__dict__['__values__'])
-        if 'entries' in ad_params:
-            for ad_dic in ad_params['entries']:
-                if 'budget' in ad_dic and 'amount' in ad_dic['budget'] and 'microAmount' in ad_dic['budget']['amount']:
-                    microAmount = ad_dic['budget']['amount']['microAmount']
-                    self.amount = microAmount / 1000000
-                    return self.amount
+        self.budget = Budget(service=self.service_container.service_budget,
+                             **ad_params.entries[0].budget.__dict__['__values__'])
+        return self.budget
 
 
 # In[ ]:
 
 
 class Budget(object):
-    def __init__(self, *arg, **kwarg):
+    class Money:
+        body = {"ComparableValue.Type": "Money", "microAmount": None}
+        
+        @checked
+        def __init__(self, amount: Union[float, int]):
+            self.body["microAmount"] = int(amount * pow(10, 6))
+
+        def __repr__(self):
+            return "{0}{1}".format(self.__class__, json.dumps(self.__dict__['body'], indent=4, default=str))
+
+    def __init__(self, service, *arg, **kwarg):
+        self.service = service
         self.body = kwarg
         self.budget_id = kwarg['budgetId']
         self.name = kwarg['name']
@@ -266,10 +297,29 @@ class Budget(object):
         self.delivery_method = kwarg['deliveryMethod']
         self.reference_count = kwarg['referenceCount']
         self.is_explicitly_shared = kwarg['isExplicitlyShared']
-        
-    def _parse_amount(self):
+
+    def __repr__(self):
+        return "{0}{1}".format(self.__class__, json.dumps(self.__dict__['body'], indent=4, default=str))
+
+    @checked
+    def _parse_amount(self) -> float:
         amount = dict(self.body['amount'].__dict__['__values__'])
         return amount['microAmount'] / 1000000
+    
+    @checked
+    def update(self, amount: Union[float, int]):
+        operation = OperatorContainer().operation
+        operation['operator'] = 'SET'
+        operation['xsi_type'] = 'BudgetOperation'
+        operation['operand'] = Operand().spec
+        operation['operand']['xsi_type'] = 'Budget'
+        operation['operand']['budgetId'] = self.budget_id
+        operation['operand']['amount'] = self.Money(amount).body
+        
+        operation['operand'].pop('campaignId', None)
+        operation['operand'].pop('criterion', None)
+        result = self.service.mutate(operation)
+        return result
 
 
 # In[ ]:
@@ -312,7 +362,6 @@ class NegativeCriterion(object):
 
 
 class AdGroupServiceContainer(object):
-
     def __init__(self, customer_id):
         self.customer_id = customer_id
         self.adwords_client = permission.init_google_api(account_id=self.customer_id)
@@ -356,7 +405,6 @@ class AdGroupServiceContainer(object):
 
         
 class AdGroup(object):
-    
     def __init__(self, service_container, ad_group_id,):
         self.service_container = service_container
         self.operator_container = OperatorContainer()
@@ -722,7 +770,6 @@ class Creative(object):
             self.operator_container.operation['operator'] = 'SET' if result else 'ADD'
             self.operator_container.operand.pop('id')
             self.operator_container.operand['adGroupId'] = self.ad_group_id
-#             print(result[0]['status'])
             self.operator_container.operand['status'] = result[0]['status']
             self.operator_container.operand['ad'] = {}
             self.operator_container.operand['ad']['id'] = self.ad_id
