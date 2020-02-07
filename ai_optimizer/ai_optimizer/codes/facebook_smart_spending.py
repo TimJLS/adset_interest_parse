@@ -80,6 +80,8 @@ def set_campaign_daily_budget_lower(campaign_id, ai_daily_budget, lower_rate):
 def smart_spending_branding(campaign_instance, campaign_target_dict):
     destination = campaign_target_dict.get('destination')
     destination_max = campaign_target_dict.get('destination_max')
+    if math.isnan(destination_max):
+        destination_max = None
     ai_spend_cap = campaign_target_dict.get('ai_spend_cap')
     current_target_count = campaign_target_dict.get('target')
     left_target_count = campaign_target_dict.get('target_left')
@@ -138,8 +140,8 @@ def smart_spending_branding(campaign_instance, campaign_target_dict):
     print('[smart_spending_branding] --')
     
     
-    #need to update daily budget everyday
-    if left_money_can_spend_per_day > 0:
+    #need to update daily budget everyday only if there is no destination_max
+    if left_money_can_spend_per_day > 0 and not destination_max:
         print('[smart_spending_branding] daily reset budget')
         update_campaign_daily_budget(campaign_instance.campaign_id, left_money_can_spend_per_day)
     
@@ -211,6 +213,8 @@ def smart_spending_branding(campaign_instance, campaign_target_dict):
 def smart_spending_performance(campaign_instance, campaign_target_dict):
     destination = campaign_target_dict.get('destination')
     destination_max = campaign_target_dict.get('destination_max')
+    if math.isnan(destination_max):
+        destination_max = None
     ai_spend_cap = campaign_target_dict.get('ai_spend_cap')
     current_target_count = campaign_target_dict.get('target')
     left_target_count = campaign_target_dict.get('target_left')
@@ -327,7 +331,7 @@ def process_performance_campaign():
         if collector_campaign.bid_strategy:
             if collector_campaign.budget_pacing_type == "DAILY":
                 if (campaign.get('is_smart_spending') == 'True') and (collector_campaign.status == 'ACTIVE'):
-                    smart_spending_branding(collector_campaign, campaign)
+                    smart_spending_performance(collector_campaign, campaign)
     
     print('-------',datetime.datetime.now().date(), '-------all finish-------')
 
@@ -370,6 +374,14 @@ if __name__ == "__main__":
 
 
 # !jupyter nbconvert --to script facebook_smart_spending.ipynb
+
+
+# In[13]:
+
+
+a = None
+if not a:
+    print('a')
 
 
 # In[ ]:
