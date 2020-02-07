@@ -282,7 +282,7 @@ class Budget(object):
         
         @checked
         def __init__(self, amount: Union[float, int]):
-            self.body["microAmount"] = int(amount * pow(10, 6))
+            self.body["microAmount"] = int(round(amount, 2) * pow(10, 6))
 
         def __repr__(self):
             return "{0}{1}".format(self.__class__, json.dumps(self.__dict__['body'], indent=4, default=str))

@@ -132,5 +132,11 @@ if __name__=='__main__':
 # In[ ]:
 
 
+# !jupyter nbconvert --to script google_adwords_budget_allocation.ipynb
+
+
+# In[ ]:
+
+
 
 
