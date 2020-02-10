@@ -91,6 +91,7 @@ def process_budget_allocation(database):
     campaign_groups = database.get_running_campaign_group().groupby('campaign_group_id')
     for idx, campaign_group in campaign_groups:
         cgp = CampaignGroup(media='gdn', data=campaign_group)
+        logger.debug("{}".format(cgp.campaigns))
         cgp.budget_allocation()
         logger.info("Campaign Group ID: {}".format(cgp.campaign_group_id))
         logger.info("    Budget: {}".format(cgp.budget), )
