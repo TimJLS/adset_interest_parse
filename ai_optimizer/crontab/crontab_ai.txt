@@ -31,6 +31,10 @@
 # facebook smart spending, start at 12:01 am
 1 0  * * * sh /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/facebook_smart_spending.sh
 
+# facebook compute suggestion adset at 6:00 am
+0 6 * * * sh /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/facebook_campaign_suggestion.sh
+
+
 #get adset data
 #10 * * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/facebook_adset_handler.py
 
