@@ -5,6 +5,7 @@
 
 
 from pathlib import Path
+import pandas as pd
 import datetime
 import time
 import facebook_business.adobjects.adset as facebook_business_adset
@@ -343,12 +344,66 @@ def record_suggestion_status():
 # In[18]:
 
 
-def main():
-    save_suggestion_for_all_campaign()
-    record_suggestion_status()
+def save_suggestion_by_industry(account_id, campaign_id, suggest_id, suggest_name, audience_size):
+    db = database_controller.Database()
+    database_fb = database_controller.FB(db)
+
+    database_fb.upsert(
+        "campaign_target_suggestion",
+        {
+            'account_id': int(account_id),
+            'campaign_id': int(campaign_id),
+            'source_adset_id': -1,
+            'suggest_id': int(suggest_id),
+            'suggest_name': suggest_name,
+            'audience_size': int(audience_size),
+        }
+    )
 
 
 # In[19]:
+
+
+def save_industry_suggestion_for_all_campaign():
+    #read industry data from DB
+    db = database_controller.Database()
+    database_fb = database_controller.FB(db)
+    industry_data = database_fb.retrieve_all('facebook_industry_suggestion')
+    
+    campaign_list = database_fb.get_running_campaign().to_dict('records')
+    print('[save_industry_suggestion_for_all_campaign] current running campaign:', len(campaign_list), campaign_list )
+    
+    for campaign in campaign_list:
+        account_id = campaign.get("account_id")
+        campaign_id = campaign.get("campaign_id")
+        industry_type = campaign.get("industry_type")
+        if industry_type and len(industry_type) > 0:
+            print('[save_industry_suggestion_for_all_campaign] campaign_id:', campaign_id, ' account_id:', account_id, 'industry_type:', industry_type)
+            industry_data_filter_df = industry_data[industry_data.industry_type == industry_type]
+            industry_data_filter_list = industry_data_filter_df.to_dict('records')
+            for one_industry_data in industry_data_filter_list:
+                industry_type = one_industry_data.get('industry_type')
+                target_keyword = one_industry_data.get('target_keyword')
+                target_id = one_industry_data.get('target_id')
+                target_audience_size = one_industry_data.get('target_audience_size')
+                print(industry_type, target_keyword, target_id, target_audience_size)
+                save_suggestion_by_industry(account_id, campaign_id, target_id, target_keyword, target_audience_size)
+    print('[save_industry_suggestion_for_all_campaign] end')
+                
+            
+        
+
+
+# In[20]:
+
+
+def main():
+    save_suggestion_for_all_campaign()
+    save_industry_suggestion_for_all_campaign()
+    record_suggestion_status()
+
+
+# In[21]:
 
 
 def test():
@@ -361,9 +416,21 @@ def test():
     print('[make_suggest_adset] saved_suggest_id_name_dic', saved_suggest_id_name_dic, 'saved_suggest_id_size_dic', saved_suggest_id_size_dic)
 
 
-# In[20]:
+# In[22]:
 
 
 if __name__ == "__main__":
     main()
+
+
+# In[23]:
+
+
+save_industry_suggestion_for_all_campaign()
+
+
+# In[ ]:
+
+
+
 
