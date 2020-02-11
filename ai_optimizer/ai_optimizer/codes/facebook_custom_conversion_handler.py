@@ -67,7 +67,7 @@ def get_account_custom_conversions(account_id, campaign_id):
     import json
     import requests
     token = adgeek_permission.init_facebook_api(account_id)
-    url = "https://graph.facebook.com/v3.3/act_{}/customconversions?fields=name&limit=1000".format(account_id)
+    url = "https://graph.facebook.com/{0}/act_{1}/customconversions?fields=name&limit=1000".format(permission.FACEBOOK_API_VERSION, account_id)
     headers = {"Authorization":"OAuth {}".format(token)}
     r = requests.get(url, headers=headers)
     data = json.loads(r.text)['data']
@@ -75,10 +75,6 @@ def get_account_custom_conversions(account_id, campaign_id):
         customconversions_id_list = [ custom_conversion['id'] for custom_conversion in data ]
     
         save_account_custom_conversions_intodb(account_id, campaign_id, customconversions_id_list)
-      
-    
-    
-    
 
 
 # In[ ]:
@@ -238,7 +234,7 @@ if __name__ == "__main__":
     main()
 
 
-# In[ ]:
+# In[1]:
 
 
 # !jupyter nbconvert --to script facebook_custom_conversion_handler.ipynb
