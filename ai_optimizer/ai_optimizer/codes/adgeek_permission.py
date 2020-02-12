@@ -36,8 +36,10 @@ def init_facebook_api(account_id = None):
         
         FacebookAdsApi(session).init(credential_id, credential_secret, credential_token, api_version=FACEBOOK_API_VERSION)
         return credential_token
-    except:
+
+    except Exception as e:
         print('[init_facebook_api] error')
+        print(e)
         session = FacebookSession()
 #         FacebookAdsApi(session, api_version="latest")
         FacebookAdsApi(session).init(ADGEEK_FACEBOOK_API_ID, ADGEEK_FACEBOOK_APP_SECRET, ADGEEK_FACEBOOK_ACCESS_TOKEN, api_version=FACEBOOK_API_VERSION)
@@ -67,8 +69,9 @@ def init_google_api(account_id = None):
         return my_adwords_client
 
 
-    except:
+    except Exception as e:
         print('[init_google_api] error')
+        print(e)
         return adgeek_adwords_client
 
 
@@ -79,44 +82,30 @@ import requests
 import json 
 
 def get_queryid_by_accountid(account_id):
-#     print('[get_token_by_accountid] account_id:', account_id )
-    
     my_params = {'filter[account_id]': account_id}
     r = requests.get(ACCOUNT_API_URL, params = my_params)
-
-    if r.status_code == requests.codes.ok:
-        content = json.loads(r.text)
-#         print('[get_token_by_accountid] content:', content )
-        
-        data = content.get('_data')
-#         print('[get_token_by_accountid] data:', data )
-        
-        if len(data) > 0:
-            first_data = data[0]
-#             print('first_data', first_data)
-            query_id = first_data.get('credential_id')
-#             print('[get_token_by_accountid] query_id:', query_id )
-            return query_id
+    assert r.status_code == requests.codes.ok, "unexpected status code: {0}\n{1}".format(r.status_code, r.text)
+    content = json.loads(r.text)
+    data = content.get('_data')
+    assert len(data) > 0, "account data empty: {}".format(content)
+    first_data = data[0]
+    query_id = first_data.get('credential_id')
+    return query_id
 
 def get_media_token_by_queryid(query_id):
     request_url = ACCOUNT_TOEKN_API_URL + str(query_id)
-#     print('[get_media_token_by_queryid] request_url:', request_url )
-    
     r = requests.get(request_url)
-    if r.status_code == requests.codes.ok:
-        token_dic = {}
-        content = json.loads(r.text)    
-#         print('[get_media_token_by_queryid] content:', content )
-        token_dic['credential_id'] = content.get('credential_id')#F #G
-        token_dic['credential_secret'] = content.get('credential_secret')#F #G
-        token_dic['credential_token'] = content.get('credential_token')#F
-        token_dic['credential_developer_token'] = content.get('credential_developer_token')#G
-        token_dic['credential_refresh_token'] = content.get('credential_refresh_token')#G
-        token_dic['name'] = content.get('name')#G
-        
-        print('[get_media_token_by_queryid] token_dic', token_dic)
-        return token_dic
-        
+    assert r.status_code == requests.codes.ok, "unexpected status code: {0}\n{1}".format(r.status_code, r.text)
+    token_dic = {}
+    content = json.loads(r.text)
+    token_dic['credential_id'] = content.get('credential_id')#F #G
+    token_dic['credential_secret'] = content.get('credential_secret')#F #G
+    token_dic['credential_token'] = content.get('credential_token')#F
+    token_dic['credential_developer_token'] = content.get('credential_developer_token')#G
+    token_dic['credential_refresh_token'] = content.get('credential_refresh_token')#G
+    token_dic['name'] = content.get('name')#G
+#     print('[get_media_token_by_queryid] token_dic', token_dic)
+    return token_dic
 
 
 # In[ ]:
@@ -148,10 +137,4 @@ if __name__=='__main__':
 
 
 # !jupyter nbconvert --to script adgeek_permission.ipynb
-
-
-# In[ ]:
-
-
-
 
