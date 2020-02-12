@@ -116,7 +116,7 @@ class ReportGenerator(object):
         self.__init_brief()
         self.__init_report()
         self.__init_predicates_object()
-        
+
     def __init_customer(self, media):
         global database
         if media.lower() == 'gsn':
@@ -126,35 +126,41 @@ class ReportGenerator(object):
         else: raise ValueError("arg media should be 'gdn' or gsn")
         campaign = database.get_one_campaign(campaign_id=self.campaign_id).to_dict('records')[0]
         self.customer_id = campaign['customer_id']
-        
+
     def __init_brief(self):
         self.brief = database.get_brief(campaign_id=self.campaign_id)
         self.ai_start_date = self.brief['ai_start_date'].strftime("%Y%m%d")
         self.ai_stop_date = self.brief['ai_stop_date'].strftime("%Y%m%d")
         self.ai_spend_cap = self.brief['ai_spend_cap']
         self.destination_type = self.brief['destination_type']
-        
+
     def __init_report(self):
         self.report = Report()
-        
+
     def _init_fields(self):
         self.fields = self._fields.copy()
         self.columns = self._columns.copy()
-        
+
     def __init_predicates_object(self):
         self.report.selector_object.predicates_object.spec['field'] = 'CampaignId'
         self.report.selector_object.predicates_object.spec['values'] = self.campaign_id
-        
+
     def __init_selector(self, date_preset=None):
         self.date_preset = date_preset
         if not date_preset or date_preset == 'ALL_TIME':
             self.report.selector_object.spec['dateRange']['min'] = self.ai_start_date
             self.report.selector_object.spec['dateRange']['max'] = self.ai_stop_date
+
+        elif date_preset.upper() == 'YESTERDAY':
+            yesterday = datetime.date.today() - datetime.timedelta(days=1)
+            self.report.selector_object.spec['dateRange']['min'] = yesterday.strftime("%Y%m%d")
+            self.report.selector_object.spec['dateRange']['max'] = yesterday.strftime("%Y%m%d")
+
         else:
             self.report.selector_object.spec['dateRange']['min'] = datetime.date.today().strftime("%Y%m%d")
             self.report.selector_object.spec['dateRange']['max'] = datetime.date.today().strftime("%Y%m%d")
         self.report.selector_object.spec['fields'] = self.fields
-            
+
     def _extract_value(self, value):
         if value == 'day':
             self.fields.append('Date')
@@ -168,13 +174,13 @@ class ReportGenerator(object):
         elif value == 'device':
             self.fields.append('Device')
             self.columns.append('device')
-            
+
     def add_param(self, key, value):
         if key in self.param_types.keys():
             if value in self.param_types[key]:
                 self._extract_value(value)
         return self
-            
+
     def add_params(self, params):
         self._init_fields()
         if params is None:
@@ -182,7 +188,7 @@ class ReportGenerator(object):
         for key in params.keys():
             self.add_param(key, params[key])
         return self
-    
+
     def get_insights(self, date_preset, params=None):
         self.add_params(params)
         self.__init_selector(date_preset)
@@ -203,6 +209,53 @@ class ReportGenerator(object):
         numeric_money_list = [column for column in data_df.columns if (column in self._money_columns) and data_df[column].dtype != 'object']
         data_df[data_df.columns.intersection( numeric_money_list )] = data_df[data_df.columns.intersection( numeric_money_list )].div(1000000)
         data_df.rename( columns=dict(zip(data_df.columns, self.columns)), inplace=True)
+        return [data.to_dict() for idx, data in data_df.iterrows()]
+
+
+# In[ ]:
+
+
+class AdScheduleReportGenerator(ReportGenerator):
+    _fields = [
+        'ExternalCustomerId', 'CampaignId', 'CampaignStatus', 'Cost', 'Id', 'BidModifier',
+        'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'AverageCpc', 'CostPerConversion', 'CostPerAllConversion',
+        'Ctr', 'ViewThroughConversions'
+    ]
+    _columns = [
+        'customer_id', 'campaign_id', 'status', 'spend', 'id', 'bid_modifier',
+        'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion',
+        'cost_per_all_conversion', 'ctr', 'view_conversions'
+    ]
+    report_name = 'CAMPAIGN_AD_SCHEDULE_TARGET_REPORT'
+    report_type = 'CAMPAIGN_AD_SCHEDULE_TARGET_REPORT'
+
+    def __init__(self, campaign_id, media):
+        super().__init__(campaign_id, media)
+        self._fields = self._fields
+        self._columns = self._columns
+        self.__init_report()
+
+    def __init_report(self):
+        self.report.spec[self.report.report_name] = self.report_name
+        self.report.spec[self.report.report_type] = self.report_type
+        
+    def get_insights(self, date_preset, params=None):
+        self.add_params(params)
+        self._ReportGenerator__init_selector(date_preset)
+        data = self.report_downloader.DownloadReportAsString(self.report.spec,
+                                                             skip_report_header=True,
+                                                             skip_column_header=True,
+                                                             skip_report_summary=True,
+                                                             include_zero_impressions=True,
+                                                             client_customer_id=self.customer_id)
+        data_list = data.split('\n')[:-1]
+        data_df = pd.DataFrame( columns=self.fields, data=[data.split(',') for data in data_list] )
+        data_df.rename( columns=dict(zip(data_df.columns, self.columns)), inplace=True)
+        data_df = data_df.apply(pd.to_numeric, errors='ignore')
+        week_map = dict(zip([x for x in range(30, 37)], ['mon','tue','wed','thr','fri','sat','sun']))
+        div, mod = divmod(data_df['id'], pow(10, 4))
+        data_df['weekofday'] = div.map(lambda value: week_map[value])
+        data_df['starthour'], data_df['endhour'] = divmod((mod // 4), 100)
         return [data.to_dict() for idx, data in data_df.iterrows()]
 
 
