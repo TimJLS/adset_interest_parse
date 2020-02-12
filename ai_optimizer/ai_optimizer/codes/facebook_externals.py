@@ -205,6 +205,7 @@ def optimize_performance_campaign(account_id,
                                   is_creative_opt,
                                   is_smart_bidding,
                                   actual_metrics,
+                                  industry_type,
                                  ):
     print('[optimize_performance_campaign] campaign ', campaign_id)
     is_smart_spending = eval(is_smart_spending)
@@ -353,6 +354,7 @@ def optimize_branding_campaign(account_id,
                                is_creative_opt,
                                is_smart_bidding,
                                actual_metrics,
+                               industry_type,
                               ):
     print('[optimize_branding_campaign] campaign ', campaign_id)
     # charge_type attribute of first row
