@@ -4,12 +4,7 @@
 # In[ ]:
 
 
-import copy
-import math
 import datetime
-import inspect
-from typing import Union
-from functools import wraps
 
 import json
 import pandas as pd
@@ -17,15 +12,13 @@ from loguru import logger
 import database_controller
 import google_adwords_controller as controller
 import google_adwords_report_generator as collector
-import adgeek_permission as permission
-PATH = '/home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/auto_calibration/facebook/'+         '{date}.log'.format(date=datetime.datetime.strftime(datetime.datetime.today(), "%m_%d_%Y"))
 
 
 # In[ ]:
 
 
 class CampaignGroup:
-    def __init__(self, campaign_group_id: int=None, data: pd.DataFrame=None, *arg, **kwarg):
+    def __init__(self, campaign_group_id: int = None, data: pd.DataFrame = None, *arg, **kwarg):
         self.data = data
         if data is None:
             self.data = pd.DataFrame()
@@ -33,7 +26,7 @@ class CampaignGroup:
             self._data_parsing()
             self.campaigns = [Campaign(campaign_id=row['campaign_id'],
                                        media=kwarg['media'],
-                                       data=dict(row)) for idx, row in self.data.iterrows()]
+                                       data=dict(row)) for _, row in self.data.iterrows()]
 
     def __repr__(self) -> str:
         return "{0}{1}".format(self.__class__, json.dumps(self.data.to_dict('records'), indent=4, default=str))
@@ -63,7 +56,7 @@ class Campaign(collector.CampaignReportGenerator):
         'LINK_CLICKS': 'clicks',
         'COVERSIONS': 'conversions'
     }
-    def __init__(self, campaign_id: int, media: str, data: dict=None, *arg, **kwarg):
+    def __init__(self, campaign_id: int, media: str, data: dict = None, *arg, **kwarg):
         super().__init__(campaign_id, media)
         self.data = data
         self.objective = self._COST_OBJECTIVE[self.brief['destination_type']]
@@ -89,14 +82,14 @@ def process_budget_allocation(database):
                                                                        "%m_%d_%Y"))
     logger.add(PATH)
     campaign_groups = database.get_running_campaign_group().groupby('campaign_group_id')
-    for idx, campaign_group in campaign_groups:
+    for _, campaign_group in campaign_groups:
         cgp = CampaignGroup(media='gdn', data=campaign_group)
         logger.debug("{}".format(cgp.campaigns))
         cgp.budget_allocation()
         logger.info("Campaign Group ID: {}".format(cgp.campaign_group_id))
-        logger.info("    Budget: {}".format(cgp.budget), )
-        logger.info("    Available Balance: {}".format(cgp.available_balance), )
-        logger.info("    Expected Destinations: {}".format(cgp.expected_destination), )
+        logger.info("    Budget: {}".format(cgp.budget))
+        logger.info("    Available Balance: {}".format(cgp.available_balance))
+        logger.info("    Expected Destinations: {}".format(cgp.expected_destination))
         if not cgp.campaigns:
             logger.info("Allocation Requirements not match.")
             return
@@ -126,7 +119,7 @@ def main():
 # In[ ]:
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     main()
 
 
