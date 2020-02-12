@@ -1,13 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
-import gdn_datacollector
-from gdn_datacollector import Campaign
-from gdn_datacollector import AdGroup
-from gdn_datacollector import DatePreset
 import google_adwords_controller as controller
 import gdn_db
 import datetime
@@ -25,7 +21,7 @@ DATETIME = datetime.datetime.now()
 AGE_RANGE_LIST = [503001,503002,503003,503004,503005,503006,503999,]
 
 
-# In[2]:
+# In[ ]:
 
 
 def get_campaign_custom_audience(campaign_id):
@@ -59,7 +55,7 @@ def get_campaign_custom_audience(campaign_id):
     
 
 
-# In[3]:
+# In[ ]:
 
 
 def get_ad_groups_include_custom_audience(customer_id, campaign_id):
@@ -78,7 +74,7 @@ def get_ad_groups_include_custom_audience(customer_id, campaign_id):
     return user_list_criterion_list
 
 
-# In[4]:
+# In[ ]:
 
 
 def save_campaign_custom_audience(customer_id, campaign_id):
@@ -145,7 +141,7 @@ def save_campaign_custom_audience(customer_id, campaign_id):
     return custom_criterion_list
 
 
-# In[5]:
+# In[ ]:
 
 
 def save_custom_audience_for_all_campaign(campaign_id=None):
@@ -168,7 +164,7 @@ def save_custom_audience_for_all_campaign(campaign_id=None):
 #         print('[save_custom_audience_for_all_campaign] current conversion campaign:', len(conversion_campaign_id_list), conversion_campaign_id_list )
 
 
-# In[6]:
+# In[ ]:
 
 
 def get_current_ad_group_ids(campaign_id, criterion_id):
@@ -182,7 +178,7 @@ def get_current_ad_group_ids(campaign_id, criterion_id):
     return ad_group_ids[0][0].split(',')
 
 
-# In[7]:
+# In[ ]:
 
 
 def modify_result_db(campaign_id, criterion_id, ad_group_id):
@@ -201,21 +197,21 @@ def modify_result_db(campaign_id, criterion_id, ad_group_id):
     mycursor.close()
 
 
-# In[8]:
+# In[ ]:
 
 
 def main():
     save_custom_audience_for_all_campaign()
 
 
-# In[9]:
+# In[ ]:
 
 
 if __name__=='__main__':
     main()
 
 
-# In[10]:
+# In[ ]:
 
 
 #!jupyter nbconvert --to script gdn_custom_audience.ipynb
