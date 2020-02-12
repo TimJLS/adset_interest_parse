@@ -84,7 +84,7 @@
                 {% if campaign.destination_speed_ratio >= 1 %}
                     <td>{{campaign.current_target_count}}</td>
                 {% else %}
-                    <td style="background-color:Tomato;">{{campaign.current_target_count}}</td>
+                    <td style="background-color:#ffffb3;">{{campaign.current_target_count}}</td>
                 {% endif %}
                 <td>{{campaign.destination_count_until_today}}</td>
                
@@ -101,7 +101,12 @@
                     <td>{{campaign.ai_stop_date}}</td>
                 {% endif %}
                 
-                <td class="small_wording">{{campaign.name}}</td>
+                {% if campaign.current_target_count == 0 %}
+                    <td class="small_wording" style="background-color:#f9e6ff;">{{campaign.name}}</td>
+                {% else %}
+                    <td>{{campaign.name}}</td>
+                {% endif %}
+                
                 <td class="small_wording">{{campaign.account_name}}</td>
                 <td class="small_wording">{{campaign.token_name}}</td>
                 <td class="small_wording">{{campaign.currency}}</td>
@@ -164,7 +169,7 @@
                 {% if campaign.destination_speed_ratio >= 1 %}
                     <td>{{campaign.current_target_count}}</td>
                 {% else %}
-                    <td style="background-color:Tomato;">{{campaign.current_target_count}}</td>
+                    <td style="background-color:#ffffb3;">{{campaign.current_target_count}}</td>
                 {% endif %}
                 <td>{{campaign.destination_count_until_today}}</td>
                
@@ -181,7 +186,12 @@
                     <td>{{campaign.ai_stop_date}}</td>
                 {% endif %}
                 
-                <td class="small_wording">{{campaign.name}}</td>
+                {% if campaign.current_target_count == 0 %}
+                    <td class="small_wording" style="background-color:#f9e6ff;">{{campaign.name}}</td>
+                {% else %}
+                    <td>{{campaign.name}}</td>
+                {% endif %}
+                
                 <td class="small_wording">{{campaign.account_name}}</td>
                 <td class="small_wording">{{campaign.token_name}}</td>
                 <td class="small_wording">{{campaign.currency}}</td>
@@ -236,7 +246,7 @@
                 {% if campaign.destination_speed_ratio >= 1 %}
                     <td>{{campaign.current_target_count}}</td>
                 {% else %}
-                    <td style="background-color:Tomato;">{{campaign.current_target_count}}</td>
+                    <td style="background-color:#ffffb3;">{{campaign.current_target_count}}</td>
                 {% endif %}
                 <td>{{campaign.destination_count_until_today}}</td>
                
@@ -252,7 +262,13 @@
                 {% else %}
                     <td>{{campaign.ai_stop_date}}</td>
                 {% endif %}
-                <td class="small_wording">{{campaign.name}}</td>
+                
+                {% if campaign.current_target_count == 0 %}
+                    <td class="small_wording" style="background-color:#f9e6ff;">{{campaign.name}}</td>
+                {% else %}
+                    <td>{{campaign.name}}</td>
+                {% endif %}
+                
                 <td class="small_wording">{{campaign.customer_id}}</td>
                 <td class="small_wording">{{campaign.token_name}}</td>
                 
@@ -307,7 +323,7 @@
                 {% if campaign.destination_speed_ratio >= 1 %}
                     <td>{{campaign.current_target_count}}</td>
                 {% else %}
-                    <td style="background-color:Tomato;">{{campaign.current_target_count}}</td>
+                    <td style="background-color:#ffffb3;">{{campaign.current_target_count}}</td>
                 {% endif %}
                 <td>{{campaign.destination_count_until_today}}</td>
                
@@ -323,7 +339,13 @@
                 {% else %}
                     <td>{{campaign.ai_stop_date}}</td>
                 {% endif %}
-                <td class="small_wording">{{campaign.name}}</td>
+                
+                {% if campaign.current_target_count == 0 %}
+                    <td class="small_wording" style="background-color:#f9e6ff;">{{campaign.name}}</td>
+                {% else %}
+                    <td>{{campaign.name}}</td>
+                {% endif %}
+                
                 <td class="small_wording">{{campaign.customer_id}}</td>
                 <td class="small_wording">{{campaign.token_name}}</td>
                 
