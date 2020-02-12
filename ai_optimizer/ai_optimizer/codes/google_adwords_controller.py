@@ -132,7 +132,7 @@ class OperatorContainer():
 # In[ ]:
 
 
-class Predicates:
+class Predicates(dict):
     field = 'field'
     operator = 'operator'
     values = 'values'
@@ -143,11 +143,22 @@ class Predicates:
             self.values: None
         }
 
+    def __repr__(self):
+        return "<{0}> {1}".format(
+            self.__class__.__name__,
+            json.dumps(
+                eval(super().__repr__()),
+                sort_keys=True,
+                indent=4,
+                separators=(',', ': '),
+            ),
+        )
+
 
 # In[ ]:
 
 
-class Selector:
+class Selector(dict):
     fields = 'fields'
     predicates = 'predicates'
     def __init__(self):
@@ -157,33 +168,79 @@ class Selector:
             self.predicates: [self.predicates_object.spec],
         }
 
+    def __repr__(self):
+        return "<{0}> {1}".format(
+            self.__class__.__name__,
+            json.dumps(
+                eval(super().__repr__()),
+                sort_keys=True,
+                indent=4,
+                separators=(',', ': '),
+            ),
+        )
+
 
 # In[ ]:
 
 
-class Operand:
+class Operand(dict):
     xsi_type = 'xsi_type'
     campaign_id = 'campaignId'
     criterion = 'criterion'
+    
+    class Criterion(dict):
+        id = 'id'
+        xsi_type = 'xsi_type'
+        def __init__(self):
+            self["xsi_type"] = None
+            self["id"] = None
+    
     def __init__(self):
+        self["xsi_type"] = None
+        self["campaignId"] = None
+        self["criterion"] = self.Criterion()
         self.spec = {
             'xsi_type': None,
             'campaignId': None,
             'criterion': None
         }
+    
+    def __repr__(self):
+        return "<{0}> {1}".format(
+            self.__class__.__name__,
+            json.dumps(
+                eval(super().__repr__()),
+                sort_keys=True,
+                indent=4,
+                separators=(',', ': '),
+            ),
+        )
 
 
 # In[ ]:
 
 
-class Operation:
+class Operation(dict):
     operator = 'operator'
     operand = 'operand'
     def __init__(self):
+        self["operator"] = None
+        self["operand"] = None
         self.spec = {
             'operator': None,
             'operand': None
         }
+
+    def __repr__(self):
+        return "<{0}> {1}".format(
+            self.__class__.__name__,
+            json.dumps(
+                eval(super().__repr__()),
+                sort_keys=True,
+                indent=4,
+                separators=(',', ': '),
+            ),
+        )
 
 
 # In[ ]:
@@ -195,7 +252,8 @@ class CampaignServiceContainer(object):
         self.adwords_client = permission.init_google_api(account_id=self.customer_id)
         self.service_campaign = self.adwords_client.GetService('CampaignService', version='v201809')
         self.service_budget = self.adwords_client.GetService('BudgetService', version='v201809')
-        self.service_criterion = self.adwords_client.GetService('CampaignCriterionService', version='v201809')
+        self.service_criterion = self.adwords_client.GetService('CampaignCriterionService',
+                                                                version='v201809')
         self.operator_container = OperatorContainer()
         self.ad_group = AdGroup
 
@@ -214,12 +272,16 @@ class Campaign(object):
         self._init_selector()
         self._init_operand()
         self.negative_criterions = self._create_negetive_criterions()
+        self.ad_schedules = self._create_ad_schedules()
         
     def _init_selector(self):
         self.selector = Selector()
     
     def _init_operand(self):
         self.operand = Operand()
+
+    def _create_ad_schedules(self):
+        return AdSchedule(self)
         
     def _create_negetive_criterions(self):
         return NegativeCriterion(self)
@@ -276,6 +338,107 @@ class Campaign(object):
 # In[ ]:
 
 
+class AdSchedule:
+    fields = ['CampaignId', 'BidModifier', 'CampaignCriterionStatus', 'CriteriaType', 'Id']
+    
+    def __init__(self, Campaign):
+        self.campaign = Campaign
+        self.operand = self._init_operand()
+        self.operation = self._init_operation()
+        self.selector = self._init_selector(Campaign)
+        self.selector = self._init_selector(self.campaign)
+        
+    def _init_operand(self):
+        self.operand = Operand()
+        self.operand["bidModifier"] = 1
+        self.operand["xsi_type"] = "CampaignCriterion"
+        self.operand["campaignId"] = self.campaign.campaign_id
+        
+        return self.operand
+        
+    def _init_operation(self):
+        self.operation = Operation()
+        return self.operation
+    
+    def _init_selector(self, *arg, **kwarg):
+        self.selector = Selector()
+        self.selector.spec["fields"] = self.fields
+        self.selector.predicates_object.spec["field"] = 'CampaignId'
+        self.selector.predicates_object.spec["values"] = arg[0].campaign_id
+        return self.selector
+    
+    @checked
+    def retrieve(self) -> dict:
+        weekdays = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]
+        results = dict.fromkeys(weekdays, [])
+        result = self.campaign.service_container.service_criterion.get(self.selector.spec)
+        resp = [entries for entries in result['entries'] if entries['criterion']['type'] == 'AD_SCHEDULE']
+        for weekday in weekdays:
+            results[weekday] = [ad_schedule for ad_schedule in resp if ad_schedule['criterion']['dayOfWeek'] == weekday]
+        return results
+    
+    def remove_all(self):
+        ad_schedules = self.retrieve()
+        operations = [{
+            'operator': "REMOVE",
+            'operand': ad_schedule
+        } for ad_schedule in ad_schedules]
+        resp = self.campaign.service_container.service_criterion.mutate(operations)
+        return resp
+    
+    def update(self, day_of_week, start_hour, end_hour, bid_modifier=1, criterion_id=None, start_minute="ZERO", end_minute='ZERO'):
+        self.operand['criterion']['xsi_type'] = 'AD_SCHEDULE'
+        self.operand['criterion']['dayOfWeek'] = day_of_week.upper()
+        self.operand['criterion']['startHour'] = start_hour
+        self.operand['criterion']['endHour'] = end_hour
+        self.operand['criterion']['startMinute'] = start_minute
+        self.operand['criterion']['endMinute'] = end_minute
+        self.operand['bidModifier'] = bid_modifier
+        self.operation['operand'] = dict(self.operand)
+        self.operation['operator'] = 'SET' if  criterion_id else 'ADD'
+        resp = self.campaign.service_container.service_criterion.mutate(self.operation)
+        return resp
+
+
+# In[ ]:
+
+
+class NegativeCriterion(object):
+    def __init__(self, Campaign):
+        self.campaign = Campaign
+        self.operand = self._init_operand()
+        self.operation = self._init_operation()
+        self.operand.spec['xsi_type'] = 'NegativeCampaignCriterion'
+        self.operand.spec['campaignId'] = Campaign.campaign_id
+        
+        self.criterions = []
+        self.operations = []
+        
+    def _init_operand(self):
+        self.operand = Operand()
+        return self.operand
+        
+    def _init_operation(self):
+        self.operation = Operation()
+        return self.operation
+        
+    def make_from_df(self, data=None):
+        for idx, row in data.iterrows():
+            criterion = {}
+            criterion['xsi_type'] = 'Placement'
+            criterion['url'] = row['display_name']
+            self.operand.spec['criterion'] = criterion
+            self.operation.spec['operator'] = 'ADD'
+            self.operation.spec['operand'] = self.operand.spec
+
+            self.operations.append(copy.deepcopy(self.operation.spec))
+        result = self.campaign.service_container.service_criterion.mutate(self.operations)
+        return result
+
+
+# In[ ]:
+
+
 class Budget(object):
     class Money:
         body = {"ComparableValue.Type": "Money", "microAmount": None}
@@ -319,42 +482,6 @@ class Budget(object):
         operation['operand'].pop('campaignId', None)
         operation['operand'].pop('criterion', None)
         result = self.service.mutate(operation)
-        return result
-
-
-# In[ ]:
-
-
-class NegativeCriterion(object):
-    def __init__(self, Campaign):
-        self.campaign = Campaign
-        self.operand = self._init_operand()
-        self.operation = self._init_operation()
-        self.operand.spec['xsi_type'] = 'NegativeCampaignCriterion'
-        self.operand.spec['campaignId'] = Campaign.campaign_id
-        
-        self.criterions = []
-        self.operations = []
-        
-    def _init_operand(self):
-        self.operand = Operand()
-        return self.operand
-        
-    def _init_operation(self):
-        self.operation = Operation()
-        return self.operation
-        
-    def make_from_df(self, data=None):
-        for idx, row in data.iterrows():
-            criterion = {}
-            criterion['xsi_type'] = 'Placement'
-            criterion['url'] = row['display_name']
-            self.operand.spec['criterion'] = criterion
-            self.operation.spec['operator'] = 'ADD'
-            self.operation.spec['operand'] = self.operand.spec
-
-            self.operations.append(copy.deepcopy(self.operation.spec))
-        result = self.campaign.service_container.service_criterion.mutate(self.operations)
         return result
 
 
