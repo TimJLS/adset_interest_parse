@@ -1,20 +1,16 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
-from googleads import adwords
 import pandas as pd
-import copy
-import math
 import datetime
-from enum import Enum
 import adgeek_permission as permission
 import database_controller
 
 
-# In[2]:
+# In[ ]:
 
 
 class DatePreset:
@@ -22,9 +18,10 @@ class DatePreset:
     yesterday = 'YESTERDAY'
     lifetime = 'ALL_TIME'
     last_14_days = 'LAST_14_DAYS'
+    entire_time = 'ENTIRE_TIME'
 
 
-# In[3]:
+# In[ ]:
 
 
 class Predicates:
@@ -39,7 +36,7 @@ class Predicates:
         }
 
 
-# In[4]:
+# In[ ]:
 
 
 class Selector:
@@ -58,14 +55,14 @@ class Selector:
         }
 
 
-# In[5]:
+# In[ ]:
 
 
 class Operator:
     pass
 
 
-# In[6]:
+# In[ ]:
 
 
 class Report:
@@ -85,7 +82,7 @@ class Report:
         }
 
 
-# In[7]:
+# In[ ]:
 
 
 class ReportGenerator(object):
@@ -156,11 +153,6 @@ class ReportGenerator(object):
             unix_time = datetime.date(1970, 1, 1)
             self.report.selector_object.spec['dateRange']['min'] = unix_time.strftime("%Y%m%d")
             self.report.selector_object.spec['dateRange']['max'] = datetime.date.today().strftime("%Y%m%d")
-
-        elif date_preset.upper() == 'LAST_7_DAYS':
-            last_7_days = datetime.date.today() - datetime.timedelta(days=7)
-            self.report.selector_object.spec['dateRange']['min'] = last_7_days.strftime("%Y%m%d")
-            self.report.selector_object.spec['dateRange']['max'] = datetime.date.today().strftime("%Y%m%d")
             
         elif date_preset.upper() == 'LAST_7_DAYS':
             last_7_days = datetime.date.today() - datetime.timedelta(days=7)
@@ -230,7 +222,7 @@ class ReportGenerator(object):
         return [data.to_dict() for idx, data in data_df.iterrows()]
 
 
-# In[8]:
+# In[ ]:
 
 
 class AdScheduleReportGenerator(ReportGenerator):
@@ -277,7 +269,7 @@ class AdScheduleReportGenerator(ReportGenerator):
         return [data.to_dict() for idx, data in data_df.iterrows()]
 
 
-# In[9]:
+# In[ ]:
 
 
 class CampaignReportGenerator(ReportGenerator):
@@ -306,7 +298,7 @@ class CampaignReportGenerator(ReportGenerator):
         self.report.spec[self.report.report_type] = self.report_type
 
 
-# In[10]:
+# In[ ]:
 
 
 class AdGroupReportGenerator(ReportGenerator):
@@ -373,7 +365,67 @@ class AdGroupReportGenerator(ReportGenerator):
         return [data.to_dict() for idx, data in data_df.iterrows()]
 
 
-# In[11]:
+# In[ ]:
+
+
+class AdReportGenerator(ReportGenerator):
+    _fields = [
+        'ExternalCustomerId', 'CampaignId', 'AdGroupId', 'Id', 'AdGroupStatus', 'Cost',
+        'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'AverageCpc',
+        'CostPerConversion', 'CostPerAllConversion', 'Ctr', 'ViewThroughConversions'
+    ]
+    _columns = [
+        'customer_id', 'campaign_id', 'adgroup_id', 'ad_id', 'status', 'spend', 'cost_per_target',
+        'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click',
+        'cost_per_conversion', 'cost_per_all_conversion', 'ctr', 'view_conversions'
+    ]
+    report_name = 'AD_PERFORMANCE_REPORT'
+    report_type = 'AD_PERFORMANCE_REPORT'
+    
+    def __init__(self, campaign_id, media):
+        super().__init__(campaign_id, media)
+        self._fields = self._fields
+        self._columns = self._columns
+        self.__init_report()
+        
+    def __init_report(self):
+        self.report.spec[self.report.report_name] = self.report_name
+        self.report.spec[self.report.report_type] = self.report_type
+        
+    def get_bidding_column(self, data):
+        if self.bidding_type in self.google_smart_bidding.keys() and self.google_smart_bidding[self.bidding_type] in data.columns:
+            self.col = self.google_smart_bidding.get(self.bidding_type)
+        else:
+            self.col = 'CpcBid'
+        return data
+    
+    def parse_bidding_column(self, data):
+        if self.bidding_type in ['Maximize clicks', 'Maximize Conversions']:
+            data[self.col] = data[self.col].str.split(':', expand = True)[1]
+        return data
+    
+    def get_insights(self, date_preset, params=None):
+        self.add_params(params)
+        self._ReportGenerator__init_selector(date_preset)
+        data = self.report_downloader.DownloadReportAsString(self.report.spec,
+                                                             skip_report_header=True,
+                                                             skip_column_header=True,
+                                                             skip_report_summary=True,
+                                                             include_zero_impressions=True,
+                                                             client_customer_id=self.customer_id)
+        data_list = data.split('\n')[:-1]
+        data_df = pd.DataFrame( columns=self.fields, data=[data.split(',') for data in data_list] )
+        if data_df.empty:
+            return []
+        if 'Ctr' in data_df.columns:
+            data_df['Ctr'] = data_df.Ctr.str.split('%', expand = True)[0]
+        data_df[data_df.columns.difference( self._non_numeric_columns )] = data_df[data_df.columns.difference( self._non_numeric_columns )].apply(pd.to_numeric, errors='ignore')
+        data_df[data_df.columns.intersection( self._money_columns )] = data_df[data_df.columns.intersection( self._money_columns )].div(1000000)
+        data_df.rename( columns=dict(zip(data_df.columns, self.columns)), inplace=True)
+        return [data.to_dict() for idx, data in data_df.iterrows()]
+
+
+# In[ ]:
 
 
 class KeywordReportGenerator(ReportGenerator):
@@ -440,7 +492,7 @@ class KeywordReportGenerator(ReportGenerator):
         return [data.to_dict() for idx, data in data_df.iterrows()]
 
 
-# In[12]:
+# In[ ]:
 
 
 class AudienceReportGenerator(ReportGenerator):
@@ -468,7 +520,7 @@ class AudienceReportGenerator(ReportGenerator):
         self.report.spec[self.report.report_type] = self.report_type
 
 
-# In[13]:
+# In[ ]:
 
 
 class DisplayTopicReportGenerator(ReportGenerator):
@@ -496,7 +548,7 @@ class DisplayTopicReportGenerator(ReportGenerator):
         self.report.spec[self.report.report_type] = self.report_type
 
 
-# In[14]:
+# In[ ]:
 
 
 class DisplayKeywordReportGenerator(ReportGenerator):
@@ -524,7 +576,7 @@ class DisplayKeywordReportGenerator(ReportGenerator):
         self.report.spec[self.report.report_type] = self.report_type
 
 
-# In[15]:
+# In[ ]:
 
 
 class UrlReportGenerator(ReportGenerator):
@@ -581,7 +633,7 @@ class UrlReportGenerator(ReportGenerator):
         return [data.to_dict() for idx, data in data_df.iterrows()]
 
 
-# In[85]:
+# In[ ]:
 
 
 class PlacementReportGenerator(ReportGenerator):
@@ -643,7 +695,7 @@ class PlacementReportGenerator(ReportGenerator):
         return [data.to_dict() for idx, data in data_df.iterrows()]
 
 
-# In[86]:
+# In[ ]:
 
 
 class SearchKeywordReportGenerator(ReportGenerator):
@@ -688,7 +740,7 @@ class SearchKeywordReportGenerator(ReportGenerator):
         return [data.to_dict() for idx, data in data_df.iterrows()]
 
 
-# In[18]:
+# In[ ]:
 
 
 def main():
@@ -696,14 +748,14 @@ def main():
     database = database_controller.GDN(database_controller.Database)
 
 
-# In[19]:
+# In[ ]:
 
 
 # if __name__=='__main__':
 #     main()
 
 
-# In[20]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script google_adwords_report_generator.ipynb
