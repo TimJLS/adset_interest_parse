@@ -340,33 +340,32 @@ class Campaign(object):
 
 class AdSchedule:
     fields = ['CampaignId', 'BidModifier', 'CampaignCriterionStatus', 'CriteriaType', 'Id']
-    
+
     def __init__(self, Campaign):
         self.campaign = Campaign
         self.operand = self._init_operand()
         self.operation = self._init_operation()
         self.selector = self._init_selector(Campaign)
         self.selector = self._init_selector(self.campaign)
-        
+
     def _init_operand(self):
         self.operand = Operand()
         self.operand["bidModifier"] = 1
         self.operand["xsi_type"] = "CampaignCriterion"
         self.operand["campaignId"] = self.campaign.campaign_id
-        
         return self.operand
-        
+
     def _init_operation(self):
         self.operation = Operation()
         return self.operation
-    
+
     def _init_selector(self, *arg, **kwarg):
         self.selector = Selector()
         self.selector.spec["fields"] = self.fields
         self.selector.predicates_object.spec["field"] = 'CampaignId'
         self.selector.predicates_object.spec["values"] = arg[0].campaign_id
         return self.selector
-    
+
     @checked
     def retrieve(self) -> dict:
         weekdays = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]
@@ -376,7 +375,7 @@ class AdSchedule:
         for weekday in weekdays:
             results[weekday] = [ad_schedule for ad_schedule in resp if ad_schedule['criterion']['dayOfWeek'] == weekday]
         return results
-    
+
     def remove_all(self):
         ad_schedules = self.retrieve()
         operations = [{
@@ -385,7 +384,7 @@ class AdSchedule:
         } for ad_schedule in ad_schedules]
         resp = self.campaign.service_container.service_criterion.mutate(operations)
         return resp
-    
+
     def update(self, day_of_week, start_hour, end_hour, bid_modifier=1, criterion_id=None, start_minute="ZERO", end_minute='ZERO'):
         self.operand['criterion']['xsi_type'] = 'AD_SCHEDULE'
         self.operand['criterion']['dayOfWeek'] = day_of_week.upper()
@@ -864,46 +863,37 @@ class UserListCriterion(Criterion):
 # In[ ]:
 
 
-class Creative(object):
-    fields = [
-        'AdGroupId', 'Id', 'HeadlinePart1', 'HeadlinePart2', 'DisplayUrl', 'CreativeFinalUrls', 'Description', 'Url', 'PolicySummary']
-#     def __setattr__(self, name, value):
-#         print(name, value)
-    def __init__(self, service_ad, ad_group_id, ad_id, policy_summary=None):
-        self.service_ad = service_ad
-        self.ad_group_id = ad_group_id
-        self.operator_container = OperatorContainer()
-        self.ad_id = ad_id
-        if policy_summary:
-            self.policy = PolicySummary(summary = policy_summary)
-        else:
-            self.policy = PolicySummary(service_ad, ad_group_id, ad_id)
+class BidModifier(object):
+    fields = ['CampaignId', 'AdGroupId', 'BidModifier', 'Id', 'PlatformName']
+    def __init__(self, AdGroup):
+        self.ad_group = AdGroup
+        self.operation_container = OperatorContainer()
         
     def retrieve(self,):
-        self.operator_container.selector_ad[0]['fields'] = self.fields
-        self.operator_container.selector_ad[0]['predicates'][0]['values'][0] = self.ad_id
-        self.operator_container.selector_ad[0]['predicates'][1]['values'][0] = self.ad_group_id
-        result = self.service_ad.get(self.operator_container.selector_ad)
-        if result['totalNumEntries'] == 0:
-            return
-        else:
-            return result['entries']
-        
-    def assign(self, ad_group_id):
-        result = self.retrieve()
-        if len(result) != 0:
-            self.ad_group_id = ad_group_id
-            self.operator_container.operations = []
-            self.operator_container.operation['operator'] = 'SET' if result else 'ADD'
-            self.operator_container.operand.pop('id')
-            self.operator_container.operand['adGroupId'] = self.ad_group_id
-            self.operator_container.operand['status'] = result[0]['status']
-            self.operator_container.operand['ad'] = {}
-            self.operator_container.operand['ad']['id'] = self.ad_id
-            self.operator_container.operation['operand'] = self.operator_container.operand
-            self.operator_container.operations.append(self.operator_container.operation)
-            result = self.service_ad.mutate(self.operator_container.operations)
-            return result
+        self.operation_container.selector_bid_modifier['fields'] = self.fields
+        self.operation_container.selector_bid_modifier['predicates'][0]['values'][0] = self.ad_group.ad_group_id
+        resp = self.ad_group.service_container.service_bid_modifier.get(self.operation_container.selector_bid_modifier)
+        return resp['entries']
+    
+    def update(self, bid_modifier_dict):
+        self.operation_container.operand.pop('id', None)
+        for device in bid_modifier_dict:
+            device_id = Device.__dict__.get(device)
+            bid_modifier_ratio = bid_modifier_dict[device]
+            self.operation_container.criterion['xsi_type'] = 'Platform'
+            self.operation_container.criterion['id'] = device_id
+            
+            self.operation_container.operand['adGroupId'] = self.ad_group.ad_group_id
+            self.operation_container.operand['criterion'] = self.operation_container.criterion
+            self.operation_container.operand['bidModifier'] = bid_modifier_ratio
+            
+            self.operation_container.operation['operator'] = 'ADD'
+            self.operation_container.operation['operand'] = self.operation_container.operand
+            
+            self.operation_container.operations.append(copy.deepcopy(self.operation_container.operation))
+        resp = self.ad_group.service_container.service_bid_modifier.mutate(self.operation_container.operations)
+        self.operation_container.operations = []
+        return resp
 
 
 # In[ ]:
@@ -941,37 +931,60 @@ class PolicySummary(object):
 # In[ ]:
 
 
-class BidModifier(object):
-    fields = ['CampaignId', 'AdGroupId', 'BidModifier', 'Id', 'PlatformName']
-    def __init__(self, AdGroup):
-        self.ad_group = AdGroup
-        self.operation_container = OperatorContainer()
+class Creative(object):
+    fields = [
+        'AdGroupId', 'Id', 'HeadlinePart1', 'HeadlinePart2', 'DisplayUrl', 'CreativeFinalUrls',
+        'Description', 'Url', 'PolicySummary', 'MediaId'
+    ]
+
+    def __init__(self, service_ad, ad_group_id, ad_id, policy_summary=None):
+        self.service_ad = service_ad
+        self.ad_group_id = ad_group_id
+        self.operator_container = OperatorContainer()
+        self.ad_id = ad_id
+        if policy_summary:
+            self.policy = PolicySummary(summary = policy_summary)
+        else:
+            self.policy = PolicySummary(service_ad, ad_group_id, ad_id)
         
     def retrieve(self,):
-        self.operation_container.selector_bid_modifier['fields'] = self.fields
-        self.operation_container.selector_bid_modifier['predicates'][0]['values'][0] = self.ad_group.ad_group_id
-        resp = self.ad_group.service_container.service_bid_modifier.get(self.operation_container.selector_bid_modifier)
-        return resp['entries']
-    
-    def update(self, bid_modifier_dict):
-        self.operation_container.operand.pop('id', None)
-        for device in bid_modifier_dict:
-            device_id = Device.__dict__.get(device)
-            bid_modifier_ratio = bid_modifier_dict[device]
-            self.operation_container.criterion['xsi_type'] = 'Platform'
-            self.operation_container.criterion['id'] = device_id
-            
-            self.operation_container.operand['adGroupId'] = self.ad_group.ad_group_id
-            self.operation_container.operand['criterion'] = self.operation_container.criterion
-            self.operation_container.operand['bidModifier'] = bid_modifier_ratio
-            
-            self.operation_container.operation['operator'] = 'ADD'
-            self.operation_container.operation['operand'] = self.operation_container.operand
-            
-            self.operation_container.operations.append(copy.deepcopy(self.operation_container.operation))
-        resp = self.ad_group.service_container.service_bid_modifier.mutate(self.operation_container.operations)
-        self.operation_container.operations = []
-        return resp
+        self.operator_container.selector_ad[0]['fields'] = self.fields
+        self.operator_container.selector_ad[0]['predicates'][0]['values'][0] = self.ad_id
+        self.operator_container.selector_ad[0]['predicates'][1]['values'][0] = self.ad_group_id
+        result = self.service_ad.get(self.operator_container.selector_ad)
+        if result['totalNumEntries'] == 0:
+            return
+        else:
+            return result['entries']
+        
+    def update(self, status=Status.enable):
+        self.operator_container.operand.pop('id', None)
+        self.operator_container.operand['adGroupId'] = self.ad_group_id
+        self.operator_container.operand['ad'] = {'id': self.ad_id}
+        self.operator_container.operand['status'] = status
+        self.operator_container.operation['operand'] = self.operator_container.operand
+        self.operator_container.operation['operator'] = 'SET'
+
+        self.operator_container.operations.append(self.operator_container.operation)
+        result = self.service_ad.mutate(self.operator_container.operations)
+        self.operator_container.operations = []
+        return result
+        
+    def assign(self, ad_group_id):
+        result = self.retrieve()
+        if len(result) != 0:
+            self.ad_group_id = ad_group_id
+            self.operator_container.operations = []
+            self.operator_container.operation['operator'] = 'SET' if result else 'ADD'
+            self.operator_container.operand.pop('id')
+            self.operator_container.operand['adGroupId'] = self.ad_group_id
+            self.operator_container.operand['status'] = result[0]['status']
+            self.operator_container.operand['ad'] = {}
+            self.operator_container.operand['ad']['id'] = self.ad_id
+            self.operator_container.operation['operand'] = self.operator_container.operand
+            self.operator_container.operations.append(self.operator_container.operation)
+            result = self.service_ad.mutate(self.operator_container.operations)
+            return result
 
 
 # In[ ]:
