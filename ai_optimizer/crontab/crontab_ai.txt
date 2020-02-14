@@ -38,7 +38,7 @@
 #get adset data
 #10 * * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/facebook_adset_handler.py
 
-00 */2 * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/handle_device_proportion.py >> /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/handle_device_proportion.log
+00 */2 * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/device_adjustment.py >> /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/device_adjustment.log
 
 00 00 * * * python3 ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/facebook_lookalike_audience.py >> /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/facebook_lookalike_audience.log
 
