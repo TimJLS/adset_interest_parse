@@ -54,6 +54,8 @@ def adjust_bid_modifier_cpc(adgroup, report_df):
         if mobile_cpc > not_mobile_cpc:
             for bid_modifier in bid_modifier_list:
                 if bid_modifier['criterion']['platformName'] == 'HighEndMobile':
+                    if not bid_modifier['bidModifier']:
+                        bid_modifier['bidModifier'] = 1.0
                     if (bid_modifier['bidModifier'] != 0.0) and (bid_modifier['bidModifier'] != 0.1):
                         bid_modifier['bidModifier'] = round((bid_modifier['bidModifier'] - 0.1), 1)
                         operation['operand'] = bid_modifier
@@ -63,6 +65,8 @@ def adjust_bid_modifier_cpc(adgroup, report_df):
         elif mobile_cpc < not_mobile_cpc:
             for bid_modifier in bid_modifier_list:
                 if bid_modifier['criterion']['platformName'] != 'HighEndMobile':
+                    if not bid_modifier['bidModifier']:
+                        bid_modifier['bidModifier'] = 1.0
                     if (bid_modifier['bidModifier'] != 0.0) and (bid_modifier['bidModifier'] != 0.1):
                         bid_modifier['bidModifier'] = round((bid_modifier['bidModifier'] - 0.1), 1)
                         operation['operand'] = bid_modifier
@@ -104,16 +108,20 @@ def adjust_bid_modifier_cpa(adgroup, report_df):
         if mobile_cpa > not_mobile_cpa:
             for bid_modifier in bid_modifier_list:
                 if bid_modifier['criterion']['platformName'] == 'HighEndMobile':
-                    bid_mod_rate = bid_modifier['bidModifier']
-                    if (bid_mod_rate != 0.0) and (bid_mod_rate != 0.1):
-                        bid_modifier['bidModifier'] = round((bid_mod_rate - 0.1), 1)
+                    if not bid_modifier['bidModifier']:
+                        bid_modifier['bidModifier'] = 1.0
+                        
+                    if (bid_modifier['bidModifier'] != 0.0) and (bid_modifier['bidModifier'] != 0.1):
+                        bid_modifier['bidModifier'] = round((bid_modifier['bidModifier'] - 0.1), 1)
                         operation['operand'] = bid_modifier
                         adgroup.service_container.service_bid_modifier.mutate(operation)
                 
                 if bid_modifier['criterion']['platformName'] != 'HighEndMobile':
-                    bid_mod_rate = bid_modifier['bidModifier']
-                    if (bid_mod_rate != 0.0) and (bid_mod_rate <= 1.8):
-                        bid_modifier['bidModifier'] = round((bid_mod_rate + 0.1), 1)
+                    if not bid_modifier['bidModifier']:
+                        bid_modifier['bidModifier'] = 1.0
+                        
+                    if (bid_modifier['bidModifier'] != 0.0) and (bid_modifier['bidModifier'] <= 1.8):
+                        bid_modifier['bidModifier'] = round((bid_modifier['bidModifier'] + 0.1), 1)
                         operation['operand'] = bid_modifier
                         adgroup.service_container.service_bid_modifier.mutate(operation)
                         
@@ -121,16 +129,20 @@ def adjust_bid_modifier_cpa(adgroup, report_df):
         elif mobile_cpa < not_mobile_cpa:
             for bid_modifier in bid_modifier_list:
                 if bid_modifier['criterion']['platformName'] != 'HighEndMobile':
-                    bid_mod_rate = bid_modifier['bidModifier']
-                    if (bid_mod_rate != 0.0) and (bid_mod_rate != 0.1):
-                        bid_modifier['bidModifier'] = round((bid_mod_rate - 0.1), 1)
+                    if not bid_modifier['bidModifier']:
+                        bid_modifier['bidModifier'] = 1.0
+                        
+                    if (bid_modifier['bidModifier'] != 0.0) and (bid_modifier['bidModifier'] != 0.1):
+                        bid_modifier['bidModifier'] = round((bid_modifier['bidModifier'] - 0.1), 1)
                         operation['operand'] = bid_modifier
                         adgroup.service_container.service_bid_modifier.mutate(operation)
                 
                 if bid_modifier['criterion']['platformName'] == 'HighEndMobile':
-                    bid_mod_rate = bid_modifier['bidModifier']
-                    if (bid_mod_rate != 0.0) and (bid_mod_rate <= 1.8):
-                        bid_modifier['bidModifier'] = round((bid_mod_rate + 0.1), 1)
+                    if not bid_modifier['bidModifier']:
+                        bid_modifier['bidModifier'] = 1.0
+                    
+                    if (bid_modifier['bidModifier'] != 0.0) and (bid_modifier['bidModifier'] <= 1.8):
+                        bid_modifier['bidModifier'] = round((bid_modifier['bidModifier'] + 0.1), 1)
                         operation['operand'] = bid_modifier
                         adgroup.service_container.service_bid_modifier.mutate(operation)
         
