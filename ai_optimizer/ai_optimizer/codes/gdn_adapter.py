@@ -244,7 +244,6 @@ def main():
     del database_gdn
     print(datetime.datetime.now()-start_time)
     return
-    
 
 
 # In[ ]:

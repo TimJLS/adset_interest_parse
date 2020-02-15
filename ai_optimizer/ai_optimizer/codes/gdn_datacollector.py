@@ -108,7 +108,11 @@ def make_addition_dict(customer_id,
                        is_target_suggest,
                        is_lookalike,
                        is_creative_opt,
-                       is_device_pro_rata):
+                       is_device_pro_rata,
+                       is_hour_adjust,
+                       is_weekday_adjust,
+                       is_domain_adjust,
+                       industry_type):
     addition_dict = {}
     target = eval(CAMPAIGN_OBJECTIVE_FIELD[destination_type])
     target_left = int(destination) - eval(CAMPAIGN_OBJECTIVE_FIELD[destination_type])

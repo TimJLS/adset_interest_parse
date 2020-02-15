@@ -4,7 +4,8 @@
 # In[ ]:
 
 
-import gdn_datacollector as collector
+# import gdn_datacollector as collector
+import google_adwords_report_generator as collector
 import gdn_gsn_ai_behavior_log as logger
 from gdn_gsn_ai_behavior_log import BehaviorType
 import datetime
@@ -459,9 +460,11 @@ def optimize_performance_campaign():
         
         objective = 'conversions'
         # Init datacollector Campaign
-        collector_campaign = collector.Campaign(customer_id, campaign_id, destination_type)
-        day_dict = collector_campaign.get_campaign_insights(date_preset=collector.DatePreset.yesterday)
-        lifetime_dict = collector_campaign.get_campaign_insights(date_preset=collector.DatePreset.lifetime)
+        collector_campaign = collector.CampaignReportGenerator(campaign_id, 'gdn')
+        ins = collector_campaign.get_insights(date_preset=collector.DatePreset.yesterday)
+        day_dict = ins[0] if ins else {}
+        ins = collector_campaign.get_insights(date_preset=collector.DatePreset.lifetime)
+        lifetime_dict = ins[0] if ins else {}
         # Init param retriever Retrieve
         controller_campaign = controller.Campaign(service_container, campaign_id)
         controller_campaign.generate_ad_group_id_type_list()
@@ -516,10 +519,12 @@ def optimize_branding_campaign():
         
         objective = 'clicks'
         # Init datacollector Campaign
-        collector_campaign = collector.Campaign(customer_id, campaign_id, destination_type)
-        day_dict = collector_campaign.get_campaign_insights(date_preset=collector.DatePreset.yesterday)
+        collector_campaign = collector.CampaignReportGenerator(campaign_id, 'gdn')
+        ins = collector_campaign.get_insights(date_preset=collector.DatePreset.yesterday)
+        day_dict = ins[0] if ins else {}
         print('[optimize_branding_campaign] day_dict', day_dict)
-        lifetime_dict = collector_campaign.get_campaign_insights(date_preset=collector.DatePreset.lifetime)
+        ins = collector_campaign.get_insights(date_preset=collector.DatePreset.lifetime)
+        lifetime_dict = ins[0] if ins else {}
         print('[optimize_branding_campaign] lifetime_dict', lifetime_dict)
         # Init param retriever Retrieve
         controller_campaign = controller.Campaign(service_container, campaign_id)

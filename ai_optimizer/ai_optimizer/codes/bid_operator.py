@@ -82,8 +82,8 @@ def adjust(media, **status):
     status['campaign_progress'] = status.pop( ADAPTER[media]['campaign_progress'] ).astype(object)
     status['adset_progress'] = status.pop( ADAPTER[media]['adset_progress'] ).astype(object)
     df_status = pd.DataFrame( status, index=[0] )
-    ai_engine_db.insert( "bidding_computation", status, )
-    return { ADAPTER[media].get("adset_id"):status['id'], BID:np.round(bid, 2) }
+#     ai_engine_db.insert( "bidding_computation", status)
+    return { ADAPTER[media].get("adset_id"): status['id'], BID: np.round(bid, 2) }
     return { ADSET_ID:adset_id, BID:bid }
 
 if __name__=='__main__':
