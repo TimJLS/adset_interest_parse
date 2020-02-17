@@ -4,6 +4,7 @@
 # In[ ]:
 
 
+import re
 import json
 import time
 import datetime
@@ -26,7 +27,7 @@ PICK_DEFAULT_COUNT = 3
 PICK_DEFAULT_AUDIENCE_SIZE = 100000
 ENG_COPY_STRING = ' - Copy'
 CHN_COPY_STRING = ' - 複本'
-AI_ADSET_PREFIX = '_AI_'
+AI_ADSET_PREFIX = '_AI'
 IS_DEBUG = False #debug mode will not modify anything
 
 ACTION_DICT = {
@@ -89,7 +90,13 @@ def make_adset(adset_params):
     account_id = adset_params[AdSet.Field.account_id]
     new_adset = AdSet(parent_id='act_{}'.format(account_id))
     new_adset.update(adset_params)
-    new_adset.remote_create(params={'status': 'ACTIVE', })
+    try:
+        resp = new_adset.remote_create(params={'status': 'ACTIVE'})
+    except Exception as err:
+        resp = err
+        adset_params = error_parse(resp, adset_params)
+        new_adset.update(adset_params)
+        new_adset.remote_create(params={'status': 'ACTIVE'})
     return new_adset[AdSet.Field.id]
 
 def retrieve_origin_adset_params(origin_adset_id):
@@ -253,6 +260,19 @@ def copy_adset_new_target(campaign_id, new_adset_params, original_adset_id):
 # In[ ]:
 
 
+def error_parse(response, params):
+    error = response.__dict__.get('_error', None)
+    if error:
+        error_user_title = error['error_user_title']
+        error_user_msg = re.split('; |, |\*|\n| |，|。', error['error_user_msg'])
+        budget = error_user_msg[1].split('$')[1]
+        params['daily_budget'] = budget
+        return params
+
+
+# In[ ]:
+
+
 def copy_branding_adset(campaign_id, adset_id, actions, adset_params=None):
     print('[copy_branding_adset] adset_params', adset_params)
     new_adset_params = adset_params
@@ -361,7 +381,7 @@ def is_adset_should_close(adset_id, setting_CPA):
         return True
 
 
-# In[2]:
+# In[ ]:
 
 
 #  !jupyter nbconvert --to script facebook_adset_controller.ipynb
@@ -403,9 +423,9 @@ def fast_test_remove_copy_string(account_id, campaign_id):
 
 ##make suggest adset , test case
 # import adgeek_permission as permission
-# account_id = 1690972390965768
-# campaign_id = 23844021038540408
-# original_adset_id = 23844030923290408
+# account_id = 350498128813378
+# campaign_id = 23844199663310559
+# original_adset_id = 23844237887090559
 # permission.init_facebook_api(account_id)
 # make_performance_suggest_adset(campaign_id, [original_adset_id])
 
