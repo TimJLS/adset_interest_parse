@@ -4,6 +4,12 @@
 # In[ ]:
 
 
+from retrying import retry
+
+
+# In[ ]:
+
+
 ###FB
 ADGEEK_FACEBOOK_API_ID = '958842090856883'
 ADGEEK_FACEBOOK_APP_SECRET = 'a952f55afca38572cea2994d440d674b'
@@ -81,6 +87,13 @@ def init_google_api(account_id = None):
 import requests
 import json 
 
+def retry_if_assertion_error(exception):
+    print('error happened')
+    return isinstance(exception, AssertionError)
+
+@retry(retry_on_exception=retry_if_assertion_error,
+       stop_max_attempt_number=5,
+       wait_fixed=1)
 def get_queryid_by_accountid(account_id):
     my_params = {'filter[account_id]': account_id}
     r = requests.get(ACCOUNT_API_URL, params = my_params)
@@ -92,6 +105,9 @@ def get_queryid_by_accountid(account_id):
     query_id = first_data.get('credential_id')
     return query_id
 
+@retry(retry_on_exception=retry_if_assertion_error,
+       stop_max_attempt_number=5,
+       wait_fixed=1)
 def get_media_token_by_queryid(query_id):
     request_url = ACCOUNT_TOEKN_API_URL + str(query_id)
     r = requests.get(request_url)
@@ -122,7 +138,6 @@ def get_access_name_by_account(account_id):
     token_dic = get_media_token_by_queryid(query_id)
     credential_token  = token_dic['name']
     return credential_token
-    
 
 
 # In[ ]:
