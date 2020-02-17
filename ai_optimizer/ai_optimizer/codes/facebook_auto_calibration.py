@@ -168,7 +168,7 @@ def main():
                 logger.info("  AdSet Id: {}".format(adset_id))
                 logger.info("    Is Available: {}".format(ins.is_available))
                 logger.info("    Sequence: {}".format(ins.sequence))
-                logger.info("    Result Bid: {}".format(bid if ins.is_available else None)))
+                logger.info("    Result Bid: {}".format(bid if ins.is_available else None))
                 logger.info("    Origin Bid: {}".format(ins.origin_bid))
         else:
             logger.info("Calibration Condition not Matched.")
