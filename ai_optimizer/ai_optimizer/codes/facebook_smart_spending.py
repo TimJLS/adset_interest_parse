@@ -41,15 +41,15 @@ def update_campaign_daily_budget(campaign_id, daily_budget):
     except Exception as error:
         print('[update_campaign_daily_budget] error:', error)
 
-
-def update_campaign_bidding_ratio(campaign_id, bid_up_ratio):
-    print('[update_campaign_bidding_ratio] bid_up_ratio:', bid_up_ratio)
-    if IS_DEBUG:
-        return
-    db = database_controller.Database()
-    database_fb = database_controller.FB(db)
+# not to update bid in smart_spending, only adjust budgut
+# def update_campaign_bidding_ratio(campaign_id, bid_up_ratio):
+#     print('[update_campaign_bidding_ratio] bid_up_ratio:', bid_up_ratio)
+#     if IS_DEBUG:
+#         return
+#     db = database_controller.Database()
+#     database_fb = database_controller.FB(db)
     
-    database_fb.update_init_bid(campaign_id, bid_up_ratio)
+#     database_fb.update_init_bid(campaign_id, bid_up_ratio)
     
 def get_campaign_name_status(campaign_id):
     this_campaign = facebook_business_campaign.Campaign(campaign_id).api_get(fields=["status", "name"])
@@ -149,9 +149,11 @@ def smart_spending_branding(campaign_instance, campaign_target_dict):
         print('[smart_spending_branding] Error, spend too much money!!!')  
     elif current_target_count >= destination:
         if destination_max is None:
-            print('[smart_spending_branding][spend money] destination is already satisfied, up the bid to spend money')
-            bid_up_ratio = 1.1
-            update_campaign_bidding_ratio(campaign_instance.campaign_id, bid_up_ratio)             
+            print('[smart_spending_branding][spend money] destination is already satisfied, do nothing')
+#             # not to update bid in smart_spending, only adjust budgut
+#             print('[smart_spending_branding][spend money] destination is already satisfied, up the bid to spend money')
+#             bid_up_ratio = 1.1
+#             update_campaign_bidding_ratio(campaign_instance.campaign_id, bid_up_ratio)             
         else:
             print('[smart_spending_branding][save money] destination is already satisfied, destination:', destination , ' destination_max:' ,destination_max)
             if current_target_count > destination_max:
@@ -179,9 +181,10 @@ def smart_spending_branding(campaign_instance, campaign_target_dict):
             if destination_max is None:
                 print('[smart_spending_branding] need to spend all money')
                 if destination_speed_ratio >= DESTINATION_SPEED_RATIO_VALUE: # speed good, can up bid to use money
-                    print('[smart_spending_branding][spend money] speed good, can spend all money')
-                    bid_up_ratio = 1.1
-                    update_campaign_bidding_ratio(campaign_instance.campaign_id, bid_up_ratio)
+                    print('[smart_spending_branding][spend money] speed good, do nothing')
+                    # not to update bid in smart_spending, only adjust budgut
+#                     bid_up_ratio = 1.1
+#                     update_campaign_bidding_ratio(campaign_instance.campaign_id, bid_up_ratio)
                 else:
                     print('[smart_spending_branding][spend money] destination_max is None, destination_speed_ratio too low')  
 
@@ -282,9 +285,10 @@ def smart_spending_performance(campaign_instance, campaign_target_dict):
         if (current_target_count >= destination) or (ai_running_days >= ai_left_days and destination_speed_ratio >= 1):
             spend_until_today = round(ai_spend_cap * (ai_running_days / ai_period) , 2)
             if current_total_spend < spend_until_today:
-                print('[smart_spending_performance] more than target count, spend not enough, up bidding to spend money')  
-                bid_up_ratio = 1.1
-                update_campaign_bidding_ratio(campaign_instance.campaign_id, bid_up_ratio)
+                print('[smart_spending_performance] more than target count, spend not enough, do nothing')  
+                # not to update bid in smart_spending, only adjust budgut
+#                 bid_up_ratio = 1.1
+#                 update_campaign_bidding_ratio(campaign_instance.campaign_id, bid_up_ratio)
         
 
 
@@ -374,14 +378,6 @@ if __name__ == "__main__":
 
 
 # !jupyter nbconvert --to script facebook_smart_spending.ipynb
-
-
-# In[13]:
-
-
-a = None
-if not a:
-    print('a')
 
 
 # In[ ]:
