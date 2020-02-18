@@ -28,14 +28,7 @@ import adgeek_permission as permission
 
 IS_DEBUG = False #debug mode will not modify anything
 
-DATABASE = 'dev_facebook_test'
-DATE = datetime.datetime.now().date()#-datetime.timedelta(1)
 ACTION_BOUNDARY = 0.8
-ACTION_DICT = {
-    'bid': AdSet.Field.bid_amount,
-    'age': AdSet.Field.targeting,
-    'interest': AdSet.Field.targeting
-}
 
 ADSET_MAX_COUNT_CPA = 5
 ADSET_MIN_COUNT = 3
@@ -245,7 +238,8 @@ def optimize_performance_campaign(account_id,
     print('[achieving rate]', lifetime_achieving_rate, ' current_target', lifetime_target,
           ' \n    destined_target', (ai_setting_destination_count * lifetime_flight_process))
     adsets_active_list = campaign_instance.get_adsets_active()
-
+    
+    yesterday_spend = float(day_dict.get('spend', 0))
     if last_7d_achieving_rate < 1:
         print('[optimize_performance_campaign] last_7d status: off standard.\n')
         if lifetime_achieving_rate < ACTION_BOUNDARY:
@@ -254,13 +248,18 @@ def optimize_performance_campaign(account_id,
             if not day_dict.get('spend'):
                 print('[optimize_performance_campaign] no spend value')            
                 return
-            yesterday_spend = float(day_dict.get('spend'))
             if daily_budget and yesterday_spend and (yesterday_spend <= daily_budget * 0.8):
                 print('[optimize_performance_campaign] yesterday_spend not enough:', yesterday_spend)            
                 if not IS_DEBUG:
                     database_fb.update_init_bid(campaign_id, update_ratio=1.1)
             else:
-                print('[optimize_performance_campaign] yesterday_spend is enough, no need to up bidding')
+                print('[optimize_performance_campaign] yesterday_spend is enough, lower bidding')
+                if not IS_DEBUG:
+                    database_fb.update_init_bid(campaign_id, update_ratio=0.9)
+                
+                
+                
+                
         if lifetime_achieving_rate < 1:
             print('[optimize_performance_campaign] lifetime status: off standard.\n')
             # 1.close half (免死)
@@ -271,6 +270,21 @@ def optimize_performance_campaign(account_id,
             close_adset(adset_for_off_list, ai_setting_cost_per_result)
             # 2.add one suggestion
             adset_optimization(campaign_instance)
+            print('[optimize_performance_campaign] campaign_daily_budget', daily_budget)
+            if not day_dict.get('spend'):
+                print('[optimize_performance_campaign] no spend value')            
+                return
+            if daily_budget and yesterday_spend and (yesterday_spend <= daily_budget * 0.8):
+                print('[optimize_performance_campaign] yesterday_spend not enough:', yesterday_spend)            
+                if not IS_DEBUG:
+                    database_fb.update_init_bid(campaign_id, update_ratio=1.1)
+            else:
+                print('[optimize_performance_campaign] yesterday_spend is enough, lower bidding')
+                if not IS_DEBUG:
+                    database_fb.update_init_bid(campaign_id, update_ratio=0.9)
+            
+            
+            
         else:
             print('[optimize_performance_campaign] lifetime status: meet requirements.\n')
             # 1.In [adset for adset in lifetime_adset if adset_cpa <= 1.2 KPI] pick adset who has the lowest cpa.
@@ -297,6 +311,22 @@ def optimize_performance_campaign(account_id,
             adset_for_copy_list, adset_for_off_list = split_adset_list(adset_list)
             adset_for_off_list = [adset for adset in adset_for_off_list if len(adsets_active_list) >= ADSET_MIN_COUNT]
             close_adset(adset_for_off_list, ai_setting_cost_per_result)
+            
+            print('[optimize_performance_campaign] campaign_daily_budget', daily_budget)
+            if not day_dict.get('spend'):
+                print('[optimize_performance_campaign] no spend value')            
+                return
+            if daily_budget and yesterday_spend and (yesterday_spend <= daily_budget * 0.8):
+                print('[optimize_performance_campaign] yesterday_spend not enough:', yesterday_spend)            
+                if not IS_DEBUG:
+                    database_fb.update_init_bid(campaign_id, update_ratio=1.1)
+            else:
+                print('[optimize_performance_campaign] yesterday_spend is enough, lower bidding')
+                if not IS_DEBUG:
+                    database_fb.update_init_bid(campaign_id, update_ratio=0.9)
+            
+            
+            
         modify_opt_result_db(campaign_id, "True")
     else:
         print('[optimize_performance_campaign] last_7d status: meet requirements.\n')
@@ -310,8 +340,32 @@ def optimize_performance_campaign(account_id,
                 modify_opt_result_db(campaign_id, "True")
             else:
                 modify_opt_result_db(campaign_id, "False")
+                
+            print('[optimize_performance_campaign] campaign_daily_budget', daily_budget)
+            if not day_dict.get('spend'):
+                print('[optimize_performance_campaign] no spend value')            
+                return
+            if daily_budget and yesterday_spend and (yesterday_spend <= daily_budget * 0.8):
+                print('[optimize_performance_campaign] yesterday_spend not enough:', yesterday_spend)            
+                if not IS_DEBUG:
+                    database_fb.update_init_bid(campaign_id, update_ratio=1.1)
+            else:
+                print('[optimize_performance_campaign] yesterday_spend is enough')
+                
+                
+                
         else:
             print('[optimize_performance_campaign] lifetime status: meet requirements.\n')
+            print('[optimize_performance_campaign] campaign_daily_budget', daily_budget)
+            if not day_dict.get('spend'):
+                print('[optimize_performance_campaign] no spend value')            
+                return
+            if daily_budget and yesterday_spend and (yesterday_spend <= daily_budget * 0.8):
+                print('[optimize_performance_campaign] yesterday_spend not enough:', yesterday_spend)            
+                if not IS_DEBUG:
+                    database_fb.update_init_bid(campaign_id, update_ratio=1.1)
+            else:
+                print('[optimize_performance_campaign] yesterday_spend is enough')
             modify_opt_result_db(campaign_id, "False")
 
 
@@ -430,20 +484,29 @@ def optimize_branding_campaign(account_id,
 
     adset_list = campaign_instance.get_adsets_active()
     adset_for_copy_list, adset_for_off_list = split_adset_list(adset_list)
-
+    
+    
+    
+    close_adset(adset_list, ai_kpi_setting)
+    
+    
     for adset_id in adset_for_copy_list:
         # bid adjust
         bid = fb_adapter.init_bid_dict.get(int(adset_id))
         #error handle: the adset did not have score
         if bid is None:
             print('[optimize_branding_campaign] adset bid is None')
-            break
+            continue
         bid = fb_currency_handler.get_proper_bid(campaign_id, bid)
 
         actions.update({'bid': bid})
         origin_adset_params = adset_controller.retrieve_origin_adset_params(adset_id)
         origin_adset_params[AdSet.Field.id] = None
         origin_name = origin_adset_params[AdSet.Field.name]
+        
+        if is_contain_rt_string(origin_name) or is_contain_lookalike_string(origin_name):
+            continue
+        
         adset_max = origin_adset_params[AdSet.Field.targeting]["age_max"]
         adset_min = origin_adset_params[AdSet.Field.targeting]["age_min"]
         try:
@@ -460,10 +523,10 @@ def optimize_branding_campaign(account_id,
             interval = 2
             age_interval = math.ceil((adset_max-adset_min) / interval)
             for i in range(interval):
-                current_adset_min = adset_min
-                current_adset_max = current_adset_min + age_interval if (current_adset_min + age_interval) < 66 else 65
+                current_adset_min = adset_min 
+                current_adset_max = current_adset_min + age_interval if (current_adset_min + age_interval) < adset_max else adset_max
                 actions['age'][0] = str(current_adset_min) + '-' + str(current_adset_max)
-                adset_min = current_adset_max
+                adset_min = current_adset_max + 1
                 actions_copy = deepcopy(actions)
                 copy_result_new_adset_id = adset_controller.copy_branding_adset(campaign_id, 
                                                                                 adset_id, 
