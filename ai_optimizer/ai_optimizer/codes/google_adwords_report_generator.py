@@ -187,8 +187,10 @@ class ReportGenerator(object):
 
     def add_param(self, key, value):
         if key in self.param_types.keys():
-            if value in self.param_types[key]:
-                self._extract_value(value)
+            for val in value:
+                print(val)
+                if val in self.param_types[key]:
+                    self._extract_value(val)
         return self
 
     def add_params(self, params):
@@ -220,6 +222,35 @@ class ReportGenerator(object):
         data_df[data_df.columns.intersection( numeric_money_list )] = data_df[data_df.columns.intersection( numeric_money_list )].div(1000000)
         data_df.rename( columns=dict(zip(data_df.columns, self.columns)), inplace=True)
         return [data.to_dict() for idx, data in data_df.iterrows()]
+
+
+# In[ ]:
+
+
+class CampaignReportGenerator(ReportGenerator):
+    _fields = [
+        'ExternalCustomerId', 'CampaignId', 'AdvertisingChannelType', 'CampaignStatus', 'BiddingStrategyType', 'Amount', 'Cost',
+        'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'AverageCpc', 'CostPerConversion', 'CostPerAllConversion',
+        'Ctr', 'ViewThroughConversions'
+    ]
+    _columns = [
+        'customer_id', 'campaign_id', 'channel_type', 'status', 'bidding_type', 'daily_budget', 'spend',
+        'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion',
+        'cost_per_all_conversion', 'ctr', 'view_conversions'
+    ]
+    report_name = 'CAMPAIGN_PERFORMANCE_REPORT'
+    report_type = 'CAMPAIGN_PERFORMANCE_REPORT'
+    
+    def __init__(self, campaign_id, media):
+        super().__init__(campaign_id, media)
+        self.fields = CampaignReportGenerator._fields.copy()
+        self.columns = CampaignReportGenerator._columns.copy()
+        self.__init_report()
+#         self.__init_predicates_object()
+        
+    def __init_report(self):
+        self.report.spec[self.report.report_name] = self.report_name
+        self.report.spec[self.report.report_type] = self.report_type
 
 
 # In[ ]:
@@ -267,35 +298,6 @@ class AdScheduleReportGenerator(ReportGenerator):
         data_df['weekofday'] = div.map(lambda value: week_map[value])
         data_df['starthour'], data_df['endhour'] = divmod((mod // 4), 100)
         return [data.to_dict() for idx, data in data_df.iterrows()]
-
-
-# In[ ]:
-
-
-class CampaignReportGenerator(ReportGenerator):
-    _fields = [
-        'ExternalCustomerId', 'CampaignId', 'AdvertisingChannelType', 'CampaignStatus', 'BiddingStrategyType', 'Amount', 'Cost',
-        'AverageCost', 'Impressions', 'Clicks', 'Conversions', 'AllConversions', 'AverageCpc', 'CostPerConversion', 'CostPerAllConversion',
-        'Ctr', 'ViewThroughConversions'
-    ]
-    _columns = [
-        'customer_id', 'campaign_id', 'channel_type', 'status', 'bidding_type', 'daily_budget', 'spend',
-        'cost_per_target', 'impressions', 'clicks', 'conversions', 'all_conversions', 'cost_per_click', 'cost_per_conversion',
-        'cost_per_all_conversion', 'ctr', 'view_conversions'
-    ]
-    report_name = 'CAMPAIGN_PERFORMANCE_REPORT'
-    report_type = 'CAMPAIGN_PERFORMANCE_REPORT'
-    
-    def __init__(self, campaign_id, media):
-        super().__init__(campaign_id, media)
-        self.fields = CampaignReportGenerator._fields.copy()
-        self.columns = CampaignReportGenerator._columns.copy()
-        self.__init_report()
-#         self.__init_predicates_object()
-        
-    def __init_report(self):
-        self.report.spec[self.report.report_name] = self.report_name
-        self.report.spec[self.report.report_type] = self.report_type
 
 
 # In[ ]:
