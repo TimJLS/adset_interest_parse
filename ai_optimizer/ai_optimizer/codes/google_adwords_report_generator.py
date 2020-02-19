@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[2]:
 
 
 import pandas as pd
@@ -10,7 +10,7 @@ import adgeek_permission as permission
 import database_controller
 
 
-# In[ ]:
+# In[3]:
 
 
 class DatePreset:
@@ -21,7 +21,7 @@ class DatePreset:
     entire_time = 'ENTIRE_TIME'
 
 
-# In[ ]:
+# In[4]:
 
 
 class Predicates:
@@ -36,7 +36,7 @@ class Predicates:
         }
 
 
-# In[ ]:
+# In[5]:
 
 
 class Selector:
@@ -55,14 +55,14 @@ class Selector:
         }
 
 
-# In[ ]:
+# In[6]:
 
 
 class Operator:
     pass
 
 
-# In[ ]:
+# In[7]:
 
 
 class Report:
@@ -82,7 +82,7 @@ class Report:
         }
 
 
-# In[ ]:
+# In[8]:
 
 
 class ReportGenerator(object):
@@ -188,7 +188,6 @@ class ReportGenerator(object):
     def add_param(self, key, value):
         if key in self.param_types.keys():
             for val in value:
-                print(val)
                 if val in self.param_types[key]:
                     self._extract_value(val)
         return self
@@ -224,7 +223,7 @@ class ReportGenerator(object):
         return [data.to_dict() for idx, data in data_df.iterrows()]
 
 
-# In[ ]:
+# In[9]:
 
 
 class CampaignReportGenerator(ReportGenerator):
@@ -253,7 +252,7 @@ class CampaignReportGenerator(ReportGenerator):
         self.report.spec[self.report.report_type] = self.report_type
 
 
-# In[ ]:
+# In[10]:
 
 
 class AdScheduleReportGenerator(ReportGenerator):
@@ -757,7 +756,7 @@ def main():
 #     main()
 
 
-# In[ ]:
+# In[1]:
 
 
 # !jupyter nbconvert --to script google_adwords_report_generator.ipynb
