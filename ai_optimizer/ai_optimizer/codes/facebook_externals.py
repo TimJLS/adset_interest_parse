@@ -487,7 +487,7 @@ def optimize_branding_campaign(account_id,
     
     
     
-    close_adset(adset_list, ai_kpi_setting)
+    close_adset(adset_list, ai_setting_cost_per_result)
     
     
     for adset_id in adset_for_copy_list:
