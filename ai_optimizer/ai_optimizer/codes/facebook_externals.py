@@ -485,11 +485,6 @@ def optimize_branding_campaign(account_id,
     adset_list = campaign_instance.get_adsets_active()
     adset_for_copy_list, adset_for_off_list = split_adset_list(adset_list)
     
-    
-    
-    close_adset(adset_list, ai_setting_cost_per_result)
-    
-    
     for adset_id in adset_for_copy_list:
         # bid adjust
         bid = fb_adapter.init_bid_dict.get(int(adset_id))
@@ -612,10 +607,4 @@ if __name__ == '__main__':
 # actions_copy['age'].append( str(adset_min) + '-' + str(adset_max))
 # origin_adset_params = adset_controller.retrieve_origin_adset_params(adset_id)
 # adset_controller.copy_branding_adset(campaign_id, adset_id, actions_copy, origin_adset_params)
-
-
-# In[ ]:
-
-
-
 
