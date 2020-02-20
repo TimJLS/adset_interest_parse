@@ -477,6 +477,9 @@ def optimize_performance_campaign():
         achieving_rate = (target / daily_target) if daily_target != 0 else 0
         print('[optimize_performance_campaign][achieving rate]', achieving_rate, '[target]', target, '[daily_target]', daily_target)
 
+        for native_ad_group_id in native_ad_group_id_list:
+            if is_lookalike:
+                make_user_list_criterion(campaign_id, native_ad_group)  
         
         if is_assessed(campaign_id):
             print('[optimize_performance_campaign]: campaign is assessed.')
@@ -487,8 +490,6 @@ def optimize_performance_campaign():
                     service_container, campaign_id, native_ad_group,)
                 make_display_keyword_criterion(campaign_id, native_ad_group,)
                 make_display_topics_criterion(campaign_id, native_ad_group,)
-                if is_lookalike:
-                    make_user_list_criterion(campaign_id, native_ad_group)
             modify_opt_result_db(campaign_id , 'True')
         else:
             print('[optimize_performance_campaign] campaign is not assessed. campaign_id: ', campaign_id)
@@ -537,8 +538,11 @@ def optimize_branding_campaign():
         target = int( day_dict[objective] )
         achieving_rate = (target / daily_target) if daily_target != 0 else 0
         print('[optimize_branding_campaign][achieving rate]', achieving_rate, '[target]', target, '[daily_target]', daily_target)
-
-
+        
+        for native_ad_group_id in native_ad_group_id_list:
+            if is_lookalike:
+                make_user_list_criterion(campaign_id, native_ad_group)        
+        
         if achieving_rate < 1 and achieving_rate >= 0:
             # Pause all on-line mutant
             for ad_group_id in mutate_ad_group_id_list:
@@ -557,8 +561,7 @@ def optimize_branding_campaign():
                         native_ad_group = native_ad_group,
                         mutant_ad_group = native_ad_group
                     )
-                    if is_lookalike:
-                        make_user_list_criterion(campaign_id, native_ad_group)
+
                         
                 modify_opt_result_db(campaign_id , 'True')
             else:
