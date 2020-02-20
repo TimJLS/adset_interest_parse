@@ -14,6 +14,7 @@ import requests
 
 from facebook_business.adobjects.adset import AdSet
 import facebook_business.adobjects.ad as facebook_business_ad
+from facebook_business.adobjects.campaign import Campaign
 
 from bid_operator import revert_bid_amount
 import database_controller
@@ -180,8 +181,10 @@ def make_performance_suggest_adset(campaign_id, adsets_active_list):
         return
 
     suggestion_full_name = '_'.join(suggest_name_list)
-    new_adset_params[AdSet.Field.name] = "(BT/{name}/X/AI_{date})BT/{name}/X#[BT,{name}]".format(name=suggestion_full_name,
-                                                                                                 date=datetime.date.today().strftime("%Y%m%d"))
+    new_adset_params[AdSet.Field.name] = "(BT/{name}/X/AI_{date})BT/{name}/X#[BT,{name}]".format(
+        name=suggestion_full_name, 
+        date=datetime.date.today().strftime("%Y%m%d")
+    )
     if new_adset_params[AdSet.Field.targeting].get("custom_audiences"): 
         print('[make_suggest_adset] remove custom_audiences when add suggestion adset')
         del new_adset_params[AdSet.Field.targeting]['custom_audiences']
@@ -262,11 +265,15 @@ def copy_adset_new_target(campaign_id, new_adset_params, original_adset_id):
 
 def error_parse(response, params):
     error = response.__dict__.get('_error', None)
+    campaign_id = params['campaign_id']
+    camp = Campaign(campaign_id)
     if error:
         error_user_title = error['error_user_title']
         error_user_msg = re.split('; |, |\*|\n| |，|。', error['error_user_msg'])
-        budget = error_user_msg[1].split('$')[1]
-        params['daily_budget'] = budget
+        budget = error_user_msg[2].split('$')[1]
+        budget = int(budget.replace(',', ''))
+        params['daily_budget'] = None
+        resp = camp.api_update(params={'daily_budget': budget})
         return params
 
 
