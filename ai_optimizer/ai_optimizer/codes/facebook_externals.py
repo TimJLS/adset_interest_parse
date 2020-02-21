@@ -199,11 +199,15 @@ def optimize_performance_campaign(account_id,
                                   is_smart_bidding,
                                   actual_metrics,
                                   industry_type,
-                                 ):
+                                  *arg, **kwarg):
     print('[optimize_performance_campaign] campaign ', campaign_id)
     is_smart_spending = eval(is_smart_spending)
     is_target_suggest = eval(is_target_suggest)
     is_lookalike = eval(is_lookalike)
+    
+    if not is_target_suggest:
+        return
+    
     current_flight = (datetime.date.today()-ai_start_date).days + 1
     last_7d_flight_process = 7 / period
     lifetime_flight_process = current_flight / period
@@ -282,8 +286,6 @@ def optimize_performance_campaign(account_id,
                 print('[optimize_performance_campaign] yesterday_spend is enough, lower bidding')
                 if not IS_DEBUG:
                     database_fb.update_init_bid(campaign_id, update_ratio=0.9)
-            
-            
             
         else:
             print('[optimize_performance_campaign] lifetime status: meet requirements.\n')
@@ -372,6 +374,96 @@ def optimize_performance_campaign(account_id,
 # In[ ]:
 
 
+def set_adset_status(campaign_instance, ai_kpi_setting):
+    df = database_fb.retrieve('score_7d', campaign_instance.campaign_id)
+    adsets_active_list = campaign_instance.get_adsets_active()
+    adset_list = []
+    adset_action_list = []
+    if df.empty:
+        print('[get_sorted_adset] Error, no adset score')
+        modify_opt_result_db(campaign_id, "False")
+        return []
+    df_today = df.sort_values(by=['score'], ascending=False)
+    print('[get_sorted_adset] df_today\n', df_today)
+    adset_list = df_today['adset_id'].unique().tolist()
+    for adset in adset_list:
+        if str(adset) in adsets_active_list:
+            adset_action_list.append(adset)
+    adset_for_copy_list, adset_for_off_list = split_adset_list(adset_action_list)
+    # current going adset is less than ADSET_MIN_COUNT, not to close any adset
+    if len(adsets_active_list) <= ADSET_MIN_COUNT:
+        adset_for_off_list = []
+    print('[optimize_performance_campaign] adset_list', len(adset_list))
+    print('[optimize_performance_campaign] adset_action_list', len(adset_action_list))
+    print('[optimize_performance_campaign] adset_for_copy_list', len(adset_for_copy_list))
+    print('[optimize_performance_campaign] adset_for_off_list', len(adset_for_off_list))
+    close_adset(adset_for_off_list, ai_kpi_setting)
+
+
+# In[ ]:
+
+
+def duplicate_adset(campaign_instance, *arg, **kwarg):
+    # get ready to duplicate
+    actions = {'bid': None, 'age': list(), 'interest': None}
+    actions_list = list()
+
+    #get adset bid for this campaign
+    fb_adapter = adapter.FacebookCampaignAdapter(campaign_id, database_fb)
+    fb_adapter.retrieve_campaign_attribute()
+    
+    adset_list = campaign_instance.get_adsets_active()
+    adset_for_copy_list, adset_for_off_list = split_adset_list(adset_list)
+    for adset_id in adset_for_copy_list:
+        # bid adjust
+        bid = fb_adapter.init_bid_dict.get(int(adset_id))
+        #error handle: the adset did not have score
+        if bid is None:
+            print('[optimize_branding_campaign] adset bid is None')
+            continue
+        bid = fb_currency_handler.get_proper_bid(campaign_id, bid)
+
+        actions.update({'bid': bid})
+        origin_adset_params = adset_controller.retrieve_origin_adset_params(adset_id)
+        origin_adset_params[AdSet.Field.id] = None
+        origin_name = origin_adset_params[AdSet.Field.name]
+        
+        if is_contain_rt_string(origin_name) or is_contain_lookalike_string(origin_name):
+            continue
+        
+        adset_max = origin_adset_params[AdSet.Field.targeting]["age_max"]
+        adset_min = origin_adset_params[AdSet.Field.targeting]["age_min"]
+        try:
+            actions['age'][0] = str(adset_min) + '-' + str(adset_max)
+            actions.update({'interest': origin_interest['interests'][0]})
+        except:
+            actions['age'].append(str(adset_min) + '-' + str(adset_max))
+            actions.update({'interest': None})
+        # whether to split age or copy adset names with 'copy'
+        if is_contain_copy_string(origin_name):
+            print('[optimize_branding_campaign] not to copy the copied adset')
+        else:
+            # for CPC case without COPY string
+            interval = 2
+            age_interval = math.ceil((adset_max-adset_min) / interval)
+            for i in range(interval):
+                current_adset_min = adset_min 
+                current_adset_max = current_adset_min + age_interval if (current_adset_min + age_interval) < adset_max else adset_max
+                actions['age'][0] = str(current_adset_min) + '-' + str(current_adset_max)
+                adset_min = current_adset_max + 1
+                actions_copy = deepcopy(actions)
+                copy_result_new_adset_id = adset_controller.copy_branding_adset(campaign_id, 
+                                                                                adset_id, 
+                                                                                actions_copy, 
+                                                                                origin_adset_params)
+                if copy_result_new_adset_id:
+                    ai_logger.save_adset_behavior(copy_result_new_adset_id, ai_logger.BehaviorType.COPY)
+    modify_opt_result_db(campaign_id, "True")
+
+
+# In[ ]:
+
+
 def optimize_branding_campaign(account_id,
                                campaign_id,
                                destination,
@@ -409,7 +501,7 @@ def optimize_branding_campaign(account_id,
                                is_smart_bidding,
                                actual_metrics,
                                industry_type,
-                              ):
+                               *arg, **kwarg):
     print('[optimize_branding_campaign] campaign ', campaign_id)
     # charge_type attribute of first row
     is_smart_spending = eval(is_smart_spending)
@@ -471,65 +563,25 @@ def optimize_branding_campaign(account_id,
     # current going adset is less than ADSET_MIN_COUNT, not to close any adset
     adsets_active_list = campaign_instance.get_adsets_active()
     print('[optimize_branding_campaign] adsets_active_list:', adsets_active_list)
-
-    set_adset_status(campaign_instance, ai_setting_cost_per_result)
-
-    # get ready to duplicate
-    actions = {'bid': None, 'age': list(), 'interest': None}
-    actions_list = list()
-
-    #get adset bid for this campaign
-    fb_adapter = adapter.FacebookCampaignAdapter(campaign_id, database_fb)
-    fb_adapter.retrieve_campaign_attribute()
-
-    adset_list = campaign_instance.get_adsets_active()
-    adset_for_copy_list, adset_for_off_list = split_adset_list(adset_list)
     
-    for adset_id in adset_for_copy_list:
-        # bid adjust
-        bid = fb_adapter.init_bid_dict.get(int(adset_id))
-        #error handle: the adset did not have score
-        if bid is None:
-            print('[optimize_branding_campaign] adset bid is None')
-            continue
-        bid = fb_currency_handler.get_proper_bid(campaign_id, bid)
+    if is_target_suggest:
+        set_adset_status(campaign_instance, ai_setting_cost_per_result)
 
-        actions.update({'bid': bid})
-        origin_adset_params = adset_controller.retrieve_origin_adset_params(adset_id)
-        origin_adset_params[AdSet.Field.id] = None
-        origin_name = origin_adset_params[AdSet.Field.name]
-        
-        if is_contain_rt_string(origin_name) or is_contain_lookalike_string(origin_name):
-            continue
-        
-        adset_max = origin_adset_params[AdSet.Field.targeting]["age_max"]
-        adset_min = origin_adset_params[AdSet.Field.targeting]["age_min"]
-        try:
-            actions['age'][0] = str(adset_min) + '-' + str(adset_max)
-            actions.update({'interest': origin_interest['interests'][0]})
-        except:
-            actions['age'].append(str(adset_min) + '-' + str(adset_max))
-            actions.update({'interest': None})
-        # whether to split age or copy adset names with 'copy'
-        if is_contain_copy_string(origin_name):
-            print('[optimize_branding_campaign] not to copy the copied adset')
-        else:
-            # for CPC case without COPY string
-            interval = 2
-            age_interval = math.ceil((adset_max-adset_min) / interval)
-            for i in range(interval):
-                current_adset_min = adset_min 
-                current_adset_max = current_adset_min + age_interval if (current_adset_min + age_interval) < adset_max else adset_max
-                actions['age'][0] = str(current_adset_min) + '-' + str(current_adset_max)
-                adset_min = current_adset_max + 1
-                actions_copy = deepcopy(actions)
-                copy_result_new_adset_id = adset_controller.copy_branding_adset(campaign_id, 
-                                                                                adset_id, 
-                                                                                actions_copy, 
-                                                                                origin_adset_params)
-                if copy_result_new_adset_id:
-                    ai_logger.save_adset_behavior(copy_result_new_adset_id, ai_logger.BehaviorType.COPY)
-    modify_opt_result_db(campaign_id, "True")
+        duplicate_adset(campaign_instance)
+
+
+# In[ ]:
+
+
+def optimize_campaign(campaign_id):
+    print('[optimize_campaign] campaign_id', campaign_id)
+    campaign = database_fb.get_one_campaign(campaign_id).to_dict('records')[0]
+    permission.init_facebook_api(campaign['account_id'])
+    campaign_name, campaign_fb_status = get_campaign_name_status(campaign_id)
+    print(campaign_id, campaign_fb_status, campaign_name)
+    if campaign_fb_status == 'ACTIVE':
+        if campaign['destination_type'] in collector.BRANDING_CAMPAIGN_LIST:
+            optimize_branding_campaign(**campaign)
 
 
 # In[ ]:

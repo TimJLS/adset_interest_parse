@@ -488,6 +488,7 @@ def main():
     db = database_controller.Database()
     database_fb = database_controller.FB(db)
     campaign_list = database_fb.get_branding_campaign().to_dict('records')
+    campaign_list = [campaign for campaign in campaign_list if eval(campaign['is_target_suggest'])]
     print("Branding Campaign In Assessment: \n", [campaign['campaign_id'] for campaign in campaign_list])
     for campaign in campaign_list:
         campaign_id = campaign.get("campaign_id")
@@ -495,6 +496,7 @@ def main():
             generate_optimal_weight(campaign_id, time_slice=time_slice)
 
     campaign_list = database_fb.get_performance_campaign().to_dict('records')
+    campaign_list = [campaign for campaign in campaign_list if eval(campaign['is_target_suggest'])]
     print("Performance Campaign In Assessment: \n", [campaign['campaign_id'] for campaign in campaign_list])
     for campaign in campaign_list:
         campaign_id = campaign.get("campaign_id")
@@ -519,10 +521,4 @@ if __name__ == "__main__":
 
 
 # !jupyter nbconvert --to script genetic_algorithm.ipynb
-
-
-# In[ ]:
-
-
-
 
