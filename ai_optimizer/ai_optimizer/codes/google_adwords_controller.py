@@ -386,7 +386,7 @@ class AdSchedule:
         return resp
 
     def update(self, day_of_week, start_hour, end_hour, bid_modifier=1, criterion_id=None, start_minute="ZERO", end_minute='ZERO'):
-        self.operand['criterion']['xsi_type'] = 'AD_SCHEDULE'
+        self.operand['criterion']['xsi_type'] = 'AdSchedule'
         self.operand['criterion']['dayOfWeek'] = day_of_week.upper()
         self.operand['criterion']['startHour'] = start_hour
         self.operand['criterion']['endHour'] = end_hour
@@ -394,7 +394,7 @@ class AdSchedule:
         self.operand['criterion']['endMinute'] = end_minute
         self.operand['bidModifier'] = bid_modifier
         self.operation['operand'] = dict(self.operand)
-        self.operation['operator'] = 'SET' if  criterion_id else 'ADD'
+        self.operation['operator'] = 'SET' if criterion_id else 'ADD'
         resp = self.campaign.service_container.service_criterion.mutate(self.operation)
         return resp
 
