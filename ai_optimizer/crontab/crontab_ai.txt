@@ -40,6 +40,9 @@
 
 00 */2 * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/device_adjustment.py >> /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/device_adjustment.log
 
+# GDN hour range optimization
+00 00 * * * python3 /home/tim_su/ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/google_adwords_hour_range_opt.py >> /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/google_adwords_hour_range_opt.log
+
 00 00 * * * python3 ai_optimizer/opt/ai_optimizer/ai_optimizer/codes/facebook_lookalike_audience.py >> /home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/facebook_lookalike_audience.log
 
 #add custom audience (provider by google) in each adgroup
