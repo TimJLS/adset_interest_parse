@@ -28,11 +28,11 @@ def checked(func):
         bound = sig.bind(*args, **kwargs)
         for name, val in bound.arguments.items():
             if name in rules:
-                assert isinstance(val, rules[name].__args__), f"Expected {rules[name].__args__}"
+                assert isinstance(val, rules[name].__args__), f"Expecting {rules[name].__args__}"
  
         if 'return' in rules and not isinstance(func(*args, **kwargs), rules['return']):
             assert isinstance(func(*args, **kwargs),
-                              rules[name].__args__), f"Expected {rules['return']}, got {type(func(*args, **kwargs))}"
+                              rules[name].__args__), f"Expecting {rules['return']}, got {type(func(*args, **kwargs))}"
  
         return func(*args, **kwargs)
     return wrapper
@@ -393,6 +393,8 @@ class AdSchedule:
         self.operand['criterion']['startMinute'] = start_minute
         self.operand['criterion']['endMinute'] = end_minute
         self.operand['bidModifier'] = bid_modifier
+        if criterion_id:
+             self.operand['criterion']['id'] = criterion_id
         self.operation['operand'] = dict(self.operand)
         self.operation['operator'] = 'SET' if criterion_id else 'ADD'
         resp = self.campaign.service_container.service_criterion.mutate(self.operation)
