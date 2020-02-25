@@ -409,7 +409,7 @@ def duplicate_adset(campaign_instance, *arg, **kwarg):
     actions_list = list()
 
     #get adset bid for this campaign
-    fb_adapter = adapter.FacebookCampaignAdapter(campaign_id, database_fb)
+    fb_adapter = adapter.FacebookCampaignAdapter(campaign_instance.campaign_id, database_fb)
     fb_adapter.retrieve_campaign_attribute()
     
     adset_list = campaign_instance.get_adsets_active()
@@ -421,7 +421,7 @@ def duplicate_adset(campaign_instance, *arg, **kwarg):
         if bid is None:
             print('[optimize_branding_campaign] adset bid is None')
             continue
-        bid = fb_currency_handler.get_proper_bid(campaign_id, bid)
+        bid = fb_currency_handler.get_proper_bid(campaign_instance.campaign_id, bid)
 
         actions.update({'bid': bid})
         origin_adset_params = adset_controller.retrieve_origin_adset_params(adset_id)
@@ -452,13 +452,13 @@ def duplicate_adset(campaign_instance, *arg, **kwarg):
                 actions['age'][0] = str(current_adset_min) + '-' + str(current_adset_max)
                 adset_min = current_adset_max + 1
                 actions_copy = deepcopy(actions)
-                copy_result_new_adset_id = adset_controller.copy_branding_adset(campaign_id, 
+                copy_result_new_adset_id = adset_controller.copy_branding_adset(campaign_instance.campaign_id, 
                                                                                 adset_id, 
                                                                                 actions_copy, 
                                                                                 origin_adset_params)
                 if copy_result_new_adset_id:
                     ai_logger.save_adset_behavior(copy_result_new_adset_id, ai_logger.BehaviorType.COPY)
-    modify_opt_result_db(campaign_id, "True")
+    modify_opt_result_db(campaign_instance.campaign_id, "True")
 
 
 # In[ ]:

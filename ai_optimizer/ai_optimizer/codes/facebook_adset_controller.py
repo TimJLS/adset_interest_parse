@@ -269,12 +269,13 @@ def error_parse(response, params):
     camp = Campaign(campaign_id)
     if error:
         error_user_title = error['error_user_title']
-        error_user_msg = re.split('; |, |\*|\n| |，|。', error['error_user_msg'])
-        budget = error_user_msg[2].split('$')[1]
-        budget = int(budget.replace(',', ''))
-        params['daily_budget'] = None
-        resp = camp.api_update(params={'daily_budget': budget})
-        return params
+        if error_user_title == "預算過低":
+            error_user_msg = re.split('; |, |\*|\n| |，|。', error['error_user_msg'])
+            budget = error_user_msg[2].split('$')[1]
+            budget = int(budget.replace(',', ''))
+            params['daily_budget'] = None
+            resp = camp.api_update(params={'daily_budget': budget})
+    return params
 
 
 # In[ ]:
