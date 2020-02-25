@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[ ]:
 
 
 import pandas as pd
@@ -10,7 +10,7 @@ import adgeek_permission as permission
 import database_controller
 
 
-# In[3]:
+# In[ ]:
 
 
 class DatePreset:
@@ -21,7 +21,7 @@ class DatePreset:
     entire_time = 'ENTIRE_TIME'
 
 
-# In[4]:
+# In[ ]:
 
 
 class Predicates:
@@ -36,7 +36,7 @@ class Predicates:
         }
 
 
-# In[5]:
+# In[ ]:
 
 
 class Selector:
@@ -55,14 +55,14 @@ class Selector:
         }
 
 
-# In[6]:
+# In[ ]:
 
 
 class Operator:
     pass
 
 
-# In[7]:
+# In[ ]:
 
 
 class Report:
@@ -82,7 +82,7 @@ class Report:
         }
 
 
-# In[8]:
+# In[ ]:
 
 
 class ReportGenerator(object):
@@ -156,8 +156,10 @@ class ReportGenerator(object):
             
         elif date_preset.upper() == 'LAST_7_DAYS':
             last_7_days = datetime.date.today() - datetime.timedelta(days=7)
+            last_7_days = last_7_days if last_7_days > self.ai_start_date else self.ai_start_date
+            yesterday = datetime.date.today() - datetime.timedelta(days=1)
             self.report.selector_object.spec['dateRange']['min'] = last_7_days.strftime("%Y%m%d")
-            self.report.selector_object.spec['dateRange']['max'] = datetime.date.today().strftime("%Y%m%d")
+            self.report.selector_object.spec['dateRange']['max'] = yesterday.strftime("%Y%m%d")
 
         elif date_preset.upper() == 'YESTERDAY':
             yesterday = datetime.date.today() - datetime.timedelta(days=1)
@@ -223,7 +225,7 @@ class ReportGenerator(object):
         return [data.to_dict() for idx, data in data_df.iterrows()]
 
 
-# In[9]:
+# In[ ]:
 
 
 class CampaignReportGenerator(ReportGenerator):
@@ -252,7 +254,7 @@ class CampaignReportGenerator(ReportGenerator):
         self.report.spec[self.report.report_type] = self.report_type
 
 
-# In[10]:
+# In[ ]:
 
 
 class AdScheduleReportGenerator(ReportGenerator):
@@ -756,7 +758,7 @@ def main():
 #     main()
 
 
-# In[1]:
+# In[ ]:
 
 
 # !jupyter nbconvert --to script google_adwords_report_generator.ipynb
