@@ -378,14 +378,17 @@ class Campaigns(object):
     def get_campaign_insights(self, date_preset=None):
         params = {}
         if date_preset is None or date_preset == DatePreset.lifetime:
-            params = {
-                'time_range[since]': self.ai_start_date,
-                'time_range[until]': self.ai_stop_date,
-            }
+            params['time_range[since]'] = self.ai_start_date
+            params['time_range[until]'] = self.ai_stop_date
+
+        elif date_preset == DatePreset.last_7d:
+            last_7d = datetime.date.today() - datetime.timedelta(7)
+            params['time_range[since]'] = self.ai_start_date if last_7d < self.ai_start_date else last_7d
+            params['time_range[until]'] = datetime.date.today()
+            
         else:
-            params = {
-                'date_preset': date_preset,
-            }
+            params['date_preset'] = date_preset
+
         camp = campaign.Campaign(self.campaign_id)
         try:
             insights = camp.get_insights(
@@ -581,16 +584,20 @@ class AdSets(object):
         return self.adset_features
     
     def get_adset_insights(self, date_preset=None):
-        adsets = adset.AdSet( self.adset_id )
+        params = {}
         if date_preset is None or date_preset == DatePreset.lifetime:
-            params = {
-                'time_range[since]': self.ai_start_date,
-                'time_range[until]': self.ai_stop_date,
-            }
+            params['time_range[since]'] = self.ai_start_date
+            params['time_range[until]'] = self.ai_stop_date
+
+        elif date_preset == DatePreset.last_7d:
+            last_7d = datetime.date.today() - datetime.timedelta(7)
+            params['time_range[since]'] = self.ai_start_date if last_7d < self.ai_start_date else last_7d
+            params['time_range[until]'] = datetime.date.today()
+            
         else:
-            params = {
-                'date_preset': date_preset,
-            }
+            params['date_preset'] = date_preset
+            
+        adsets = adset.AdSet( self.adset_id )
         try:
             insights = adsets.get_insights(
                 params=params,
@@ -768,10 +775,4 @@ if __name__ == "__main__":
 
 
 # !jupyter nbconvert --to script facebook_datacollector.ipynb
-
-
-# In[ ]:
-
-
-
 
