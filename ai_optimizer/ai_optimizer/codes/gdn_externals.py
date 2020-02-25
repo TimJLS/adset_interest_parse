@@ -441,22 +441,24 @@ def make_user_list_criterion(campaign_id, ad_group):
 
 
 def optimize_performance_campaign():
-    performance_campaign_dict_list = database_gdn.get_performance_campaign().to_dict('records')
-    campaign_id_list = [ performance_campaign_dict['campaign_id'] for performance_campaign_dict in performance_campaign_dict_list ]
+    campaign_list = database_gdn.get_performance_campaign().to_dict('records')
+    campaign_list = [campaign for campaign in campaign_list if eval(campaign['is_target_suggest'])]
+    campaign_id_list = [campaign['campaign_id'] for campaign in campaign_list]
     print('[optimize_performance_campaign]: campaign_id_list', campaign_id_list)
-    for performance_campaign_dict in performance_campaign_dict_list:
-        customer_id = performance_campaign_dict['customer_id']
-        campaign_id = performance_campaign_dict['campaign_id']
-        destination_type = performance_campaign_dict['destination_type']
-        daily_target = performance_campaign_dict['daily_target']
-        is_lookalike = eval(performance_campaign_dict['is_lookalike'])
-        destination = performance_campaign_dict['destination']
-        ai_spend_cap = performance_campaign_dict['ai_spend_cap']
+
+    for campaign in campaign_list:
+        customer_id = campaign['customer_id']
+        campaign_id = campaign['campaign_id']
+        destination_type = campaign['destination_type']
+        daily_target = campaign['daily_target']
+        is_lookalike = eval(campaign['is_lookalike'])
+        destination = campaign['destination']
+        ai_spend_cap = campaign['ai_spend_cap']
         original_cpa = ai_spend_cap/destination
         print('[optimize_performance_campaign] campaign_id:' , campaign_id)
         print('[optimize_performance_campaign] original_cpa:' , original_cpa)
         
-        service_container = controller.AdGroupServiceContainer( customer_id )
+        service_container = controller.AdGroupServiceContainer(customer_id)
         
         objective = 'conversions'
         # Init datacollector Campaign
@@ -471,7 +473,11 @@ def optimize_performance_campaign():
         native_ad_group_id_list = controller_campaign.native_ad_group_id_list
         # Adjust initial bids
         for ad_group_id in native_ad_group_id_list:
-            handle_initial_bids(ad_group_id, day_dict['spend'], day_dict['daily_budget'], daily_target, original_cpa)
+            handle_initial_bids(ad_group_id,
+                                day_dict['spend'],
+                                day_dict['daily_budget'],
+                                daily_target,
+                                original_cpa)
         
         target = int( day_dict[objective] )
         achieving_rate = (target / daily_target) if daily_target != 0 else 0
@@ -500,18 +506,19 @@ def optimize_performance_campaign():
 
 
 def optimize_branding_campaign():
-    branding_campaign_dict_list = database_gdn.get_branding_campaign().to_dict('records')
-    campaign_id_list = [ branding_campaign_dict['campaign_id'] for branding_campaign_dict in branding_campaign_dict_list ]
+    campaign_list = database_gdn.get_branding_campaign().to_dict('records')
+    campaign_list = [campaign for campaign in campaign_list if eval(campaign['is_target_suggest'])]
+    campaign_id_list = [campaign['campaign_id'] for campaign in campaign_list]
     print('[optimize_branding_campaign]: campaign_id_list', campaign_id_list)
     
-    for branding_campaign_dict in branding_campaign_dict_list:
-        customer_id = branding_campaign_dict['customer_id']
-        campaign_id = branding_campaign_dict['campaign_id']
-        destination_type = branding_campaign_dict['destination_type']
-        daily_target = branding_campaign_dict['daily_target']
-        is_lookalike = eval(branding_campaign_dict['is_lookalike'])
-        destination = branding_campaign_dict['destination']
-        ai_spend_cap = branding_campaign_dict['ai_spend_cap']
+    for campaign in campaign_list:
+        customer_id = campaign['customer_id']
+        campaign_id = campaign['campaign_id']
+        destination_type = campaign['destination_type']
+        daily_target = campaign['daily_target']
+        is_lookalike = eval(campaign['is_lookalike'])
+        destination = campaign['destination']
+        ai_spend_cap = campaign['ai_spend_cap']
         original_cpc = ai_spend_cap/destination
         print('[optimize_branding_campaign] campaign_id', campaign_id)
         print('[optimize_branding_campaign] original_cpc:' , original_cpc)
@@ -534,7 +541,11 @@ def optimize_branding_campaign():
         mutate_ad_group_id_list = controller_campaign.mutate_ad_group_id_list        
         # Adjust initial bids
         for ad_group_id in native_ad_group_id_list:
-            handle_initial_bids(ad_group_id, day_dict['spend'], day_dict['daily_budget'], daily_target, original_cpc)
+            handle_initial_bids(ad_group_id,
+                                day_dict['spend'],
+                                day_dict['daily_budget'],
+                                daily_target,
+                                original_cpc)
         target = int( day_dict[objective] )
         achieving_rate = (target / daily_target) if daily_target != 0 else 0
         print('[optimize_branding_campaign][achieving rate]', achieving_rate, '[target]', target, '[daily_target]', daily_target)

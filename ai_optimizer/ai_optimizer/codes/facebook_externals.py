@@ -616,6 +616,9 @@ if __name__ == '__main__':
     database_fb = database_controller.FB(db)
     print('[facebook_externals] current_time:', current_time)
     campaign_not_opted_list = database_fb.get_not_opted_campaign().to_dict('records')
+    campaign_not_opted_list = [
+        campaign for campaign in campaign_not_opted_list if eval(campaign['is_target_suggest'])
+    ]
     print('df_not_opted len:', len(campaign_not_opted_list))
     print(campaign_not_opted_list)
     for campaign in campaign_not_opted_list:

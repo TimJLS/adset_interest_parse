@@ -36,40 +36,44 @@ def modify_opt_result_db(campaign_id, is_optimized):
 
 def optimize_performance_campaign():
     objective = 'conversions'
-    performance_campaign_dict_list = database_gsn.get_performance_campaign().to_dict('records')
-    campaign_id_list = [ performance_campaign_dict['campaign_id'] for performance_campaign_dict in performance_campaign_dict_list ]
+    
+    campaign_list = database_gsn.get_performance_campaign().to_dict('records')
+    campaign_list = [campaign for campaign in campaign_list if eval(campaign['is_target_suggest'])]
+    campaign_id_list = [campaign['campaign_id'] for campaign in campaign_list]
     print('[optimize_performance_campaign]: campaign_id_list', campaign_id_list)
-    for performance_campaign_dict in performance_campaign_dict_list:
-        print('[optimize_performance_campaign] campaign_id', performance_campaign_dict['campaign_id'])
-        customer_id = performance_campaign_dict['customer_id']
-        campaign_id = branding_campaign_dict['campaign_id']
-        destination_type = performance_campaign_dict['destination_type']
-        daily_target = performance_campaign_dict['daily_target']
-        is_lookalike = eval(performance_campaign_dict['is_lookalike'])
-        destination = performance_campaign_dict['destination']
-        ai_spend_cap = performance_campaign_dict['ai_spend_cap']
+    
+    for campaign in campaign_id_list:
+        print('[optimize_performance_campaign] campaign_id', campaign['campaign_id'])
+        customer_id = campaign['customer_id']
+        campaign_id = campaign['campaign_id']
+        destination_type = campaign['destination_type']
+        daily_target = campaign['daily_target']
+        is_lookalike = eval(campaign['is_lookalike'])
+        destination = campaign['destination']
+        ai_spend_cap = campaign['ai_spend_cap']
         original_cpa = ai_spend_cap/destination
         print('[optimize_performance_campaign]  original_cpa:' , original_cpa)
         
         service_container = controller.AdGroupServiceContainer( customer_id )
         # Init datacollector Campaign
         collector_campaign = collector.Campaign(customer_id, campaign_id)
-        campaign_day_insights_dict_list = collector_campaign.get_performance_insights(date_preset=datacollector.DatePreset.yesterday, performance_type='CAMPAIGN').to_dict('records')
-        print('[optimize_branding_campaign] campaign_day_insights_dict', campaign_day_insights_dict_list)
+        day_insights = collector_campaign.get_performance_insights(date_preset=datacollector.DatePreset.yesterday,
+                                                                   performance_type='CAMPAIGN').to_dict('records')
+        print('[optimize_branding_campaign] day_insights', day_insights)
         # Init param retriever Retrieve
         controller_campaign = controller.Campaign(service_container, campaign_id)
         ad_group_list = controller_campaign.get_ad_groups()
-        if bool(campaign_day_insights_dict_list):
-            campaign_day_insights_dict = campaign_day_insights_dict_list[0]
-            campaign_day_insights_dict['original_cpa'] = original_cpa
-            campaign_day_insights_dict['daily_target'] = daily_target
-            campaign_day_insights_dict['achieving_rate'] = int( campaign_day_insights_dict[objective] ) / daily_target
-            campaign_day_insights_dict['target'] = campaign_day_insights_dict[objective]
-            print('[optimize_branding_campaign][achieving rate]', campaign_day_insights_dict['achieving_rate'], '[target]', campaign_day_insights_dict[objective], '[daily_target]', daily_target)
+        if bool(day_insights):
+            day_insights = day_insights[0]
+            day_insights['original_cpa'] = original_cpa
+            day_insights['daily_target'] = daily_target
+            day_insights['achieving_rate'] = int( day_insights[objective] ) / daily_target
+            day_insights['target'] = day_insights[objective]
+            print('[optimize_branding_campaign][achieving rate]', day_insights['achieving_rate'], '[target]', day_insights[objective], '[daily_target]', daily_target)
             for ad_group in ad_group_list:
                 handle_campaign_destination(ad_group.ad_group_id, daily_target, original_cpa)
             optimize_list = ['customer_id', 'campaign_id', 'spend', 'daily_budget', 'original_cpa', 'achieving_rate']
-            campaign_status_dict = dict([(key, value) for key, value in campaign_day_insights_dict.items() if key in optimize_list])
+            campaign_status_dict = dict([(key, value) for key, value in day_insights.items() if key in optimize_list])
             handle_initial_bids(**campaign_status_dict)
 
             if spend >= 1.5 * daily_budget:
@@ -85,18 +89,21 @@ def optimize_performance_campaign():
 
 def optimize_branding_campaign():
     objective = 'clicks'
-    branding_campaign_dict_list = database_gsn.get_branding_campaign().to_dict('records')
-    campaign_id_list = [ branding_campaign_dict['campaign_id'] for branding_campaign_dict in branding_campaign_dict_list ]
+    
+    campaign_list = database_gsn.get_branding_campaign().to_dict('records')
+    campaign_list = [campaign for campaign in campaign_list if eval(campaign['is_target_suggest'])]
+    campaign_id_list = [campaign['campaign_id'] for campaign in campaign_list]
     print('[optimize_branding_campaign]: campaign_id_list', campaign_id_list)
-    for branding_campaign_dict in branding_campaign_dict_list:
-        print('[optimize_branding_campaign] campaign_id', branding_campaign_dict['campaign_id'])
-        customer_id = branding_campaign_dict['customer_id']
-        campaign_id = branding_campaign_dict['campaign_id']
-        destination_type = branding_campaign_dict['destination_type']
-        daily_target = branding_campaign_dict['daily_target']
-        is_lookalike = eval(branding_campaign_dict['is_lookalike'])
-        destination = branding_campaign_dict['destination']
-        ai_spend_cap = branding_campaign_dict['ai_spend_cap']
+
+    for campaign in campaign_list:
+        print('[optimize_branding_campaign] campaign_id', campaign['campaign_id'])
+        customer_id = campaign['customer_id']
+        campaign_id = campaign['campaign_id']
+        destination_type = campaign['destination_type']
+        daily_target = campaign['daily_target']
+        is_lookalike = eval(campaign['is_lookalike'])
+        destination = campaign['destination']
+        ai_spend_cap = campaign['ai_spend_cap']
         original_cpa = ai_spend_cap/destination
         print('[optimize_branding_campaign]  original_cpa:' , original_cpa)
         
@@ -104,24 +111,25 @@ def optimize_branding_campaign():
 
         # Init datacollector Campaign
         camp = datacollector.Campaign(customer_id, campaign_id)
-        campaign_day_insights_dict_list = camp.get_performance_insights(database=database_gsn, date_preset=datacollector.DatePreset.yesterday, performance_type='CAMPAIGN').to_dict('records')
+        day_insights = camp.get_performance_insights(date_preset=datacollector.DatePreset.yesterday,
+                                                     performance_type='CAMPAIGN').to_dict('records')
         # Init param retriever Retrieve
         controller_campaign = controller.Campaign(service_container, campaign_id)
         ad_group_list = controller_campaign.get_ad_groups()
-        print('[optimize_branding_campaign] campaign_day_insights_dict', campaign_day_insights_dict_list)
-        if bool(campaign_day_insights_dict_list):
-            campaign_day_insights_dict = campaign_day_insights_dict_list[0]
-            campaign_day_insights_dict['original_cpa'] = original_cpa
-            campaign_day_insights_dict['daily_target'] = daily_target
-            campaign_day_insights_dict['achieving_rate'] = int( campaign_day_insights_dict[objective] ) / daily_target
-            campaign_day_insights_dict['target'] = campaign_day_insights_dict[objective]
-            print('[optimize_branding_campaign][achieving rate]', campaign_day_insights_dict['achieving_rate'], '[target]', campaign_day_insights_dict[objective], '[daily_target]', daily_target)
+        print('[optimize_branding_campaign] day_insights', day_insights)
+        if bool(day_insights):
+            day_insights = day_insights[0]
+            day_insights['original_cpa'] = original_cpa
+            day_insights['daily_target'] = daily_target
+            day_insights['achieving_rate'] = int(day_insights[objective]) / daily_target
+            day_insights['target'] = day_insights[objective]
+            print('[optimize_branding_campaign][achieving rate]', day_insights['achieving_rate'], '[target]', day_insights[objective], '[daily_target]', daily_target)
 
             for ad_group in ad_group_list:
                 handle_campaign_destination(ad_group.ad_group_id, daily_target, original_cpa)
 
             optimize_list = ['customer_id', 'campaign_id', 'spend', 'daily_budget', 'original_cpa', 'achieving_rate']
-            campaign_status_dict = dict([(key, value) for key, value in campaign_day_insights_dict.items() if key in optimize_list])
+            campaign_status_dict = dict([(key, value) for key, value in day_insights.items() if key in optimize_list])
             handle_initial_bids(**campaign_status_dict)
 
 
@@ -238,10 +246,4 @@ if __name__=="__main__":
 
 
 # [keyword_insights for keyword_insights in keyword_insights_dict_list]
-
-
-# In[ ]:
-
-
-
 
