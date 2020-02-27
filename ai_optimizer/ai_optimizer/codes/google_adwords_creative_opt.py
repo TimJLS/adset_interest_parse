@@ -20,6 +20,7 @@ LOGGER_FOLDER = '/home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/creative_con
 # In[ ]:
 
 
+@logger.catch
 def process(database):
     PATH = LOGGER_FOLDER + '{media}/{date}.log'.format(
         media=database.media,
@@ -30,8 +31,14 @@ def process(database):
     performance_campaigns = [campaign for campaign in performance_campaigns
                              if eval(campaign['is_creative_opt'])]
     
+    if not performance_campaigns:
+        logger.info("No Campaigns to optimize.")
+        return
+    
     for campaign in performance_campaigns:
         campaign_id = campaign['campaign_id']
+        logger.info("Campaign ID: {}".format(campaign_id))
+        
         kpi = campaign['ai_spend_cap'] / campaign['destination']
         rpg = report_generator.AdReportGenerator(campaign_id,
                                                  media=database.media)
@@ -48,7 +55,10 @@ def process(database):
                                          ad['ad_id'])
                      for ad in df_ads.to_dict('records')]
         for creative in creatives:
-            creative.update(status=controller.Status.pause)
+            try:
+                creative.update(status=controller.Status.pause)
+            except Exception as err:
+                logger.debug("Exception occurred. \n{}".format(err))
 
 
 # In[ ]:

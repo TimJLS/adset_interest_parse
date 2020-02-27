@@ -53,6 +53,7 @@ def process_outlier_handling(database):
 # In[ ]:
 
 
+@logger.catch
 def process(database):
     LOGGER_FOLDER = '/home/tim_su/ai_optimizer/opt/ai_optimizer/app_log/'
     LOGGER_PATH = 'placement_handling/{database}/{date}.log'.format(
@@ -62,9 +63,15 @@ def process(database):
     performance_campaigns = database.get_performance_campaign().to_dict('records')
     performance_campaigns = [campaign for campaign in performance_campaigns
                              if eval(campaign['is_domain_adjust'])]
+    
+    if not performance_campaigns:
+        logger.info("No Campaigns to optimize.")
+        return
+    
     params = {'breakdowns': 'ad_group'}
     for campaign in performance_campaigns:
         campaign_id = campaign['campaign_id']
+        logger.info("Campaign ID: {}".format(campaign_id))
         kpi = campaign['ai_spend_cap'] / campaign['destination']
         report_generator = report_generator.PlacementReportGenerator(campaign_id,
                                                                      media=database.media)
@@ -78,6 +85,7 @@ def process(database):
         service_container_campaign = controller.CampaignServiceContainer(campaign['customer_id'])
         controller_campaign = controller.Campaign(service_container_campaign, campaign_id)
         resp = controller_campaign.negative_criterions.make_from_df(data=df_drop)
+        logger.debug("Response: {}".format(resp))
         for value in resp['value']:
             url = value['criterion']['url']
             database.upsert("placement_insights", {
