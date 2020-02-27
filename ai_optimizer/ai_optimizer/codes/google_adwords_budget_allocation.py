@@ -82,8 +82,13 @@ def process_budget_allocation(database):
                                                                        "%m_%d_%Y"))
     logger.add(PATH)
     campaign_groups = database.get_running_campaign_group().groupby('campaign_group_id')
+    
+    if campaign_groups.size().empty:
+        logger.info("No Campaign Groups to optimize.")
+        return
+    
     for _, campaign_group in campaign_groups:
-        cgp = CampaignGroup(media='gdn', data=campaign_group)
+        cgp = CampaignGroup(media=database.media, data=campaign_group)
         logger.debug("{}".format(cgp.campaigns))
         cgp.budget_allocation()
         logger.info("Campaign Group ID: {}".format(cgp.campaign_group_id))
@@ -127,10 +132,4 @@ if __name__ == '__main__':
 
 
 # !jupyter nbconvert --to script google_adwords_budget_allocation.ipynb
-
-
-# In[ ]:
-
-
-
 
